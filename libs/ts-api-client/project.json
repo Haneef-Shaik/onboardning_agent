@@ -1,0 +1,33 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "ts-api-client",
+  "projectType": "library",
+  "sourceRoot": "libs/ts-api-client/src",
+  "tags": [
+    "lang:ts",
+    "type:lib"
+  ],
+  "targets": {
+    "lint": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "options": {
+        "command": "eslint --max-warnings=0 libs/ts-api-client"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "options": {
+        "command": "tsc -p libs/ts-api-client/tsconfig.json"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "options": {
+        "command": "vitest run --config libs/ts-api-client/vitest.config.ts"
+      }
+    }
+  }
+}

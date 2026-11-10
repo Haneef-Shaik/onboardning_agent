@@ -1,0 +1,40 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "api",
+  "projectType": "application",
+  "sourceRoot": "apps/api/src",
+  "tags": [
+    "lang:py",
+    "type:app"
+  ],
+  "targets": {
+    "lint": {
+      "executor": "@nxlv/python:run-commands",
+      "cache": true,
+      "options": {
+        "commands": [
+          "uv run --frozen ruff check apps/api",
+          "uv run --frozen ruff format --check apps/api"
+        ],
+        "parallel": false,
+        "cwd": "."
+      }
+    },
+    "typecheck": {
+      "executor": "@nxlv/python:run-commands",
+      "cache": true,
+      "options": {
+        "command": "uv run --frozen mypy apps/api/src apps/api/tests",
+        "cwd": "."
+      }
+    },
+    "test": {
+      "executor": "@nxlv/python:run-commands",
+      "cache": true,
+      "options": {
+        "command": "uv run --frozen pytest apps/api/tests",
+        "cwd": "."
+      }
+    }
+  }
+}

@@ -10,6 +10,7 @@ import re
 import subprocess
 import tomllib
 from pathlib import Path
+from typing import Any, cast
 
 import pytest
 
@@ -40,11 +41,11 @@ COVERAGE_MIN = 80
 EXTRA_FOLDERS = ("config", "templates", "infra", "docs/adr")
 
 
-def _project(rel: str) -> dict:
-    return json.loads((ROOT / rel / "project.json").read_text(encoding="utf-8"))
+def _project(rel: str) -> dict[str, Any]:
+    return cast(dict[str, Any], json.loads((ROOT / rel / "project.json").read_text(encoding="utf-8")))
 
 
-def _command(target: dict) -> str:
+def _command(target: dict[str, Any]) -> str:
     options = target.get("options", {})
     cmd = options.get("command") or " && ".join(options.get("commands", []))
     return str(cmd)
@@ -111,7 +112,8 @@ def test_nx_python_plugin_is_pinned_to_uv() -> None:
     nx = json.loads((ROOT / "nx.json").read_text(encoding="utf-8"))
     plugins = [p for p in nx.get("plugins", []) if isinstance(p, dict)]
     nxlv = [p for p in plugins if p.get("plugin") == "@nxlv/python"]
-    assert nxlv and nxlv[0]["options"]["packageManager"] == "uv"
+    assert nxlv
+    assert nxlv[0]["options"]["packageManager"] == "uv"
 
 
 @pytest.mark.parametrize("rel", EXTRA_FOLDERS)
@@ -128,7 +130,10 @@ def test_makefile_check_runs_plan_check_and_all_targets() -> None:
         assert target in makefile
 
 
-@pytest.mark.parametrize("path", [".env", ".env.local", "evals/reports/x.json", ".venv/x", "node_modules/x", "infra/mongo/keyfile"])
+IGNORED = (".env", ".env.local", "evals/reports/x.json", ".venv/x", "node_modules/x", "infra/mongo/keyfile")
+
+
+@pytest.mark.parametrize("path", IGNORED)
 def test_gitignore_covers(path: str) -> None:
     result = subprocess.run(
         ["git", "check-ignore", "--no-index", path], cwd=ROOT, capture_output=True, text=True, check=False

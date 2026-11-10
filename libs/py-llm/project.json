@@ -1,0 +1,40 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "py-llm",
+  "projectType": "library",
+  "sourceRoot": "libs/py-llm/src",
+  "tags": [
+    "lang:py",
+    "type:lib"
+  ],
+  "targets": {
+    "lint": {
+      "executor": "@nxlv/python:run-commands",
+      "cache": true,
+      "options": {
+        "commands": [
+          "uv run --frozen ruff check libs/py-llm",
+          "uv run --frozen ruff format --check libs/py-llm"
+        ],
+        "parallel": false,
+        "cwd": "."
+      }
+    },
+    "typecheck": {
+      "executor": "@nxlv/python:run-commands",
+      "cache": true,
+      "options": {
+        "command": "uv run --frozen mypy libs/py-llm/src libs/py-llm/tests",
+        "cwd": "."
+      }
+    },
+    "test": {
+      "executor": "@nxlv/python:run-commands",
+      "cache": true,
+      "options": {
+        "command": "uv run --frozen pytest libs/py-llm/tests --cov=onb_llm --cov-report=term-missing --cov-fail-under=80",
+        "cwd": "."
+      }
+    }
+  }
+}

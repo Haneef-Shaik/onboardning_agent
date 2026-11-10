@@ -1,0 +1,33 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "ts-ui",
+  "projectType": "library",
+  "sourceRoot": "libs/ts-ui/src",
+  "tags": [
+    "lang:ts",
+    "type:lib"
+  ],
+  "targets": {
+    "lint": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "options": {
+        "command": "eslint --max-warnings=0 libs/ts-ui"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "options": {
+        "command": "tsc -p libs/ts-ui/tsconfig.json"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "options": {
+        "command": "vitest run --config libs/ts-ui/vitest.config.ts"
+      }
+    }
+  }
+}

@@ -1,0 +1,93 @@
+[project]
+name = "onboarding-platform"
+version = "0.0.0"
+description = "Agentic HR onboarding platform: root uv workspace (not a distributable package)"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+  "onb-api",
+  "onb-orchestrator",
+  "onb-mcp-hub",
+  "onb-mcp-mongo",
+  "onb-mcp-mocks",
+  "onb-contracts",
+  "onb-data",
+  "onb-crypto",
+  "onb-llm",
+  "onb-agents",
+  "onb-guardrails",
+  "onb-telemetry",
+  "onb-eventbus",
+  "onb-evals",
+]
+
+[dependency-groups]
+dev = [
+  "mypy>=1.13",
+  "pytest>=8.3",
+  "pytest-cov>=6.0",
+  "ruff>=0.8",
+]
+
+[tool.uv]
+package = false
+
+[tool.uv.workspace]
+members = [
+  "apps/api",
+  "apps/orchestrator",
+  "apps/mcp-hub",
+  "apps/mcp-mongo",
+  "apps/mcp-mocks",
+  "libs/py-contracts",
+  "libs/py-data",
+  "libs/py-crypto",
+  "libs/py-llm",
+  "libs/py-agents",
+  "libs/py-guardrails",
+  "libs/py-telemetry",
+  "libs/py-eventbus",
+  "libs/py-evals",
+]
+
+[tool.uv.sources]
+onb-api = { workspace = true }
+onb-orchestrator = { workspace = true }
+onb-mcp-hub = { workspace = true }
+onb-mcp-mongo = { workspace = true }
+onb-mcp-mocks = { workspace = true }
+onb-contracts = { workspace = true }
+onb-data = { workspace = true }
+onb-crypto = { workspace = true }
+onb-llm = { workspace = true }
+onb-agents = { workspace = true }
+onb-guardrails = { workspace = true }
+onb-telemetry = { workspace = true }
+onb-eventbus = { workspace = true }
+onb-evals = { workspace = true }
+
+[tool.ruff]
+target-version = "py312"
+line-length = 120
+extend-exclude = ["docs", "evals", "node_modules"]
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "B", "UP", "S", "N", "SIM", "RUF", "PT"]
+
+[tool.ruff.lint.per-file-ignores]
+# assert is how pytest tests check; subprocess calls in repo tooling tests are fixed argv lists
+"**/tests/**" = ["S101", "S603", "S607"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_unreachable = true
+
+[tool.pytest.ini_options]
+addopts = "-ra --strict-markers --import-mode=importlib"
+
+[tool.coverage.run]
+branch = false  # the PRD §12 gate is line coverage
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false

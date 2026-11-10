@@ -1,0 +1,40 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "py-eventbus",
+  "projectType": "library",
+  "sourceRoot": "libs/py-eventbus/src",
+  "tags": [
+    "lang:py",
+    "type:lib"
+  ],
+  "targets": {
+    "lint": {
+      "executor": "@nxlv/python:run-commands",
+      "cache": true,
+      "options": {
+        "commands": [
+          "uv run --frozen ruff check libs/py-eventbus",
+          "uv run --frozen ruff format --check libs/py-eventbus"
+        ],
+        "parallel": false,
+        "cwd": "."
+      }
+    },
+    "typecheck": {
+      "executor": "@nxlv/python:run-commands",
+      "cache": true,
+      "options": {
+        "command": "uv run --frozen mypy libs/py-eventbus/src libs/py-eventbus/tests",
+        "cwd": "."
+      }
+    },
+    "test": {
+      "executor": "@nxlv/python:run-commands",
+      "cache": true,
+      "options": {
+        "command": "uv run --frozen pytest libs/py-eventbus/tests --cov=onb_eventbus --cov-report=term-missing --cov-fail-under=80",
+        "cwd": "."
+      }
+    }
+  }
+}

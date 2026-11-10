@@ -1,0 +1,40 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "mcp-mongo",
+  "projectType": "application",
+  "sourceRoot": "apps/mcp-mongo/src",
+  "tags": [
+    "lang:py",
+    "type:app"
+  ],
+  "targets": {
+    "lint": {
+      "executor": "@nxlv/python:run-commands",
+      "cache": true,
+      "options": {
+        "commands": [
+          "uv run --frozen ruff check apps/mcp-mongo",
+          "uv run --frozen ruff format --check apps/mcp-mongo"
+        ],
+        "parallel": false,
+        "cwd": "."
+      }
+    },
+    "typecheck": {
+      "executor": "@nxlv/python:run-commands",
+      "cache": true,
+      "options": {
+        "command": "uv run --frozen mypy apps/mcp-mongo/src apps/mcp-mongo/tests",
+        "cwd": "."
+      }
+    },
+    "test": {
+      "executor": "@nxlv/python:run-commands",
+      "cache": true,
+      "options": {
+        "command": "uv run --frozen pytest apps/mcp-mongo/tests",
+        "cwd": "."
+      }
+    }
+  }
+}

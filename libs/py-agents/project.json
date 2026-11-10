@@ -1,0 +1,40 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "py-agents",
+  "projectType": "library",
+  "sourceRoot": "libs/py-agents/src",
+  "tags": [
+    "lang:py",
+    "type:lib"
+  ],
+  "targets": {
+    "lint": {
+      "executor": "@nxlv/python:run-commands",
+      "cache": true,
+      "options": {
+        "commands": [
+          "uv run --frozen ruff check libs/py-agents",
+          "uv run --frozen ruff format --check libs/py-agents"
+        ],
+        "parallel": false,
+        "cwd": "."
+      }
+    },
+    "typecheck": {
+      "executor": "@nxlv/python:run-commands",
+      "cache": true,
+      "options": {
+        "command": "uv run --frozen mypy libs/py-agents/src libs/py-agents/tests",
+        "cwd": "."
+      }
+    },
+    "test": {
+      "executor": "@nxlv/python:run-commands",
+      "cache": true,
+      "options": {
+        "command": "uv run --frozen pytest libs/py-agents/tests --cov=onb_agents --cov-report=term-missing --cov-fail-under=80",
+        "cwd": "."
+      }
+    }
+  }
+}

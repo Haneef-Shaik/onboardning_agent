@@ -1,0 +1,40 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "py-telemetry",
+  "projectType": "library",
+  "sourceRoot": "libs/py-telemetry/src",
+  "tags": [
+    "lang:py",
+    "type:lib"
+  ],
+  "targets": {
+    "lint": {
+      "executor": "@nxlv/python:run-commands",
+      "cache": true,
+      "options": {
+        "commands": [
+          "uv run --frozen ruff check libs/py-telemetry",
+          "uv run --frozen ruff format --check libs/py-telemetry"
+        ],
+        "parallel": false,
+        "cwd": "."
+      }
+    },
+    "typecheck": {
+      "executor": "@nxlv/python:run-commands",
+      "cache": true,
+      "options": {
+        "command": "uv run --frozen mypy libs/py-telemetry/src libs/py-telemetry/tests",
+        "cwd": "."
+      }
+    },
+    "test": {
+      "executor": "@nxlv/python:run-commands",
+      "cache": true,
+      "options": {
+        "command": "uv run --frozen pytest libs/py-telemetry/tests --cov=onb_telemetry --cov-report=term-missing --cov-fail-under=80",
+        "cwd": "."
+      }
+    }
+  }
+}

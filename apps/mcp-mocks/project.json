@@ -1,0 +1,40 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "mcp-mocks",
+  "projectType": "application",
+  "sourceRoot": "apps/mcp-mocks/src",
+  "tags": [
+    "lang:py",
+    "type:app"
+  ],
+  "targets": {
+    "lint": {
+      "executor": "@nxlv/python:run-commands",
+      "cache": true,
+      "options": {
+        "commands": [
+          "uv run --frozen ruff check apps/mcp-mocks",
+          "uv run --frozen ruff format --check apps/mcp-mocks"
+        ],
+        "parallel": false,
+        "cwd": "."
+      }
+    },
+    "typecheck": {
+      "executor": "@nxlv/python:run-commands",
+      "cache": true,
+      "options": {
+        "command": "uv run --frozen mypy apps/mcp-mocks/src apps/mcp-mocks/tests",
+        "cwd": "."
+      }
+    },
+    "test": {
+      "executor": "@nxlv/python:run-commands",
+      "cache": true,
+      "options": {
+        "command": "uv run --frozen pytest apps/mcp-mocks/tests",
+        "cwd": "."
+      }
+    }
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "py-guardrails",
+  "projectType": "library",
+  "sourceRoot": "libs/py-guardrails/src",
+  "tags": [
+    "lang:py",
+    "type:lib"
+  ],
+  "targets": {
+    "lint": {
+      "executor": "@nxlv/python:run-commands",
+      "cache": true,
+      "options": {
+        "commands": [
+          "uv run --frozen ruff check libs/py-guardrails",
+          "uv run --frozen ruff format --check libs/py-guardrails"
+        ],
+        "parallel": false,
+        "cwd": "."
+      }
+    },
+    "typecheck": {
+      "executor": "@nxlv/python:run-commands",
+      "cache": true,
+      "options": {
+        "command": "uv run --frozen mypy libs/py-guardrails/src libs/py-guardrails/tests",
+        "cwd": "."
+      }
+    },
+    "test": {
+      "executor": "@nxlv/python:run-commands",
+      "cache": true,
+      "options": {
+        "command": "uv run --frozen pytest libs/py-guardrails/tests --cov=onb_guardrails --cov-report=term-missing --cov-fail-under=80",
+        "cwd": "."
+      }
+    }
+  }
+}

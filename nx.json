@@ -1,0 +1,28 @@
+{
+  "$schema": "./node_modules/nx/schemas/nx-schema.json",
+  "neverConnectToCloud": true,
+  "defaultBase": "main",
+  "namedInputs": {
+    "default": ["{projectRoot}/**/*", "sharedGlobals"],
+    "sharedGlobals": [
+      "{workspaceRoot}/pyproject.toml",
+      "{workspaceRoot}/uv.lock",
+      "{workspaceRoot}/package-lock.json",
+      "{workspaceRoot}/tsconfig.base.json",
+      "{workspaceRoot}/eslint.config.mjs"
+    ]
+  },
+  "targetDefaults": {
+    "lint": { "cache": true, "inputs": ["default"] },
+    "typecheck": { "cache": true, "inputs": ["default"] },
+    "test": { "cache": true, "inputs": ["default"] }
+  },
+  "plugins": [
+    {
+      "plugin": "@nxlv/python",
+      "options": {
+        "packageManager": "uv"
+      }
+    }
+  ]
+}

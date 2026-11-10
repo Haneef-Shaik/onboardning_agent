@@ -1,0 +1,40 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "orchestrator",
+  "projectType": "application",
+  "sourceRoot": "apps/orchestrator/src",
+  "tags": [
+    "lang:py",
+    "type:app"
+  ],
+  "targets": {
+    "lint": {
+      "executor": "@nxlv/python:run-commands",
+      "cache": true,
+      "options": {
+        "commands": [
+          "uv run --frozen ruff check apps/orchestrator",
+          "uv run --frozen ruff format --check apps/orchestrator"
+        ],
+        "parallel": false,
+        "cwd": "."
+      }
+    },
+    "typecheck": {
+      "executor": "@nxlv/python:run-commands",
+      "cache": true,
+      "options": {
+        "command": "uv run --frozen mypy apps/orchestrator/src apps/orchestrator/tests",
+        "cwd": "."
+      }
+    },
+    "test": {
+      "executor": "@nxlv/python:run-commands",
+      "cache": true,
+      "options": {
+        "command": "uv run --frozen pytest apps/orchestrator/tests",
+        "cwd": "."
+      }
+    }
+  }
+}
