@@ -1,0 +1,7 @@
+libs/py-crypto/tests/test_masks.py::test_each_prd_mask_example_produces_exactly_the_prd_string[mobile-9800000021-98XXXXXX21] PASSED [ 16%]
+libs/py-crypto/tests/test_masks.py::test_each_prd_mask_example_produces_exactly_the_prd_string[email-jane.doe@domain.com-j***@domain.com] PASSED [ 33%]
+libs/py-crypto/tests/test_masks.py::test_each_prd_mask_example_produces_exactly_the_prd_string[aadhaar-999900001234-XXXX XXXX 1234] PASSED [ 50%]
+libs/py-crypto/tests/test_masks.py::test_each_prd_mask_example_produces_exactly_the_prd_string[pan-ABCDE1234F-ABXXXXX4F] PASSED [ 66%]
+libs/py-crypto/tests/test_masks.py::test_each_prd_mask_example_produces_exactly_the_prd_string[bank_account-000123456789-XXXXXX6789] PASSED [ 83%]
+libs/py-crypto/tests/test_masks.py::test_the_prd_table_covers_every_masked_field PASSED [100%]
+============================== 6 passed in 0.07s ===============================

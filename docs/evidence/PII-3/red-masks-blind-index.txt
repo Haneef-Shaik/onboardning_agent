@@ -1,0 +1,21 @@
+
+==================================== ERRORS ====================================
+__________ ERROR collecting libs/py-crypto/tests/test_blind_index.py ___________
+ImportError while importing test module '/Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-pii-3/libs/py-crypto/tests/test_blind_index.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+libs/py-crypto/tests/test_blind_index.py:5: in <module>
+    from onb_crypto import MIN_INDEX_KEY_BYTES, BlindIndexField, blind_index
+E   ImportError: cannot import name 'MIN_INDEX_KEY_BYTES' from 'onb_crypto' (/Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-pii-3/libs/py-crypto/src/onb_crypto/__init__.py)
+_____________ ERROR collecting libs/py-crypto/tests/test_masks.py ______________
+ImportError while importing test module '/Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-pii-3/libs/py-crypto/tests/test_masks.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+libs/py-crypto/tests/test_masks.py:7: in <module>
+    from onb_crypto import MaskedField, mask, mask_aadhaar, mask_bank_account, mask_email, mask_mobile, mask_pan
+E   ImportError: cannot import name 'MaskedField' from 'onb_crypto' (/Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-pii-3/libs/py-crypto/src/onb_crypto/__init__.py)
+=========================== short test summary info ============================
+ERROR libs/py-crypto/tests/test_blind_index.py
+ERROR libs/py-crypto/tests/test_masks.py
+!!!!!!!!!!!!!!!!!!! Interrupted: 2 errors during collection !!!!!!!!!!!!!!!!!!!!
+2 errors in 0.14s
