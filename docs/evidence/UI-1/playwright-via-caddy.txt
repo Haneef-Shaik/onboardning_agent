@@ -1,0 +1,13 @@
+[WebServer] (!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+[WebServer]   - import "./aliases" without a file extension (apps/web/vite.config.ts:4:25). Add the file extension
+[WebServer] Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+Running 5 tests using 5 workers
+
+  ✓  5 [chromium] › apps/web/e2e/smoke.spec.ts:79:1 › a wrong password shows the login error and does not sign in (2.9s)
+  ✓  3 [chromium] › apps/web/e2e/smoke.spec.ts:49:3 › HR signs in and sees the HR nav (3.3s)
+  ✓  1 [chromium] › apps/web/e2e/smoke.spec.ts:49:3 › MANAGER signs in and sees the MANAGER nav (3.3s)
+  ✓  4 [chromium] › apps/web/e2e/smoke.spec.ts:49:3 › HR_ADMIN signs in and sees the HR_ADMIN nav (3.4s)
+  ✓  2 [chromium] › apps/web/e2e/smoke.spec.ts:86:1 › a reload signs the user out: the token is in memory only (3.5s)
+
+  5 passed (10.9s)

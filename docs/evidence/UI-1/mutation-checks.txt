@@ -1,0 +1,86 @@
+M1 CAUGHT (exit=1, restored byte-for-byte: True) — maskedText shows a ptk_ token
+  $ node_modules/.bin/vitest run --config libs/ts-ui/vitest.config.ts
+    FAIL  src/masked-field.test.tsx > MaskedField > never renders a token, even when one is passed as the masked form
+    FAIL  src/masked-field.test.tsx > maskedText > never shows a vault token: a ptk_ value becomes the mask
+
+M2 CAUGHT (exit=1, restored byte-for-byte: True) — MaskedField starts revealed (shows the masked form as 'revealed')
+  $ node_modules/.bin/vitest run --config libs/ts-ui/vitest.config.ts
+    FAIL  src/masked-field.test.tsx > MaskedField > never renders a token, even when one is passed as the masked form
+    FAIL  src/masked-field.test.tsx > MaskedField > offers a reveal control when allowed, and calls onReveal
+    FAIL  src/masked-field.test.tsx > MaskedField > renders masked by default, with its label
+    FAIL  src/masked-field.test.tsx > MaskedField > treats an empty revealed value as not revealed
+
+M3 CAUGHT (exit=1, restored byte-for-byte: True) — a reveal control is shown without onReveal
+  $ node_modules/.bin/vitest run --config libs/ts-ui/vitest.config.ts
+    FAIL  src/masked-field.test.tsx > MaskedField > shows no reveal control unless the caller passes onReveal
+
+M4 CAUGHT (exit=1, restored byte-for-byte: True) — Hires shown to every role, managers included
+  $ node_modules/.bin/vitest run --config apps/web/vitest.config.ts
+    FAIL  src/App.test.tsx > App > signs in u_acme_mgr_ravi@example.com and shows that role's nav
+    FAIL  src/nav/nav.test.tsx > RoleNav > renders the links for MANAGER and nothing else
+    FAIL  src/nav/nav.test.tsx > canAccess > refuses a section the role does not have, however the path is written
+    FAIL  src/nav/nav.test.tsx > navFor > gives MANAGER exactly its sections, in order
+    FAIL  src/nav/nav.test.tsx > navFor > never shows Hires to a manager: managers never see hire PII (PRD §3)
+
+M5 CAUGHT (exit=1, restored byte-for-byte: True) — Admin shown to HR as well
+  $ node_modules/.bin/vitest run --config apps/web/vitest.config.ts
+    FAIL  src/App.test.tsx > App > refuses a section the role does not have, even by direct URL
+    FAIL  src/App.test.tsx > App > signs in u_acme_hr1@example.com and shows that role's nav
+    FAIL  src/nav/nav.test.tsx > RoleNav > renders the links for HR and nothing else
+    FAIL  src/nav/nav.test.tsx > canAccess > refuses a section the role does not have, however the path is written
+    FAIL  src/nav/nav.test.tsx > navFor > gives HR exactly its sections, in order
+    FAIL  src/nav/nav.test.tsx > navFor > shows Admin to HR_ADMIN only
+
+M6 CAUGHT (exit=1, restored byte-for-byte: True) — section match is a bare prefix (/runsx counts as /runs)
+  $ node_modules/.bin/vitest run --config apps/web/vitest.config.ts
+    FAIL  src/nav/nav.test.tsx > canAccess > does not treat a lookalike prefix as the section
+
+M7 CAUGHT (exit=1, restored byte-for-byte: True) — the route guard ignores the role
+  $ node_modules/.bin/vitest run --config apps/web/vitest.config.ts
+    FAIL  src/App.test.tsx > App > refuses a section the role does not have, even by direct URL
+
+M8 CAUGHT (exit=1, restored byte-for-byte: True) — the session store persists the token to sessionStorage
+  $ node_modules/.bin/vitest run --config apps/web/vitest.config.ts
+    FAIL  src/auth/session.test.ts > createSessionStore > keeps the token in memory only: nothing is written to web storage
+
+M9 CAUGHT (exit=1, restored byte-for-byte: True) — an expired token still counts as a session
+  $ node_modules/.bin/vitest run --config apps/web/vitest.config.ts
+    FAIL  src/auth/session.test.ts > createSessionStore > refuses a token that is already expired
+    FAIL  src/auth/session.test.ts > createSessionStore > treats an expired token as no session, and drops it
+
+M10 CAUGHT (exit=1, restored byte-for-byte: True) — a 401 to a signed-in call does not end the session
+  $ node_modules/.bin/vitest run --config apps/web/vitest.config.ts
+    FAIL  src/App.test.tsx > App > signs out with a notice when the API rejects the token
+    FAIL  src/api.test.ts > createAppClient > ends the session and reports it when the API answers 401 to a signed-in call
+
+M11 CAUGHT (exit=1, restored byte-for-byte: True) — a wrong password at login counts as a lost session
+  $ node_modules/.bin/vitest run --config apps/web/vitest.config.ts
+    FAIL  src/api.test.ts > login > does not report a wrong password as a lost session
+
+M12 CAUGHT (exit=1, restored byte-for-byte: True) — the client never sends the bearer token
+  $ node_modules/.bin/vitest run --config apps/web/vitest.config.ts
+    FAIL  src/App.test.tsx > App > refuses a section the role does not have, even by direct URL
+    FAIL  src/App.test.tsx > App > returns to the page asked for after signing in
+    FAIL  src/App.test.tsx > App > signs in u_acme_hr1@example.com and shows that role's nav
+    FAIL  src/App.test.tsx > App > signs in u_acme_hradmin@example.com and shows that role's nav
+    FAIL  src/App.test.tsx > App > signs in u_acme_mgr_ravi@example.com and shows that role's nav
+    FAIL  src/App.test.tsx > App > signs out on request and forgets the token
+
+M13 CAUGHT (exit=1, restored byte-for-byte: True) — a non-API error's text is shown to the user
+  $ node_modules/.bin/vitest run --config apps/web/vitest.config.ts
+    FAIL  src/errors.test.ts > describeError > never shows the text of an error that is not from the API
+
+M14 CAUGHT (exit=1, restored byte-for-byte: True) — login failure shows the session-ended text
+  $ node_modules/.bin/vitest run --config apps/web/vitest.config.ts
+    FAIL  src/App.test.tsx > App > shows a wrong password as a login error and stays signed out
+    FAIL  src/errors.test.ts > describeError > explains a failed login without saying which part was wrong
+
+M15 CAUGHT (exit=1, restored byte-for-byte: True) — Caddy forwards /api without stripping the prefix
+  $ uv run --frozen pytest tools/tests/test_compose_static.py -q
+    FAILED tools/tests/test_compose_static.py::test_dev_caddyfile_serves_the_web_app_and_the_api_on_localhost
+
+M16 CAUGHT (exit=1, restored byte-for-byte: True) — Playwright: managers see Hires (end to end)
+  $ node_modules/.bin/playwright test --config apps/web/playwright.config.ts
+    1) [chromium] › apps/web/e2e/smoke.spec.ts:49:3 › MANAGER signs in and sees the MANAGER nav ──────
+
+SUMMARY: 16 of 16 mutations caught

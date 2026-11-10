@@ -1,0 +1,9 @@
+$ curl -sk https://localhost:19801/api/health
+{"success":true,"data":{"status":"ok","service":"api"},"error":null,"meta":{"trace_id":null,"page":null}}
+$ curl -sk -o /dev/null -w "%{http_code}" https://localhost:19801/api/me   # no token
+401
+$ curl -sk https://localhost:19801/ | grep -o "<title>.*</title>\|/src/main.tsx"
+<title>Onboarding</title>
+/src/main.tsx
+$ curl -sk -o /dev/null -w "%{http_code}" https://localhost:19801/healthz
+200
