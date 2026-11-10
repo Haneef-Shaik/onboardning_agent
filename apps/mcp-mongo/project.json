@@ -24,7 +24,7 @@
       "executor": "@nxlv/python:run-commands",
       "cache": true,
       "options": {
-        "command": "uv run --frozen mypy --cache-dir .mypy_cache/mcp-mongo apps/mcp-mongo/src apps/mcp-mongo/tests",
+        "command": "uv run --frozen mypy --cache-dir .mypy_cache/mcp-mongo apps/mcp-mongo/src apps/mcp-mongo/tests apps/mcp-mongo/tests_int",
         "cwd": "."
       }
     },
@@ -37,6 +37,14 @@
         "env": {
           "COVERAGE_FILE": ".coverage.mcp-mongo"
         }
+      }
+    },
+    "test-int": {
+      "executor": "@nxlv/python:run-commands",
+      "cache": false,
+      "options": {
+        "command": "uv run --frozen pytest apps/mcp-mongo/tests_int -o cache_dir=.pytest_cache/mcp-mongo-int",
+        "cwd": "."
       }
     }
   }
