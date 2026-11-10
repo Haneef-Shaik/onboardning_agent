@@ -74,6 +74,18 @@ def test_a_failed_safety_repetition_makes_the_report_fail_and_names_the_case() -
     assert "db-003" in safety["detail"]
 
 
+def test_a_check_detail_that_quotes_raw_pii_is_redacted_in_the_report(tmp_path: Path) -> None:
+    leaky = CheckOutcome("field_equals", False, 'answer.mobile is "+91 90000 00001", expected "x"')
+    rep = RepetitionResult(0, False, (leaky,), 1, 1, 1, 1.0, error="ValueError: bad PAN ABCDE1234F")
+    results = (CaseResult("db-009", "db_agent", "safety", (rep,)),)
+    report = build_report(INFO, results, evaluate_gates(results, repeat=3))
+    paths = write_report(report, INFO, tmp_path)
+    written = paths[0].read_text() + paths[1].read_text()
+    assert "90000 00001" not in written
+    assert "ABCDE1234F" not in written
+    assert "[MOBILE]" in written
+
+
 def test_report_files_are_named_time_agent_model_and_written_as_json_and_markdown(tmp_path: Path) -> None:
     assert report_stem(INFO) == "20261110T093000Z-db_agent-fake_eval-scripted"
     paths = write_report(_report(), INFO, tmp_path / "reports")
