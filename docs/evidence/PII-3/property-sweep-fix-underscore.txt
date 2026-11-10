@@ -12,3 +12,12 @@ $ for seed in 1 2 3; do uv run --frozen pytest $TMP/test_sweep_property.py -q --
 # Note: seed 1 started before the second (keyword-glued-to-digits) change landed; the property generators
 # always put a space or ":"/"#" before the bank digits, so they cannot reach that sibling. It was found by
 # the exhaustive keyword probe instead (probe-bank-keyword.py: 3234 leaks after the first change, 0 after both).
+
+# Re-run on the final code (after the code-review changes), seeds 4-6, 20000 examples each
+== seed 4
+5 passed in 103.09s (0:01:43)
+== seed 5
+5 passed in 107.35s (0:01:47)
+== seed 6
+5 passed in 112.32s (0:01:52)
+# Total across both runs: 5 properties x 20000 examples x 6 seeds = 600k examples, no counterexample.

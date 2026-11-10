@@ -107,3 +107,27 @@ None needing an ADR. Smaller decisions, all within the PRD:
 - **Stale bytecode in mutation runs.** A same-size edit within one second keeps the old `.pyc` valid (mtime+size check), so a "restored" file kept running mutated bytecode. The mutation runner now sets `PYTHONDONTWRITEBYTECODE=1` and purges `__pycache__`.
 - **Escapes decoded by the editor.** `\uXXXX` escapes typed into the editor tool were written as literal characters, which ruff flagged as RUF001. Non-ASCII characters in the sources are now escaped.
 - **Card traps.** Both are covered by named tests: `test_a_12_digit_number_failing_verhoeff_is_not_aadhaar` and `test_mobile_inside_a_12_digit_aadhaar_is_reported_as_aadhaar_only`.
+
+## Addendum: fix after merge
+Branch `fix/pii-3-account-keyword-underscore` (from `main` at 41e0043). Not merged, not pushed. The goal board is untouched.
+
+**Defect.** The redact property (`test_no_character_of_a_value_survives_in_any_glue`) intermittently found that `redact("_account number 000000000")` left the number in place, so `make check` was flaky on main. Cause: `_BANK_ACCOUNT` anchored its keyword with `\b`, and `_` (punctuation category Pc, so it is allowed in `_PUNCT_CONTEXT`) is a regex word character. Probing the same detector found sibling leaks: `_` inside the keyword phrase (`account_number 123456789`, `acct_no …`, `account no_…`), the keyword after letters (`myaccount 123456789`), and the keyword glued straight to the number (`account000111222`, `acct_no000111222`). Code review of the first fix found more of the same family: other punctuation (`A/c No.:- 123…`, `account_no=…`, `"account_number": "…"`, `account-no …`, `account: no. …`), "no" glued on (`acctNo`, `accountnumber`, `AccNo.`), and the plural (`accounts 123…`).
+
+**Fix** (`detectors.py`, `_BANK_ACCOUNT`).
+- The keyword has no left boundary.
+- An optional plural `s` and "no", "number" or "num" may follow the keyword, with or without a gap.
+- Every gap between the keyword, "no", "is" and the digits is a short run of `_KW_GAP = [\s_\-:=#."']`.
+- Only gap characters or digits may follow the keyword, so a letter after it (`accept`, `accurate`) still rules it out. The negative tests pin this.
+- Every quantifier stays bounded, so runtime stays linear, and the linear-input tests pass.
+
+| Evidence | Result |
+|----------|--------|
+| Tests added | `test_account_keyword_beside_underscores_or_digits_still_redacts_the_number[*]` (12), `test_account_keyword_with_other_separators_or_spellings_still_redacts_the_number[*]` (13), `test_words_that_only_start_like_the_account_keyword_are_not_a_bank_account[*]` (4 negatives), `test_glued_keyword_beside_another_value_is_typed_by_priority[*]` (2), plus `@example("account number 000000000", "_", "", "", "")` on `test_no_character_of_a_value_survives_in_any_glue` |
+| RED before GREEN | 10 failed on 41e0043 with the first new tests (9 unit cases + the property). The 3 glued-digit cases failed after the first change, and the 13 review cases failed at d469768 (`docs/evidence/PII-3/red-fix-underscore-keyword.txt`). The negative and typed-priority tests passed from the start: they pin the current behaviour |
+| Mutation checks | 8 of 8 killed by failing tests: F1 `\b` before the keyword; F2 whitespace-only gaps; F3 `[\s_]` gaps; F4 a `\b`-like end after the keyword; F5 "no" must be separated; F6 no plural; F7 letters allowed after the keyword; F8 the whole pattern reverted to main. After restore: `209 passed`, source byte-identical (`mutation-checks-fix-underscore.txt`, runner `.py` beside it) |
+| Sibling-leak search | Properties at 20,000 examples × 6 seeds (1–3 on the first change, 4–6 on the final code): 600k examples, all 5 pass (`property-sweep-fix-underscore.txt`). The property generators always put a space or `:`/`#` before the bank digits, so an exhaustive keyword probe was added (`probe-bank-keyword.py`): 66,066 keyword × suffix × glue inputs. It found 3,234 leaks after the first change, all from the keyword glued to the digits, and 0 now (`probe-bank-keyword.txt`). The code reviewer's hand probes found the punctuation and spelling siblings above, now fixed |
+| False-positive corpus | `test_corpus_false_positive_rate_is_measured` passes unchanged: FP rate still 2/32, zero false negatives |
+| `make check` | `make check: all passed` (exit 0) on the final code; py-guardrails 210 passed, 100% coverage (`make-check-fix-underscore.txt`) |
+| Code review | One review (general-purpose agent with a reviewer brief). No critical or high findings. The medium finding (more separators and spellings) is fixed. The low test-quality finding (no negatives, no typed-span check) is fixed. The low false-positive finding is accepted; see Residual risk |
+
+**Residual risk.** With no left boundary, `acc`, `acct`, `account` or `a/c` *inside* an id is redacted when 9–18 digits follow. Examples: `3facc1234567890e` becomes `3facc[BANK_ACCOUNT]e`, and `/data/c-1234567890` becomes `/data/c-[BANK_ACCOUNT]`. The reviewer found no realistic English word that triggers it, and random hex hits it about 4e-6 per position. This over-redacts, which is the safe direction for a pre-LLM filter, so it is accepted deliberately. One type change is also visible: `x_acc 9876543210` used to be `[MOBILE]` and is now `[BANK_ACCOUNT]`. The span is the same, because bank outranks mobile on a tie, and nothing leaks. The low items left open in the original handoff are unchanged (for example, a bare number with no keyword).

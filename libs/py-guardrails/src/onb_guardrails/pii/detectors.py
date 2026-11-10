@@ -104,15 +104,16 @@ _EMAIL: Final = re.compile(
 )
 _LOCAL_PART_STOP: Final = frozenset(" <>()[]{}\"'`,;:|\\@/")
 # A bare 9-18 digit run is too common to call an account number; it needs an account keyword before it.
-# The keyword may follow anything ("_account", "myaccount") and "_" spaces it like whitespace
-# ("account_no_123...") and the digits may follow it directly ("account123..."): "\b" treats "_" and
-# digits as word characters, which let the digits leak.
-_KW_END: Final = r"(?![A-Za-z])"
-_KW_GAP: Final = r"[\s_]"
+# The keyword may follow anything ("_account", "myaccount"), may be glued to "no"/"number"
+# ("acctNo", "accountnumber") and may be followed directly by the digits ("account123..."). No "\b": it
+# treated "_" and digits as word characters and let the digits leak. Only gap characters or digits may
+# follow the keyword, so a letter after it ("accept", "accurate") still rules it out.
+# Between keyword, "no", "is" and the digits go short runs of the punctuation people put there:
+# "account_no=", "A/c No.:- ", '"account_number": "'.
+_KW_GAP: Final = r"""[\s_\-:=#."']"""
 _BANK_ACCOUNT: Final = re.compile(
-    rf"(?:a/c|acc(?:oun)?t|acc){_KW_END}\.?"
-    rf"(?:{_KW_GAP}{{0,3}}(?:no|number|num){_KW_END}\.?|{_KW_GAP}{{0,3}}\#)?(?:{_KW_GAP}{{1,3}}is)?"
-    rf"{_KW_GAP}{{0,3}}[:#\-]?{_KW_GAP}{{0,3}}"
+    rf"(?:a/c|acc(?:oun)?t|acc)s?(?:{_KW_GAP}{{0,3}}(?:no|number|num))?"
+    rf"(?:{_KW_GAP}{{1,3}}is)?{_KW_GAP}{{0,6}}"
     rf"([0-9](?:[ \-]?[0-9]){{{BANK_ACCOUNT_MIN_DIGITS - 1},{BANK_ACCOUNT_MAX_DIGITS - 1}}})(?![0-9])",
     re.ASCII | re.IGNORECASE,
 )

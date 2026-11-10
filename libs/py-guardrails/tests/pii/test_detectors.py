@@ -266,3 +266,42 @@ def test_more_separator_variants_do_not_hide_a_value(text: str, expected: str) -
 )
 def test_account_keyword_beside_underscores_or_digits_still_redacts_the_number(text: str, expected: str) -> None:
     assert redact(text) == expected
+
+
+# Code review of the fix: more separators and spellings around the keyword that still leaked.
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        ("A/c No.:- 123456789", "A/c No.:- [BANK_ACCOUNT]"),
+        ("account no:- 123456789", "account no:- [BANK_ACCOUNT]"),
+        ("acc no = 123456789", "acc no = [BANK_ACCOUNT]"),
+        ("account_no=123456789", "account_no=[BANK_ACCOUNT]"),
+        ('"account_number": "123456789"', '"account_number": "[BANK_ACCOUNT]"'),
+        ("account-no 123456789", "account-no [BANK_ACCOUNT]"),
+        ("a/c-no: 123456789", "a/c-no: [BANK_ACCOUNT]"),
+        ("account: no. 123456789", "account: no. [BANK_ACCOUNT]"),
+        ("accountNumber: 123456789", "accountNumber: [BANK_ACCOUNT]"),
+        ("acctNo 123456789", "acctNo [BANK_ACCOUNT]"),
+        ("AccNo.123456789", "AccNo.[BANK_ACCOUNT]"),
+        ("accountnumber 123456789", "accountnumber [BANK_ACCOUNT]"),
+        ("accounts 123456789", "accounts [BANK_ACCOUNT]"),
+    ],
+)
+def test_account_keyword_with_other_separators_or_spellings_still_redacts_the_number(text: str, expected: str) -> None:
+    assert redact(text) == expected
+
+
+@pytest.mark.parametrize("text", ["accept 123456789", "accurate 123456789", "Isaac 123456789", "accent 123456789"])
+def test_words_that_only_start_like_the_account_keyword_are_not_a_bank_account(text: str) -> None:
+    assert detect(text) == ()
+
+
+@pytest.mark.parametrize(
+    ("text", "kind"),
+    [
+        ("myacc 999900000125", PiiType.AADHAAR),  # Verhoeff-valid Aadhaar wins over the bank keyword
+        ("x_acc 9000000002", PiiType.BANK_ACCOUNT),  # same span, bank outranks mobile on a tie
+    ],
+)
+def test_glued_keyword_beside_another_value_is_typed_by_priority(text: str, kind: PiiType) -> None:
+    assert [span.type for span in detect(text)] == [kind]

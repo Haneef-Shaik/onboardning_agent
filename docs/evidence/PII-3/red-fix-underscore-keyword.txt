@@ -35,3 +35,20 @@ FAILED libs/py-guardrails/tests/pii/test_detectors.py::test_account_keyword_next
 FAILED libs/py-guardrails/tests/pii/test_detectors.py::test_account_keyword_next_to_an_underscore_still_redacts_the_number[acct_no000111222-acct_no[BANK_ACCOUNT]]
 FAILED libs/py-guardrails/tests/pii/test_detectors.py::test_account_keyword_next_to_an_underscore_still_redacts_the_number[A/C number000111222 ok-A/C number[BANK_ACCOUNT] ok]
 3 failed, 9 passed, 81 deselected in 0.98s
+
+# RED for the code-review findings (more separators and spellings), at commit d469768
+$ uv run --frozen pytest libs/py-guardrails/tests/pii/test_detectors.py -q -k "spellings or start_like or priority"
+FAILED libs/py-guardrails/tests/pii/test_detectors.py::test_account_keyword_with_other_separators_or_spellings_still_redacts_the_number[A/c No.:- 123456789-A/c No.:- [BANK_ACCOUNT]]
+FAILED libs/py-guardrails/tests/pii/test_detectors.py::test_account_keyword_with_other_separators_or_spellings_still_redacts_the_number[account no:- 123456789-account no:- [BANK_ACCOUNT]]
+FAILED libs/py-guardrails/tests/pii/test_detectors.py::test_account_keyword_with_other_separators_or_spellings_still_redacts_the_number[acc no = 123456789-acc no = [BANK_ACCOUNT]]
+FAILED libs/py-guardrails/tests/pii/test_detectors.py::test_account_keyword_with_other_separators_or_spellings_still_redacts_the_number[account_no=123456789-account_no=[BANK_ACCOUNT]]
+FAILED libs/py-guardrails/tests/pii/test_detectors.py::test_account_keyword_with_other_separators_or_spellings_still_redacts_the_number["account_number": "123456789"-"account_number": "[BANK_ACCOUNT]"]
+FAILED libs/py-guardrails/tests/pii/test_detectors.py::test_account_keyword_with_other_separators_or_spellings_still_redacts_the_number[account-no 123456789-account-no [BANK_ACCOUNT]]
+FAILED libs/py-guardrails/tests/pii/test_detectors.py::test_account_keyword_with_other_separators_or_spellings_still_redacts_the_number[a/c-no: 123456789-a/c-no: [BANK_ACCOUNT]]
+FAILED libs/py-guardrails/tests/pii/test_detectors.py::test_account_keyword_with_other_separators_or_spellings_still_redacts_the_number[account: no. 123456789-account: no. [BANK_ACCOUNT]]
+FAILED libs/py-guardrails/tests/pii/test_detectors.py::test_account_keyword_with_other_separators_or_spellings_still_redacts_the_number[accountNumber: 123456789-accountNumber: [BANK_ACCOUNT]]
+FAILED libs/py-guardrails/tests/pii/test_detectors.py::test_account_keyword_with_other_separators_or_spellings_still_redacts_the_number[acctNo 123456789-acctNo [BANK_ACCOUNT]]
+FAILED libs/py-guardrails/tests/pii/test_detectors.py::test_account_keyword_with_other_separators_or_spellings_still_redacts_the_number[AccNo.123456789-AccNo.[BANK_ACCOUNT]]
+FAILED libs/py-guardrails/tests/pii/test_detectors.py::test_account_keyword_with_other_separators_or_spellings_still_redacts_the_number[accountnumber 123456789-accountnumber [BANK_ACCOUNT]]
+FAILED libs/py-guardrails/tests/pii/test_detectors.py::test_account_keyword_with_other_separators_or_spellings_still_redacts_the_number[accounts 123456789-accounts [BANK_ACCOUNT]]
+13 failed, 6 passed, 93 deselected in 0.15s

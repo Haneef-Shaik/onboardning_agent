@@ -1,26 +1,32 @@
-F1 leading boundary restored (\b before keyword): KILLED (5 failing)
+F1 \b before the keyword: KILLED (6 failing)
     FAILED libs/py-guardrails/tests/pii/test_detectors.py::test_account_keyword_beside_underscores_or_digits_still_redacts_the_number[_account number 000000000-_account number [BANK_ACCOUNT]]
     FAILED libs/py-guardrails/tests/pii/test_detectors.py::test_account_keyword_beside_underscores_or_digits_still_redacts_the_number[x_acct # 123456789-x_acct # [BANK_ACCOUNT]]
     FAILED libs/py-guardrails/tests/pii/test_detectors.py::test_account_keyword_beside_underscores_or_digits_still_redacts_the_number[_A/c no: 123456789-_A/c no: [BANK_ACCOUNT]]
-    FAILED libs/py-guardrails/tests/pii/test_detectors.py::test_account_keyword_beside_underscores_or_digits_still_redacts_the_number[myaccount 123456789-myaccount [BANK_ACCOUNT]]
-    FAILED libs/py-guardrails/tests/pii/test_redact_property.py::test_no_character_of_a_value_survives_in_any_glue
-F2 underscore no longer a keyword gap: KILLED (6 failing)
-    FAILED libs/py-guardrails/tests/pii/test_detectors.py::test_account_keyword_beside_underscores_or_digits_still_redacts_the_number[account_number 123456789-account_number [BANK_ACCOUNT]]
-    FAILED libs/py-guardrails/tests/pii/test_detectors.py::test_account_keyword_beside_underscores_or_digits_still_redacts_the_number[acct_no 123456789-acct_no [BANK_ACCOUNT]]
-    FAILED libs/py-guardrails/tests/pii/test_detectors.py::test_account_keyword_beside_underscores_or_digits_still_redacts_the_number[a/c_no 123456789-a/c_no [BANK_ACCOUNT]]
+F2 gaps whitespace only: KILLED (22 failing)
+    FAILED libs/py-guardrails/tests/pii/test_corpus.py::test_corpus_has_zero_false_negatives
+    FAILED libs/py-guardrails/tests/pii/test_corpus.py::test_redacting_a_positive_removes_every_expected_value
+    FAILED libs/py-guardrails/tests/pii/test_detectors.py::test_each_detector_returns_a_typed_span_over_the_value[A/c no: 123456789012345-BANK_ACCOUNT-123456789012345]
+F3 gaps without punctuation (only [\s_]): KILLED (16 failing)
+    FAILED libs/py-guardrails/tests/pii/test_corpus.py::test_corpus_has_zero_false_negatives
+    FAILED libs/py-guardrails/tests/pii/test_corpus.py::test_redacting_a_positive_removes_every_expected_value
+    FAILED libs/py-guardrails/tests/pii/test_detectors.py::test_each_detector_returns_a_typed_span_over_the_value[A/c no: 123456789012345-BANK_ACCOUNT-123456789012345]
+F4 keyword end rejects digits/_ (\b-like): KILLED (5 failing)
     FAILED libs/py-guardrails/tests/pii/test_detectors.py::test_account_keyword_beside_underscores_or_digits_still_redacts_the_number[account no_123456789-account no_[BANK_ACCOUNT]]
     FAILED libs/py-guardrails/tests/pii/test_detectors.py::test_account_keyword_beside_underscores_or_digits_still_redacts_the_number[account__no__is__123456789-account__no__is__[BANK_ACCOUNT]]
-    FAILED libs/py-guardrails/tests/pii/test_detectors.py::test_account_keyword_beside_underscores_or_digits_still_redacts_the_number[acct_no000111222-acct_no[BANK_ACCOUNT]]
-F3 keyword end rejects digits again: KILLED (3 failing)
     FAILED libs/py-guardrails/tests/pii/test_detectors.py::test_account_keyword_beside_underscores_or_digits_still_redacts_the_number[account000111222-account[BANK_ACCOUNT]]
-    FAILED libs/py-guardrails/tests/pii/test_detectors.py::test_account_keyword_beside_underscores_or_digits_still_redacts_the_number[acct_no000111222-acct_no[BANK_ACCOUNT]]
-    FAILED libs/py-guardrails/tests/pii/test_detectors.py::test_account_keyword_beside_underscores_or_digits_still_redacts_the_number[A/C number000111222 ok-A/C number[BANK_ACCOUNT] ok]
-F4 whole fix reverted to \b (original): KILLED (13 failing)
+F5 no/number must be separated: KILLED (4 failing)
+    FAILED libs/py-guardrails/tests/pii/test_detectors.py::test_account_keyword_with_other_separators_or_spellings_still_redacts_the_number[accountNumber: 123456789-accountNumber: [BANK_ACCOUNT]]
+    FAILED libs/py-guardrails/tests/pii/test_detectors.py::test_account_keyword_with_other_separators_or_spellings_still_redacts_the_number[acctNo 123456789-acctNo [BANK_ACCOUNT]]
+    FAILED libs/py-guardrails/tests/pii/test_detectors.py::test_account_keyword_with_other_separators_or_spellings_still_redacts_the_number[AccNo.123456789-AccNo.[BANK_ACCOUNT]]
+F6 plural keyword dropped: KILLED (1 failing)
+    FAILED libs/py-guardrails/tests/pii/test_detectors.py::test_account_keyword_with_other_separators_or_spellings_still_redacts_the_number[accounts 123456789-accounts [BANK_ACCOUNT]]
+F7 letters allowed after keyword (accept matches): KILLED (35 failing)
+    FAILED libs/py-guardrails/tests/pii/test_corpus.py::test_corpus_has_zero_false_negatives
+    FAILED libs/py-guardrails/tests/pii/test_corpus.py::test_redacting_a_positive_removes_every_expected_value
+    FAILED libs/py-guardrails/tests/pii/test_detectors.py::test_each_detector_returns_a_typed_span_over_the_value[account number 000111222333-BANK_ACCOUNT-000111222333]
+F8 whole pattern reverted to main: KILLED (27 failing)
     FAILED libs/py-guardrails/tests/pii/test_detectors.py::test_account_keyword_beside_underscores_or_digits_still_redacts_the_number[_account number 000000000-_account number [BANK_ACCOUNT]]
     FAILED libs/py-guardrails/tests/pii/test_detectors.py::test_account_keyword_beside_underscores_or_digits_still_redacts_the_number[x_acct # 123456789-x_acct # [BANK_ACCOUNT]]
     FAILED libs/py-guardrails/tests/pii/test_detectors.py::test_account_keyword_beside_underscores_or_digits_still_redacts_the_number[_A/c no: 123456789-_A/c no: [BANK_ACCOUNT]]
-    FAILED libs/py-guardrails/tests/pii/test_detectors.py::test_account_keyword_beside_underscores_or_digits_still_redacts_the_number[myaccount 123456789-myaccount [BANK_ACCOUNT]]
-    FAILED libs/py-guardrails/tests/pii/test_detectors.py::test_account_keyword_beside_underscores_or_digits_still_redacts_the_number[account_number 123456789-account_number [BANK_ACCOUNT]]
-    FAILED libs/py-guardrails/tests/pii/test_detectors.py::test_account_keyword_beside_underscores_or_digits_still_redacts_the_number[acct_no 123456789-acct_no [BANK_ACCOUNT]]
-after restore: 190 passed in 17.08s
+after restore: 209 passed in 6.32s
 source restored byte-identical: True
