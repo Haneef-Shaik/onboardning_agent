@@ -9,7 +9,10 @@ from pathlib import Path
 import pytest
 
 REPO = Path(__file__).resolve().parents[3]
-ALLOWED = (REPO / "libs" / "py-crypto", REPO / "apps" / "api")
+# ADR 0003: the eval harness seeds throwaway databases through the real vault from this one file only;
+# libs/py-evals/tests/test_harness_boundary.py keeps every app and other library from importing it.
+EVAL_FIXTURE_SEEDER = REPO / "libs" / "py-evals" / "src" / "onb_evals" / "vault_seed.py"
+ALLOWED = (REPO / "libs" / "py-crypto", REPO / "apps" / "api", EVAL_FIXTURE_SEEDER)
 _VAULT_NAMES = frozenset({"Vault", "VaultStore", "VaultRepository"})
 _VAULT_MODULES = frozenset({"onb_crypto.vault", "onb_crypto.vault_record", "onb_crypto.vault_indexes"})
 
