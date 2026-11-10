@@ -1,5 +1,5 @@
 infra/mongo/gen-keyfile.sh
-gen-keyfile: wrote infra/mongo/keyfile
+gen-keyfile: keeping existing infra/mongo/keyfile
 docker compose up -d --wait --build
  Image onb/otel-collector:0.165.0 Building 
 #1 [internal] load local bake definitions
@@ -10,22 +10,22 @@ docker compose up -d --wait --build
 #2 transferring dockerfile: 578B done
 #2 DONE 0.0s
 
-#3 [internal] load metadata for docker.io/otel/opentelemetry-collector-contrib:0.165.0@sha256:e40d61f10c9a617cca1ffd1be4d7e2b3a4b0f0001798ff07e58cabe82e618cea
+#3 [internal] load metadata for docker.io/library/alpine:3.24.4@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf
 #3 DONE 0.0s
 
-#4 [internal] load metadata for docker.io/library/alpine:3.24.4@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf
+#4 [internal] load metadata for docker.io/otel/opentelemetry-collector-contrib:0.165.0@sha256:e40d61f10c9a617cca1ffd1be4d7e2b3a4b0f0001798ff07e58cabe82e618cea
 #4 DONE 0.0s
 
 #5 [internal] load .dockerignore
 #5 transferring context: 2B done
 #5 DONE 0.0s
 
-#6 [upstream 1/1] FROM docker.io/otel/opentelemetry-collector-contrib:0.165.0@sha256:e40d61f10c9a617cca1ffd1be4d7e2b3a4b0f0001798ff07e58cabe82e618cea
-#6 resolve docker.io/otel/opentelemetry-collector-contrib:0.165.0@sha256:e40d61f10c9a617cca1ffd1be4d7e2b3a4b0f0001798ff07e58cabe82e618cea done
+#6 [stage-1 1/3] FROM docker.io/library/alpine:3.24.4@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf
+#6 resolve docker.io/library/alpine:3.24.4@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf 0.0s done
 #6 DONE 0.0s
 
-#7 [stage-1 1/3] FROM docker.io/library/alpine:3.24.4@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf
-#7 resolve docker.io/library/alpine:3.24.4@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf done
+#7 [upstream 1/1] FROM docker.io/otel/opentelemetry-collector-contrib:0.165.0@sha256:e40d61f10c9a617cca1ffd1be4d7e2b3a4b0f0001798ff07e58cabe82e618cea
+#7 resolve docker.io/otel/opentelemetry-collector-contrib:0.165.0@sha256:e40d61f10c9a617cca1ffd1be4d7e2b3a4b0f0001798ff07e58cabe82e618cea 0.0s done
 #7 DONE 0.0s
 
 #8 [stage-1 2/3] RUN adduser -D -H -u 10001 otel
@@ -38,8 +38,8 @@ docker compose up -d --wait --build
 #10 exporting layers done
 #10 exporting manifest sha256:0857c927e290ac133c7bd493276ac278692f00778b900e36be5a465efa3a10ec done
 #10 exporting config sha256:17320879e06cffd67e05bc9a41baf76f97faf32442ee3e310b92562208302e4b done
-#10 exporting attestation manifest sha256:66c85686ec650312e77e43ba399fc01429e6d58b3756918fe216933590a7dabe done
-#10 exporting manifest list sha256:df05c8e06a0e8f18f48c6f93a02372f28a08c9053caf3541610f3eaca97c7b28 done
+#10 exporting attestation manifest sha256:3ce103ac6cb1633af481c5610c28c659820a208b909244216b6e90368075ff0b done
+#10 exporting manifest list sha256:ff49e716b7747efae6e1c6a78879394947e8582af27f5fe207556bafe70cd40c done
 #10 naming to docker.io/onb/otel-collector:0.165.0 done
 #10 unpacking to docker.io/onb/otel-collector:0.165.0 done
 #10 DONE 0.0s
@@ -47,63 +47,27 @@ docker compose up -d --wait --build
 #11 resolving provenance for metadata file
 #11 DONE 0.0s
  Image onb/otel-collector:0.165.0 Built 
- Network ob-mcp-1_backend Creating 
- Network ob-mcp-1_backend Creating 
- Network ob-mcp-1_edge Creating 
- Network ob-mcp-1_edge Creating 
- Volume ob-mcp-1_caddy_config Creating 
- Volume ob-mcp-1_caddy_config Creating 
- Volume ob-mcp-1_caddy_data Creating 
- Volume ob-mcp-1_caddy_data Creating 
- Volume ob-mcp-1_mongo_config Creating 
- Volume ob-mcp-1_mongo_data Creating 
- Volume ob-mcp-1_mongo_data Creating 
- Volume ob-mcp-1_mongo_config Creating 
- Volume ob-mcp-1_mongo_config Created 
- Volume ob-mcp-1_mongo_config Created 
- Volume ob-mcp-1_caddy_config Created 
- Volume ob-mcp-1_caddy_config Created 
- Volume ob-mcp-1_mongo_data Created 
- Volume ob-mcp-1_mongo_data Created 
- Volume ob-mcp-1_caddy_data Created 
- Volume ob-mcp-1_caddy_data Created 
- Network ob-mcp-1_edge Created 
- Network ob-mcp-1_edge Created 
- Network ob-mcp-1_backend Created 
- Network ob-mcp-1_backend Created 
- Container ob-mcp-1-mongo-1 Creating 
- Container ob-mcp-1-jaeger-1 Creating 
- Container ob-mcp-1-jaeger-1 Created 
- Container ob-mcp-1-otel-collector-1 Creating 
- Container ob-mcp-1-caddy-1 Creating 
- Container ob-mcp-1-mongo-1 Created 
- Container ob-mcp-1-otel-collector-1 Created 
- Container ob-mcp-1-caddy-1 Created 
- Container ob-mcp-1-mongo-1 Starting 
- Container ob-mcp-1-jaeger-1 Starting 
- Container ob-mcp-1-mongo-1 Started 
- Container ob-mcp-1-jaeger-1 Started 
+ Container ob-mcp-1-jaeger-1 Running 
+ Container ob-mcp-1-caddy-1 Running 
+ Container ob-mcp-1-mongo-1 Running 
+ Container ob-mcp-1-otel-collector-1 Running 
  Container ob-mcp-1-jaeger-1 Waiting 
  Container ob-mcp-1-jaeger-1 Waiting 
  Container ob-mcp-1-jaeger-1 Healthy 
- Container ob-mcp-1-caddy-1 Starting 
  Container ob-mcp-1-jaeger-1 Healthy 
- Container ob-mcp-1-otel-collector-1 Starting 
- Container ob-mcp-1-caddy-1 Started 
- Container ob-mcp-1-otel-collector-1 Started 
+ Container ob-mcp-1-mongo-1 Waiting 
  Container ob-mcp-1-otel-collector-1 Waiting 
  Container ob-mcp-1-jaeger-1 Waiting 
  Container ob-mcp-1-caddy-1 Waiting 
- Container ob-mcp-1-mongo-1 Waiting 
- Container ob-mcp-1-jaeger-1 Healthy 
  Container ob-mcp-1-caddy-1 Healthy 
+ Container ob-mcp-1-jaeger-1 Healthy 
  Container ob-mcp-1-otel-collector-1 Healthy 
  Container ob-mcp-1-mongo-1 Healthy 
 set -a && . ./.env && set +a && \
 	uv run --frozen pytest tools/tests_int -q -o cache_dir=.pytest_cache/tools-int && \
 	node_modules/.bin/nx run-many -t test-int --output-style=static
 ............                                                             [100%]
-12 passed in 3.45s
+12 passed in 3.17s
 
  NX   Running target test-int for 4 projects:
 
@@ -129,7 +93,7 @@ collected 24 items
 libs/py-data/tests_int/test_compose_mongo_transaction.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m            [ 16%][0m
 libs/py-data/tests_int/test_tenant_repository.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m    [100%][0m
 
-[32m============================== [32m[1m24 passed[0m[32m in 4.66s[0m[32m ==============================[0m
+[32m============================== [32m[1m24 passed[0m[32m in 4.24s[0m[32m ==============================[0m
 
 > nx run py-telemetry:test-int
 
@@ -144,7 +108,7 @@ plugins: hypothesis-6.170.15, cov-7.1.0, anyio-4.16.0
 collected 3 items
 
 libs/py-telemetry/tests_int/test_jaeger_roundtrip.py 
-Jaeger returned trace 6f84c5263d93aa7fc8e50cdebeccfe15 for service f4-probe-e33f559c: [('f4-probe-e33f559c', 'onb_telemetry', 'f4.resumed-after-wait'), ('f4-probe-e33f559c', 'opentelemetry.instrumentation.fastapi', 'GET /ping'), ('f4-probe-e33f559c', 'opentelemetry.instrumentation.fastapi', 'GET /ping http send')]
+Jaeger returned trace c601bd1b3d8fae0c94c61d85296c2b99 for service f4-probe-369c9140: [('f4-probe-369c9140', 'onb_telemetry', 'f4.resumed-after-wait'), ('f4-probe-369c9140', 'opentelemetry.instrumentation.fastapi', 'GET /ping'), ('f4-probe-369c9140', 'opentelemetry.instrumentation.fastapi', 'GET /ping http send')]
 [32m.[0m[32m.[0m[32m.[0m
 
 [33m=============================== warnings summary ===============================[0m
@@ -158,7 +122,7 @@ Jaeger returned trace 6f84c5263d93aa7fc8e50cdebeccfe15 for service f4-probe-e33f
 [32mPASSED[0m libs/py-telemetry/tests_int/test_jaeger_roundtrip.py::[1mtest_fastapi_span_is_returned_by_jaeger_through_the_collector[0m
 [32mPASSED[0m libs/py-telemetry/tests_int/test_jaeger_roundtrip.py::[1mtest_jaeger_lists_the_probe_service[0m
 [32mPASSED[0m libs/py-telemetry/tests_int/test_jaeger_roundtrip.py::[1mtest_pymongo_commands_get_spans[0m
-[33m========================= [32m3 passed[0m, [33m[1m1 warning[0m[33m in 5.72s[0m[33m =========================[0m
+[33m========================= [32m3 passed[0m, [33m[1m1 warning[0m[33m in 4.29s[0m[33m =========================[0m
 
 > nx run py-crypto:test-int
 
@@ -174,7 +138,7 @@ collected 2 items
 
 libs/py-crypto/tests_int/test_org_keys_mongo.py [32m.[0m[32m.[0m[32m                       [100%][0m
 
-[32m============================== [32m[1m2 passed[0m[32m in 2.86s[0m[32m ===============================[0m
+[32m============================== [32m[1m2 passed[0m[32m in 1.36s[0m[32m ===============================[0m
 
 > nx run mcp-mongo:test-int
 
@@ -186,19 +150,19 @@ cachedir: .pytest_cache/mcp-mongo-int
 rootdir: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-mcp-1
 configfile: pyproject.toml
 plugins: hypothesis-6.170.15, cov-7.1.0, anyio-4.16.0
-collected 16 items
+collected 18 items
 
-apps/mcp-mongo/tests_int/test_mcp_mongo_int.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m          [100%][0m
+apps/mcp-mongo/tests_int/test_mcp_mongo_int.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m        [100%][0m
 
-[32m============================== [32m[1m16 passed[0m[32m in 9.06s[0m[32m ==============================[0m
+[32m============================== [32m[1m18 passed[0m[32m in 6.54s[0m[32m ==============================[0m
 
 
 
  NX   Successfully ran target test-int for 4 projects
 
 
-  Run duration:      10.7s
+  Run duration:      8.1s
   Cache:             0/4 hit (0%)
-  Critical path:     10.7s (1 task)
-  Recoverable time:  6ms (0% of the run)
+  Critical path:     8.1s (1 task)
+  Recoverable time:  21ms (0% of the run)
 exit=0
