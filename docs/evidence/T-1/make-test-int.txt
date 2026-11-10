@@ -1,0 +1,104 @@
+infra/mongo/gen-keyfile.sh
+gen-keyfile: keeping existing infra/mongo/keyfile
+docker compose up -d --wait --build
+ Image onb/otel-collector:0.165.0 Building 
+#1 [internal] load local bake definitions
+#1 reading from stdin 641B done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 578B done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/alpine:3.24.4@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf
+#3 DONE 0.0s
+
+#4 [internal] load metadata for docker.io/otel/opentelemetry-collector-contrib:0.165.0@sha256:e40d61f10c9a617cca1ffd1be4d7e2b3a4b0f0001798ff07e58cabe82e618cea
+#4 DONE 0.0s
+
+#5 [internal] load .dockerignore
+#5 transferring context: 2B done
+#5 DONE 0.0s
+
+#6 [stage-1 1/3] FROM docker.io/library/alpine:3.24.4@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf
+#6 resolve docker.io/library/alpine:3.24.4@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf done
+#6 DONE 0.0s
+
+#7 [upstream 1/1] FROM docker.io/otel/opentelemetry-collector-contrib:0.165.0@sha256:e40d61f10c9a617cca1ffd1be4d7e2b3a4b0f0001798ff07e58cabe82e618cea
+#7 resolve docker.io/otel/opentelemetry-collector-contrib:0.165.0@sha256:e40d61f10c9a617cca1ffd1be4d7e2b3a4b0f0001798ff07e58cabe82e618cea done
+#7 DONE 0.0s
+
+#8 [stage-1 2/3] RUN adduser -D -H -u 10001 otel
+#8 CACHED
+
+#9 [stage-1 3/3] COPY --from=upstream /otelcol-contrib /otelcol-contrib
+#9 CACHED
+
+#10 exporting to image
+#10 exporting layers done
+#10 exporting manifest sha256:a65eaa83361cb44d9e6eeb30fdece1ee3586cd409636d3826647a2510bf877ec done
+#10 exporting config sha256:7075117648e9399f6e058fb34f3fbd6201dded4aac9310afa97642271fee1325 done
+#10 exporting attestation manifest sha256:9f159ac7c93c984a3ec22aa5f1d742ab616677e97af1afcb3828c0c86331d8da done
+#10 exporting manifest list sha256:e680b09f669daeb09c0ef98ec492ec37f2bb4811a6191b1102a11b2ad202a372 done
+#10 naming to docker.io/onb/otel-collector:0.165.0 done
+#10 unpacking to docker.io/onb/otel-collector:0.165.0 done
+#10 DONE 0.0s
+
+#11 resolving provenance for metadata file
+#11 DONE 0.0s
+ Image onb/otel-collector:0.165.0 Built 
+ Container ob-t-1-otel-collector-1 Running 
+ Container ob-t-1-jaeger-1 Running 
+ Container ob-t-1-caddy-1 Running 
+ Container ob-t-1-mongo-1 Running 
+ Container ob-t-1-jaeger-1 Waiting 
+ Container ob-t-1-jaeger-1 Waiting 
+ Container ob-t-1-jaeger-1 Healthy 
+ Container ob-t-1-jaeger-1 Healthy 
+ Container ob-t-1-otel-collector-1 Waiting 
+ Container ob-t-1-jaeger-1 Waiting 
+ Container ob-t-1-caddy-1 Waiting 
+ Container ob-t-1-mongo-1 Waiting 
+ Container ob-t-1-otel-collector-1 Healthy 
+ Container ob-t-1-jaeger-1 Healthy 
+ Container ob-t-1-mongo-1 Healthy 
+ Container ob-t-1-caddy-1 Healthy 
+set -a && . ./.env && set +a && \
+	uv run --frozen pytest tools/tests_int -q -o cache_dir=.pytest_cache/tools-int && \
+	node_modules/.bin/nx run-many -t test-int --output-style=static
+............                                                             [100%]
+12 passed in 1.88s
+
+ NX   Running target test-int for project py-data:
+
+- py-data
+
+
+
+> nx run py-data:test-int
+
+> uv run --frozen pytest libs/py-data/tests_int -o cache_dir=.pytest_cache/py-data-int
+
+============================= test session starts ==============================
+platform darwin -- Python 3.12.13, pytest-9.2.0, pluggy-1.7.0
+cachedir: .pytest_cache/py-data-int
+rootdir: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-t-1
+configfile: pyproject.toml
+plugins: cov-7.1.0
+collected 24 items
+
+libs/py-data/tests_int/test_compose_mongo_transaction.py ....            [ 16%]
+libs/py-data/tests_int/test_tenant_repository.py ....................    [100%]
+
+============================== 24 passed in 2.90s ==============================
+
+
+
+ NX   Successfully ran target test-int for project py-data
+
+
+  Run duration:      3.3s
+  Cache:             0/1 hit (0%)
+  Critical path:     3.3s (1 task)
+  Recoverable time:  <1ms
+make test-int exit=0

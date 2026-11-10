@@ -1,0 +1,35 @@
+$ uv run --frozen pytest libs/py-data/tests_int -v -p no:cacheprovider   (compose project: ob-t-1)
+============================= test session starts ==============================
+platform darwin -- Python 3.12.13, pytest-9.2.0, pluggy-1.7.0 -- /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-t-1/.venv/bin/python
+rootdir: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-t-1
+configfile: pyproject.toml
+plugins: cov-7.1.0
+collecting ... collected 24 items
+
+libs/py-data/tests_int/test_compose_mongo_transaction.py::test_server_is_a_replica_set_primary PASSED [  4%]
+libs/py-data/tests_int/test_compose_mongo_transaction.py::test_multi_document_transaction_commits PASSED [  8%]
+libs/py-data/tests_int/test_compose_mongo_transaction.py::test_aborted_transaction_writes_nothing PASSED [ 12%]
+libs/py-data/tests_int/test_compose_mongo_transaction.py::test_unauthenticated_client_is_refused PASSED [ 16%]
+libs/py-data/tests_int/test_tenant_repository.py::test_the_operation_list_matches_the_repository PASSED [ 20%]
+libs/py-data/tests_int/test_tenant_repository.py::test_every_operation_raises_without_a_context_and_changes_nothing[aggregate] PASSED [ 25%]
+libs/py-data/tests_int/test_tenant_repository.py::test_every_operation_raises_without_a_context_and_changes_nothing[count] PASSED [ 29%]
+libs/py-data/tests_int/test_tenant_repository.py::test_every_operation_raises_without_a_context_and_changes_nothing[delete_by_id] PASSED [ 33%]
+libs/py-data/tests_int/test_tenant_repository.py::test_every_operation_raises_without_a_context_and_changes_nothing[delete_one] PASSED [ 37%]
+libs/py-data/tests_int/test_tenant_repository.py::test_every_operation_raises_without_a_context_and_changes_nothing[find] PASSED [ 41%]
+libs/py-data/tests_int/test_tenant_repository.py::test_every_operation_raises_without_a_context_and_changes_nothing[find_one] PASSED [ 45%]
+libs/py-data/tests_int/test_tenant_repository.py::test_every_operation_raises_without_a_context_and_changes_nothing[get] PASSED [ 50%]
+libs/py-data/tests_int/test_tenant_repository.py::test_every_operation_raises_without_a_context_and_changes_nothing[insert_many] PASSED [ 54%]
+libs/py-data/tests_int/test_tenant_repository.py::test_every_operation_raises_without_a_context_and_changes_nothing[insert_one] PASSED [ 58%]
+libs/py-data/tests_int/test_tenant_repository.py::test_every_operation_raises_without_a_context_and_changes_nothing[update_by_id] PASSED [ 62%]
+libs/py-data/tests_int/test_tenant_repository.py::test_every_operation_raises_without_a_context_and_changes_nothing[update_many] PASSED [ 66%]
+libs/py-data/tests_int/test_tenant_repository.py::test_every_operation_raises_without_a_context_and_changes_nothing[update_one] PASSED [ 70%]
+libs/py-data/tests_int/test_tenant_repository.py::test_reads_see_only_the_own_org PASSED [ 75%]
+libs/py-data/tests_int/test_tenant_repository.py::test_an_aggregate_starting_with_sort_and_group_sees_only_the_own_org PASSED [ 79%]
+libs/py-data/tests_int/test_tenant_repository.py::test_a_foreign_id_is_not_found_for_get_update_and_delete PASSED [ 83%]
+libs/py-data/tests_int/test_tenant_repository.py::test_writes_land_in_the_own_org_only PASSED [ 87%]
+libs/py-data/tests_int/test_tenant_repository.py::test_an_upsert_creates_the_document_in_the_own_org PASSED [ 91%]
+libs/py-data/tests_int/test_tenant_repository.py::test_an_org_prefixed_unique_index_allows_the_same_value_in_two_orgs PASSED [ 95%]
+libs/py-data/tests_int/test_tenant_repository.py::test_ping_reaches_the_server PASSED [100%]
+
+============================== 24 passed in 3.12s ==============================
+exit=0

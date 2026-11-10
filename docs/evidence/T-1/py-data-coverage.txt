@@ -1,0 +1,46 @@
+
+> nx run py-data:test
+
+> uv run --frozen pytest libs/py-data/tests -o cache_dir=.pytest_cache/py-data --cov=onb_data --cov-report=term-missing --cov-fail-under=80
+
+============================= test session starts ==============================
+platform darwin -- Python 3.12.13, pytest-9.2.0, pluggy-1.7.0
+cachedir: .pytest_cache/py-data
+rootdir: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-t-1
+configfile: pyproject.toml
+plugins: cov-7.1.0
+collected 144 items
+
+libs/py-data/tests/test_context.py ..............                        [  9%]
+libs/py-data/tests/test_exports.py ...........                           [ 17%]
+libs/py-data/tests/test_onb_data.py .                                    [ 18%]
+libs/py-data/tests/test_repository.py .................................. [ 41%]
+..............................................                           [ 73%]
+libs/py-data/tests/test_store.py ......................................  [100%]
+
+================================ tests coverage ================================
+______________ coverage: platform darwin, python 3.12.13-final-0 _______________
+
+Name                                      Stmts   Miss  Cover   Missing
+-----------------------------------------------------------------------
+libs/py-data/src/onb_data/__init__.py         6      0   100%
+libs/py-data/src/onb_data/context.py         28      0   100%
+libs/py-data/src/onb_data/errors.py           9      0   100%
+libs/py-data/src/onb_data/repository.py     103      0   100%
+libs/py-data/src/onb_data/scoping.py        115      0   100%
+libs/py-data/src/onb_data/store.py           55      0   100%
+-----------------------------------------------------------------------
+TOTAL                                       316      0   100%
+Required test coverage of 80% reached. Total coverage: 100.00%
+============================= 144 passed in 0.20s ==============================
+
+
+
+ NX   Successfully ran target test for project py-data
+
+
+  Run duration:      582ms
+  Cache:             Skipped (--skip-nx-cache)
+  Critical path:     515ms (1 task)
+  Recoverable time:  <1ms
+nx run py-data:test exit=0
