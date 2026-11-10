@@ -924,11 +924,15 @@ name = "onb-data"
 version = "0.1.0"
 source = { editable = "libs/py-data" }
 dependencies = [
+    { name = "opentelemetry-api" },
     { name = "pymongo" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "pymongo", specifier = ">=4.10,<5" }]
+requires-dist = [
+    { name = "opentelemetry-api", specifier = ">=1.45,<2" },
+    { name = "pymongo", specifier = ">=4.10,<5" },
+]
 
 [[package]]
 name = "onb-evals"

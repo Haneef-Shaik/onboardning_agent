@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, Any
 
 from pymongo import AsyncMongoClient as _AsyncMongoClient
 
+from .append_only import APPEND_ONLY_COLLECTIONS, AppendOnlyRepository
 from .errors import InvalidIndexError, TransactionError, UnknownCollectionError
 from .queue import QUEUE_COLLECTIONS, QueueRepository
 from .repository import GlobalRepository, TenantRepository
@@ -61,7 +62,16 @@ class DataStore:
         name = _collection_name(collection)
         if name in GLOBAL_COLLECTIONS:
             raise UnknownCollectionError(f"{name} is a global collection: use shared({name!r})")
+        if name in APPEND_ONLY_COLLECTIONS:
+            raise UnknownCollectionError(f"{name} is append-only: use append_only({name!r})")
         return TenantRepository(self._database[name])
+
+    def append_only(self, collection: str) -> AppendOnlyRepository:
+        """The insert-and-read view of an append-only tenant collection (`audit_log`); no update or delete."""
+        name = _collection_name(collection)
+        if name not in APPEND_ONLY_COLLECTIONS:
+            raise UnknownCollectionError(f"{name} is not an append-only collection: use tenant({name!r})")
+        return AppendOnlyRepository(self._database[name])
 
     def queue(self, collection: str) -> QueueRepository:
         """The cross-org worker view of `jobs` or `dead_letters` (see `onb_data.queue`)."""

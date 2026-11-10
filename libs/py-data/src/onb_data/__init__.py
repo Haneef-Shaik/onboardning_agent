@@ -7,9 +7,15 @@
     await store.run_transaction(change_and_event)   # one transaction (EVT-1 outbox)
     store.queue("jobs")                              # workers only: cross-org claim by lease
 
+    audit_log = AuditLog(store)                      # append-only; see `onb_data.audit`
+    with tenant_scope(org_id):
+        await audit_log.audit(actor=Actor.user(uid), action="pii.reveal", target=t, outcome=AuditOutcome.SUCCESS)
+
 No collection, database or client object is exported.
 """
 
+from .append_only import APPEND_ONLY_COLLECTIONS, AppendOnlyRepository
+from .audit import Actor, ActorType, AuditEntry, AuditLog, AuditOutcome, AuditPage, AuditQuery
 from .context import TenantContext, current_tenant, tenant_scope
 from .errors import (
     DataAccessError,
@@ -27,9 +33,18 @@ from .session import in_transaction
 from .store import GLOBAL_COLLECTIONS, DataStore, connect
 
 __all__ = [
+    "APPEND_ONLY_COLLECTIONS",
     "GLOBAL_COLLECTIONS",
     "PROJECT",
     "QUEUE_COLLECTIONS",
+    "Actor",
+    "ActorType",
+    "AppendOnlyRepository",
+    "AuditEntry",
+    "AuditLog",
+    "AuditOutcome",
+    "AuditPage",
+    "AuditQuery",
     "DataAccessError",
     "DataStore",
     "GlobalRepository",
