@@ -1,0 +1,26 @@
+$ make up   # cold: volumes removed with `docker compose down -v` first
+ Container ob-f-2-jaeger-1 Healthy 
+ Container ob-f-2-otel-collector-1 Starting 
+ Container ob-f-2-caddy-1 Started 
+ Container ob-f-2-otel-collector-1 Started 
+ Container ob-f-2-otel-collector-1 Waiting 
+ Container ob-f-2-jaeger-1 Waiting 
+ Container ob-f-2-caddy-1 Waiting 
+ Container ob-f-2-mongo-1 Waiting 
+ Container ob-f-2-jaeger-1 Healthy 
+ Container ob-f-2-caddy-1 Healthy 
+ Container ob-f-2-otel-collector-1 Healthy 
+ Container ob-f-2-mongo-1 Healthy 
+
+$ docker compose ps
+NAME                      IMAGE                         COMMAND                  SERVICE          CREATED         STATUS                   PORTS
+ob-f-2-caddy-1            caddy:2.11.9-alpine           "caddy run --config …"   caddy            8 seconds ago   Up 4 seconds (healthy)   127.0.0.1:18082->80/tcp, 127.0.0.1:18445->443/tcp
+ob-f-2-jaeger-1           jaegertracing/jaeger:2.23.0   "/cmd/jaeger/jaeger-…"   jaeger           8 seconds ago   Up 7 seconds (healthy)   4317-4318/tcp, 5778-5779/tcp, 9411/tcp, 13132-13133/tcp, 14250/tcp, 14268/tcp, 16686/tcp
+ob-f-2-mongo-1            mongo:8.0.34                  "bash -c 'install -m…"   mongo            8 seconds ago   Up 7 seconds (healthy)   27017/tcp
+ob-f-2-otel-collector-1   onb/otel-collector:0.165.0    "/otelcol-contrib --…"   otel-collector   8 seconds ago   Up 4 seconds (healthy)   
+
+$ docker compose ps --format "{{.Service}} {{.State}} {{.Health}}"
+caddy running healthy
+jaeger running healthy
+mongo running healthy
+otel-collector running healthy

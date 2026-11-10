@@ -1,0 +1,19 @@
+$ docker compose exec -T mongo mongosh --quiet --eval "db.adminCommand({listDatabases: 1})"   # no credentials
+MongoServerError: Command listDatabases requires authentication
+exit=1
+
+$ docker compose exec -T mongo mongosh --quiet --eval "rs.status()"   # no credentials
+MongoServerError: Command replSetGetStatus requires authentication
+exit=1
+
+$ docker compose exec -T mongo mongosh --quiet -u root -p wrong-password --eval "db.runCommand({ping: 1})"
+MongoServerError: Authentication failed.
+exit=1
+
+# From the host: mongo publishes no port, so there is nothing to connect to.
+$ nc -z -w 2 127.0.0.1 27017   # is anything published on the host?
+exit=1
+
+$ docker compose exec -T mongo sh -c 'mongosh --quiet -u "$MONGO_INITDB_ROOT_USERNAME" -p "$MONGO_INITDB_ROOT_PASSWORD" --eval "db.runCommand({ping: 1}).ok"'   # control: with credentials
+1
+exit=0
