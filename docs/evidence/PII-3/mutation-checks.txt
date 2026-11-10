@@ -11,9 +11,9 @@ M10 bank-account keyword anchor removed: killed by FAILED libs/py-guardrails/tes
 M19 zero-width/format characters kept in the skeleton: killed by FAILED libs/py-guardrails/tests/pii/test_detectors.py::test_formatting_tricks_do_not_hide_a_value[id 9\u200b9\u200b9\u200b9\u200b0\u200b0\u200b0\u200b0\u200b0\u200b1\u200b2\u200b5-id [AADHAAR]]
 M20 homoglyph folding disabled: killed by FAILED libs/py-guardrails/tests/pii/test_detectors.py::test_formatting_tricks_do_not_hide_a_value[PAN \u0410\u0412\u0421D\u04151234F-PAN [PAN]]
 M21 overlap merge keeps the first span instead of the union: killed by FAILED libs/py-guardrails/tests/pii/test_detectors.py::test_overlapping_values_are_redacted_as_their_union
-M22 email not extended over a long local part: SNIPPET NOT FOUND EXACTLY ONCE in libs/py-guardrails/src/onb_guardrails/pii/detectors.py
+M22 email not extended over a long local part: killed by FAILED libs/py-guardrails/tests/pii/test_detectors.py::test_formatting_tricks_do_not_hide_a_value[xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx@example.com-[EMAIL]]
 M23 bank-account gaps unbounded (the quadratic pattern): killed by FAILED libs/py-guardrails/tests/pii/test_detectors.py::test_redact_stays_linear_on_review_inputs[account-spaces]
-M27 email walk-back ignores the previous match (quadratic): SURVIVED (80 passed in 0.48s)
+M27 email walk-back ignores the previous match (quadratic): killed by FAILED libs/py-guardrails/tests/pii/test_detectors.py::test_email_walk_back_is_linear[url-encoded]
 M28 email walk-back crosses @ and /: killed by FAILED libs/py-guardrails/tests/pii/test_detectors.py::test_email_walk_back_and_bank_gaps[see http://site/path/jane@example.com-see http://site/path/[EMAIL]]
 M29 separators narrowed back to space/dot/hyphen: killed by FAILED libs/py-guardrails/tests/pii/test_detectors.py::test_formatting_tricks_do_not_hide_a_value[id 9999\n0000\n0125-id [AADHAAR]]
 M24 email TLD may not be followed by a hyphen: killed by FAILED libs/py-guardrails/tests/pii/test_detectors.py::test_formatting_tricks_do_not_hide_a_value[jane@example.com-call-[EMAIL]-call]
@@ -27,6 +27,6 @@ M15 blind index without field domain separation: killed by FAILED libs/py-crypto
 M16 blind index key length check removed: killed by FAILED libs/py-crypto/tests/test_blind_index.py::test_short_keys_are_rejected[]
 M17 email not lower-cased for the index: killed by FAILED libs/py-crypto/tests/test_blind_index.py::test_layouts_of_one_value_share_an_index_so_dedupe_works[email-priya.sharma@example.com-  Priya.Sharma@EXAMPLE.com ]
 M18 malformed-value error echoes the value: killed by FAILED libs/py-crypto/tests/test_masks.py::test_mask_rejects_malformed_input_without_echoing_it[mask_mobile-5800000021]
-after restore, full suite: 231 passed in 5.30s
-source restored (git diff --quiet libs): False
-mutations: 29, survived: ['M22 email not extended over a long local part', 'M27 email walk-back ignores the previous match (quadratic)']
+after restore, full suite: 232 passed in 5.91s
+source restored (git diff --quiet libs): True
+mutations: 29, survived: []

@@ -15,52 +15,52 @@ libs/py-guardrails/tests/pii/test_redact_property.py::test_text_without_digits_o
 
 libs/py-guardrails/tests/pii/test_redact_property.py::test_redact_output_contains_no_detector_hit:
 
-  - during generate phase (1.26 seconds):
+  - during generate phase (1.21 seconds):
     - Typical runtimes: ~ 0-1 ms, of which < 1ms in data generation
-    - 1500 passing, 0 failing, and 117 invalid test cases
+    - 1500 passing, 0 failing, and 156 invalid test cases
 
   - Stopped because settings.max_examples=1500
 
 
 libs/py-guardrails/tests/pii/test_redact_property.py::test_redact_is_idempotent:
 
-  - during generate phase (1.35 seconds):
+  - during generate phase (1.31 seconds):
     - Typical runtimes: ~ 0-1 ms, of which < 1ms in data generation
-    - 1500 passing, 0 failing, and 148 invalid test cases
+    - 1500 passing, 0 failing, and 125 invalid test cases
 
   - Stopped because settings.max_examples=1500
 
 
 libs/py-guardrails/tests/pii/test_redact_property.py::test_no_character_of_a_value_survives_in_any_glue:
 
-  - during generate phase (0.98 seconds):
+  - during generate phase (1.13 seconds):
     - Typical runtimes: < 1ms, of which < 1ms in data generation
-    - 1500 passing, 0 failing, and 24 invalid test cases
+    - 1500 passing, 0 failing, and 31 invalid test cases
     - Events:
-      * 0.20%, Retried draw from characters(categories=('Pc', 'Zs', 'Pf', 'Pi', 'Pd', 'Sc', 'Sk', 'Sm', 'Pe', 'Ps', 'So', 'Po'), exclude_characters='@%').filter(lambda c: not _is_digit_or_at(c)) to satisfy filter
+      * 7.05%, Retried draw from characters(categories=('Pc', 'Zs', 'Pf', 'Pi', 'Pd', 'Sc', 'Sk', 'Sm', 'Pe', 'Ps', 'So', 'Po'), exclude_characters='@%').filter(lambda c: not _folds_to_alnum_or_at(c)) to satisfy filter
 
   - Stopped because settings.max_examples=1500
 
 
 libs/py-guardrails/tests/pii/test_redact_property.py::test_digit_values_glued_to_letters_leave_nothing_behind:
 
-  - during generate phase (0.75 seconds):
+  - during generate phase (0.86 seconds):
     - Typical runtimes: < 1ms, of which < 1ms in data generation
-    - 1500 passing, 0 failing, and 43 invalid test cases
+    - 1500 passing, 0 failing, and 50 invalid test cases
 
   - Stopped because settings.max_examples=1500
 
 
 libs/py-guardrails/tests/pii/test_redact_property.py::test_text_without_digits_or_at_signs_is_left_unchanged:
 
-  - during generate phase (0.51 seconds):
+  - during generate phase (0.49 seconds):
     - Typical runtimes: < 1ms, of which < 1ms in data generation
-    - 1500 passing, 0 failing, and 114 invalid test cases
+    - 1500 passing, 0 failing, and 110 invalid test cases
     - Events:
-      * 14.37%, Retried draw from characters().filter(lambda c: not _is_digit_or_at(c)) to satisfy filter
-      * 0.37%, gave up because: Aborted test because unable to satisfy characters().filter(lambda c: not _is_digit_or_at(c))
+      * 11.43%, Retried draw from characters().filter(lambda c: not _is_digit_or_at(c)) to satisfy filter
+      * 0.19%, gave up because: Aborted test because unable to satisfy characters().filter(lambda c: not _is_digit_or_at(c))
 
   - Stopped because settings.max_examples=1500
 
 
-============================== 5 passed in 4.87s ===============================
+============================== 5 passed in 5.05s ===============================

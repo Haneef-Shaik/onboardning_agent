@@ -1,4 +1,4 @@
-# Handoff — PII-3 · Validate, detect, mask and blind-index sensitive values        attempt 1 · goal/pii-3-pii-detectors-masks · see `git log -1` (evidence captured at 996b334)
+# Handoff — PII-3 · Validate, detect, mask and blind-index sensitive values        attempt 1 · goal/pii-3-pii-detectors-masks · see `git log -1` (code at 8bbd54a; evidence refreshed after it)
 
 **Outcome claimed.** The branch adds pure functions for each sensitive field of PRD §7.10:
 - **Validators** (`onb_guardrails.pii`): Aadhaar with Verhoeff, PAN, IFSC, mobile, email, bank account.
@@ -19,8 +19,8 @@
 |-------|-----------|
 | `from onb_guardrails.pii import detect, redact, PiiType, PiiSpan` behaves as follows. `detect(text)` returns non-overlapping `PiiSpan(type, start, end)` in text order, with offsets into the **original** text. Spans never carry the value, so they are safe to log. | `test_spans_are_frozen_ordered_and_carry_no_value` |
 | `redact(text)` replaces each span with `PiiType.marker` (`[AADHAAR]`, `[PAN]`, `[IFSC]`, `[MOBILE]`, `[EMAIL]`, `[BANK_ACCOUNT]`). It is idempotent, and text without digits or `@` comes back unchanged. | `test_redact_replaces_every_value_with_its_typed_marker`, properties |
-| Detection survives the following tricks: zero-width characters, soft hyphens, any Unicode space, full-width, superscript and circled forms, non-ASCII digits, Cyrillic and Greek lookalikes, mixed separators (Aadhaar), 3-3-4, 2×5 and bracketed mobiles, spaced or glued upper-case PAN, IDN and `%40` emails, and over-long email local parts. | `test_formatting_tricks_do_not_hide_a_value[*]` (27 cases) |
-| Runtime is linear. Adversarial 100–220 KB inputs (account keyword + 100k spaces, 20k PANs, 200k digits) each finish in under 5 s. | `test_redact_stays_linear_on_review_inputs[*]`, `test_redact_is_linear_on_adversarial_input` |
+| Detection survives the following tricks: zero-width characters, soft hyphens, any Unicode space, Hangul and Braille blanks, full-width, superscript and circled forms, non-ASCII digits, and Cyrillic and Greek lookalikes. Digit groups may be separated by any 0–3 non-alphanumeric characters (Unicode minus, dashes, `_`, `,`, ` - `). Mobiles may be grouped 5-5, 3-3-4, 4-3-3, 4-4-2, 2-3-2-3 or 2×5, with a `+91`, `0091`, `91` or `0` prefix. Also covered: a separated or glued upper-case PAN, IDN and `%40` emails, and over-long email local parts. | `test_formatting_tricks_do_not_hide_a_value[*]` (27), `test_more_separator_variants_do_not_hide_a_value[*]` (13), `test_email_walk_back_and_bank_gaps[*]` |
+| Runtime is linear. Adversarial 100–260 KB inputs each finish in under 5 s: account keyword + 100k spaces, 20k PANs, 200k digits, and 50k chars + 10k `@a.co` / 30k `%40a.co`. | `test_redact_stays_linear_on_review_inputs[*]`, `test_email_walk_back_is_linear[*]`, `test_redact_is_linear_on_adversarial_input` |
 | `ptk_…` tokens are never detected, so tokens can flow through redaction. | `test_pii_tokens_are_not_detected[*]` |
 | Validators: `is_valid_aadhaar/pan/ifsc/mobile/email/bank_account` and `verhoeff_is_valid/verhoeff_check_digit`. All are pure and total. Aadhaar input accepts only `NNNNNNNNNNNN`, `NNNN NNNN NNNN` and `NNNN-NNNN-NNNN`. | `test_validators.py` |
 | `onb_crypto.mask(MaskedField.X, value)` and `mask_*`. Masks are fixed width, so a mask never reveals length. A malformed value raises `ValueError("malformed <field> value")`, and the message never contains the value. | `test_masks.py`, M18 |
@@ -34,7 +34,7 @@
 ## Gates
 | Gate | Command | Result |
 |------|---------|--------|
-| Check | `make check` (at 996b334) | `make check: all passed`. There are 17/17 lint, typecheck and test runs, and every `libs/py-*` reports `Total coverage: 100.00%`. py-guardrails ran 161 tests and py-crypto 53. Summary: `docs/evidence/PII-3/make-check.txt` |
+| Check | `make check` (at 8bbd54a) | `make check: all passed`. There are 17/17 lint, typecheck and test runs, and every `libs/py-*` reports `Total coverage: 100.00%`. py-guardrails ran 179 tests and py-crypto 53. Summary: `docs/evidence/PII-3/make-check.txt` |
 | Integration | `make test-int` | `No tasks were run`. This branch was cut from 820f473, before F-2 (42301cc) added the `test-int` targets, and the orchestration rules forbid a rebase. The diff adds no DB, compose or IO code; py-crypto only gains pure functions. **The orchestrator should run `make test-int` after integrating onto main.** |
 | Eval self-test | `make evals-selftest` | Not available yet (EVAL-1 is not done) |
 | Others | test-xt, contracts-check, test-pii, e2e | Not created yet, and the diff adds no route, contract or UI |
@@ -47,7 +47,7 @@
 | F-1 | Tooling note: use `node_modules/.bin/nx` or `rtk proxy …` because the rtk hook rewrites commands | yes: it also truncates `make check` output, so evidence was captured with `rtk proxy make check` |
 
 ## Mutation checks
-26 mutations; every one was killed by a named test, and the suite is clean afterwards (`after restore, full suite: 214 passed`, `git diff --quiet libs: True`). Full output: `docs/evidence/PII-3/mutation-checks.txt`. Bytecode was purged around every mutation (see Traps). Each line gives the guard, how it was broken, and the test that failed.
+29 mutations; every one was killed by a named test, and the suite is clean afterwards (`after restore, full suite: 232 passed`, `git diff --quiet libs: True`). Full output: `docs/evidence/PII-3/mutation-checks.txt`. Bytecode was purged around every mutation (see Traps). Each line gives the guard, how it was broken, and the test that failed.
 - M1 Aadhaar 0/1 rule removed → `test_aadhaar_starting_with_0_or_1_is_rejected[023456789014]`
 - M2 Verhoeff dropped from Aadhaar → `test_aadhaar_rejects_bad_numbers[999900000126]`
 - M3 one swap in the base permutation → `test_verhoeff_accepts_valid_vectors[999900000125]`
@@ -71,13 +71,17 @@
 - M24 TLD may not precede `-` → `test_formatting_tricks_do_not_hide_a_value[jane@example.com-call-…]`
 - M25 3-3-4 mobile grouping removed → `test_formatting_tricks_do_not_hide_a_value[call 900 000 0001-…]`
 - M26 email canonical form loosened → `test_email_index_accepts_only_plain_ascii_addresses[Kte@example.com]`
+- M27 email walk-back ignores the previous match → `test_email_walk_back_is_linear[url-encoded]`
+- M28 email walk-back crosses `@` and `/` → `test_email_walk_back_and_bank_gaps[see http://site/path/jane@example.com-…]`
+- M29 separators narrowed back to space/dot/hyphen → `test_formatting_tricks_do_not_hide_a_value[id 9999\n0000\n0125-…]`
 
-RED before GREEN is recorded in `red-validators.txt`, `red-detectors.txt`, `red-masks-blind-index.txt` (collection errors before implementation), `red-review-findings.txt` (29 of 33 review-finding tests fail on the attempt-1 detectors) and `red-property-partial-leaks.txt`.
+RED before GREEN is recorded in `red-validators.txt`, `red-detectors.txt`, `red-masks-blind-index.txt` (collection errors before implementation), `red-review-findings.txt` (29 of 33 review-finding tests fail on the attempt-1 detectors), `red-property-partial-leaks.txt` and `red-re-review.txt` (16 re-review tests fail at 996b334).
 
 ## Review findings left open
-code-reviewer and security-reviewer both ran (general-purpose agents with reviewer briefs). All their critical/high findings are fixed in 6c66788: ReDoS in the bank pattern, the email-hyphen escape, partial leaks from dropped overlaps, and formatting bypasses. So are the mediums: 64-char email prefix leak, quadratic span selection, weak property tests, realistic-looking fixtures, and the Unicode email index collision. Left open:
+code-reviewer and security-reviewer both ran (general-purpose agents with reviewer briefs). All their critical/high findings are fixed in 6c66788: ReDoS in the bank pattern, the email-hyphen escape, partial leaks from dropped overlaps, and formatting bypasses. So are the mediums: 64-char email prefix leak, quadratic span selection, weak property tests, realistic-looking fixtures, and the Unicode email index collision. Both reviewers re-checked at 996b334. They confirmed every finding fixed, and both reported one new high: the email walk-back was quadratic (`"x"*50000 + "@a.co"*10000` took 14 s). The security reviewer also listed more separator variants. All of it is fixed in e3da8d3 and 8bbd54a: the walk stops at `@`, `/` and the previous match's end; gaps accept any short non-alphanumeric run; and there are more mobile groupings. The URL over-redaction (`http:[EMAIL]`) is fixed too, and so is the newline-after-keyword bank regression. Left open:
 - low · `detectors.py` `_BANK_ACCOUNT` · A bare account number with no keyword (`send to 50100000000001`) is not redacted. Any 9–18 digit run is too common to flag by default (amounts, ids, AWBs). Possible follow-up for GR-1: redact long digit runs near an IFSC.
-- low · `detectors.py` `_PAN_*` · A PAN glued to *preceding* letters (`PANABCDE1234F`) is not detected; the lookbehind needs a non-alphanumeric. Leetspeak and "[at]"/"dot" spellings are not handled either. Both are residual risk and should be documented in GR-1.
+- low · `detectors.py` `_PAN_*` · Two PAN forms are missed: a PAN glued to *preceding* letters (`PANABCDE1234F`, or after a symbol that NFKC-folds to a letter, like a circled A), and a spaced lower-case PAN (`abcde 1234 f`). Leetspeak and "[at]"/"dot" spellings are not handled either. All of these are residual risk and should be documented in GR-1.
+- low · `detectors.py` `_MOBILE` · For `+91 098765 43210` only the country prefix `+91 ` survives. The number itself is redacted.
 - low · `blind_index.py` · Key rotation (a key-version prefix) and a separate Aadhaar key type belong to PII-2's key management. The docstring says `aadhaar_hash` must use the Aadhaar partition key.
 - low · `normalize.py` · Masks and indexes check shape only (no Verhoeff, and a bare `91` prefix is accepted). Callers validate on input first, as the docstring says.
 
