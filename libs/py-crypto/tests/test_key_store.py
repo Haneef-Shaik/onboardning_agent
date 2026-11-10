@@ -98,5 +98,5 @@ def test_a_malformed_document_fails_closed(corrupt: dict[str, Any]) -> None:
     repo = FakeTenantRepository(ORG_A)
     run(store_over(repo).add(record(1)))
     repo.documents = [{**repo.documents[0], **corrupt}]
-    with pytest.raises(KeyUnwrapError, match="malformed|another org"):
+    with pytest.raises(KeyUnwrapError, match=r"malformed|another org"):
         run(store_over(repo).load(ORG_A))

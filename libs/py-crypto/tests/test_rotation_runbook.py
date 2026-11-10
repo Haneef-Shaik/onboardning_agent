@@ -9,8 +9,8 @@ from pathlib import Path
 
 import pytest
 from onb_crypto import (
-    Keyring,
     KeyPurpose,
+    Keyring,
     KeyUnwrapError,
     MasterKey,
     rewrap_orgs,

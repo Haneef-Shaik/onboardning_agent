@@ -7,8 +7,8 @@ from typing import Any
 import pytest
 from onb_crypto import (
     DecryptionError,
-    Keyring,
     KeyPurpose,
+    Keyring,
     KeyUnwrapError,
     KeyVersionConflictError,
     NoOrgKeysError,
@@ -134,7 +134,7 @@ def test_a_wrong_master_key_fails_closed_and_returns_nothing() -> None:
 
 def test_a_wrong_master_key_fails_even_when_the_record_claims_its_id() -> None:
     """The master key id is a hint for operators; the AES-GCM tag is the guard."""
-    keyring, store = two_org_keyring()
+    _, store = two_org_keyring()
     impostor_master = new_master_key()
     store.records = {
         k: OrgKeyRecord(r.org_id, r.version, impostor_master.key_id, r.wrapped, r.created_at)
@@ -269,12 +269,14 @@ def test_a_concurrent_rotation_conflict_surfaces_and_the_winner_stands() -> None
 
 
 def test_records_must_be_internally_consistent() -> None:
-    keyring, store = two_org_keyring()
+    _, store = two_org_keyring()
     record = store.records[(ORG_A, 1)]
     with pytest.raises(ValueError, match="version"):
         OrgKeyRecord(ORG_A, 0, record.master_key_id, record.wrapped, record.created_at)
     with pytest.raises(ValueError, match="purpose"):
-        OrgKeyRecord(ORG_A, 1, record.master_key_id, {KeyPurpose.DATA: record.wrapped[KeyPurpose.DATA]}, record.created_at)
+        OrgKeyRecord(
+            ORG_A, 1, record.master_key_id, {KeyPurpose.DATA: record.wrapped[KeyPurpose.DATA]}, record.created_at
+        )
 
 
 def test_a_store_returning_another_orgs_record_is_refused() -> None:
