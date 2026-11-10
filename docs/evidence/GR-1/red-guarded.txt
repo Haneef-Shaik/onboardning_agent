@@ -1,0 +1,6 @@
+    from onb_guardrails import (
+E   ImportError: cannot import name 'EVENT_NAME' from 'onb_guardrails' (/Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-gr-1/libs/py-guardrails/src/onb_guardrails/__init__.py)
+=========================== short test summary info ============================
+ERROR libs/py-guardrails/tests/test_guarded.py
+!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+1 error in 1.53s

@@ -988,6 +988,20 @@ requires-dist = [
 name = "onb-guardrails"
 version = "0.1.0"
 source = { editable = "libs/py-guardrails" }
+dependencies = [
+    { name = "langchain-core" },
+    { name = "onb-data" },
+    { name = "opentelemetry-api" },
+    { name = "pydantic" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "langchain-core", specifier = ">=1.0,<2" },
+    { name = "onb-data", editable = "libs/py-data" },
+    { name = "opentelemetry-api", specifier = ">=1.45,<2" },
+    { name = "pydantic", specifier = ">=2.9,<3" },
+]
 
 [[package]]
 name = "onb-llm"
