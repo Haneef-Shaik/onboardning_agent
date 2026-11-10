@@ -863,6 +863,20 @@ wheels = [
 name = "onb-agents"
 version = "0.1.0"
 source = { editable = "libs/py-agents" }
+dependencies = [
+    { name = "onb-data" },
+    { name = "pydantic" },
+    { name = "pymongo" },
+    { name = "pyyaml" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "onb-data", editable = "libs/py-data" },
+    { name = "pydantic", specifier = ">=2.9,<3" },
+    { name = "pymongo", specifier = ">=4.10,<5" },
+    { name = "pyyaml", specifier = ">=6" },
+]
 
 [[package]]
 name = "onb-api"
