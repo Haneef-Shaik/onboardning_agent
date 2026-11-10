@@ -112,7 +112,10 @@ MUTATIONS = [
         "M16 dependency: tenant scope opened but never closed",
         f"{API}/auth/dependencies.py",
         "    with tenant_scope(principal.org_id):\n        yield principal\n",
-        "    tenant_scope(principal.org_id).__enter__()\n    yield principal\n",
+        # Set the context variable directly and never reset it. (`tenant_scope(...).__enter__()` is
+        # not a leak: the unreferenced context manager is collected at once and its `finally` resets.)
+        "    from onb_data.context import TenantContext, _current\n\n"
+        "    _current.set(TenantContext(principal.org_id))\n    yield principal\n",
     ),
 ]
 

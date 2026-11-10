@@ -14,14 +14,14 @@ M2 token: expiry not checked
     FAILED apps/api/tests/test_tokens.py::test_an_expired_token_is_refused
 M3 token: signature not checked
   apps/api/src/onb_api/auth/tokens.py: 'options={"require": list(_REQUIRED_CLAIMS)},' -> 'options={"require": list(_REQUIRED_CLAIMS), "verify_signature": False},'
-  caught: yes (10 failed)
+  caught: yes (14 failed)
     FAILED apps/api/tests/test_login.py::test_expired_token_returns_401
     FAILED apps/api/tests/test_login.py::test_tampered_token_returns_401
     FAILED apps/api/tests/test_login.py::test_token_signed_with_another_secret_returns_401
     FAILED apps/api/tests/test_login.py::test_the_401_answer_carries_no_token_detail
     FAILED apps/api/tests/test_tokens.py::test_an_expired_token_is_refused
-    FAILED apps/api/tests/test_tokens.py::test_a_token_signed_with_another_secret_is_refused
-    ... and 4 more
+    FAILED apps/api/tests/test_tokens.py::test_a_token_issued_in_the_future_is_refused
+    ... and 8 more
 M4 dependency: missing token let through as a fixed principal
   apps/api/src/onb_api/auth/dependencies.py: 'if credentials is None:\n        raise unauthenticated()' -> 'if credentials is None:\n        with tenant_scope("org_acme"):\n            yield Principal(user_id="u_acme_hr1", org_id="org_acme", role=Role.HR_ADMIN)\n        return'
   caught: yes (9 failed)
@@ -34,14 +34,14 @@ M4 dependency: missing token let through as a fixed principal
     ... and 3 more
 M5 dependency: route not run in the token's tenant scope
   apps/api/src/onb_api/auth/dependencies.py: 'with tenant_scope(principal.org_id):\n        yield principal' -> 'yield principal'
-  caught: yes (12 failed)
+  caught: yes (14 failed)
     FAILED apps/api/tests/test_login.py::test_me_with_a_valid_token_returns_the_user
+    FAILED apps/api/tests/test_login.py::test_me_reports_the_stored_role_not_the_tokens
     FAILED apps/api/tests/test_login.py::test_a_token_from_login_opens_me
     FAILED apps/api/tests/test_org_from_token.py::test_an_org_id_in_the_query_is_ignored[org_id=org_globex]
     FAILED apps/api/tests/test_org_from_token.py::test_an_org_id_in_the_query_is_ignored[orgId=org_globex]
     FAILED apps/api/tests/test_org_from_token.py::test_an_org_id_in_the_query_is_ignored[tenant=org_globex]
-    FAILED apps/api/tests/test_org_from_token.py::test_an_org_id_in_a_header_is_ignored[X-Org-Id]
-    ... and 6 more
+    ... and 8 more
 M6 require_role: role not checked
   apps/api/src/onb_api/auth/dependencies.py: 'if principal.role not in allowed:' -> 'if False:'
   caught: yes (5 failed)
@@ -94,6 +94,24 @@ M13 data errors: a foreign id answers 403 instead of 404
   apps/api/src/onb_api/errors.py: 'NotFoundError: ErrorCode.NOT_FOUND,' -> 'NotFoundError: ErrorCode.FORBIDDEN,'
   caught: yes (1 failed)
     FAILED apps/api/tests/test_data_errors.py::test_a_data_error_becomes_its_envelope_answer[NotFoundError-404-NOT_FOUND]
+M14 token: lifetime longer than configured accepted
+  apps/api/src/onb_api/auth/tokens.py: 'if exp - iat > settings.token_ttl.total_seconds():' -> 'if False:'
+  caught: yes (1 failed)
+    FAILED apps/api/tests/test_tokens.py::test_a_token_living_longer_than_the_configured_lifetime_is_refused
+M15 token: audience not checked
+  apps/api/src/onb_api/auth/tokens.py: 'audience=AUDIENCE,' -> 'audience=None,'
+  caught: yes (29 failed)
+    FAILED apps/api/tests/test_login.py::test_login_with_the_right_password_returns_a_token_for_the_users_org_and_role
+    FAILED apps/api/tests/test_login.py::test_me_with_a_valid_token_returns_the_user
+    FAILED apps/api/tests/test_login.py::test_me_reports_the_stored_role_not_the_tokens
+    FAILED apps/api/tests/test_login.py::test_a_token_from_login_opens_me
+    FAILED apps/api/tests/test_org_from_token.py::test_an_org_id_in_the_query_is_ignored[org_id=org_globex]
+    FAILED apps/api/tests/test_org_from_token.py::test_an_org_id_in_the_query_is_ignored[orgId=org_globex]
+    ... and 23 more
+M16 dependency: tenant scope opened but never closed
+  apps/api/src/onb_api/auth/dependencies.py: 'with tenant_scope(principal.org_id):\n        yield principal' -> 'from onb_data.context import TenantContext, _current\n\n    _current.set(TenantContext(principal.org_id))\n    yield principal'
+  caught: yes (1 failed)
+    FAILED apps/api/tests/test_org_from_token.py::test_the_tenant_scope_opens_with_the_token_and_closes_after_the_route
 
-13/13 mutations caught
+16/16 mutations caught
 exit=0
