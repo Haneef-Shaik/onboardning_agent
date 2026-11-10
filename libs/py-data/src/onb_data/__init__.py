@@ -4,6 +4,9 @@
     with tenant_scope(org_id_from_signed_token):
         hire = await store.tenant("hires").get(hire_id)   # {_id, org_id}; NotFound otherwise
 
+    await store.run_transaction(change_and_event)   # one transaction (EVT-1 outbox)
+    store.queue("jobs")                              # workers only: cross-org claim by lease
+
 No collection, database or client object is exported.
 """
 
@@ -15,14 +18,18 @@ from .errors import (
     NotFound,
     NotFoundError,
     TenantViolationError,
+    TransactionError,
     UnknownCollectionError,
 )
+from .queue import QUEUE_COLLECTIONS, QueueRepository
 from .repository import GlobalRepository, TenantRepository, UpdateOutcome
+from .session import in_transaction
 from .store import GLOBAL_COLLECTIONS, DataStore, connect
 
 __all__ = [
     "GLOBAL_COLLECTIONS",
     "PROJECT",
+    "QUEUE_COLLECTIONS",
     "DataAccessError",
     "DataStore",
     "GlobalRepository",
@@ -30,13 +37,16 @@ __all__ = [
     "NoTenantContextError",
     "NotFound",
     "NotFoundError",
+    "QueueRepository",
     "TenantContext",
     "TenantRepository",
     "TenantViolationError",
+    "TransactionError",
     "UnknownCollectionError",
     "UpdateOutcome",
     "connect",
     "current_tenant",
+    "in_transaction",
     "tenant_scope",
 ]
 

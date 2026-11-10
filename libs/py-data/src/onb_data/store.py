@@ -6,14 +6,16 @@ private and hands out repositories only, so no caller ever holds a collection or
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Awaitable, Callable, Sequence
 from typing import TYPE_CHECKING, Any
 
 from pymongo import AsyncMongoClient as _AsyncMongoClient
 
-from .errors import UnknownCollectionError
+from .errors import InvalidIndexError, TransactionError, UnknownCollectionError
+from .queue import QUEUE_COLLECTIONS, QueueRepository
 from .repository import GlobalRepository, TenantRepository
-from .scoping import IndexKey, validate_index_keys
+from .scoping import ORG_FIELD, IndexKey, validate_index_keys
+from .session import bound_session, in_transaction
 
 if TYPE_CHECKING:
     from pymongo.asynchronous.database import AsyncDatabase
@@ -59,6 +61,32 @@ class DataStore:
             raise UnknownCollectionError(f"{name} is a global collection: use shared({name!r})")
         return TenantRepository(self._database[name])
 
+    def queue(self, collection: str) -> QueueRepository:
+        """The cross-org worker view of `jobs` or `dead_letters` (see `onb_data.queue`)."""
+        name = _collection_name(collection)
+        if name not in QUEUE_COLLECTIONS:
+            raise UnknownCollectionError(f"{name} is not a queue collection: use tenant({name!r})")
+        return QueueRepository(self._database[name])
+
+    async def run_transaction[T](self, callback: Callable[[], Awaitable[T]]) -> T:
+        """Run `callback` in one transaction and return its result.
+
+        Every repository call inside it joins the transaction. It commits when the callback returns
+        and rolls back when it raises (the error propagates). The driver retries the whole callback
+        on a transient error, such as a write conflict, so the callback must be safe to run again.
+        """
+        if in_transaction():
+            raise TransactionError("transactions do not nest: call the inner work inside the outer callback")
+        if self._client is None:
+            raise TransactionError("this store has no client to start a session with")
+
+        async def attempt(session: Any) -> T:
+            with bound_session(session):
+                return await callback()
+
+        async with self._client.start_session() as session:
+            return await session.with_transaction(attempt)
+
     def shared(self, collection: str) -> GlobalRepository:
         name = _collection_name(collection)
         if name not in GLOBAL_COLLECTIONS:
@@ -68,9 +96,16 @@ class DataStore:
     async def ensure_index(
         self, collection: str, keys: Sequence[IndexKey], *, unique: bool = False, name: str | None = None
     ) -> str:
-        """Create an index. On a tenant collection the keys must start with `org_id`."""
+        """Create an index. On a tenant collection the keys must start with `org_id`.
+
+        Queue collections (`jobs`, `dead_letters`) are claimed across orgs, so a non-unique index
+        there may lead with another field (`status`); a unique one must still start with `org_id`.
+        """
         coll = _collection_name(collection)
-        spec = validate_index_keys(keys, tenant=coll not in GLOBAL_COLLECTIONS)
+        queue_lookup = coll in QUEUE_COLLECTIONS and not unique
+        spec = validate_index_keys(keys, tenant=coll not in GLOBAL_COLLECTIONS and not queue_lookup)
+        if coll in QUEUE_COLLECTIONS and unique and spec[0][0] != ORG_FIELD:
+            raise InvalidIndexError("a unique index on a queue collection must start with org_id")
         options: dict[str, Any] = {"unique": unique}
         if name is not None:
             options["name"] = name

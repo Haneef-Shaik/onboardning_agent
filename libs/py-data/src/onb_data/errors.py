@@ -9,6 +9,7 @@ __all__ = [
     "NotFound",
     "NotFoundError",
     "TenantViolationError",
+    "TransactionError",
     "UnknownCollectionError",
 ]
 
@@ -43,3 +44,7 @@ class InvalidIndexError(DataAccessError):
 
 class UnknownCollectionError(DataAccessError):
     """A global collection was asked for as a tenant one, or the other way round."""
+
+
+class TransactionError(DataAccessError):
+    """A transaction was nested, or the store has no client to start one."""

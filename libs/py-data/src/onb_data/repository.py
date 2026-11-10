@@ -15,6 +15,7 @@ from typing import TYPE_CHECKING, Any
 from . import scoping
 from .context import current_tenant
 from .errors import NotFoundError
+from .session import session_kwargs
 
 if TYPE_CHECKING:
     from pymongo.asynchronous.collection import AsyncCollection
@@ -79,13 +80,15 @@ class _Repository(ABC):
         skip: int = 0,
         limit: int = 0,
     ) -> list[Document]:
-        cursor = self._collection.find(self._filter(query), projection=projection, sort=sort, skip=skip, limit=limit)
+        cursor = self._collection.find(
+            self._filter(query), projection=projection, sort=sort, skip=skip, limit=limit, **session_kwargs()
+        )
         return await cursor.to_list()
 
     async def find_one(
         self, query: Mapping[str, Any] | None = None, *, projection: Mapping[str, Any] | None = None
     ) -> Document | None:
-        return await self._collection.find_one(self._filter(query), projection=projection)
+        return await self._collection.find_one(self._filter(query), projection=projection, **session_kwargs())
 
     async def get(self, doc_id: Any, *, projection: Mapping[str, Any] | None = None) -> Document:
         """The document with this id, looked up as `{_id, org_id}`; `NotFoundError` otherwise."""
@@ -95,7 +98,7 @@ class _Repository(ABC):
         return found
 
     async def insert_one(self, document: Mapping[str, Any]) -> Any:
-        result = await self._collection.insert_one(self._document(document))
+        result = await self._collection.insert_one(self._document(document), **session_kwargs())
         return result.inserted_id
 
     async def insert_many(self, documents: Sequence[Mapping[str, Any]]) -> list[Any]:
@@ -104,19 +107,23 @@ class _Repository(ABC):
         if not documents:
             raise ValueError("insert_many needs at least one document")
         prepared = [self._document(document) for document in documents]
-        result = await self._collection.insert_many(prepared)
+        result = await self._collection.insert_many(prepared, **session_kwargs())
         return list(result.inserted_ids)
 
     async def update_one(
         self, query: Mapping[str, Any] | None, update: Mapping[str, Any], *, upsert: bool = False
     ) -> UpdateOutcome:
         scoped_query = self._filter(query)
-        result = await self._collection.update_one(scoped_query, self._update(update, upsert=upsert), upsert=upsert)
+        result = await self._collection.update_one(
+            scoped_query, self._update(update, upsert=upsert), upsert=upsert, **session_kwargs()
+        )
         return UpdateOutcome(result.matched_count, result.modified_count, result.upserted_id)
 
     async def update_many(self, query: Mapping[str, Any] | None, update: Mapping[str, Any]) -> UpdateOutcome:
         scoped_query = self._filter(query)
-        result = await self._collection.update_many(scoped_query, self._update(update, upsert=False))
+        result = await self._collection.update_many(
+            scoped_query, self._update(update, upsert=False), **session_kwargs()
+        )
         return UpdateOutcome(result.matched_count, result.modified_count)
 
     async def update_by_id(self, doc_id: Any, update: Mapping[str, Any]) -> UpdateOutcome:
@@ -126,7 +133,7 @@ class _Repository(ABC):
         return outcome
 
     async def delete_one(self, query: Mapping[str, Any] | None) -> int:
-        result = await self._collection.delete_one(self._filter(query))
+        result = await self._collection.delete_one(self._filter(query), **session_kwargs())
         return result.deleted_count
 
     async def delete_by_id(self, doc_id: Any) -> None:
@@ -134,11 +141,11 @@ class _Repository(ABC):
             raise self._not_found()
 
     async def aggregate(self, pipeline: Sequence[Mapping[str, Any]]) -> list[Document]:
-        cursor = await self._collection.aggregate(self._pipeline(pipeline))
+        cursor = await self._collection.aggregate(self._pipeline(pipeline), **session_kwargs())
         return await cursor.to_list()
 
     async def count(self, query: Mapping[str, Any] | None = None) -> int:
-        return await self._collection.count_documents(self._filter(query))
+        return await self._collection.count_documents(self._filter(query), **session_kwargs())
 
 
 class TenantRepository(_Repository):
