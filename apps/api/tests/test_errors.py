@@ -1,12 +1,16 @@
 """Every error leaves the API as the envelope with a stable code, and no internals (PRD §10)."""
 
 import logging
+from collections.abc import AsyncIterator
+from typing import Any, Literal
 
 import pytest
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import StreamingResponse
 from fastapi.testclient import TestClient
 from onb_api import AppError
 from onb_contracts import ErrorCode, RequestModel
+from pydantic import Field, field_validator
 
 LEAK_MARKER = "hunter2-aadhaar-1234-5678-9012"
 
@@ -126,7 +130,7 @@ def test_validation_error_names_fields_but_never_echoes_input(failing: TestClien
     details = error["details"]
     assert isinstance(details, list)
     fields = {d["field"] for d in details}
-    assert fields == {"body.name", "body.size", "body.org_id"}
+    assert fields == {"body.name", "body.size", "body.<extra>"}
     assert all(set(d) == {"field", "issue"} for d in details)
     assert LEAK_MARKER not in response.text
     assert "org-b" not in response.text
@@ -138,3 +142,89 @@ def test_malformed_json_is_a_validation_error(failing: TestClient) -> None:
     assert response.status_code == 422
     _assert_error_envelope(response.json(), ErrorCode.VALIDATION_ERROR)
     assert "{not json" not in response.text
+
+
+class Checked(RequestModel):
+    aadhaar: str
+    tags: dict[str, int] = Field(default_factory=dict)
+    kind: Literal["a", "b"] = "a"
+
+    @field_validator("aadhaar")
+    @classmethod
+    def _shape(cls, value: str) -> str:
+        if not value.isdigit():
+            raise ValueError(f"bad aadhaar {value}")  # a careless validator echoing the value
+        return value
+
+
+@pytest.fixture
+def checked(app: FastAPI, client: TestClient) -> TestClient:
+    async def create(body: Checked) -> None:
+        return None
+
+    app.add_api_route("/test/checked", create, methods=["POST"])
+    return client
+
+
+def _details(response_json: dict[str, Any]) -> list[dict[str, Any]]:
+    details = response_json["error"]["details"]
+    assert isinstance(details, list)
+    return details
+
+
+def test_a_validator_message_carrying_the_value_is_not_echoed(checked: TestClient) -> None:
+    response = checked.post("/test/checked", json={"aadhaar": LEAK_MARKER})
+
+    assert response.status_code == 422
+    assert LEAK_MARKER not in response.text
+    _assert_error_envelope(response.json(), ErrorCode.VALIDATION_ERROR)
+    assert _details(response.json()) == [{"field": "body.aadhaar", "issue": "Invalid value"}]
+
+
+def test_user_chosen_keys_never_appear_in_field_locations(checked: TestClient) -> None:
+    pii_key = "jane.doe@example.com"
+    body = {"aadhaar": "123", "tags": {pii_key: "x", "999988887777": "y", "janedoe": "z"}, pii_key: 1}
+    response = checked.post("/test/checked", json=body)
+
+    assert response.status_code == 422
+    for leak in (pii_key, "999988887777", "janedoe"):
+        assert leak not in response.text
+    assert {d["field"] for d in _details(response.json())} == {"body.tags.*", "body.<extra>"}
+
+
+def test_issue_texts_are_fixed_per_error_type(checked: TestClient) -> None:
+    response = checked.post("/test/checked", json={"kind": "AADHAAR999988887777"})
+
+    assert "AADHAAR999988887777" not in response.text
+    issues = {d["field"]: d["issue"] for d in _details(response.json())}
+    assert issues == {"body.aadhaar": "Field required", "body.kind": "Not an allowed value"}
+
+
+def test_an_http_exception_with_a_non_error_status_passes_through(app: FastAPI, client: TestClient) -> None:
+    async def not_modified() -> None:
+        raise HTTPException(status_code=304, headers={"etag": '"v1"'})
+
+    app.add_api_route("/test/not-modified", not_modified)
+    response = client.get("/test/not-modified")
+
+    assert response.status_code == 304
+    assert response.headers["etag"] == '"v1"'
+    assert response.content == b""
+
+
+def test_a_failure_after_the_response_started_is_re_raised_without_its_message(app: FastAPI) -> None:
+    async def chunks() -> AsyncIterator[bytes]:
+        yield b"partial"
+        raise ValueError(f"mid-stream {LEAK_MARKER}")
+
+    async def stream() -> StreamingResponse:
+        return StreamingResponse(chunks())
+
+    app.add_api_route("/test/stream", stream)
+    with TestClient(app) as client, pytest.raises(RuntimeError) as raised:
+        client.get("/test/stream")
+
+    assert LEAK_MARKER not in str(raised.value)
+    assert "ValueError" in str(raised.value)
+    assert raised.value.__suppress_context__
+    assert raised.value.__cause__ is None

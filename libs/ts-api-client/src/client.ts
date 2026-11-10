@@ -52,10 +52,21 @@ interface FetchResult<T> {
   response: Response;
 }
 
-function isErrorEnvelope(body: unknown): body is ErrorEnvelope & { error: Schemas["ErrorBody"] } {
+/** The parts of an error body this client relies on; anything else may be missing (a proxy, an old API). */
+interface LooseErrorEnvelope {
+  success: false;
+  error: { code: ErrorCode; message: string; details?: unknown };
+  meta?: { trace_id?: unknown } | null;
+}
+
+function isErrorEnvelope(body: unknown): body is LooseErrorEnvelope {
   if (typeof body !== "object" || body === null) return false;
-  const candidate = body as Partial<ErrorEnvelope>;
-  return candidate.success === false && typeof candidate.error?.code === "string";
+  const candidate = body as { success?: unknown; error?: { code?: unknown; message?: unknown } | null };
+  return (
+    candidate.success === false &&
+    typeof candidate.error?.code === "string" &&
+    typeof candidate.error.message === "string"
+  );
 }
 
 function unexpected(status: number): ApiError {
@@ -63,13 +74,20 @@ function unexpected(status: number): ApiError {
   return new ApiError("INTERNAL_ERROR", `Unexpected response (${status})`, status, null, []);
 }
 
-/** The `data` of a success envelope; throws `ApiError` for an error envelope or anything else. */
+function fromEnvelope(body: LooseErrorEnvelope, status: number): ApiError {
+  const traceId = body.meta?.trace_id;
+  const details = Array.isArray(body.error.details) ? (body.error.details as ErrorDetail[]) : [];
+  return new ApiError(body.error.code, body.error.message, status, typeof traceId === "string" ? traceId : null, details);
+}
+
+/**
+ * The `data` of a success envelope; throws `ApiError` for an error envelope or anything else.
+ * For routes that answer with data. A success with `data: null` is treated as unexpected.
+ */
 export function unwrap<T>(result: FetchResult<T>): T {
   const { data, error, response } = result;
   if (error !== undefined) {
-    if (!isErrorEnvelope(error)) throw unexpected(response.status);
-    const { code, message, details } = error.error;
-    throw new ApiError(code, message, response.status, error.meta.trace_id, details);
+    throw isErrorEnvelope(error) ? fromEnvelope(error, response.status) : unexpected(response.status);
   }
   if (data?.success !== true || data.data === null || data.data === undefined) {
     throw unexpected(response.status);

@@ -4,11 +4,12 @@
 declare it. These tests prove the walker finds every way one could sneak in.
 """
 
-from typing import Any
+from dataclasses import dataclass
+from typing import Any, TypedDict
 
 import pytest
 from onb_contracts import RequestModel, is_tenant_key, request_model_classes, tenant_inputs_in_model
-from onb_contracts.inputs import tenant_inputs_in_openapi
+from onb_contracts.inputs import tenant_inputs_in_openapi, tenant_inputs_in_type
 from pydantic import BaseModel, Field, ValidationError
 
 
@@ -25,15 +26,48 @@ from pydantic import BaseModel, Field, ValidationError
         "parent_org_id",
         "orgid",
         "OrgID",
+        "org",
+        "orgs",
+        "tenant",
+        "X-Tenant",
+        "organization",
+        "organisations",
+        "org_ids",
+        "org_uuid",
+        "orgUuid",
+        "tenantKey",
+        "tenant_slug",
     ],
 )
 def test_tenant_keys_are_recognised_in_any_spelling(name: str) -> None:
     assert is_tenant_key(name)
 
 
-@pytest.mark.parametrize("name", ["org", "organisation_name", "origin_id", "id", "run_id", "org_name", "orgs", ""])
+@pytest.mark.parametrize(
+    "name", ["organisation_name", "origin_id", "id", "run_id", "org_name", "org_chart", "torg", "contention", ""]
+)
 def test_other_keys_are_not_tenant_keys(name: str) -> None:
     assert not is_tenant_key(name)
+
+
+def test_an_alias_hiding_the_python_name_org_id_is_found() -> None:
+    class Hidden(BaseModel):
+        org_id: str = Field(alias="o")
+
+    assert tenant_inputs_in_model(Hidden) == ["Hidden.org_id"]
+
+
+def test_a_non_pydantic_type_declaring_org_id_is_found() -> None:
+    @dataclass
+    class Plain:
+        org_id: str
+
+    class Typed(TypedDict):
+        tenant: str
+
+    assert tenant_inputs_in_type(Plain, "Plain") == ["Plain.org_id"]
+    assert tenant_inputs_in_type(list[Typed], "Typed") == ["Typed.[].tenant"]
+    assert tenant_inputs_in_type(str, "s") == []
 
 
 def test_request_models_forbid_unknown_fields_so_a_sent_org_id_is_rejected() -> None:

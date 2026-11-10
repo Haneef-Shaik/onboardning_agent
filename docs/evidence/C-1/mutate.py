@@ -56,7 +56,9 @@ MUTATIONS = (
         "M3",
         "box 1: the tenant-key matcher never matches",
         f"{CONTRACTS}/inputs.py",
-        "    return bool((pairs | set(words)) & _TENANT_KEYS)",
+        "    if len(words) == 1 and (words[0] in _TENANT_WORDS or words[0] in _TENANT_IDS):\n"
+        "        return True\n"
+        '    return any(f"{a}{b}" in _TENANT_IDS for a, b in itertools.pairwise(words))',
         "    return False",
         ("libs/py-contracts/tests/test_request_inputs.py", "apps/api/tests/test_routes.py"),
         (
@@ -95,12 +97,12 @@ MUTATIONS = (
     ),
     Mutation(
         "M7",
-        "validation details echo the submitted value",
-        f"{API}/errors.py",
-        'issue=str(err.get("msg", ""))',
-        'issue=str(err.get("msg", "")) + repr(err.get("input"))',
+        "validation details pass Pydantic's `msg` through (it can carry the value)",
+        f"{API}/validation.py",
+        '            issue=issue_for(str(err.get("type", ""))),',
+        '            issue=str(err.get("msg", "")),',
         ("apps/api/tests/test_errors.py",),
-        ("test_validation_error_names_fields_but_never_echoes_input",),
+        ("test_a_validator_message_carrying_the_value_is_not_echoed", "test_issue_texts_are_fixed_per_error_type"),
     ),
     Mutation(
         "M8",
@@ -146,6 +148,35 @@ MUTATIONS = (
         "",
         ("apps/api/tests/test_telemetry.py",),
         ("test_an_unhandled_error_marks_the_server_span_as_failed_without_the_message",),
+    ),
+    Mutation(
+        "M13",
+        "validation locations keep a client-chosen dict key",
+        f"{API}/validation.py",
+        "        elif node is not None and isinstance(node.get(\"additionalProperties\"), Mapping):\n"
+        "            parts.append(WILDCARD)\n",
+        "        elif node is not None and isinstance(node.get(\"additionalProperties\"), Mapping):\n"
+        "            parts.append(str(segment))\n",
+        ("apps/api/tests/test_errors.py", "apps/api/tests/test_validation_details.py"),
+        ("test_user_chosen_keys_never_appear_in_field_locations",),
+    ),
+    Mutation(
+        "M14",
+        "a failure after the response started is re-raised as is (message reaches OTel and logs)",
+        f"{API}/errors.py",
+        '                raise RuntimeError(f"unhandled {type(exc).__name__} after the response started") from None',
+        "                raise",
+        ("apps/api/tests/test_errors.py",),
+        ("test_a_failure_after_the_response_started_is_re_raised_without_its_message",),
+    ),
+    Mutation(
+        "M15",
+        "box 1: the model walk checks wire names only (an alias hides `org_id`)",
+        f"{CONTRACTS}/inputs.py",
+        "    for by_alias in (True, False):",
+        "    for by_alias in (True,):",
+        ("libs/py-contracts/tests/test_request_inputs.py",),
+        ("test_an_alias_hiding_the_python_name_org_id_is_found",),
     ),
 )
 

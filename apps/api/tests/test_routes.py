@@ -1,7 +1,7 @@
 """Route-wide rules: every route answers in the envelope, and no request declares `org_id` (PRD §7.9, §10)."""
 
-import typing
 from collections.abc import Iterator
+from dataclasses import dataclass
 from typing import Annotated, Any
 
 from fastapi import Depends, FastAPI, Header
@@ -9,9 +9,20 @@ from fastapi.dependencies.models import Dependant
 from fastapi.routing import APIRoute, iter_route_contexts
 from fastapi.testclient import TestClient
 from onb_api import create_app
-from onb_contracts import Envelope, is_tenant_key, request_model_classes, tenant_inputs_in_model
+from onb_contracts import (
+    Envelope,
+    is_tenant_key,
+    request_model_classes,
+    tenant_inputs_in_model,
+    tenant_inputs_in_type,
+)
 from onb_contracts.inputs import tenant_inputs_in_openapi
 from pydantic import BaseModel
+
+
+@dataclass
+class Plain:
+    tenant: str
 
 
 def _api_routes(app: FastAPI) -> list[APIRoute]:
@@ -24,10 +35,10 @@ def _api_routes(app: FastAPI) -> list[APIRoute]:
     return [ctx.original_route for ctx in contexts if isinstance(ctx.original_route, APIRoute)]
 
 
-def _models_in(annotation: Any) -> list[type[BaseModel]]:
-    if isinstance(annotation, type) and issubclass(annotation, BaseModel):
-        return [annotation]
-    return [m for arg in typing.get_args(annotation) for m in _models_in(arg)]
+def _type_hits(path: str, annotation: Any, fallback: str) -> list[str]:
+    """Tenant keys inside a parameter's or body's type, whatever the type (model, dataclass, TypedDict)."""
+    label = getattr(annotation, "__name__", fallback)
+    return [f"{path} {hit}" for hit in tenant_inputs_in_type(annotation, label)]
 
 
 def _dependants(root: Dependant) -> Iterator[Dependant]:
@@ -48,13 +59,17 @@ def _tenant_inputs_in_routes(app: FastAPI) -> tuple[int, list[str]]:
             params = [*dependant.path_params, *dependant.query_params, *dependant.header_params]
             for param in [*params, *dependant.cookie_params]:
                 found.extend(f"{route.path} param:{name}" for name in {param.name, param.alias} if is_tenant_key(name))
-                for model in _models_in(param.field_info.annotation):
-                    found.extend(f"{route.path} {hit}" for hit in tenant_inputs_in_model(model))
+                found.extend(_type_hits(route.path, param.field_info.annotation, param.name))
             for body in dependant.body_params:
                 found.extend(f"{route.path} body:{name}" for name in {body.name, body.alias} if is_tenant_key(name))
-                for model in _models_in(body.field_info.annotation):
-                    found.extend(f"{route.path} {hit}" for hit in tenant_inputs_in_model(model))
+                found.extend(_type_hits(route.path, body.field_info.annotation, body.name))
     return len(routes), found
+
+
+def test_every_request_model_rejects_unknown_fields() -> None:
+    create_app()
+    loose = [cls.__name__ for cls in request_model_classes() if cls.model_config.get("extra") != "forbid"]
+    assert loose == [], f"request models that would accept a sent org_id: {loose}"
 
 
 def test_no_request_model_or_parameter_declares_org_id() -> None:
@@ -94,16 +109,21 @@ def test_the_route_walk_finds_org_id_however_it_is_declared() -> None:
     async def by_dependency(org: Annotated[str, Depends(org_from_header)]) -> None:
         return None
 
+    async def by_hidden_dataclass(body: Plain) -> None:
+        return None
+
     app.add_api_route("/q", by_query, include_in_schema=False)
     app.add_api_route("/b", by_body, methods=["POST"])
     app.add_api_route("/p/{org_id}", by_path)
     app.add_api_route("/d", by_dependency)
+    app.add_api_route("/h", by_hidden_dataclass, methods=["POST"], include_in_schema=False)
 
     _, hits = _tenant_inputs_in_routes(app)
     assert "/q param:org_id" in hits
     assert "/b Body.inner.org_id" in hits
     assert "/p/{org_id} param:org_id" in hits
     assert "/d param:x-org-id" in hits
+    assert "/h Plain.tenant" in hits
 
 
 def test_every_route_declares_an_envelope_response_model() -> None:

@@ -1,17 +1,17 @@
 ## M1: box 1 seen to fail: GET /health declares an `org_id` query parameter
    apps/api/src/onb_api/health.py: 'async def health() -> Envelope[Health]:' -> 'async def health(org_id: str | None = None) -> Envelope[Health]:'
    FAILED apps/api/tests/test_routes.py::test_no_request_model_or_parameter_declares_org_id
-   1 failed in 0.32s
+   1 failed in 1.06s
    caught=True restored=True
 
 ## M2: box 1: a RequestModel subclass declares `org_id`
    libs/py-contracts/src/onb_contracts/health.py: 'class HealthEnvelope(Envelope[Health]):\n    """The API is up."""' -> 'class HealthEnvelope(Envelope[Health]):\n    """The API is up."""\n\n\nfrom onb_contracts.inputs import RequestModel  # noqa: E402\n\n\nclass Probe(RequestModel):\n    org_id: str'
    FAILED apps/api/tests/test_routes.py::test_no_request_model_or_parameter_declares_org_id
-   1 failed in 0.22s
+   1 failed in 0.40s
    caught=True restored=True
 
 ## M3: box 1: the tenant-key matcher never matches
-   libs/py-contracts/src/onb_contracts/inputs.py: 'return bool((pairs | set(words)) & _TENANT_KEYS)' -> 'return False'
+   libs/py-contracts/src/onb_contracts/inputs.py: 'if len(words) == 1 and (words[0] in _TENANT_WORDS or words[0] in _TENANT_IDS):\n        return True\n    return any(f"{a}{b}" in _TENANT_IDS for a, b in itertools.pairwise(words))' -> 'return False'
    FAILED libs/py-contracts/tests/test_request_inputs.py::test_tenant_keys_are_recognised_in_any_spelling[org_id]
    FAILED libs/py-contracts/tests/test_request_inputs.py::test_tenant_keys_are_recognised_in_any_spelling[orgId]
    FAILED libs/py-contracts/tests/test_request_inputs.py::test_tenant_keys_are_recognised_in_any_spelling[ORG-ID]
@@ -22,6 +22,19 @@
    FAILED libs/py-contracts/tests/test_request_inputs.py::test_tenant_keys_are_recognised_in_any_spelling[parent_org_id]
    FAILED libs/py-contracts/tests/test_request_inputs.py::test_tenant_keys_are_recognised_in_any_spelling[orgid]
    FAILED libs/py-contracts/tests/test_request_inputs.py::test_tenant_keys_are_recognised_in_any_spelling[OrgID]
+   FAILED libs/py-contracts/tests/test_request_inputs.py::test_tenant_keys_are_recognised_in_any_spelling[org]
+   FAILED libs/py-contracts/tests/test_request_inputs.py::test_tenant_keys_are_recognised_in_any_spelling[orgs]
+   FAILED libs/py-contracts/tests/test_request_inputs.py::test_tenant_keys_are_recognised_in_any_spelling[tenant]
+   FAILED libs/py-contracts/tests/test_request_inputs.py::test_tenant_keys_are_recognised_in_any_spelling[X-Tenant]
+   FAILED libs/py-contracts/tests/test_request_inputs.py::test_tenant_keys_are_recognised_in_any_spelling[organization]
+   FAILED libs/py-contracts/tests/test_request_inputs.py::test_tenant_keys_are_recognised_in_any_spelling[organisations]
+   FAILED libs/py-contracts/tests/test_request_inputs.py::test_tenant_keys_are_recognised_in_any_spelling[org_ids]
+   FAILED libs/py-contracts/tests/test_request_inputs.py::test_tenant_keys_are_recognised_in_any_spelling[org_uuid]
+   FAILED libs/py-contracts/tests/test_request_inputs.py::test_tenant_keys_are_recognised_in_any_spelling[orgUuid]
+   FAILED libs/py-contracts/tests/test_request_inputs.py::test_tenant_keys_are_recognised_in_any_spelling[tenantKey]
+   FAILED libs/py-contracts/tests/test_request_inputs.py::test_tenant_keys_are_recognised_in_any_spelling[tenant_slug]
+   FAILED libs/py-contracts/tests/test_request_inputs.py::test_an_alias_hiding_the_python_name_org_id_is_found
+   FAILED libs/py-contracts/tests/test_request_inputs.py::test_a_non_pydantic_type_declaring_org_id_is_found
    FAILED libs/py-contracts/tests/test_request_inputs.py::test_a_model_declaring_org_id_is_found
    FAILED libs/py-contracts/tests/test_request_inputs.py::test_an_alias_spelling_org_id_is_found
    FAILED libs/py-contracts/tests/test_request_inputs.py::test_a_nested_org_id_is_found
@@ -33,7 +46,7 @@
    FAILED libs/py-contracts/tests/test_request_inputs.py::test_org_id_in_additional_properties_and_all_of_is_found
    FAILED libs/py-contracts/tests/test_request_inputs.py::test_path_level_parameters_are_checked
    FAILED apps/api/tests/test_routes.py::test_the_route_walk_finds_org_id_however_it_is_declared
-   21 failed, 19 passed in 0.55s
+   34 failed, 21 passed in 0.64s
    caught=True restored=True
 
 ## M4: box 4: the unhandled-error middleware is not installed
@@ -41,41 +54,43 @@
    FAILED apps/api/tests/test_errors.py::test_unhandled_exception_returns_the_envelope_with_a_stable_code_and_no_stack_trace[/test/boom]
    FAILED apps/api/tests/test_errors.py::test_unhandled_exception_returns_the_envelope_with_a_stable_code_and_no_stack_trace[/test/boom-sync]
    FAILED apps/api/tests/test_errors.py::test_unhandled_exception_log_names_the_type_but_not_the_message
-   3 failed, 6 passed in 1.01s
+   FAILED apps/api/tests/test_errors.py::test_a_failure_after_the_response_started_is_re_raised_without_its_message
+   4 failed, 10 passed in 2.23s
    caught=True restored=True
 
 ## M5: box 4: the 500 answer carries the exception text
    apps/api/src/onb_api/errors.py: 'await error_response(ErrorCode.INTERNAL_ERROR)(scope, receive, send)' -> 'await error_response(ErrorCode.INTERNAL_ERROR, repr(exc))(scope, receive, send)'
-   ERROR    onb_api.errors:errors.py:137 unhandled RuntimeError in GET /test/boom at test_errors.py:21
-   ERROR    onb_api.errors:errors.py:137 unhandled KeyError in GET /test/boom-sync at test_errors.py:24
+   ERROR    onb_api.errors:errors.py:145 unhandled RuntimeError in GET /test/boom at test_errors.py:25
+   ERROR    onb_api.errors:errors.py:145 unhandled KeyError in GET /test/boom-sync at test_errors.py:28
    FAILED apps/api/tests/test_errors.py::test_unhandled_exception_returns_the_envelope_with_a_stable_code_and_no_stack_trace[/test/boom]
    FAILED apps/api/tests/test_errors.py::test_unhandled_exception_returns_the_envelope_with_a_stable_code_and_no_stack_trace[/test/boom-sync]
-   2 failed in 0.41s
+   2 failed in 1.06s
    caught=True restored=True
 
 ## M6: box 4: the server log carries the traceback (and so the message)
    apps/api/src/onb_api/errors.py: 'kind, scope.get("method", "?"), path, location)' -> 'kind, scope.get("method", "?"), path, location, exc_info=exc)'
-   ERROR    onb_api.errors:errors.py:137 unhandled RuntimeError in GET /test/boom at test_errors.py:21
+   ERROR    onb_api.errors:errors.py:145 unhandled RuntimeError in GET /test/boom at test_errors.py:25
    FAILED apps/api/tests/test_errors.py::test_unhandled_exception_log_names_the_type_but_not_the_message
-   1 failed, 8 passed in 0.55s
+   1 failed, 13 passed in 2.76s
    caught=True restored=True
 
-## M7: validation details echo the submitted value
-   apps/api/src/onb_api/errors.py: 'issue=str(err.get("msg", ""))' -> 'issue=str(err.get("msg", "")) + repr(err.get("input"))'
-   FAILED apps/api/tests/test_errors.py::test_validation_error_names_fields_but_never_echoes_input
-   1 failed, 8 passed in 0.46s
+## M7: validation details pass Pydantic's `msg` through (it can carry the value)
+   apps/api/src/onb_api/validation.py: 'issue=issue_for(str(err.get("type", ""))),' -> 'issue=str(err.get("msg", "")),'
+   FAILED apps/api/tests/test_errors.py::test_a_validator_message_carrying_the_value_is_not_echoed
+   FAILED apps/api/tests/test_errors.py::test_issue_texts_are_fixed_per_error_type
+   2 failed, 12 passed in 1.59s
    caught=True restored=True
 
 ## M8: an HTTPException's detail reaches the client
    apps/api/src/onb_api/errors.py: 'return error_response(code_for_status(exc.status_code), status=exc.status_code, headers=headers)' -> 'return error_response(code_for_status(exc.status_code), str(exc.detail), status=exc.status_code, headers=headers)'
    FAILED apps/api/tests/test_errors.py::test_http_exception_uses_the_code_for_its_status_and_not_its_detail
-   1 failed, 8 passed in 0.44s
+   1 failed, 13 passed in 0.46s
    caught=True restored=True
 
 ## M9: the envelope accepts a failure without an error
    libs/py-contracts/src/onb_contracts/envelope.py: 'raise ValueError("a failure envelope must carry an error")' -> 'pass'
    FAILED libs/py-contracts/tests/test_envelope.py::test_failure_without_an_error_is_rejected
-   1 failed, 34 passed in 0.35s
+   1 failed, 34 passed in 0.31s
    caught=True restored=True
 
 ## M10: box 2: the drift check compares nothing
@@ -84,22 +99,42 @@
    FAILED tools/tests/test_contracts.py::test_a_stale_ts_client_is_drift - Asser...
    FAILED tools/tests/test_contracts.py::test_a_missing_committed_file_is_drift
    FAILED tools/tests/test_contracts.py::test_check_fails_with_a_diff_and_the_fix
-   4 failed, 8 passed in 8.65s
+   4 failed, 9 passed in 6.68s
    caught=True restored=True
 
 ## M11: telemetry: create_app never instruments the app
    apps/api/src/onb_api/app.py: 'if telemetry_is_active():' -> 'if False:'
-   ERROR    onb_api.errors:errors.py:137 unhandled RuntimeError in GET /test/boom at test_telemetry.py:54
+   ERROR    onb_api.errors:errors.py:145 unhandled RuntimeError in GET /test/boom at test_telemetry.py:54
    FAILED apps/api/tests/test_telemetry.py::test_requests_get_server_spans_and_meta_carries_the_trace_id
    FAILED apps/api/tests/test_telemetry.py::test_an_unhandled_error_marks_the_server_span_as_failed_without_the_message
-   2 failed, 2 passed in 0.56s
+   2 failed, 2 passed in 0.29s
    caught=True restored=True
 
 ## M12: telemetry: an unhandled error is not recorded on the span
    apps/api/src/onb_api/errors.py: 'span.set_attribute("error.type", kind)' -> ''
-   ERROR    onb_api.errors:errors.py:137 unhandled RuntimeError in GET /test/boom at test_telemetry.py:54
+   ERROR    onb_api.errors:errors.py:145 unhandled RuntimeError in GET /test/boom at test_telemetry.py:54
    FAILED apps/api/tests/test_telemetry.py::test_an_unhandled_error_marks_the_server_span_as_failed_without_the_message
-   1 failed, 3 passed in 0.60s
+   1 failed, 3 passed in 0.53s
    caught=True restored=True
 
-SUMMARY: 12 of 12 mutations caught; survivors: []
+## M13: validation locations keep a client-chosen dict key
+   apps/api/src/onb_api/validation.py: 'elif node is not None and isinstance(node.get("additionalProperties"), Mapping):\n            parts.append(WILDCARD)' -> 'elif node is not None and isinstance(node.get("additionalProperties"), Mapping):\n            parts.append(str(segment))'
+   FAILED apps/api/tests/test_errors.py::test_user_chosen_keys_never_appear_in_field_locations
+   FAILED apps/api/tests/test_validation_details.py::test_locations_keep_only_declared_segments[loc2-missing-body.extras.*.sku]
+   2 failed, 31 passed in 6.60s
+   caught=True restored=True
+
+## M14: a failure after the response started is re-raised as is (message reaches OTel and logs)
+   apps/api/src/onb_api/errors.py: 'raise RuntimeError(f"unhandled {type(exc).__name__} after the response started") from None' -> 'raise'
+   ERROR    onb_api.errors:errors.py:145 unhandled ValueError in GET /test/stream at test_errors.py:218
+   FAILED apps/api/tests/test_errors.py::test_a_failure_after_the_response_started_is_re_raised_without_its_message
+   1 failed, 13 passed in 2.44s
+   caught=True restored=True
+
+## M15: box 1: the model walk checks wire names only (an alias hides `org_id`)
+   libs/py-contracts/src/onb_contracts/inputs.py: 'for by_alias in (True, False):' -> 'for by_alias in (True,):'
+   FAILED libs/py-contracts/tests/test_request_inputs.py::test_an_alias_hiding_the_python_name_org_id_is_found
+   1 failed, 48 passed in 1.26s
+   caught=True restored=True
+
+SUMMARY: 15 of 15 mutations caught; survivors: []

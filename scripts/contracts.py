@@ -6,6 +6,10 @@
 The two committed files are `libs/ts-api-client/openapi.json` (from `onb_api.openapi`) and
 `libs/ts-api-client/src/generated/schema.ts` (from openapi-typescript). `check` renders both into a
 temporary directory and compares them byte for byte with the committed copies.
+
+openapi-typescript 7.13 declares a TypeScript `^5.x` peer; `package.json` `overrides` points it at
+the repo's TypeScript 6. Its output does not depend on the TS version today, and this byte-for-byte
+check would flag it if an upgrade changed that. Drop the override once a release accepts TS 6.
 """
 
 from __future__ import annotations
@@ -34,12 +38,15 @@ def _render(workdir: Path) -> tuple[str, str]:
     openapi = workdir / "openapi.json"
     schema = workdir / "schema.ts"
     openapi.write_text(export_openapi(), encoding="utf-8")
-    subprocess.run(  # noqa: S603  # fixed argv: the pinned generator from node_modules
+    done = subprocess.run(  # noqa: S603  # fixed argv: the pinned generator from node_modules
         [str(GENERATOR), str(openapi), "--output", str(schema)],
-        check=True,
+        check=False,
         capture_output=True,
+        text=True,
         cwd=ROOT,
     )
+    if done.returncode != 0:
+        raise RuntimeError(f"{GENERATOR.name} failed (exit {done.returncode}):\n{done.stderr.strip()}")
     return openapi.read_text(encoding="utf-8"), schema.read_text(encoding="utf-8")
 
 

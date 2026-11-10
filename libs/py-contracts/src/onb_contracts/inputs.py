@@ -8,13 +8,18 @@ model and the API's whole OpenAPI document.
 
 from __future__ import annotations
 
+import itertools
 import re
 from collections.abc import Iterator, Mapping
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, TypeAdapter
 
-_TENANT_KEYS = frozenset({"orgid", "organizationid", "organisationid", "tenantid"})
+_TENANT_WORDS = frozenset(
+    {"org", "orgs", "organization", "organizations", "organisation", "organisations", "tenant", "tenants"}
+)
+_ID_WORDS = frozenset({"id", "ids", "uuid", "key", "slug"})
+_TENANT_IDS = frozenset(f"{t}{i}" for t in _TENANT_WORDS for i in _ID_WORDS)
 _HTTP_METHODS = ("get", "put", "post", "delete", "options", "head", "patch", "trace")
 _SUBSCHEMA_LISTS = ("allOf", "anyOf", "oneOf", "prefixItems")
 _REF_PREFIX = "#/components/schemas/"
@@ -27,15 +32,20 @@ class RequestModel(BaseModel):
 
 
 def is_tenant_key(name: str) -> bool:
-    """True for `org_id` in any spelling, alone or inside a longer name.
+    """True for a name that carries the tenant, in any spelling.
 
-    `orgId`, `ORG-ID`, `organization_id`, `tenant_id`, `X-Org-Id` and `parent_org_id` all count;
-    `origin_id` and `organisation_name` do not. Words are split on case changes and separators.
+    A tenant word (`org`, `tenant`, `organization`, plurals) alone, or followed by an id word (`id`,
+    `ids`, `uuid`, `key`, `slug`) anywhere in the name: `org`, `X-Tenant`, `orgId`, `ORG-ID`,
+    `parent_org_id`, `tenant_slug` all count; `org_name`, `origin_id`, `organisation_name` do not.
+    Words are split on case changes and separators; a header's leading `x` is ignored.
     """
     spaced = re.sub(r"([a-z0-9])([A-Z])", r"\1 \2", name)
     words = [w for w in re.split(r"[^A-Za-z0-9]+", spaced.lower()) if w]
-    pairs = {"".join(words[i : i + 2]) for i in range(len(words) - 1)}
-    return bool((pairs | set(words)) & _TENANT_KEYS)
+    if len(words) > 1 and words[0] == "x":
+        words = words[1:]
+    if len(words) == 1 and (words[0] in _TENANT_WORDS or words[0] in _TENANT_IDS):
+        return True
+    return any(f"{a}{b}" in _TENANT_IDS for a, b in itertools.pairwise(words))
 
 
 def request_model_classes() -> list[type[RequestModel]]:
@@ -52,9 +62,24 @@ def request_model_classes() -> list[type[RequestModel]]:
 
 def tenant_inputs_in_model(model: type[BaseModel]) -> list[str]:
     """Paths of every tenant key `model` declares, at any depth, as `Model.path.to.key`."""
-    schema = model.model_json_schema(by_alias=True, ref_template=_REF_PREFIX + "{model}")
-    components = {"schemas": schema.get("$defs", {})}
-    return [f"{model.__name__}.{path}" for path in _walk_schema(schema, components, "", frozenset())]
+    return tenant_inputs_in_type(model, model.__name__)
+
+
+def tenant_inputs_in_type(tp: Any, label: str) -> list[str]:
+    """Like `tenant_inputs_in_model` for any type Pydantic can validate (dataclass, TypedDict, list[...]).
+
+    Both the wire names (aliases) and the Python names are checked, so `org_id: str = Field(alias="o")`
+    is still found.
+    """
+    found: list[str] = []
+    for by_alias in (True, False):
+        schema = TypeAdapter(tp).json_schema(by_alias=by_alias, ref_template=_REF_PREFIX + "{model}")
+        components = {"schemas": schema.get("$defs", {})}
+        for path in _walk_schema(schema, components, "", frozenset()):
+            hit = f"{label}.{path}"
+            if hit not in found:
+                found.append(hit)
+    return found
 
 
 def tenant_inputs_in_openapi(spec: Mapping[str, Any]) -> list[str]:

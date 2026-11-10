@@ -91,6 +91,17 @@ def test_a_missing_generator_fails_closed(
         contracts.drifted(*committed_copy)
 
 
+def test_a_failing_generator_fails_closed_with_its_stderr(
+    contracts: ModuleType, committed_copy: tuple[Path, Path], monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    broken = tmp_path / "broken-generator"
+    broken.write_text("#!/bin/sh\necho 'cannot parse spec' >&2\nexit 3\n", encoding="utf-8")
+    broken.chmod(0o755)
+    monkeypatch.setattr(contracts, "GENERATOR", broken)
+    with pytest.raises(RuntimeError, match=r"exit 3\):\ncannot parse spec"):
+        contracts.drifted(*committed_copy)
+
+
 @pytest.mark.parametrize("argv", [[], ["publish"], ["check", "extra"]])
 def test_main_rejects_unknown_usage(contracts: ModuleType, argv: list[str], capsys: pytest.CaptureFixture[str]) -> None:
     assert contracts.main(argv) == 2

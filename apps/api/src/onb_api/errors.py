@@ -3,7 +3,8 @@
 - `AppError(code, message)` is how route code fails on purpose; the message is shown to the client.
 - `HTTPException` (from FastAPI/Starlette: 404, 405, ...) gets the code for its status and that
   code's fixed message. Its `detail` is never shown.
-- Validation errors list the failing fields and issues, never the submitted values.
+- Validation errors list the failing fields and issues, never the submitted values (`validation`).
+- An `HTTPException` with a status under 400 (304, a redirect) passes through without the envelope.
 - Anything else is `INTERNAL_ERROR` with a fixed message. The server log and the span get the
   exception type and route only: messages and tracebacks can carry personal data (PRD §5.5).
 """
@@ -16,7 +17,7 @@ from typing import Any
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 from onb_contracts import ERROR_STATUS, ErrorCode, ErrorDetail, code_for_status, fail
 from opentelemetry import trace
 from opentelemetry.trace import Status, StatusCode
@@ -24,8 +25,11 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from onb_api.responses import current_meta
+from onb_api.validation import safe_details
 
 _log = logging.getLogger("onb_api.errors")
+
+MIN_ERROR_STATUS = 400
 
 MESSAGES: Mapping[ErrorCode, str] = {
     ErrorCode.BAD_REQUEST: "Bad request",
@@ -77,32 +81,36 @@ async def _app_error(_: Request, exc: Exception) -> JSONResponse:
     return error_response(exc.code, exc.message, details=exc.details)
 
 
-async def _http_error(_: Request, exc: Exception) -> JSONResponse:
+async def _http_error(_: Request, exc: Exception) -> Response:
     if not isinstance(exc, StarletteHTTPException):  # registered for StarletteHTTPException only
         raise exc
+    if exc.status_code < MIN_ERROR_STATUS:
+        # A deliberate non-error answer (304, a redirect): no envelope, headers as given, no body.
+        return Response(status_code=exc.status_code, headers=exc.headers)
     headers = {k: v for k, v in (exc.headers or {}).items() if k.lower() in _KEPT_HEADERS}
     return error_response(code_for_status(exc.status_code), status=exc.status_code, headers=headers)
 
 
-async def _validation_error(_: Request, exc: Exception) -> JSONResponse:
+async def _validation_error(request: Request, exc: Exception) -> JSONResponse:
     if not isinstance(exc, RequestValidationError):  # registered for RequestValidationError only
         raise exc
-    return error_response(ErrorCode.VALIDATION_ERROR, details=_details(exc.errors()))
+    details = safe_details(exc.errors(), _body_type(request))
+    return error_response(ErrorCode.VALIDATION_ERROR, details=details)
 
 
-def _details(errors: Sequence[Any]) -> tuple[ErrorDetail, ...]:
-    # Pydantic puts the submitted value in `input` and sometimes in `ctx`; only `loc` and `msg` leave.
-    return tuple(
-        ErrorDetail(field=".".join(str(part) for part in err.get("loc", ())) or None, issue=str(err.get("msg", "")))
-        for err in errors
-    )
+def _body_type(request: Request) -> Any | None:
+    """The type the matched route validates its body against, to tell declared fields from client keys."""
+    body_field = getattr(request.scope.get("route"), "body_field", None)
+    return getattr(getattr(body_field, "field_info", None), "annotation", None)
 
 
 class UnhandledErrorMiddleware:
     """Turns any exception that escapes the routes into the `INTERNAL_ERROR` envelope.
 
     It sits inside the OTel middleware, so the server span is current here and gets marked failed.
-    An exception after the response started cannot be answered, so it is re-raised.
+    An exception after the response started cannot be answered. It is re-raised as a bare
+    `RuntimeError` naming only the type, so the OTel middleware, Starlette and uvicorn (which record
+    or log what reaches them) never see the original message or its frames.
     """
 
     def __init__(self, app: ASGIApp) -> None:
@@ -125,7 +133,7 @@ class UnhandledErrorMiddleware:
         except Exception as exc:
             _record_unhandled(exc, scope)
             if started:
-                raise
+                raise RuntimeError(f"unhandled {type(exc).__name__} after the response started") from None
             await error_response(ErrorCode.INTERNAL_ERROR)(scope, receive, send)
 
 

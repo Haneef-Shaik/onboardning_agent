@@ -75,6 +75,23 @@ describe("unwrap", () => {
     }
   });
 
+  it("still throws ApiError (not TypeError) for an error envelope missing meta and details", async () => {
+    const partial = { success: false, error: { code: "FORBIDDEN", message: "Not allowed" } };
+    const client = createApiClient({ baseUrl: "http://web.test/api", fetch: fakeFetch(403, partial) });
+
+    const result = await client.GET("/health");
+
+    expect(() => unwrap(result)).toThrow(ApiError);
+    try {
+      unwrap(result);
+    } catch (err) {
+      const apiError = err as ApiError;
+      expect(apiError.code).toBe("FORBIDDEN");
+      expect(apiError.traceId).toBeNull();
+      expect(apiError.details).toEqual([]);
+    }
+  });
+
   it("rejects a 2xx answer that is not a success envelope", async () => {
     const client = createApiClient({ baseUrl: "http://web.test/api", fetch: fakeFetch(200, { hello: "world" }) });
 

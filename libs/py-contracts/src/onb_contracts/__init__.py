@@ -12,7 +12,13 @@ from onb_contracts.envelope import (
     ok,
 )
 from onb_contracts.errors import ERROR_STATUS, ErrorCode, code_for_status
-from onb_contracts.inputs import RequestModel, is_tenant_key, request_model_classes, tenant_inputs_in_model
+from onb_contracts.inputs import (
+    RequestModel,
+    is_tenant_key,
+    request_model_classes,
+    tenant_inputs_in_model,
+    tenant_inputs_in_type,
+)
 
 __all__ = [
     "ERROR_STATUS",
@@ -32,6 +38,7 @@ __all__ = [
     "ok",
     "request_model_classes",
     "tenant_inputs_in_model",
+    "tenant_inputs_in_type",
 ]
 
 PROJECT = "py-contracts"
