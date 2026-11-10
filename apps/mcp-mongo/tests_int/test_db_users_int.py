@@ -214,6 +214,19 @@ def test_each_user_passes_the_start_up_privilege_check(users: Users, spec: Acces
     assert_least_privilege(users.uri(spec), spec, DATABASE)
 
 
+def test_the_start_up_check_refuses_the_read_only_user_granted_an_extra_role(users: Users, mongo_uri: str) -> None:
+    root: RootClient = MongoClient(mongo_uri)
+    extra = [{"role": "readWrite", "db": DATABASE}]
+    try:
+        root["admin"].command("grantRolesToUser", READ_ONLY.user, roles=extra)
+        with pytest.raises(PrivilegeError, match="outside its role"):
+            assert_least_privilege(users.read_uri, READ_ONLY, DATABASE)
+    finally:
+        root["admin"].command("revokeRolesFromUser", READ_ONLY.user, roles=extra)
+        root.close()
+    assert_least_privilege(users.read_uri, READ_ONLY, DATABASE)
+
+
 def test_the_start_up_check_refuses_root_and_the_other_user(users: Users, mongo_uri: str) -> None:
     with pytest.raises(PrivilegeError):
         assert_least_privilege(mongo_uri, READ_ONLY, DATABASE)
