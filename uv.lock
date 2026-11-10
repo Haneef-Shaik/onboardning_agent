@@ -544,6 +544,7 @@ name = "onb-telemetry"
 version = "0.1.0"
 source = { editable = "libs/py-telemetry" }
 dependencies = [
+    { name = "onb-guardrails" },
     { name = "opentelemetry-api" },
     { name = "opentelemetry-exporter-otlp-proto-http" },
     { name = "opentelemetry-instrumentation-fastapi" },
@@ -554,6 +555,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
+    { name = "onb-guardrails", editable = "libs/py-guardrails" },
     { name = "opentelemetry-api", specifier = ">=1.45,<2" },
     { name = "opentelemetry-exporter-otlp-proto-http", specifier = ">=1.45,<2" },
     { name = "opentelemetry-instrumentation-fastapi", specifier = ">=0.66b0,<1" },

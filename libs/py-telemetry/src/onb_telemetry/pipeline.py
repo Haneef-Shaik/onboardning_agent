@@ -8,6 +8,9 @@ An ended span is read-only in the SDK, so a hook that must change what is export
 `RedactingSpanProcessor` and returns a changed copy (`copy_span`) or None to drop the span. Each
 later hook, and finally the export stage, receives what the previous hook returned.
 
+A pipeline may also have a `final_hook`: a redacting hook that runs after every registered hook and
+immediately before export, so what it guarantees (OBS-1's PII scrubbing) holds whatever a hook did.
+
 Fail closed, never break the caller:
 - a hook that raises in `on_end` drops that span (it is not exported);
 - a hook that raises in `on_start` is logged, the caller carries on, and that span is dropped;
@@ -61,8 +64,11 @@ class RedactingSpanProcessor(SpanProcessor):
 class HookedSpanProcessor(SpanProcessor):
     """Runs `hooks` in registration order, then the export processor."""
 
-    def __init__(self, export_processor: SpanProcessor | None) -> None:
+    def __init__(
+        self, export_processor: SpanProcessor | None, *, final_hook: RedactingSpanProcessor | None = None
+    ) -> None:
         self._lock = threading.Lock()
+        self._final_hook = final_hook
         self._hooks: tuple[SpanProcessor, ...] = ()
         self._export = export_processor
         self._closed = False
@@ -71,6 +77,10 @@ class HookedSpanProcessor(SpanProcessor):
     @property
     def hooks(self) -> tuple[SpanProcessor, ...]:
         return self._hooks
+
+    @property
+    def final_hook(self) -> RedactingSpanProcessor | None:
+        return self._final_hook
 
     @property
     def export_processor(self) -> SpanProcessor | None:
@@ -90,7 +100,7 @@ class HookedSpanProcessor(SpanProcessor):
             _guarded(old, "shutdown", old.shutdown)
 
     def on_start(self, span: Span, parent_context: Context | None = None) -> None:
-        for hook in self._hooks:
+        for hook in self._stages():
             try:
                 hook.on_start(span, parent_context=parent_context)
             except Exception as exc:
@@ -105,7 +115,7 @@ class HookedSpanProcessor(SpanProcessor):
         if self._closed or self._was_poisoned(span):
             return
         current = span
-        for hook in self._hooks:
+        for hook in self._stages():
             try:
                 result = _run_hook(hook, current)
             except Exception as exc:
@@ -122,13 +132,17 @@ class HookedSpanProcessor(SpanProcessor):
         self._closed = True  # first: nothing ending from now on reaches export, hooked or not
         if self._export is not None:
             _guarded(self._export, "shutdown", self._export.shutdown)
-        for hook in self._hooks:
+        for hook in self._stages():
             _guarded(hook, "shutdown", hook.shutdown)
 
     def force_flush(self, timeout_millis: int = 30000) -> bool:
-        stages = [*self._hooks, *([self._export] if self._export is not None else [])]
+        stages = [*self._stages(), *([self._export] if self._export is not None else [])]
         results = [_guarded(stage, "force_flush", lambda s=stage: s.force_flush(timeout_millis)) for stage in stages]
         return all(result is True for result in results)
+
+    def _stages(self) -> tuple[SpanProcessor, ...]:
+        final = self._final_hook
+        return self._hooks if final is None else (*self._hooks, final)
 
     def _was_poisoned(self, span: ReadableSpan) -> bool:
         if not self._poisoned or span.context is None:

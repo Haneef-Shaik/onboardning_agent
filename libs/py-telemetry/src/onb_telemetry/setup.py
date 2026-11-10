@@ -25,8 +25,10 @@ from opentelemetry.sdk.resources import SERVICE_NAME, Resource
 from opentelemetry.sdk.trace import SpanProcessor, TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExporter, SimpleSpanProcessor, SpanExporter
 
+from onb_telemetry.log_scrub import LogRedaction, install_log_redaction
 from onb_telemetry.pipeline import HookedSpanProcessor
 from onb_telemetry.settings import TelemetrySettings
+from onb_telemetry.span_scrub import PiiScrubbingSpanProcessor
 
 # (library to look for, instrumentation module, instrumentor class). Each runs with our provider.
 _INSTRUMENTATIONS: tuple[tuple[str, str, str], ...] = (
@@ -63,6 +65,7 @@ class TelemetryHandle:
     pipeline: HookedSpanProcessor
     capture_content: bool
     instrumented: tuple[str, ...]
+    log_redaction: LogRedaction
 
     def register_span_processor(self, processor: SpanProcessor) -> None:
         """Add a hook that sees every later span before it is exported (OBS-1's redaction)."""
@@ -78,6 +81,7 @@ class TelemetryHandle:
                 _uninstrument(library)
             self.provider.shutdown()
         finally:
+            self.log_redaction.uninstall()
             with _lock:
                 if _active is self:
                     _active = None
@@ -94,7 +98,9 @@ def init_telemetry(
 ) -> TelemetryHandle:
     """Set up tracing for this process. Call once, at startup, before building the FastAPI app.
 
-    `processors` are hooks run before export, in order. `exporter` overrides the one the settings
+    PII scrubbing is always on (PRD §7.7): spans pass `PiiScrubbingSpanProcessor` after every hook and
+    before export, and log records are scrubbed (`install_log_redaction`). Neither can be turned off.
+    `processors` are hooks run before the scrubber, in order. `exporter` overrides the one the settings
     choose (tests pass an in-memory exporter). `settings` default to `TelemetrySettings.from_env()`.
     """
     global _active
@@ -106,21 +112,23 @@ def init_telemetry(
             raise RuntimeError(f"telemetry is already initialised for {_active.service_name!r} in this process")
         span_exporter = exporter if exporter is not None else _exporter_for(config)
         export = _export_processor(span_exporter, batch=batch)
-        pipeline = HookedSpanProcessor(export)
+        pipeline = HookedSpanProcessor(export, final_hook=PiiScrubbingSpanProcessor())
         for processor in processors:
             pipeline.add_hook(processor)
         provider = TracerProvider(resource=Resource.create({SERVICE_NAME: service_name}))
         provider.add_span_processor(pipeline)
         _install_global(provider)
         _apply_content_capture(config.capture_content)
+        log_redaction = install_log_redaction()
         try:
             instrumented = _instrument_libraries(provider) if instrument else ()
         except Exception:
             # The global provider cannot be unset; shut it down so nothing exports half-configured.
             _uninstrument_all()
             provider.shutdown()
+            log_redaction.uninstall()
             raise
-        _active = TelemetryHandle(service_name, provider, pipeline, config.capture_content, instrumented)
+        _active = TelemetryHandle(service_name, provider, pipeline, config.capture_content, instrumented, log_redaction)
         return _active
 
 
