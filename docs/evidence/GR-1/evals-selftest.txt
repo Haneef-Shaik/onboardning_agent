@@ -1,0 +1,5 @@
+selftest evr_20261110T185459Z_af366d49: 27 cases x 3, all cases passed: True, gates: PASS, controls caught 8/8
+report: evals/reports/20261110T185459Z-all-fake_eval-scripted.json
+report: evals/reports/20261110T185459Z-all-fake_eval-scripted.md
+result: PASS
+1 passed in 52.34s

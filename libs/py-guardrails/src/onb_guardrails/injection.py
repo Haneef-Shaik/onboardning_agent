@@ -15,7 +15,7 @@ from __future__ import annotations
 import re
 from typing import Final
 
-from onb_guardrails.delimit import UNTRUSTED_TAG
+from onb_guardrails.delimit import DELIMITER_TAG
 from onb_guardrails.pii.skeleton import skeleton
 
 _INSTRUCTION_WORDS = r"(?:instructions?|rules|guidelines|directives|prompts?|polic(?:y|ies)|programming)"
@@ -42,12 +42,12 @@ _PATTERNS: Final[dict[str, re.Pattern[str]]] = {
         r"\b(?:system prompt|(?:initial|hidden|original|secret) instructions|your instructions|your prompt)\b"
         r"|\bwhat (?:were|are) your (?:initial |original |system |hidden )?(?:instructions|prompt)\b",
         "repeat_above": r"\brepeat (?:the|all|everything)(?: text| words)? (?:above|before)\b",
-        "fake_role_tag": r"<\s*/?\s*(?:system|assistant|developer|admin)\s*>"
-        r"|^\s*#{1,6}\s*(?:system|admin|developer)\s*:|\[\s*(?:system|admin)\s*\]",
+        "fake_role_tag": r"<[ \t]{0,3}/?[ \t]{0,3}(?:system|assistant|developer|admin)[ \t]{0,3}>"
+        r"|^[ \t]*#{1,6}[ \t]*(?:system|admin|developer)[ \t]*:|\[[ \t]*(?:system|admin)[ \t]*\]",
         "chat_template_token": r"<\|(?:im_start|im_end|system|endoftext|eot_id|start_header_id)\|>"
         r"|\[/?inst\]|<</?sys>>",
-        "turn_injection": r"\n\s*(?:human|assistant|system)\s*:",
-        "delimiter_escape": rf"<\s*/?\s*{UNTRUSTED_TAG}\b",
+        "turn_injection": r"\n[ \t]*(?:human|assistant|system)[ \t]*:",
+        "delimiter_escape": DELIMITER_TAG,
         "new_instructions": r"\b(?:new|updated|revised|real|actual)"
         r" (?:instructions|rules|directives|system prompt)\s*:",
         "bypass_safety": r"\b(?:override|bypass|disable|ignore|circumvent|turn off|skip)\b[^\n]{0,20}?"
@@ -57,7 +57,7 @@ _PATTERNS: Final[dict[str, re.Pattern[str]]] = {
         "admin_override": r"\b(?:admin|administrator|root|system|emergency) override\b",
         "encoded_payload": r"\b(?:decode|decrypt|deobfuscate)\b[^\n]{0,40}?\b(?:base64|rot13|hex|encoded)\b[^\n]{0,40}?"
         r"\b(?:execute|run|follow|obey)\b",
-        "markdown_exfiltration": r"!\[[^\]\n]*\]\(\s*https?://[^)\s]*[?&][a-z_]+=",
+        "markdown_exfiltration": r"!\[[^\]\n]{0,200}\]\([ \t]*https?://[^)\s]{0,2000}?[?&][a-z_]+=",
         "data_exfiltration": r"\b(?:send|post|upload|forward|email|transmit|exfiltrate)\b[^\n]{0,50}?"
         r"\b(?:conversation|history|chat|prompt|context|records|secrets|credentials|passwords|tokens)\b[^\n]{0,40}?"
         r"\b(?:to|at)\s+https?://",

@@ -18,7 +18,9 @@ UNTRUSTED_NOTICE: Final = (
 )
 
 _SOURCE: Final = re.compile(r"^[a-z][a-z0-9_]{0,31}$")
-_TAG_IN_TEXT: Final = re.compile(rf"<(\s*/?\s*{UNTRUSTED_TAG})", re.IGNORECASE)
+# The tag in any spelling a model might still read as it: case, `-`/space/`_` between the words.
+DELIMITER_TAG: Final = r"<([ \t]*/?[ \t]*untrusted[\W_]{0,3}content)"
+_TAG_IN_TEXT: Final = re.compile(DELIMITER_TAG, re.IGNORECASE)
 
 
 def delimit_untrusted(text: str, source: str) -> str:

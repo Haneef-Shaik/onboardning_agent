@@ -1,0 +1,40 @@
+[1;32mAll checks passed![0m
+[1;32mAll checks passed![0m
+[1;32mAll checks passed![0m
+[1;32mAll checks passed![0m
+[1;32mAll checks passed![0m
+[1;32mAll checks passed![0m
+[1;32mAll checks passed![0m
+ NX   Successfully ran target lint for 17 projects
+ NX   Successfully ran target typecheck for 17 projects
+[32mRequired test coverage of 80% reached. Total coverage: 99.26%
+[0m[32m============================= [32m[1m269 passed[0m[32m in 1.53s[0m[32m ==============================[0m
+[2m Test Files [22m [1m[32m2 passed[39m[22m[90m (2)[39m
+[2m      Tests [22m [1m[32m6 passed[39m[22m[90m (6)[39m
+[32mRequired test coverage of 80% reached. Total coverage: 97.57%
+[0m[32m============================= [32m[1m115 passed[0m[32m in 2.73s[0m[32m ==============================[0m
+[32mRequired test coverage of 80% reached. Total coverage: 100.00%
+[0m[32m============================= [32m[1m100 passed[0m[32m in 0.50s[0m[32m ==============================[0m
+[32mRequired test coverage of 80% reached. Total coverage: 97.24%
+[0m[32m============================= [32m[1m424 passed[0m[32m in 4.39s[0m[32m ==============================[0m
+[2m Test Files [22m [1m[32m2 passed[39m[22m[90m (2)[39m
+[2m      Tests [22m [1m[32m11 passed[39m[22m[90m (11)[39m
+[32m============================== [32m[1m1 passed[0m[32m in 0.10s[0m[32m ===============================[0m
+[32mRequired test coverage of 80% reached. Total coverage: 98.80%
+[0m[32m============================= [32m[1m123 passed[0m[32m in 5.61s[0m[32m ==============================[0m
+[32m============================== [32m[1m1 passed[0m[32m in 0.13s[0m[32m ===============================[0m
+[32mRequired test coverage of 80% reached. Total coverage: 96.33%
+[0m[32m============================== [32m[1m77 passed[0m[32m in 1.33s[0m[32m ==============================[0m
+[32mRequired test coverage of 80% reached. Total coverage: 100.00%
+[0m[32m============================== [32m[1m1 passed[0m[32m in 0.18s[0m[32m ===============================[0m
+[32m============================= [32m[1m235 passed[0m[32m in 3.84s[0m[32m ==============================[0m
+[32m============================== [32m[1m1 passed[0m[32m in 0.13s[0m[32m ===============================[0m
+[32m============================= [32m[1m230 passed[0m[32m in 7.12s[0m[32m ==============================[0m
+[32mRequired test coverage of 80% reached. Total coverage: 100.00%
+[0m[32m============================= [32m[1m277 passed[0m[32m in 33.64s[0m[32m =============================[0m
+[2m Test Files [22m [1m[32m5 passed[39m[22m[90m (5)[39m
+[2m      Tests [22m [1m[32m61 passed[39m[22m[90m (61)[39m
+[32mRequired test coverage of 80% reached. Total coverage: 97.84%
+[0m[32m============================= [32m[1m247 passed[0m[32m in 17.31s[0m[32m =============================[0m
+ NX   Successfully ran target test for 17 projects
+make check: all passed

@@ -41,7 +41,14 @@ from onb_guardrails.decision import (
     StructuredOutputError,
 )
 from onb_guardrails.external import ExternalGuard, Source
-from onb_guardrails.messages import InputScan, guard_input, pii_reason, scan_output, trusted_message
+from onb_guardrails.messages import (
+    InputScan,
+    guard_input,
+    output_texts,
+    pii_reason,
+    scan_output,
+    trusted_message,
+)
 from onb_guardrails.recorder import DecisionRecorder, GuardContext
 from onb_guardrails.structured import SchemaErrors, parse_structured, repair_prompt
 
@@ -127,17 +134,23 @@ class GuardedChatModel:
         await self._external_check(scan.untrusted_texts, GuardrailCheck.EXTERNAL_INPUT, "INPUT")
 
     async def _call(self, messages: Sequence[BaseMessage]) -> AIMessage:
-        remaining = self._budget.remaining_seconds()
         try:
-            reply = await asyncio.wait_for(self._model.ainvoke(list(messages)), timeout=remaining)
+            async with asyncio.timeout(self._budget.remaining_seconds()) as deadline:
+                reply = await self._model.ainvoke(list(messages))
         except TimeoutError:
+            if not deadline.expired():
+                self._budget.charge(_estimate(messages, None))
+                raise  # the provider's own timeout (e.g. a socket read), not the time budget
             self._budget.charge(0)
             reason = self._budget.exceeded(before_call=False) or "seconds timeout"
             await self._record(GuardrailCheck.BUDGET, GuardrailOutcome.BLOCKED, reason)
             raise BudgetExceededError(reason) from None
+        except BaseException:
+            self._budget.charge(_estimate(messages, None))  # a failed call still used a step
+            raise
+        self._budget.charge(_tokens(messages, reply))
         if not isinstance(reply, AIMessage):
             raise TypeError(f"the model returned {type(reply).__name__}, not an AIMessage")
-        self._budget.charge(_tokens(messages, reply))
         return reply
 
     async def _check_output(self, reply: AIMessage) -> AIMessage:
@@ -146,16 +159,16 @@ class GuardedChatModel:
             await self._record(GuardrailCheck.OUTPUT_PII, GuardrailOutcome.REDACTED, pii_reason(counts))
         else:
             await self._record(GuardrailCheck.OUTPUT_PII, GuardrailOutcome.PASSED)
-        texts = (redacted.text,) if redacted.text else ()
-        await self._external_check(texts, GuardrailCheck.EXTERNAL_OUTPUT, "OUTPUT")
+        await self._external_check(output_texts(redacted), GuardrailCheck.EXTERNAL_OUTPUT, "OUTPUT")
         return redacted
 
     async def _external_check(self, texts: tuple[str, ...], check: GuardrailCheck, source: Source) -> None:
         guard = self._external
-        if guard is None:
-            return
+        if guard is None or not texts:
+            return  # nothing to check is not a decision
         try:
-            verdict = await guard.check(texts, source=source)
+            async with asyncio.timeout(self._budget.remaining_seconds()):
+                verdict = await guard.check(texts, source=source)
         except Exception as error:  # fail closed: an unreachable guard blocks the call
             reason = f"error={type(error).__name__}"
             await self._record(check, GuardrailOutcome.FAILED, reason)
@@ -167,9 +180,23 @@ class GuardedChatModel:
         await self._record(check, GuardrailOutcome.PASSED)
 
 
-def _tokens(messages: Sequence[BaseMessage], reply: AIMessage) -> int:
-    """The provider's token count, or about four characters per token when it reports none."""
-    if reply.usage_metadata is not None:
-        return reply.usage_metadata["total_tokens"]
-    characters = sum(len(message.text) for message in messages) + len(reply.text)
+def _tokens(messages: Sequence[BaseMessage], reply: BaseMessage) -> int:
+    """The provider's token count, never less than its input + output figures or the estimate.
+
+    A missing, negative or implausibly small count cannot slip a call past the token budget.
+    """
+    usage = getattr(reply, "usage_metadata", None) or {}
+    total = _count(usage.get("total_tokens"))
+    parts = _count(usage.get("input_tokens")) + _count(usage.get("output_tokens"))
+    return max(total, parts, _estimate(messages, reply))
+
+
+def _count(value: object) -> int:
+    """A reported token figure, or 0 when it is missing, not an integer or negative."""
+    return value if isinstance(value, int) and not isinstance(value, bool) and value >= 0 else 0
+
+
+def _estimate(messages: Sequence[BaseMessage], reply: BaseMessage | None) -> int:
+    """About four characters per token over the input and the reply."""
+    characters = sum(len(message.text) for message in messages) + (len(reply.text) if reply is not None else 0)
     return math.ceil(characters / _CHARS_PER_TOKEN)

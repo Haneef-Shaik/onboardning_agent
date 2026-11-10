@@ -6,7 +6,9 @@ PII-redacted. It can only add a block, never lift one. A guard that errors fails
 
 `BedrockGuardrails` calls the `ApplyGuardrail` API through an injected `bedrock-runtime` client, so
 this library needs no AWS dependency and tests use a stub. The guardrail id and version are
-configuration (`BEDROCK_GUARDRAIL_ID`, `BEDROCK_GUARDRAIL_VERSION`), never code.
+configuration (`BEDROCK_GUARDRAIL_ID`, `BEDROCK_GUARDRAIL_VERSION`), never code. `GuardedChatModel`
+bounds each check by the task's time budget; give the boto client a `read_timeout` too, since a call
+running in a worker thread cannot be cancelled.
 """
 
 from __future__ import annotations
@@ -68,6 +70,8 @@ def _policies(assessments: list[dict[str, Any]]) -> str:
     names: list[str] = []
     for assessment in assessments:
         for policy, detail in assessment.items():
+            if not policy.endswith("Policy"):
+                continue  # invocationMetrics, appliedGuardrailDetails: metadata, not a fired policy
             filters = detail.get("filters") if isinstance(detail, dict) else None
             kinds = [str(f.get("type")) for f in filters or [] if isinstance(f, dict) and f.get("type")]
             if kinds:

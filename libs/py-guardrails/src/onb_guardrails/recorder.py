@@ -2,13 +2,15 @@
 
 The audit record is written first, through the `onb_data.Auditor` protocol (append-only
 `AuditLog` in services, `InMemoryAuditLog` in tests); a failed write propagates, so the guarded call
-fails closed (AUD-1 contract). The span event then carries the record id, so a trace links to its
-audit trail:
+fails closed (AUD-1 contract). The span event follows; the record carries the span's `trace_id`
+(AUD-1), which is how a trace links to its audit trail:
 
     guardrail.check     input.pii | input.injection | output.pii | output.schema | budget | external.*
     guardrail.outcome   pass | redacted | repaired | blocked | failed
     guardrail.reason    codes and counts only (absent when there is none)
-    guardrail.audit_id  the audit record id
+
+The record id is not put on the event: the OBS-1 span scrubber can mistake a digit run inside a hex
+id for a mobile number and redact it.
 
 The audit record is `actor=agent:<agent>`, `action=guardrail.<check>`, `target=task:<run_id>/<task_id>`.
 """
@@ -71,11 +73,7 @@ class DecisionRecorder:
             outcome=_AUDIT_OUTCOME[decision.outcome],
             reason=decision.reason,
         )
-        attributes = {
-            "guardrail.check": str(decision.check),
-            "guardrail.outcome": str(decision.outcome),
-            "guardrail.audit_id": audit_id,
-        }
+        attributes = {"guardrail.check": str(decision.check), "guardrail.outcome": str(decision.outcome)}
         if decision.reason is not None:
             attributes["guardrail.reason"] = decision.reason
         trace.get_current_span().add_event(EVENT_NAME, attributes)

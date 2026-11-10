@@ -1,0 +1,23 @@
+FAILED libs/py-guardrails/tests/test_review_fixes.py::test_a_tool_result_block_is_scanned_redacted_and_delimited
+FAILED libs/py-guardrails/tests/test_review_fixes.py::test_an_unknown_role_is_untrusted_and_its_name_is_redacted
+FAILED libs/py-guardrails/tests/test_review_fixes.py::test_a_trust_flag_from_data_does_not_make_a_message_trusted
+FAILED libs/py-guardrails/tests/test_review_fixes.py::test_a_trusted_message_is_still_scanned_so_interpolated_text_cannot_inject
+FAILED libs/py-guardrails/tests/test_review_fixes.py::test_output_pii_is_counted_once_and_redacted_everywhere
+FAILED libs/py-guardrails/tests/test_review_fixes.py::test_tool_call_ids_and_names_are_never_rewritten
+FAILED libs/py-guardrails/tests/test_review_fixes.py::test_the_external_output_guard_sees_tool_call_arguments
+FAILED libs/py-guardrails/tests/test_review_fixes.py::test_nothing_to_check_records_no_external_decision
+FAILED libs/py-guardrails/tests/test_review_fixes.py::test_a_hanging_external_guard_is_cut_off_by_the_time_budget_and_fails_closed
+FAILED libs/py-guardrails/tests/test_review_fixes.py::test_bedrock_metadata_keys_are_not_reported_as_policies
+FAILED libs/py-guardrails/tests/test_review_fixes.py::test_a_provider_timeout_is_not_reported_as_a_budget_block
+FAILED libs/py-guardrails/tests/test_review_fixes.py::test_a_reply_that_is_not_an_ai_message_still_uses_a_step
+FAILED libs/py-guardrails/tests/test_review_fixes.py::test_bad_or_missing_usage_falls_back_to_an_estimate[usage0]
+FAILED libs/py-guardrails/tests/test_review_fixes.py::test_ids_survive_input_redaction_of_history
+FAILED libs/py-guardrails/tests/test_review_fixes.py::test_pii_in_additional_kwargs_of_input_messages_is_redacted
+FAILED libs/py-guardrails/tests/test_review_fixes.py::test_delimiter_spellings_are_escaped_and_detected[</untrusted-content>]
+FAILED libs/py-guardrails/tests/test_review_fixes.py::test_delimiter_spellings_are_escaped_and_detected[</Untrusted Content>]
+FAILED libs/py-guardrails/tests/test_review_fixes.py::test_delimiter_spellings_are_escaped_and_detected[< /untrusted__content>]
+FAILED libs/py-guardrails/tests/test_review_fixes.py::test_a_zero_total_with_large_parts_still_charges_the_parts
+FAILED libs/py-guardrails/tests/test_review_fixes.py::test_a_failed_model_call_still_uses_a_step[error0]
+FAILED libs/py-guardrails/tests/test_review_fixes.py::test_a_failed_model_call_still_uses_a_step[error1]
+21 failed, 1 passed, 8 deselected in 5.63s
+ReDoS cases (test_the_injection_scan_stays_fast_on_200kb_adversarial_input[*]) on the pre-fix source: the run did not finish within 600 s (subprocess.TimeoutExpired)

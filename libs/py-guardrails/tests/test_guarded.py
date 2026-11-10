@@ -4,6 +4,7 @@ that every decision is audited and emitted as a `guardrail.outcome` span event (
 from __future__ import annotations
 
 import json
+from collections import Counter
 from typing import Literal
 
 import pytest
@@ -299,28 +300,36 @@ def test_every_decision_is_a_span_event_and_an_audit_record(telemetry: CapturedT
     with pytest.raises(StructuredOutputError):
         run(guarded(model, audit).ainvoke_structured([HumanMessage(f"Assess hire with PAN {PAN}.")], Verdict))
 
-    events = [event for span in telemetry.spans() for event in span.events if event.name == EVENT_NAME]
-    event_rows = sorted(
+    # (check, audit outcome, reason, trace id) for each span event and each audit record must match one to one.
+    audit_outcome = {"pass": "success", "redacted": "success", "repaired": "success", "blocked": "denied"}
+    event_rows = Counter(
         (
-            str(e.attributes["guardrail.audit_id"]),  # type: ignore[index]
-            str(e.attributes["guardrail.check"]),  # type: ignore[index]
-            str(e.attributes["guardrail.outcome"]),  # type: ignore[index]
+            str(attributes["guardrail.check"]),
+            audit_outcome.get(str(attributes["guardrail.outcome"]), str(attributes["guardrail.outcome"])),
+            str(attributes.get("guardrail.reason", "")),
+            format(span.context.trace_id, "032x"),
         )
-        for e in events
+        for span in telemetry.spans()
+        if span.context is not None
+        for event in span.events
+        if event.name == EVENT_NAME and (attributes := event.attributes) is not None
     )
     records = run(_all_records(audit))
-    audit_rows = sorted((r.id, r.action.removeprefix("guardrail."), r.reason or "") for r in records)
+    audit_rows = Counter(
+        (r.action.removeprefix("guardrail."), str(r.outcome), r.reason or "", r.trace_id) for r in records
+    )
 
-    assert len(events) == len(records) > 0
-    assert [row[0] for row in event_rows] == [row[0] for row in audit_rows]
-    by_id = {r.id: r for r in records}
-    for audit_id, check, outcome in event_rows:
-        assert by_id[audit_id].action == f"guardrail.{check}"
-        assert by_id[audit_id].actor.id == "run_assistant"
-        assert by_id[audit_id].target == "task:run_1/task_1"
-        assert outcome in {"pass", "redacted", "blocked", "repaired", "failed"}
-    checks = {row[1] for row in event_rows}
+    assert sum(event_rows.values()) == len(records) == 11
+    assert event_rows == audit_rows
+    assert {r.actor.id for r in records} == {"run_assistant"}
+    assert {r.target for r in records} == {"task:run_1/task_1"}
+    checks = {row[0] for row in event_rows}
     assert checks == {"budget", "input.injection", "input.pii", "output.pii", "output.schema"}
+    assert next(row[:3] for row in event_rows if row[0] == "output.schema") == (
+        "output.schema",
+        "failed",
+        "attempts=2; errors=1; first=json_invalid",
+    )
     assert all(span.attributes and span.attributes.get("agent.name") for span in telemetry.spans() if span.events)
 
 
