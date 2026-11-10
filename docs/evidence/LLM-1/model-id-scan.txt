@@ -1,0 +1,10 @@
+# 2026-11-10T05:23:09Z · goal/llm-1-llm-connectors @ b967ff7
+PATTERN='(^|[^a-z0-9_])((us|eu|apac|global)\.)?(anthropic|amazon|meta|mistral|cohere|ai21|deepseek|qwen|writer)\.[a-z0-9-]+-v?[0-9]|(^|[^a-z0-9_])claude-(instant|[0-9]|opus|sonnet|haiku)[a-z0-9.-]*|(^|[^a-z0-9_])gpt-[0-9o][a-z0-9.-]*|(^|[^a-z0-9_])gemini-[0-9][a-z0-9.-]*|(^|[^a-z0-9_])llama-?[0-9][a-z0-9.-]*'
+
+$ git grep -nIiE "$PATTERN" -- . ':!config/' ':!.env.example' ':!**/tests/**' ':!**/tests_int/**'
+exit=1 (1 = no match)
+
+# Control: the same pattern over the whole tree, no exclusions (hits are allowed places only)
+$ git grep -lIiE "$PATTERN"
+libs/py-llm/tests/test_no_model_ids_in_code.py
+exit=0
