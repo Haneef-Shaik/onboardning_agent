@@ -201,7 +201,8 @@ def test_an_id_from_find_updates_the_document_as_oid(
 
 def test_a_query_mongodb_refuses_is_a_denial_not_an_internal_error(mcp_server: McpServer, seeded: Any) -> None:
     mcp_server.telemetry.clear()
-    args = {"collection": "new_hires", "filter": {"status": {"$bogus": 1}}, "limit": 1}
+    # Passes the MCP-2 validator (allowlisted `$mod`), but MongoDB refuses a zero divisor.
+    args = {"collection": "new_hires", "filter": {"status": {"$mod": [0, 0]}}, "limit": 1}
     text = _error(_call(mcp_server, "org_a", "find", args))
     assert "rejected" in text
     assert "internal error" not in text

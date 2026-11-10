@@ -9,11 +9,16 @@ import copy
 from typing import Any
 
 import pytest
-from onb_mcp_mongo.policy import ToolRejectedError
+from onb_mcp_mongo.policy import ALLOWED_STAGES, ToolRejectedError
 from onb_mcp_mongo.validator import (
+    ACCUMULATOR_OPERATORS,
+    EXPRESSION_OPERATORS,
     FORBIDDEN_OPERATORS,
     MAX_DEPTH,
+    MAX_STRING_LENGTH,
+    QUERY_OPERATORS,
     REASONS,
+    UPDATE_OPERATORS,
     check_call,
 )
 
@@ -63,22 +68,15 @@ def test_every_rejection_names_its_argument_and_never_echoes_agent_text() -> Non
         assert any(name in str(caught.value) for name in ("filter", "update", "document", "pipeline"))
 
 
+def test_the_forbidden_operators_are_exactly_the_prd_list() -> None:
+    prd = {"$where", "$function", "$accumulator", "$lookup", "$graphLookup", "$out", "$merge", "$unionWith"}
+    assert prd == FORBIDDEN_OPERATORS
+
+
 @pytest.mark.parametrize("operator", sorted(FORBIDDEN_OPERATORS))
-def test_the_forbidden_operators_are_the_prd_list(operator: str) -> None:
-    assert operator in {
-        "$where",
-        "$function",
-        "$accumulator",
-        "$lookup",
-        "$graphLookup",
-        "$out",
-        "$merge",
-        "$unionWith",
-    }
-
-
-def test_the_prd_forbidden_list_is_complete() -> None:
-    assert len(FORBIDDEN_OPERATORS) == 8
+def test_no_forbidden_operator_is_on_any_allowlist(operator: str) -> None:
+    allowlists = QUERY_OPERATORS | EXPRESSION_OPERATORS | ACCUMULATOR_OPERATORS | UPDATE_OPERATORS | ALLOWED_STAGES
+    assert operator not in allowlists
 
 
 def test_a_forbidden_operator_is_named_in_the_message() -> None:
@@ -173,7 +171,7 @@ def test_ordinary_queries_are_accepted(pid: str, tool: str, args: dict[str, Any]
 
 
 def test_the_validator_does_not_change_its_input() -> None:
-    for _, tool, args, _ in ACCEPTED + CORPUS[:10]:
+    for _, tool, args, _ in ACCEPTED + CORPUS:
         before = copy.deepcopy(args)
         with contextlib.suppress(ToolRejectedError):
             check_call(tool, args)
@@ -226,3 +224,79 @@ def test_a_field_merely_named_like_pii_is_not_pii() -> None:
 
 def test_a_value_spelled_org_id_is_data_not_a_field() -> None:
     check_call("find", {"collection": R, "filter": {"label": "org_id"}, "limit": 1})
+
+
+# --- contexts and caps (review fixes) -----------------------------------------------------------
+
+
+def _filter(value: dict[str, Any]) -> dict[str, Any]:
+    return {"collection": R, "filter": value, "limit": 1}
+
+
+def _pipeline(*stages: dict[str, Any]) -> dict[str, Any]:
+    return {"collection": R, "pipeline": list(stages)}
+
+
+def _update(update: dict[str, Any]) -> dict[str, Any]:
+    return {"collection": W, "filter": {"a": 1}, "update": update}
+
+
+@pytest.mark.parametrize(
+    ("tool", "args", "reason"),
+    [
+        ("find", _filter({"$gt": 1}), "operator_not_allowed"),  # field operator at the query root
+        ("find", _filter({"$oid": "0" * 24}), "operator_not_allowed"),  # ObjectId only as a value
+        ("find", _filter({"a": {"$and": [{"b": 1}]}}), "operator_not_allowed"),  # logical under a field
+        ("find", _filter({"a": {"$gt": 1, "b": 2}}), "invalid_query"),  # operators mixed with fields
+        ("find", _filter({"$or": {"a": 1}}), "invalid_query"),  # $or needs a list
+        ("find", _filter({"$or": []}), "invalid_query"),
+        ("find", _filter({"a": {"$set": 1}}), "operator_not_allowed"),  # update operator in a query
+        ("aggregate", _pipeline({"$match": {"a": {"$sum": 1}}}), "operator_not_allowed"),
+        ("aggregate", _pipeline({"$project": {"r": "$$USER_ROLES"}}), "variable_not_allowed"),
+        ("aggregate", _pipeline({"$project": {"o": "$org_id"}}), "org_id_not_allowed"),
+        ("aggregate", _pipeline({"$group": {"_id": "$org_id"}}), "org_id_not_allowed"),
+        ("find", _filter({"$expr": {"$eq": ["$$ROOT.org_id", "org_b"]}}), "org_id_not_allowed"),
+        ("aggregate", _pipeline({"$count": "a.b"}), "invalid_field_name"),
+        ("aggregate", _pipeline({"$group": {"_id": None, "a.b": {"$sum": 1}}}), "invalid_field_name"),
+        ("aggregate", _pipeline({"$limit": 2**70}), "too_large"),
+        ("insert_one", {"collection": W, "document": {"a": 2**70}}, "too_large"),
+        ("insert_one", {"collection": W, "document": {"a": "x" * (MAX_STRING_LENGTH + 1)}}, "too_large"),
+        ("aggregate", _pipeline({"$sort": {f"k{i}": 1 for i in range(20_000)}}), "too_large"),
+        ("update_one", _update({"$set": {"$[].pii": 1}}), "invalid_field_name"),  # positional first
+        ("update_one", _update({"$rename": {"a": "$"}}), "invalid_field_name"),
+        ("update_one", _update({"$set": {"_id": 1}}), "id_not_allowed"),
+        ("update_one", _update({"$push": {"log": {"$each": [1], "$where": "x"}}}), "forbidden_operator"),
+        ("update_one", _update({"$push": {"log": {"$each": [1], "$slice": "x"}}}), "invalid_update"),
+    ],
+)
+def test_context_rules_and_caps(tool: str, args: dict[str, Any], reason: str) -> None:
+    assert _reason(tool, args) == reason
+
+
+def _maps(levels: int) -> Any:
+    node: Any = "$arr"
+    for _ in range(levels):
+        node = {"$map": {"input": "$arr", "as": "x", "in": node}}
+    return node
+
+
+def test_array_iterators_nest_at_most_two_deep() -> None:
+    check_call("aggregate", _pipeline({"$project": {"m": _maps(2)}}))
+    assert _reason("aggregate", _pipeline({"$project": {"m": _maps(3)}})) == "too_deep"
+    assert _reason("count", {"collection": R, "filter": {"$expr": {"$gt": [{"$size": _maps(3)}, 0]}}}) == "too_deep"
+
+
+@pytest.mark.parametrize(
+    ("tool", "args"),
+    [
+        ("aggregate", _pipeline({"$project": {"n": {"$sum": "$tasks.points"}, "d": {"$dayOfWeek": "$start"}}})),
+        ("aggregate", _pipeline({"$addFields": {"all": {"$concatArrays": ["$a", "$b"]}}})),
+        ("aggregate", _pipeline({"$project": {"r": "$$ROOT", "now": "$$NOW"}})),
+        ("aggregate", _pipeline({"$project": {"f": {"$filter": {"input": "$t", "as": "t", "cond": "$$t.done"}}}})),
+        ("update_one", _update({"$push": {"log": {"$each": ["x"], "$slice": -50, "$sort": {"at": -1}}}})),
+        ("update_one", _update({"$pull": {"items": {"done": True, "n": {"$lt": 3}}}})),
+        ("find", _filter({"tags": {"$elemMatch": {"k": "laptop", "$or": [{"v": 1}, {"v": 2}]}}})),
+    ],
+)
+def test_common_read_and_write_shapes_are_accepted(tool: str, args: dict[str, Any]) -> None:
+    check_call(tool, args)

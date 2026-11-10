@@ -104,6 +104,25 @@ def _assert_safe_if_accepted(tool: str, args: dict[str, Any]) -> None:
         assert not bad, (tool, bad)
         if tool == "aggregate":
             assert all(next(iter(stage)) in ALLOWED_STAGES for stage in args["pipeline"])
+        _assert_context_names(tool, args)
+
+
+def _operator_names(node: Any) -> set[str]:
+    return {name for name in _names(node) if name.startswith("$") and name not in {"$", "$[]"}}
+
+
+def _assert_context_names(tool: str, args: dict[str, Any]) -> None:
+    """Each argument holds only the operators of its own context, not just any allowlisted one."""
+    if "filter" in args:
+        # Filters: query operators, expressions under $expr, and the ObjectId form; never an update
+        # operator, a stage or an accumulator-only name.
+        assert _operator_names(args["filter"]) <= QUERY_OPERATORS | EXPRESSION_OPERATORS | {"$oid"}
+    if tool == "insert_one":
+        assert _operator_names(args["document"]) <= {"$oid"}
+    if tool == "update_one":
+        assert set(args["update"]) <= UPDATE_OPERATORS
+        for fields in args["update"].values():
+            assert not {path for path in fields if path.split(".")[0] in {"$", "$[]"}}
 
 
 @SETTINGS

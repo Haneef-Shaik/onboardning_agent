@@ -41,6 +41,15 @@ def _nest(depth: int) -> dict[str, Any]:
 
 JS = "function () { return true; }"
 
+
+def _maps(levels: int) -> Any:
+    """`$map` nested `levels` deep: each level multiplies the work by the array's length."""
+    node: Any = "$arr"
+    for _ in range(levels):
+        node = {"$map": {"input": "$arr", "as": "x", "in": node}}
+    return node
+
+
 CORPUS: list[Payload] = [
     # --- $where: server-side JavaScript in a query ---------------------------------------------
     ("where-top", "find", _find({"$where": "this.org_id != 'org_a'"}), "forbidden_operator"),
@@ -190,6 +199,22 @@ CORPUS: list[Payload] = [
     # --- size and depth ------------------------------------------------------------------------
     ("deep-nesting", "find", _find(_nest(60)), "too_deep"),
     ("wide", "find", _find({"$or": [{"a": i} for i in range(20_000)]}), "too_large"),
+    ("huge-int-limit", "aggregate", _agg({"$limit": 2**70}), "too_large"),
+    ("huge-string", "insert_one", _ins({"note": "x" * 70_000}), "too_large"),
+    (
+        "map-nesting",
+        "count",
+        {"collection": R, "filter": {"$expr": {"$gt": [{"$size": _maps(3)}, 0]}}},
+        "too_deep",
+    ),
+    # --- found in review: variables, field paths, positionals, ids -----------------------------
+    ("user-roles-variable", "aggregate", _agg({"$project": {"r": "$$USER_ROLES"}}), "variable_not_allowed"),
+    ("org-path-in-project", "aggregate", _agg({"$project": {"o": "$org_id"}}), "org_id_not_allowed"),
+    ("org-path-via-root", "find", _find({"$expr": {"$ne": ["$$ROOT.org_id", "org_a"]}}), "org_id_not_allowed"),
+    ("positional-first-pii", "update_one", _upd({"$set": {"$[].pii": "ptk_x"}}), "invalid_field_name"),
+    ("set-id", "update_one", _upd({"$set": {"_id": {"$oid": "0" * 24}}}), "id_not_allowed"),
+    ("oid-at-root", "find", _find({"$oid": "0" * 24}), "operator_not_allowed"),
+    ("push-modifier-where", "update_one", _upd({"$push": {"log": {"$each": [1], "$where": JS}}}), "forbidden_operator"),
 ]
 
 # What the card asks the corpus to cover, and the ids that cover it.
