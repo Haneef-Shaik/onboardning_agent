@@ -17,3 +17,6 @@ goal-verifier (attempt 1), then the board set to `in review` (orchestrator hold)
 - `docs/adr/0001-*` was already taken by F-1. The card's path was kept anyway.
 - `make test-int` has no targets on main yet (F-2 adds them).
 - Local Docker daemon is not running.
+
+## Verifier
+- Attempt 1 (2026-11-10): **fail**. Box 1 met; boxes 2 and 3 unmet (no remote, so no hosted run links); DEC-5, gates and rules ok. Retry guidance: no code changes; owner action (create remote, push, protect main, record red/green and integration run links after F-2), then re-verify. Goal set to `on hold`.
