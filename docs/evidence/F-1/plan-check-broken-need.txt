@@ -1,0 +1,18 @@
+# Mutation: one card in docs/plan/GOALS.md now needs the non-existent goal ZZ-99
+ docs/plan/GOALS.md | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+--- a/docs/plan/GOALS.md
+-- **Needs:** F-1
++- **Needs:** F-1, ZZ-99
+-- **Needs:** F-1
++- **Needs:** F-1, ZZ-99
+-- **Needs:** F-1
++- **Needs:** F-1, ZZ-99
+$ make check
+python3 scripts/plan/plan.py check
+plan error:
+F-2: needs 'ZZ-99', which is not a goal
+F-3: needs 'ZZ-99', which is not a goal
+PII-3: needs 'ZZ-99', which is not a goal
+make: *** [plan-check] Error 1
+exit=2

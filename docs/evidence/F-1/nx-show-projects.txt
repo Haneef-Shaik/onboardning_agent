@@ -1,0 +1,5 @@
+$ npx nx show projects
+["py-guardrails","ts-api-client","orchestrator","py-contracts","py-telemetry","py-eventbus","mcp-mocks","mcp-mongo","py-agents","py-crypto","py-evals","mcp-hub","py-data","py-llm","ts-ui","api","web"]
+exit=0
+$ npx nx show projects --json | python3 -c "import json,sys; p=json.load(sys.stdin); print(len(p))"
+17

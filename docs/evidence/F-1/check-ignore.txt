@@ -1,0 +1,4 @@
+$ git check-ignore .env evals/reports/x.json
+.env
+evals/reports/x.json
+exit=0
