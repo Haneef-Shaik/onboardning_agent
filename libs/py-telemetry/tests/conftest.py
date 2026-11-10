@@ -1,3 +1,5 @@
-"""The in-memory telemetry fixture shipped by the library, used here as any service would use it."""
+"""The in-memory telemetry fixture shipped by the library, enabled here as any service's tests would."""
 
-pytest_plugins = ["onb_telemetry.testing"]
+from onb_telemetry.testing import telemetry
+
+__all__ = ["telemetry"]

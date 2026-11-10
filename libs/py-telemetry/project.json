@@ -24,7 +24,7 @@
       "executor": "@nxlv/python:run-commands",
       "cache": true,
       "options": {
-        "command": "uv run --frozen mypy --cache-dir .mypy_cache/py-telemetry libs/py-telemetry/src libs/py-telemetry/tests",
+        "command": "uv run --frozen mypy --cache-dir .mypy_cache/py-telemetry libs/py-telemetry/src libs/py-telemetry/tests libs/py-telemetry/tests_int",
         "cwd": "."
       }
     },
@@ -37,6 +37,14 @@
         "env": {
           "COVERAGE_FILE": ".coverage.py-telemetry"
         }
+      }
+    },
+    "test-int": {
+      "executor": "@nxlv/python:run-commands",
+      "cache": false,
+      "options": {
+        "command": "uv run --frozen pytest libs/py-telemetry/tests_int -o cache_dir=.pytest_cache/py-telemetry-int -rA -s",
+        "cwd": "."
       }
     }
   }
