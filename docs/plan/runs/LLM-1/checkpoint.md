@@ -12,8 +12,8 @@ Branch `goal/llm-1-llm-connectors` (from main @ 185b674). Board: claimed.
 - Box 5 scan: `docs/evidence/LLM-1/model-id-scan.txt`.
 
 ## Next
-1. Code and security review of `git diff main...HEAD`; fix critical/high.
-2. `make check`; handoff; goal-verifier; board → in review (hold for Haneef's review, no merge).
+1. Done: reviews fixed (2c48212), evidence f3675d6, handoff written.
+2. goal-verifier; board → in review (hold for Haneef's review, no merge).
 
 ## Surprises
 - `ChatBedrockConverse` takes the guardrail as `guardrails=` (alias of `guardrail_config`) and does
