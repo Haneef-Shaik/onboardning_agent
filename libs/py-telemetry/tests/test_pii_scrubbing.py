@@ -12,13 +12,13 @@ from collections.abc import Iterator
 
 import pytest
 from onb_telemetry import setup
-from onb_telemetry.log_scrub import PiiScrubbingLogFilter, scrub_log_record
+from onb_telemetry.log_scrub import PiiScrubbingLogFilter, scrub_log_record, withheld_log_record
 from onb_telemetry.pipeline import RedactingSpanProcessor, copy_span
 from onb_telemetry.settings import TelemetrySettings
 from onb_telemetry.span_scrub import PiiScrubbingSpanProcessor
-from onb_telemetry.testing import CapturedTelemetry, reset_telemetry_globals
+from onb_telemetry.testing import CapturedTelemetry, captured_telemetry, reset_telemetry_globals
 from opentelemetry import trace
-from opentelemetry.sdk.trace import ReadableSpan
+from opentelemetry.sdk.trace import ReadableSpan, SpanLimits
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 from opentelemetry.trace import Link, Status, StatusCode
 from opentelemetry.util.types import AttributeValue
@@ -191,7 +191,7 @@ def test_a_log_record_carrying_the_same_values_is_scrubbed() -> None:
     scrubbed = scrub_log_record(record)
 
     assert scrubbed.getMessage() == "hire [EMAIL] mobile [MOBILE] pan [PAN]"
-    assert scrubbed.args == ()
+    assert scrubbed.args == ("[MOBILE]", "[PAN]")  # kept apart, scrubbed, for formatters that read args
     assert scrubbed.__dict__["hire_email"] == "[EMAIL]"
     assert scrubbed.exc_info is None
     assert "ValueError: duplicate [PAN] for [EMAIL]" in (scrubbed.exc_text or "")
@@ -280,7 +280,11 @@ def test_init_telemetry_installs_log_scrubbing_by_default(
     assert_no_raw_value(caplog.text)
 
 
-def test_init_telemetry_adds_the_log_filter_to_the_root_handlers_and_shutdown_removes_it() -> None:
+def _make(message: str, *args: object) -> logging.LogRecord:
+    return logging.getLogger("obs-1.make").makeRecord("x", logging.INFO, __file__, 1, message, args, None)
+
+
+def test_log_scrubbing_outlives_shutdown_and_only_the_test_reset_removes_it() -> None:
     reset_telemetry_globals()
     original_make_record = logging.Logger.makeRecord
     root_handler = logging.NullHandler()
@@ -288,14 +292,84 @@ def test_init_telemetry_adds_the_log_filter_to_the_root_handlers_and_shutdown_re
     try:
         handle = setup.init_telemetry("svc", settings=TelemetrySettings(exporter="none"), instrument=False)
         assert any(isinstance(f, PiiScrubbingLogFilter) for f in root_handler.filters)
-        handle.shutdown()
+        handle.shutdown()  # lifespan teardown and atexit handlers still log after this
+        assert any(isinstance(f, PiiScrubbingLogFilter) for f in root_handler.filters)
+        assert _make("pan %s", PAN).getMessage() == "pan [PAN]"
+
+        reset_telemetry_globals()
         assert not any(isinstance(f, PiiScrubbingLogFilter) for f in root_handler.filters)
         assert logging.Logger.makeRecord is original_make_record
-        made = logging.getLogger("obs-1.after").makeRecord("x", logging.INFO, __file__, 1, "pan %s", (PAN,), None)
-        assert made.getMessage() == f"pan {PAN}"  # no longer scrubbed: the process is back as it was
+        assert _make("pan %s", PAN).getMessage() == f"pan {PAN}"  # the test process is back as it was
     finally:
         logging.getLogger().removeHandler(root_handler)
         reset_telemetry_globals()
+
+
+# --- Review findings: non-string extras, account numbers under account-like keys, resource, scope
+
+
+def test_non_string_extra_fields_are_scrubbed_and_harmless_ones_kept() -> None:
+    marker = object()
+    record = _record(
+        "created",
+        extra={
+            "user": {"email": EMAIL, "pans": [PAN], "ref": PTK_REF},
+            "hire_mobile": MOBILE_INT,
+            "raw": MOBILE.encode(),
+            "count": 3,
+            "flag": None,
+            "obj": marker,
+            f"hire {EMAIL}": 1,
+        },
+    )
+
+    fields = scrub_log_record(record).__dict__
+
+    assert fields["user"] == {"email": "[EMAIL]", "pans": ["[PAN]"], "ref": PTK_REF}
+    assert fields["hire_mobile"] == "[MOBILE]"
+    assert "[MOBILE]" in str(fields["raw"])
+    assert (fields["count"], fields["flag"], fields["obj"]) == (3, None, marker)
+    assert fields["hire [EMAIL]"] == 1
+    assert_no_raw_value(repr(fields))
+
+
+ACCOUNT_NO = "50100123456789"
+
+
+@pytest.mark.parametrize("key", ["bank_account", "employee.bank_account", "acct", "account_number", "bank.acc_no"])
+def test_a_bare_account_number_under_an_account_key_is_scrubbed(telemetry: CapturedTelemetry, key: str) -> None:
+    with trace.get_tracer("obs-1").start_as_current_span(
+        "a", attributes={key: ACCOUNT_NO, f"{key}_int": 50100123456789}
+    ):
+        pass
+    record = scrub_log_record(_record("x", extra={key: ACCOUNT_NO}))
+
+    (exported,) = telemetry.spans()
+    assert dict(exported.attributes or {}) == {key: "[BANK_ACCOUNT]", f"{key}_int": "[BANK_ACCOUNT]"}
+    assert record.__dict__[key] == "[BANK_ACCOUNT]"
+
+
+def test_numbers_under_other_keys_are_not_mistaken_for_accounts(telemetry: CapturedTelemetry) -> None:
+    attributes: dict[str, AttributeValue] = {"order_id": ACCOUNT_NO, "http.response.size": 50100123456789}
+    with trace.get_tracer("obs-1").start_as_current_span("a", attributes=attributes):
+        pass
+
+    (exported,) = telemetry.spans()
+    assert dict(exported.attributes or {}) == attributes
+
+
+def test_resource_and_scope_attributes_are_scrubbed(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("OTEL_RESOURCE_ATTRIBUTES", f"deployment.owner={EMAIL}")
+    with captured_telemetry() as captured:
+        tracer = trace.get_tracer("obs-1", attributes={"scope.owner": EMAIL})
+        with tracer.start_as_current_span("r"):
+            pass
+        (exported,) = captured.spans()
+
+    assert exported.resource.attributes["deployment.owner"] == "[EMAIL]"
+    assert exported.instrumentation_scope is not None
+    assert dict(exported.instrumentation_scope.attributes or {}) == {"scope.owner": "[EMAIL]"}
+    assert_no_raw_value(exported_json(exported))
 
 
 def test_log_scrubbing_is_in_place_for_records_made_through_the_factory(
@@ -374,7 +448,7 @@ def test_a_failing_log_scrubber_withholds_the_record_without_breaking_the_caller
     (record,) = seen
     assert record.getMessage() == "[log record withheld: PII scrubbing failed with RuntimeError]"
     assert (record.exc_info, record.exc_text, record.stack_info) == (None, None, None)
-    assert "hire_email" not in record.__dict__
+    assert record.__dict__["hire_email"] == "[withheld]"
     assert_no_raw_value(_format(record) + repr(record.__dict__))
 
 
@@ -382,3 +456,72 @@ def test_a_failing_log_filter_drops_the_record(monkeypatch: pytest.MonkeyPatch) 
     _break_detectors(monkeypatch)
 
     assert PiiScrubbingLogFilter().filter(_record("pan %s", PAN)) is False
+
+
+def test_a_formatter_that_unpacks_args_keeps_working() -> None:
+    """uvicorn's AccessFormatter unpacks `record.args` into five values; scrubbing must keep them."""
+
+    class AccessLike(logging.Formatter):
+        def formatMessage(self, record: logging.LogRecord) -> str:  # noqa: N802 - stdlib override
+            client, method, path, version, status = record.__dict__["args"]
+            return f"{client} {method} {path} HTTP/{version} {status}"
+
+    record = _record('%s - "%s %s HTTP/%s" %d', "10.0.0.7:5100", "GET", f"/hires/{EMAIL}", "1.1", 200)
+
+    line = AccessLike().format(scrub_log_record(record))
+
+    assert line == "10.0.0.7:5100 GET /hires/[EMAIL] HTTP/1.1 200"
+
+
+def test_a_value_split_between_template_and_argument_is_still_scrubbed() -> None:
+    scrubbed = scrub_log_record(_record("mobile 98765 %s", "43210"))
+
+    assert scrubbed.getMessage() == "mobile [MOBILE]"
+
+
+@pytest.mark.parametrize(
+    ("key", "hex_id"),
+    [
+        ("otelTraceID", "0af7651916cd43dd84eb2a9876543210"),
+        ("trace_id", "0af7651916cd43dd84eb2a9876543210"),
+        ("otelSpanID", "ab9876543210cdef"),
+        ("span_id", "ab9876543210cdef"),
+    ],
+)
+def test_trace_correlation_ids_are_not_mangled(key: str, hex_id: str) -> None:
+    assert scrub_log_record(_record("x", extra={key: hex_id})).__dict__[key] == hex_id
+
+
+def test_a_mobile_under_a_trace_id_key_is_still_scrubbed() -> None:
+    assert scrub_log_record(_record("x", extra={"trace_id": MOBILE})).__dict__["trace_id"] == "[MOBILE]"
+
+
+def test_a_ten_digit_number_starting_6_to_9_is_treated_as_a_mobile_by_design(telemetry: CapturedTelemetry) -> None:
+    """The documented trade-off: a number shaped like a valid mobile is scrubbed whatever it means."""
+    with trace.get_tracer("obs-1").start_as_current_span("n", attributes={"db.rows": 7000000000, "small": 70}):
+        pass
+
+    (exported,) = telemetry.spans()
+    assert dict(exported.attributes or {}) == {"db.rows": "[MOBILE]", "small": 70}
+
+
+def test_dropped_attribute_counts_survive_scrubbing() -> None:
+    with captured_telemetry() as captured:
+        captured.handle.provider._span_limits = SpanLimits(max_span_attributes=1)
+        with trace.get_tracer("obs-1").start_as_current_span(
+            "d", attributes={"a": "x", "b": PAN}
+        ):  # the SDK drops the oldest
+            pass
+        (exported,) = captured.spans()
+
+    assert dict(exported.attributes or {}) == {"b": "[PAN]"}
+    assert exported.dropped_attributes == 1
+
+
+def test_a_withheld_record_keeps_custom_fields_as_placeholders() -> None:
+    withheld = withheld_log_record(_record("x", extra={"otelTraceID": "abc", "hire_email": EMAIL}), RuntimeError())
+
+    line = logging.Formatter("%(otelTraceID)s %(message)s").format(withheld)
+
+    assert line == "[withheld] [log record withheld: PII scrubbing failed with RuntimeError]"
+    assert withheld.__dict__["hire_email"] == "[withheld]"

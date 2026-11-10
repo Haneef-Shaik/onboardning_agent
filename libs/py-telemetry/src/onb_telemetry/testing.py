@@ -37,6 +37,7 @@ def reset_telemetry_globals() -> None:
     active = setup._active
     if active is not None:
         active.shutdown()
+    setup.uninstall_log_redaction_for_tests()
     reset_trace_globals()
     _forget_pymongo_tracer()
 

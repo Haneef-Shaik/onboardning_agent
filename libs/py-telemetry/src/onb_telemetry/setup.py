@@ -27,6 +27,7 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExport
 
 from onb_telemetry.log_scrub import LogRedaction, install_log_redaction
 from onb_telemetry.pipeline import HookedSpanProcessor
+from onb_telemetry.scrub_values import scrub_attributes
 from onb_telemetry.settings import TelemetrySettings
 from onb_telemetry.span_scrub import PiiScrubbingSpanProcessor
 
@@ -48,6 +49,9 @@ _CONTENT_SWITCHES: dict[str, bool] = {
 _log = logging.getLogger("onb_telemetry")
 _lock = threading.Lock()
 _active: TelemetryHandle | None = None
+# Log scrubbing outlives `shutdown()`: lifespan teardown and atexit handlers still log. Only the test
+# helper `onb_telemetry.testing.reset_telemetry_globals` removes it.
+_log_redaction: LogRedaction | None = None
 
 
 @dataclass(frozen=True)
@@ -81,7 +85,6 @@ class TelemetryHandle:
                 _uninstrument(library)
             self.provider.shutdown()
         finally:
-            self.log_redaction.uninstall()
             with _lock:
                 if _active is self:
                     _active = None
@@ -99,11 +102,12 @@ def init_telemetry(
     """Set up tracing for this process. Call once, at startup, before building the FastAPI app.
 
     PII scrubbing is always on (PRD §7.7): spans pass `PiiScrubbingSpanProcessor` after every hook and
-    before export, and log records are scrubbed (`install_log_redaction`). Neither can be turned off.
+    before export, the resource is scrubbed, and log records are scrubbed for the rest of the process
+    (`install_log_redaction`). None of it can be turned off.
     `processors` are hooks run before the scrubber, in order. `exporter` overrides the one the settings
     choose (tests pass an in-memory exporter). `settings` default to `TelemetrySettings.from_env()`.
     """
-    global _active
+    global _active, _log_redaction
     if not service_name.strip():
         raise ValueError("service_name must be a non-blank string")
     config = settings if settings is not None else TelemetrySettings.from_env()
@@ -115,19 +119,21 @@ def init_telemetry(
         pipeline = HookedSpanProcessor(export, final_hook=PiiScrubbingSpanProcessor())
         for processor in processors:
             pipeline.add_hook(processor)
-        provider = TracerProvider(resource=Resource.create({SERVICE_NAME: service_name}))
+        provider = TracerProvider(resource=_scrubbed_resource(service_name))
         provider.add_span_processor(pipeline)
         _install_global(provider)
         _apply_content_capture(config.capture_content)
-        log_redaction = install_log_redaction()
+        log_redaction = _log_redaction or install_log_redaction()
         try:
             instrumented = _instrument_libraries(provider) if instrument else ()
         except Exception:
             # The global provider cannot be unset; shut it down so nothing exports half-configured.
             _uninstrument_all()
             provider.shutdown()
-            log_redaction.uninstall()
+            if _log_redaction is None:
+                log_redaction.uninstall()
             raise
+        _log_redaction = log_redaction
         _active = TelemetryHandle(service_name, provider, pipeline, config.capture_content, instrumented, log_redaction)
         return _active
 
@@ -150,6 +156,21 @@ def instrument_app(app: Any) -> None:
     handle = active_telemetry()
     module = importlib.import_module("opentelemetry.instrumentation.fastapi")
     module.FastAPIInstrumentor.instrument_app(app, tracer_provider=handle.provider)
+
+
+def _scrubbed_resource(service_name: str) -> Resource:
+    # Resource.create merges OTEL_RESOURCE_ATTRIBUTES and resource detectors: operator-set values.
+    resource = Resource.create({SERVICE_NAME: service_name})
+    return Resource(scrub_attributes(resource.attributes), resource.schema_url)
+
+
+def uninstall_log_redaction_for_tests() -> None:
+    """Put logging back as it was before `init_telemetry` (test helpers only; never in a service)."""
+    global _log_redaction
+    with _lock:
+        if _log_redaction is not None:
+            _log_redaction.uninstall()
+            _log_redaction = None
 
 
 def _exporter_for(settings: TelemetrySettings) -> SpanExporter | None:

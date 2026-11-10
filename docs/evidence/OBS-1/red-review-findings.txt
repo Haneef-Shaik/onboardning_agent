@@ -1,0 +1,19 @@
+record = <LogRecord: svc, 40, /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-obs-1/libs/py-telemetry/tests/test_pii_scrubbing.py, 1, "[log record withheld: PII scrubbing failed with RuntimeError]">
+record = <LogRecord: svc, 40, /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-obs-1/libs/py-telemetry/tests/test_pii_scrubbing.py, 1, "[log record withheld: PII scrubbing failed with RuntimeError]">
+record = <LogRecord: svc, 40, /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-obs-1/libs/py-telemetry/tests/test_pii_scrubbing.py, 1, "[log record withheld: PII scrubbing failed with RuntimeError]">
+FAILED libs/py-telemetry/tests/test_pii_scrubbing.py::test_log_scrubbing_outlives_shutdown_and_only_the_test_reset_removes_it
+FAILED libs/py-telemetry/tests/test_pii_scrubbing.py::test_non_string_extra_fields_are_scrubbed_and_harmless_ones_kept
+FAILED libs/py-telemetry/tests/test_pii_scrubbing.py::test_a_bare_account_number_under_an_account_key_is_scrubbed[bank_account]
+FAILED libs/py-telemetry/tests/test_pii_scrubbing.py::test_a_bare_account_number_under_an_account_key_is_scrubbed[employee.bank_account]
+FAILED libs/py-telemetry/tests/test_pii_scrubbing.py::test_a_bare_account_number_under_an_account_key_is_scrubbed[acct]
+FAILED libs/py-telemetry/tests/test_pii_scrubbing.py::test_a_bare_account_number_under_an_account_key_is_scrubbed[account_number]
+FAILED libs/py-telemetry/tests/test_pii_scrubbing.py::test_a_bare_account_number_under_an_account_key_is_scrubbed[bank.acc_no]
+FAILED libs/py-telemetry/tests/test_pii_scrubbing.py::test_resource_and_scope_attributes_are_scrubbed
+FAILED libs/py-telemetry/tests/test_pii_scrubbing.py::test_a_formatter_that_unpacks_args_keeps_working
+FAILED libs/py-telemetry/tests/test_pii_scrubbing.py::test_trace_correlation_ids_are_not_mangled[otelTraceID-0af7651916cd43dd84eb2a9876543210]
+FAILED libs/py-telemetry/tests/test_pii_scrubbing.py::test_trace_correlation_ids_are_not_mangled[trace_id-0af7651916cd43dd84eb2a9876543210]
+FAILED libs/py-telemetry/tests/test_pii_scrubbing.py::test_trace_correlation_ids_are_not_mangled[otelSpanID-ab9876543210cdef]
+FAILED libs/py-telemetry/tests/test_pii_scrubbing.py::test_trace_correlation_ids_are_not_mangled[span_id-ab9876543210cdef]
+FAILED libs/py-telemetry/tests/test_pii_scrubbing.py::test_dropped_attribute_counts_survive_scrubbing
+FAILED libs/py-telemetry/tests/test_pii_scrubbing.py::test_a_withheld_record_keeps_custom_fields_as_placeholders
+15 failed, 23 passed in 1.23s
