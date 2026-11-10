@@ -27,8 +27,3 @@ def delimit_untrusted(text: str, source: str) -> str:
         raise ValueError("source is a lower-case name of at most 32 characters, such as 'chat' or 'tool'")
     escaped = _TAG_IN_TEXT.sub(r"&lt;\1", text)
     return f'<{UNTRUSTED_TAG} source="{source}">\n{escaped}\n</{UNTRUSTED_TAG}>'
-
-
-def is_delimited(text: str) -> bool:
-    """Whether `text` is exactly one block produced by `delimit_untrusted`."""
-    return text.startswith(f"<{UNTRUSTED_TAG} source=") and text.endswith(f"</{UNTRUSTED_TAG}>")
