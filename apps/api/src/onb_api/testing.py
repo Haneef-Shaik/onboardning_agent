@@ -1,10 +1,14 @@
-"""Test support: an in-memory `UserStore` with the seed users of both orgs, and token helpers.
+"""Test support: an in-memory `UserStore` with the seed users of both orgs, an in-memory audit log,
+and token helpers.
 
 Test-only, like `onb_telemetry.testing`: production code never imports it. It lives in the package
 so test suites can import it without making their `tests/` directories packages (two packages named
 `tests` collide when several projects' tests run in one pytest call).
 
-It keeps the store's contract: the login directory is global, user records are read in the current
+`InMemoryAuditLog` keeps `onb_data.AuditLog`'s contract for the API: records are per org (read in
+the current tenant scope only), newest first, filtered exactly; it has no update or delete either.
+
+The user store keeps its contract: the login directory is global, user records are read in the current
 tenant scope only (a user of another org is "not found"), and an email is unique across orgs.
 Synthetic people only (`evals/fixtures/seed_v1.json`); passwords are made up per test run.
 """
@@ -12,11 +16,12 @@ Synthetic people only (`evals/fixtures/seed_v1.json`); passwords are made up per
 from __future__ import annotations
 
 import secrets
+import uuid
 from dataclasses import replace
 from datetime import UTC, datetime
 
 from onb_contracts.auth import Role
-from onb_data import current_tenant, tenant_scope
+from onb_data import Actor, AuditEntry, AuditOutcome, AuditPage, AuditQuery, current_tenant, tenant_scope
 
 from onb_api.auth.passwords import hash_password
 from onb_api.auth.settings import AuthSettings
@@ -99,3 +104,62 @@ def token_for(user_id: str, org_id: str, role: Role, *, now: datetime | None = N
 
 def bearer(token: str) -> dict[str, str]:
     return {"Authorization": f"Bearer {token}"}
+
+
+class InMemoryAuditLog:
+    """`audit(...)` appends, `list(...)` reads the current org's records. `now`/`trace` stamp new records."""
+
+    def __init__(self) -> None:
+        self._entries: list[AuditEntry] = []
+        self.now: datetime | None = None
+        self.trace: str | None = None
+        self.indexes_ensured = 0
+        self.list_calls = 0
+        self.last_list: tuple[AuditQuery, int, int] | None = None
+
+    async def ensure_indexes(self) -> None:
+        self.indexes_ensured += 1
+
+    async def audit(
+        self, *, actor: Actor, action: str, target: str, outcome: AuditOutcome, reason: str | None = None
+    ) -> str:
+        entry = AuditEntry(
+            id=uuid.uuid4().hex,
+            org_id=current_tenant().org_id,
+            actor=actor,
+            action=action,
+            target=target,
+            outcome=outcome,
+            reason=reason,
+            trace_id=self.trace,
+            at=self.now or datetime.now(UTC),
+        )
+        self._entries = [*self._entries, entry]
+        return entry.id
+
+    async def list(self, query: AuditQuery, *, page: int, limit: int) -> AuditPage:
+        self.list_calls += 1
+        self.last_list = (query, page, limit)
+        org_id = current_tenant().org_id
+        matching = sorted(
+            (e for e in self._entries if e.org_id == org_id and _matches(e, query)),
+            key=lambda e: (e.at, e.id),
+            reverse=True,
+        )
+        start = (page - 1) * limit
+        return AuditPage(entries=tuple(matching[start : start + limit]), total=len(matching), page=page, limit=limit)
+
+
+def _matches(entry: AuditEntry, query: AuditQuery) -> bool:
+    exact = (
+        (query.actor_type, entry.actor.type),
+        (query.actor_id, entry.actor.id),
+        (query.action, entry.action),
+        (query.outcome, entry.outcome),
+        (query.target, entry.target),
+    )
+    if any(wanted is not None and wanted != actual for wanted, actual in exact):
+        return False
+    if query.since is not None and entry.at < query.since:
+        return False
+    return query.until is None or entry.at <= query.until

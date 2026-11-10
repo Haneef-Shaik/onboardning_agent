@@ -34,6 +34,8 @@ PUBLIC_ROUTES = {("GET", "/health"), ("POST", "/auth/login")}
 # Every guarded route: (method, path) -> {role: expected status}.
 ROLE_MATRIX: dict[tuple[str, str], dict[Role, int]] = {
     ("GET", "/me"): ALL_200,
+    # AUD-1: the audit log is HR_ADMIN only (PRD §3, §10 Registry & audit).
+    ("GET", "/audit"): {Role.HR_ADMIN: 200, Role.HR: 403, Role.MANAGER: 403},
 }
 
 

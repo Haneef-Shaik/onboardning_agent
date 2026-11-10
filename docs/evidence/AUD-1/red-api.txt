@@ -1,0 +1,4 @@
+ImportError while loading conftest '/Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-aud-1/apps/api/tests/conftest.py'.
+apps/api/tests/conftest.py:17: in <module>
+    from onb_api.testing import TEST_SETTINGS, InMemoryAuditLog, InMemoryUserStore, seeded_store
+E   ImportError: cannot import name 'InMemoryAuditLog' from 'onb_api.testing' (/Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-aud-1/apps/api/src/onb_api/testing.py)
