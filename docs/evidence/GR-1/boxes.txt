@@ -1,0 +1,13 @@
+injection/test_injection_corpus.py::test_corpus_covers_at_least_twenty_known_patterns PASSED
+injection/test_injection_corpus.py::test_every_known_pattern_in_the_corpus_is_detected PASSED
+injection/test_injection_corpus.py::test_benign_false_positive_rate_is_measured_and_bounded benign false-positive rate: 1/30 = 3.3%; flagged: ['neg-hard-security-training']
+PASSED
+test_guarded.py::test_aadhaar_and_pan_in_free_text_reach_the_fake_llm_only_as_markers PASSED
+test_guarded.py::test_invalid_structured_output_gets_exactly_one_repair_then_fails_visibly PASSED
+test_guarded.py::test_an_exceeded_step_budget_stops_the_agent_loop PASSED
+test_guarded.py::test_an_exceeded_token_budget_stops_after_the_call_that_crossed_it PASSED
+test_guarded.py::test_an_exceeded_time_budget_stops_the_loop PASSED
+test_guarded.py::test_the_run_token_budget_is_shared_by_its_tasks PASSED
+test_guarded.py::test_every_decision_is_a_span_event_and_an_audit_record PASSED
+test_guarded.py::test_events_and_audit_reasons_carry_no_raw_pii PASSED
+============================== 11 passed in 0.42s ==============================

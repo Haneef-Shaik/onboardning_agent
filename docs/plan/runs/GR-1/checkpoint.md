@@ -9,8 +9,11 @@ Branch `goal/gr-1-guardrails-lib` (from main @ e892d97).
    emitted as `guardrail.outcome`; optional `BedrockGuardrails` (stub client in tests).
 3. Coverage 100% on `onb_guardrails`; mutation checks 26/26 killed (`docs/evidence/GR-1/mutation-checks.txt`).
 
+4. Code + security review: highs/mediums fixed in b7fd8f0 (21/22 regression tests RED on the old source);
+   mutation checks 38/38; `make check` and `make evals-selftest` green; handoff written.
+
 ## Next
-Code + security review of `git diff main...HEAD`, `make check`, `make evals-selftest`, handoff, verifier.
+goal-verifier pass (attempt 1), then board -> in review (hold for Haneef).
 
 ## Surprises
 - A module-level `trace.get_tracer()` proxy binds to the first provider; the test fixture swaps providers,
