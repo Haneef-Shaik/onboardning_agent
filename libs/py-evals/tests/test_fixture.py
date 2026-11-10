@@ -10,8 +10,9 @@ from typing import Any
 
 import pytest
 from onb_crypto import is_token
+from onb_data import tenant_scope
 from onb_evals.cases import parse_case
-from onb_evals.fixture import FixtureError, LoadedFixture, apply_setup, load_fixture, load_seed
+from onb_evals.fixture import FixtureError, LoadedFixture, StoreState, apply_setup, load_fixture, load_seed
 from onb_evals.tokens import TokenMap
 
 from .memory_store import MemoryStore, as_data_store
@@ -132,3 +133,20 @@ def test_the_token_map_rewrites_strings_deeply_in_both_directions() -> None:
 
 def test_an_empty_token_map_returns_values_unchanged() -> None:
     assert TokenMap({}).to_real({"a": ("x",)}) == {"a": ["x"]}
+
+
+def test_final_state_reads_the_audit_log_through_its_append_only_handle() -> None:
+    """AUD-1: `audit_log` has no `tenant()` handle; the state reader uses `append_only()` and stays org-scoped."""
+    store = MemoryStore()
+    data = as_data_store(store)
+
+    async def run() -> list[dict[str, Any]]:
+        for org in ("org_acme", "org_globex"):
+            with tenant_scope(org):
+                await data.append_only("audit_log").insert_one({"kind": "mcp_call", "tool": "find"})
+        return await StoreState(data, TokenMap({})).find("audit_log", {"kind": "mcp_call"}, org_id="org_acme")
+
+    found = asyncio.run(run())
+    assert [(d["org_id"], d["tool"]) for d in found] == [("org_acme", "find")]
+    with pytest.raises(AssertionError, match="append-only"):
+        store.tenant("audit_log")

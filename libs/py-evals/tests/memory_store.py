@@ -14,7 +14,7 @@ from collections.abc import Callable, Mapping, Sequence
 from itertools import count
 from typing import Any, cast
 
-from onb_data import GLOBAL_COLLECTIONS, DataStore, UpdateOutcome, current_tenant
+from onb_data import APPEND_ONLY_COLLECTIONS, GLOBAL_COLLECTIONS, DataStore, UpdateOutcome, current_tenant
 from onb_data.scoping import plain_document, plain_filter, scoped_document, scoped_filter, scoped_update
 from onb_evals.paths import MISSING, resolve
 from pymongo.errors import DuplicateKeyError
@@ -151,8 +151,24 @@ class MemoryRepository:
         return len(await self.find(query))
 
 
+class MemoryAppendOnly:
+    """Like `onb_data.AppendOnlyRepository`: insert, find and count only."""
+
+    def __init__(self, repo: MemoryRepository) -> None:
+        self._repo = repo
+
+    async def insert_one(self, document: Mapping[str, Any]) -> Any:
+        return await self._repo.insert_one(document)
+
+    async def find(self, query: Mapping[str, Any] | None = None, **kwargs: Any) -> list[Document]:
+        return await self._repo.find(query, **kwargs)
+
+    async def count(self, query: Mapping[str, Any] | None = None) -> int:
+        return await self._repo.count(query)
+
+
 class MemoryStore:
-    """`tenant()`, `shared()` and `ensure_index()` like `DataStore`; unique indexes are enforced."""
+    """`tenant()`, `append_only()`, `shared()` and `ensure_index()` like `DataStore`; unique indexes are enforced."""
 
     def __init__(self) -> None:
         self.data: dict[str, list[Document]] = {}
@@ -161,7 +177,12 @@ class MemoryStore:
 
     def tenant(self, collection: str) -> MemoryRepository:
         assert collection not in GLOBAL_COLLECTIONS, collection
+        assert collection not in APPEND_ONLY_COLLECTIONS, f"{collection} is append-only: use append_only()"
         return MemoryRepository(collection, self, tenant=True)
+
+    def append_only(self, collection: str) -> MemoryAppendOnly:
+        assert collection in APPEND_ONLY_COLLECTIONS, collection
+        return MemoryAppendOnly(MemoryRepository(collection, self, tenant=True))
 
     def shared(self, collection: str) -> MemoryRepository:
         assert collection in GLOBAL_COLLECTIONS, collection

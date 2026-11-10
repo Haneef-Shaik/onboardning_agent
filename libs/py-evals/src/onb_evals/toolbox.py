@@ -189,7 +189,7 @@ class ToolBox:
         self.calls.append(ToolCall(name, dict(args), outcome))
         self.audit.append(AuditEntry(self._actor.org_id, name, dict(args), outcome, orgs))
         with tenant_scope(self._actor.org_id):
-            await self._store.tenant(AUDIT_COLLECTION).insert_one(
+            await self._store.append_only(AUDIT_COLLECTION).insert_one(
                 {
                     "kind": "mcp_call",
                     "tool": name,

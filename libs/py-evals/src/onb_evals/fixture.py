@@ -13,7 +13,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Final
 
-from onb_data import DataStore, tenant_scope
+from onb_data import APPEND_ONLY_COLLECTIONS, DataStore, tenant_scope
 
 from onb_evals.cases import EvalCase
 from onb_evals.context import FixtureFacts, StateReader
@@ -99,7 +99,10 @@ class StoreState(StateReader):
         self._tokens = tokens
 
     async def find(self, collection: str, query: Mapping[str, Any], *, org_id: str) -> list[dict[str, Any]]:
+        # Append-only collections (`audit_log`) have no `tenant()` handle; read them through `append_only()`.
+        append_only = collection in APPEND_ONLY_COLLECTIONS
+        repo = self._store.append_only(collection) if append_only else self._store.tenant(collection)
         with tenant_scope(org_id):
-            documents = await self._store.tenant(collection).find(self._tokens.to_real(query))
+            documents = await repo.find(self._tokens.to_real(query))
         rewritten: list[dict[str, Any]] = self._tokens.to_seed(documents)
         return rewritten

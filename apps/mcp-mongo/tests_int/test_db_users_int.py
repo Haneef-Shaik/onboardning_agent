@@ -15,7 +15,7 @@ from typing import Any
 from urllib.parse import urlsplit
 
 import pytest
-from onb_data import DataStore, connect, tenant_scope
+from onb_data import APPEND_ONLY_COLLECTIONS, DataStore, connect, tenant_scope
 from onb_mcp_mongo import policy, tools
 from onb_mcp_mongo.call_context import CallContext
 from onb_mcp_mongo.db_users import (
@@ -90,6 +90,11 @@ def _refused(uri: str, work: Callable[[DataStore], Coroutine[Any, Any, Any]]) ->
     assert caught.value.code == UNAUTHORIZED
 
 
+def _writable(store: DataStore, collection: str) -> Any:
+    """The repository the app would write `collection` through: `audit_log` has only `append_only()` (AUD-1)."""
+    return store.append_only(collection) if collection in APPEND_ONLY_COLLECTIONS else store.tenant(collection)
+
+
 def _count(root_db: Any, name: str, query: dict[str, Any]) -> int:
     return int(root_db[name].count_documents(query))
 
@@ -99,7 +104,7 @@ def _count(root_db: Any, name: str, query: dict[str, Any]) -> int:
 
 @pytest.mark.parametrize("collection", ["run_tasks", "new_hires", "audit_log"])
 def test_the_read_only_user_cannot_insert_with_the_policy_bypassed(users: Users, root_db: Any, collection: str) -> None:
-    _refused(users.read_uri, lambda s: s.tenant(collection).insert_one({"task": "evil-insert"}))
+    _refused(users.read_uri, lambda s: _writable(s, collection).insert_one({"task": "evil-insert"}))
     assert _count(root_db, collection, {"task": "evil-insert"}) == 0
 
 
@@ -267,7 +272,7 @@ def test_the_read_write_user_inserts_and_updates_its_collections(users: Users, r
 
 
 def test_the_read_write_user_cannot_write_outside_its_collections(users: Users, root_db: Any) -> None:
-    _refused(users.write_uri, lambda s: s.tenant("audit_log").insert_one({"event": "evil-audit"}))
+    _refused(users.write_uri, lambda s: s.append_only("audit_log").insert_one({"event": "evil-audit"}))
     _refused(users.write_uri, lambda s: s.tenant("templates").insert_one({"event": "evil-template"}))
     assert _count(root_db, "audit_log", {"event": "evil-audit"}) == 0
 
@@ -279,7 +284,7 @@ def test_no_mcp_user_can_delete(users: Users, root_db: Any, spec: AccessSpec) ->
 
 
 def test_the_read_only_user_cannot_read_outside_its_collections(users: Users) -> None:
-    _refused(users.read_uri, lambda s: s.tenant("audit_log").find({}, limit=1))
+    _refused(users.read_uri, lambda s: s.append_only("audit_log").find({}, limit=1))
 
 
 @pytest.mark.parametrize("spec", [READ_ONLY, READ_WRITE], ids=lambda s: s.user)

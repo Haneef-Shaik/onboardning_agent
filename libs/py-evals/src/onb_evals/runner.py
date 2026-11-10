@@ -175,6 +175,6 @@ class EvalRunner:
         entries: list[AuditEntry] = []
         for org_id in self._orgs:
             with tenant_scope(org_id):
-                documents = await store.tenant(AUDIT_COLLECTION).find({"kind": "mcp_call"})
+                documents = await store.append_only(AUDIT_COLLECTION).find({"kind": "mcp_call"})
             entries.extend(audit_from_documents(tokens.to_seed(documents)))
         return tuple(entries)
