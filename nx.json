@@ -7,6 +7,8 @@
     "default": ["{projectRoot}/**/*", "sharedGlobals"],
     "sharedGlobals": [
       "{workspaceRoot}/pyproject.toml",
+      "{workspaceRoot}/.python-version",
+      "{workspaceRoot}/.nvmrc",
       "{workspaceRoot}/uv.lock",
       "{workspaceRoot}/package-lock.json",
       "{workspaceRoot}/tsconfig.base.json",
@@ -15,8 +17,8 @@
   },
   "targetDefaults": {
     "lint": { "cache": true, "inputs": ["default"] },
-    "typecheck": { "cache": true, "inputs": ["default"] },
-    "test": { "cache": true, "inputs": ["default"] }
+    "typecheck": { "cache": true, "inputs": ["default", "^default"] },
+    "test": { "cache": true, "inputs": ["default", "^default"] }
   },
   "plugins": [
     {

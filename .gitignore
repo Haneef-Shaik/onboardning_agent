@@ -2,6 +2,12 @@
 .env
 .env.*
 !.env.example
+.envrc
+
+# Key material (vault keys, TLS) and local secret folders
+*.pem
+*.key
+secrets/
 
 # Generated eval reports
 evals/reports/

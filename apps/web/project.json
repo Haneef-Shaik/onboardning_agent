@@ -19,7 +19,7 @@
       "executor": "nx:run-commands",
       "cache": true,
       "options": {
-        "command": "tsc -p apps/web/tsconfig.json"
+        "command": "tsc -p apps/web/tsconfig.json && tsc -p apps/web/tsconfig.node.json"
       }
     },
     "test": {

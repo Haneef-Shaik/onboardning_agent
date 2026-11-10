@@ -79,7 +79,7 @@ def test_python_lib_enforces_80_percent_line_coverage(rel: str) -> None:
     assert match, f"{rel} test target does not enforce a coverage threshold: {cmd}"
     assert int(match.group(1)) >= COVERAGE_MIN
     package = _package_name(rel)
-    assert f"--cov={package}" in cmd, f"{rel} measures the wrong package: {cmd}"
+    assert re.search(rf"--cov={re.escape(package)}(\s|$)", cmd), f"{rel} measures the wrong package: {cmd}"
 
 
 def _package_name(rel: str) -> str:
@@ -126,11 +126,27 @@ def test_makefile_check_runs_plan_check_and_all_targets() -> None:
     for target in ("bootstrap:", "check:", "test-int:", "fmt:"):
         assert re.search(rf"^{re.escape(target)}", makefile, re.M), f"Makefile lacks {target}"
     assert "scripts/plan/plan.py check" in makefile
+    check_line = re.search(r"^check:(.*)$", makefile, re.M)
+    assert check_line
+    prereqs = check_line.group(1).split()
+    for prereq in ("plan-check", "tooling-test", *REQUIRED_TARGETS):
+        assert prereq in prereqs, f"check: does not depend on {prereq}"
     for target in REQUIRED_TARGETS:
-        assert target in makefile
+        assert re.search(rf"^{target}:\n\t\$\(NX\) run-many -t {target}\b", makefile, re.M)
 
 
-IGNORED = (".env", ".env.local", "evals/reports/x.json", ".venv/x", "node_modules/x", "infra/mongo/keyfile")
+IGNORED = (
+    ".env",
+    ".env.local",
+    ".envrc",
+    "evals/reports/x.json",
+    ".venv/x",
+    "node_modules/x",
+    "infra/mongo/keyfile",
+    "infra/tls/server.pem",
+    "infra/tls/server.key",
+    "secrets/x",
+)
 
 
 @pytest.mark.parametrize("path", IGNORED)
@@ -161,3 +177,28 @@ def test_python_targets_do_not_share_caches(rel: str) -> None:
     assert f"--cache-dir .mypy_cache/{name} " in _command(targets["typecheck"])
     assert f"-o cache_dir=.pytest_cache/{name}" in _command(targets["test"])
     assert targets["test"]["options"]["env"]["COVERAGE_FILE"] == f".coverage.{name}"
+
+
+def test_coverage_is_line_coverage() -> None:
+    data = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+    assert data["tool"]["coverage"]["run"]["branch"] is False
+
+
+@pytest.mark.parametrize("target", ["typecheck", "test"])
+def test_cache_key_includes_dependencies(target: str) -> None:
+    """A change in a dependency (web -> ts-ui, py-agents -> py-data) must re-run dependents."""
+    nx = json.loads((ROOT / "nx.json").read_text(encoding="utf-8"))
+    assert "^default" in nx["targetDefaults"][target]["inputs"]
+
+
+def test_toolchain_versions_are_pinned() -> None:
+    data = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+    assert data["tool"]["uv"]["required-version"]
+    assert (ROOT / ".nvmrc").read_text(encoding="utf-8").strip()
+    assert re.fullmatch(r"3\.12\.\d+", (ROOT / ".python-version").read_text(encoding="utf-8").strip())
+
+
+def test_makefile_lints_and_typechecks_repo_tooling() -> None:
+    makefile = (ROOT / "Makefile").read_text(encoding="utf-8")
+    assert "ruff check tools" in makefile
+    assert "mypy tools" in makefile

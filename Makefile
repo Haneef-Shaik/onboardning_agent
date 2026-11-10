@@ -26,6 +26,9 @@ plan-check:
 	python3 scripts/plan/plan.py check
 
 tooling-test:
+	uv run --frozen ruff check tools
+	uv run --frozen ruff format --check tools
+	uv run --frozen mypy tools
 	uv run --frozen pytest tools/tests scripts/plan/test_plan.py -q
 
 lint:
