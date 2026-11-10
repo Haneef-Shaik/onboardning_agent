@@ -1,0 +1,11 @@
+_ test_a_failed_supersede_leaves_no_live_old_value_and_the_next_update_cleans_up _
+    def test_a_failed_supersede_leaves_no_live_old_value_and_the_next_update_cleans_up() -> None:
+_____________ test_a_failed_aadhaar_write_leaves_no_consent_record _____________
+    def test_a_failed_aadhaar_write_leaves_no_consent_record() -> None:
+FAILED libs/py-crypto/tests/test_vault_review_fixes.py::test_a_replayed_active_copy_of_a_superseded_record_does_not_resolve
+FAILED libs/py-crypto/tests/test_vault_review_fixes.py::test_a_failed_supersede_leaves_no_live_old_value_and_the_next_update_cleans_up
+FAILED libs/py-crypto/tests/test_vault_review_fixes.py::test_an_old_record_purged_during_an_update_does_not_fail_the_update
+FAILED libs/py-crypto/tests/test_vault_review_fixes.py::test_an_update_refuses_to_build_on_a_newest_record_without_a_token
+FAILED libs/py-crypto/tests/test_vault_review_fixes.py::test_a_purge_that_loses_a_race_is_a_conflict
+FAILED libs/py-crypto/tests/test_vault_review_fixes.py::test_a_failed_aadhaar_write_leaves_no_consent_record
+6 failed, 1 passed in 0.37s

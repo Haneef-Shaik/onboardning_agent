@@ -21,6 +21,7 @@ from onb_crypto import (
     TokenBindingError,
     TokenNotFoundError,
     Vault,
+    VaultConflictError,
     VaultField,
     VaultIntegrityError,
     VaultStatus,
@@ -39,6 +40,7 @@ MOBILE_1 = "9000000001"
 MOBILE_2 = "9000000002"
 EMAIL_1 = "priya.test@example.com"
 NOW = datetime(2026, 11, 10, 6, 0, 0, 123456, tzinfo=UTC)
+SIG_FAILS = "signature does not verify"  # the `sig` check itself refused, not a later layer
 
 
 def make_vault() -> tuple[Vault, FakeVaultStore]:
@@ -143,7 +145,7 @@ def test_tamper_changed_subject_id_fails_closed() -> None:
     vault, store = make_vault()
     token = put(vault, HIRE_1, VaultField.MOBILE, MOBILE_1)
     raw(store, token)["subject"]["id"] = HIRE_2
-    with pytest.raises(VaultIntegrityError):
+    with pytest.raises(VaultIntegrityError, match=SIG_FAILS):
         resolve(vault, token, HIRE_2, VaultField.MOBILE)
     with pytest.raises((VaultIntegrityError, TokenBindingError)):
         resolve(vault, token, HIRE_1, VaultField.MOBILE)
@@ -155,7 +157,7 @@ def test_tamper_ciphertext_swapped_between_records_fails_closed() -> None:
     donor = put(vault, HIRE_2, VaultField.MOBILE, MOBILE_2)
     for part in ("ciphertext", "nonce", "key_version"):
         raw(store, victim)[part] = raw(store, donor)[part]
-    with pytest.raises(VaultIntegrityError):
+    with pytest.raises(VaultIntegrityError, match=SIG_FAILS):
         resolve(vault, victim, HIRE_1, VaultField.MOBILE)
 
 
@@ -170,7 +172,7 @@ def test_tamper_ciphertext_swapped_and_resigned_still_fails_on_the_aad() -> None
     keys = in_org(ORG_A, vault.keyring.key_version(ORG_A, 1))
     payload = signing_payload(record_from_document(doc))
     doc["sig"] = hmac.new(keys.key(KeyPurpose.SIGNING).reveal(), payload, hashlib.sha256).digest()
-    with pytest.raises(DecryptionError):
+    with pytest.raises(VaultIntegrityError, match="does not open"):
         resolve(vault, victim, HIRE_1, VaultField.MOBILE)
 
 
@@ -178,7 +180,7 @@ def test_tamper_changed_field_fails_closed() -> None:
     vault, store = make_vault()
     token = put(vault, HIRE_1, VaultField.MOBILE, MOBILE_1)
     raw(store, token)["field"] = "email"
-    with pytest.raises(VaultIntegrityError):
+    with pytest.raises(VaultIntegrityError, match=SIG_FAILS):
         resolve(vault, token, HIRE_1, VaultField.EMAIL)
     with pytest.raises((VaultIntegrityError, TokenBindingError)):
         resolve(vault, token, HIRE_1, VaultField.MOBILE)
@@ -189,10 +191,13 @@ def test_tamper_changed_status_fails_closed() -> None:
     old = put(vault, HIRE_1, VaultField.MOBILE, MOBILE_1)
     new = put(vault, HIRE_1, VaultField.MOBILE, MOBILE_2)
     raw(store, old)["status"] = "active"  # revive a superseded value
-    with pytest.raises(VaultIntegrityError):
+    with pytest.raises(VaultIntegrityError, match=SIG_FAILS):
         resolve(vault, old, HIRE_1, VaultField.MOBILE)
-    raw(store, new)["status"] = "purged"  # hide a live value behind "[purged]"
-    with pytest.raises(VaultIntegrityError):
+    raw(store, new)["status"] = "superseded"  # retire a live value
+    with pytest.raises(VaultIntegrityError, match=SIG_FAILS):
+        resolve(vault, new, HIRE_1, VaultField.MOBILE, allow_superseded=True)
+    raw(store, new)["status"] = "purged"  # hide a live value behind "[purged]": its ciphertext gives it away
+    with pytest.raises(VaultIntegrityError, match="purged record keeps no ciphertext"):
         resolve(vault, new, HIRE_1, VaultField.MOBILE)
 
 
@@ -201,13 +206,13 @@ def test_tamper_edited_sig_fails_closed() -> None:
     token = put(vault, HIRE_1, VaultField.MOBILE, MOBILE_1)
     doc = raw(store, token)
     doc["sig"] = bytes([doc["sig"][0] ^ 1]) + doc["sig"][1:]
-    with pytest.raises(VaultIntegrityError):
+    with pytest.raises(VaultIntegrityError, match=SIG_FAILS):
         resolve(vault, token, HIRE_1, VaultField.MOBILE)
     doc["sig"] = b""
-    with pytest.raises(VaultIntegrityError):
+    with pytest.raises(VaultIntegrityError, match="sig length"):
         resolve(vault, token, HIRE_1, VaultField.MOBILE)
     del doc["sig"]
-    with pytest.raises(VaultIntegrityError):
+    with pytest.raises(VaultIntegrityError, match="missing fields"):
         resolve(vault, token, HIRE_1, VaultField.MOBILE)
 
 
@@ -229,7 +234,8 @@ def test_tamper_with_any_other_signed_part_fails_closed(part: str, value: Any) -
     doc = raw(store, token)
     doc[part] = value
     lookup = value if part == "token" else token
-    with pytest.raises(VaultIntegrityError):
+    reason = "unknown key version" if part == "key_version" else SIG_FAILS
+    with pytest.raises(VaultIntegrityError, match=reason):
         resolve(vault, lookup, HIRE_1, VaultField.MOBILE)
 
 
@@ -382,13 +388,11 @@ def test_an_update_that_loses_a_race_is_reported() -> None:
     vault, store = make_vault()
     put(vault, HIRE_1, VaultField.MOBILE, MOBILE_1)
     store.tenant("pii_vault").fail_next_update = True
-    with pytest.raises(VaultIntegrityError, match="superseded"):
+    with pytest.raises(VaultConflictError, match="superseded"):
         put(vault, HIRE_1, VaultField.MOBILE, MOBILE_2)
 
 
 def test_a_concurrent_insert_of_the_same_version_is_refused() -> None:
-    from onb_crypto import VaultConflictError
-
     vault, store = make_vault()
     first = put(vault, HIRE_1, VaultField.MOBILE, MOBILE_1)
     assert raw(store, first)["version"] == 1
@@ -458,7 +462,7 @@ def test_a_purge_that_loses_a_race_is_reported() -> None:
     vault, store = make_vault()
     token = put(vault, HIRE_1, VaultField.MOBILE, MOBILE_1)
     store.tenant("pii_vault").fail_next_update = True
-    with pytest.raises(VaultIntegrityError, match="purge"):
+    with pytest.raises(VaultConflictError, match="purge"):
         in_org(ORG_A, vault.purge(token, org_id=ORG_A, subject_id=HIRE_1, field=VaultField.MOBILE))
 
 

@@ -28,6 +28,7 @@ from pymongo.errors import DuplicateKeyError
 
 from onb_crypto import normalize
 from onb_crypto.errors import (
+    DecryptionError,
     SupersededTokenError,
     TokenBindingError,
     TokenNotFoundError,
@@ -70,6 +71,8 @@ class VaultRepository(Protocol):
     async def insert_one(self, document: Mapping[str, Any]) -> Any: ...
 
     async def update_one(self, query: Mapping[str, Any] | None, update: Mapping[str, Any]) -> UpdateOutcome: ...
+
+    async def delete_one(self, query: Mapping[str, Any] | None) -> int: ...
 
 
 class VaultStore(Protocol):
@@ -191,14 +194,8 @@ class Vault:
             created_at=now,
         )
         signed = await self._sign(record)
-        if consent is not None:
-            await self._record_consent(signed, consent)
-        try:
-            await repo.insert_one(record_to_document(signed))
-        except DuplicateKeyError:
-            raise VaultConflictError(f"{field.value} of {subject_id} was written concurrently; retry") from None
-        if current is not None and current.status is VaultStatus.ACTIVE:
-            await self._supersede(repo, current)
+        await self._insert(repo, signed, consent)
+        await self._supersede_older(repo, signed)
         log.info("vault put: org=%s token=%s field=%s version=%d", org_id, token, field.value, version)
         return token
 
@@ -213,7 +210,7 @@ class Vault:
             {"$set": {"status": purged.status.value, "ciphertext": b"", "nonce": b"", "sig": purged.sig}},
         )
         if outcome.matched != 1:
-            raise VaultIntegrityError(f"vault record {token} changed while it was being purged")
+            raise VaultConflictError(f"vault record {token} changed while it was being purged; retry")
         log.info("vault purge: org=%s token=%s field=%s", record.org_id, token, record.field.value)
 
     # --- reads -------------------------------------------------------------------------------------
@@ -237,12 +234,15 @@ class Vault:
         record = await self.verify(token, org_id=org_id, subject_id=subject_id, field=field)
         if record.status is VaultStatus.PURGED:
             return PURGED
-        if record.status is VaultStatus.SUPERSEDED and not allow_superseded:
+        if not allow_superseded and not await self._is_live(record):
             raise SupersededTokenError(f"token {token} was superseded by a newer {record.field.value} value")
         ad = self.associated_data(record.org_id, record.subject_id, record.field, record.token, record.version)
-        plaintext = await self._keyring.decrypt(
-            record.org_id, record.sealed(), associated_data=ad, purpose=_purpose_for(record.field)
-        )
+        try:
+            plaintext = await self._keyring.decrypt(
+                record.org_id, record.sealed(), associated_data=ad, purpose=_purpose_for(record.field)
+            )
+        except DecryptionError:
+            raise self._refuse(record.org_id, token, "ciphertext does not open under its binding") from None
         return plaintext.decode("utf-8")
 
     # --- internals ---------------------------------------------------------------------------------
@@ -280,7 +280,57 @@ class Vault:
         if not docs:
             return None
         token = docs[0].get("token")
-        return await self._read(field, token if isinstance(token, str) else "", org_id)
+        if not is_token(token):
+            raise self._refuse(org_id, "(none)", f"the newest {field.value} record of {subject_id} has no valid token")
+        return await self._read(field, token, org_id)
+
+    async def _is_live(self, record: VaultRecord) -> bool:
+        """Active and the newest version of its subject's field. An older record that still says `active`
+        (a half-finished update, or an old signed copy written back) is treated as superseded."""
+        if record.status is not VaultStatus.ACTIVE:
+            return False
+        repo = self._store.tenant(collection_for(record.field))
+        newest = await self._current(repo, record.org_id, record.subject_id, record.field)
+        if newest is None or newest.token != record.token:
+            log.warning("vault stale active record: org=%s token=%s", record.org_id, record.token)
+            return False
+        return True
+
+    async def _insert(self, repo: VaultRepository, record: VaultRecord, consent: AadhaarConsent | None) -> None:
+        """The new record, with its consent record first; the consent is removed if the record is not stored."""
+        if consent is not None:
+            await self._record_consent(record, consent)
+        try:
+            await repo.insert_one(record_to_document(record))
+        except Exception as error:
+            if consent is not None:
+                await self._store.tenant(CONSENT_COLLECTION).delete_one({"token": record.token})
+            if isinstance(error, DuplicateKeyError):
+                raise VaultConflictError(
+                    f"{record.field.value} of {record.subject_id} was written concurrently; retry"
+                ) from None
+            raise
+
+    async def _supersede_older(self, repo: VaultRepository, newest: VaultRecord) -> None:
+        """Mark every older active record of the subject's field `superseded` (also repairing what an earlier
+        half-finished update left). A record that stopped being active meanwhile needs nothing more."""
+        docs = await repo.find(
+            {
+                "subject.type": newest.subject_type.value,
+                "subject.id": newest.subject_id,
+                "field": newest.field.value,
+                "status": VaultStatus.ACTIVE.value,
+            }
+        )
+        for doc in docs:
+            if doc.get("token") == newest.token:
+                continue
+            token = doc.get("token")
+            if not is_token(token):
+                raise self._refuse(newest.org_id, "(none)", f"an active {newest.field.value} record has no valid token")
+            old = await self._read(newest.field, token, newest.org_id)
+            if old.status is VaultStatus.ACTIVE and old.version < newest.version:
+                await self._supersede(repo, old)
 
     async def _supersede(self, repo: VaultRepository, current: VaultRecord) -> None:
         superseded = await self._sign(current.with_status(VaultStatus.SUPERSEDED))
@@ -288,8 +338,11 @@ class Vault:
             {"token": current.token, "sig": current.sig, "status": VaultStatus.ACTIVE.value},
             {"$set": {"status": superseded.status.value, "sig": superseded.sig}},
         )
-        if outcome.matched != 1:
-            raise VaultIntegrityError(f"vault record {current.token} changed before it could be superseded")
+        if outcome.matched == 1:
+            return
+        now = await self._read(current.field, current.token, current.org_id)
+        if now.status is VaultStatus.ACTIVE:
+            raise VaultConflictError(f"vault record {current.token} changed before it could be superseded; retry")
 
     async def _record_consent(self, record: VaultRecord, consent: AadhaarConsent) -> None:
         await self._store.tenant(CONSENT_COLLECTION).insert_one(

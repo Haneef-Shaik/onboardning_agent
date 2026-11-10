@@ -83,6 +83,8 @@ class FakeVaultRepository:
         if self.fail_next_update:
             self.fail_next_update = False
             return UpdateOutcome(0, 0)
+        if set(update) != {"$set"} or any("." in k or k == "org_id" for k in update["$set"]):
+            raise ValueError("the fake supports top-level $set only (not org_id)")
         scoped = self._scoped(query)
         for index, existing in enumerate(self.documents):
             if _matches(existing, scoped):
@@ -90,6 +92,13 @@ class FakeVaultRepository:
                 self.documents = [*self.documents[:index], changed, *self.documents[index + 1 :]]
                 return UpdateOutcome(1, 1)
         return UpdateOutcome(0, 0)
+
+    async def delete_one(self, query: Mapping[str, Any] | None) -> int:
+        scoped = self._scoped(query)
+        kept = [d for d in self.documents if not _matches(d, scoped)]
+        deleted = len(self.documents) - len(kept)
+        self.documents = kept
+        return deleted
 
     # --- tampering, as someone with direct database access -------------------------------------------
 

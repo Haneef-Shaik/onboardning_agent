@@ -45,7 +45,7 @@ MUTATIONS = [
         "V7",
         "box 2: the old record is never superseded",
         "vault.py",
-        "if current is not None and current.status is VaultStatus.ACTIVE:",
+        "if old.status is VaultStatus.ACTIVE and old.version < newest.version:",
         "if False:",
     ),
     (
@@ -101,7 +101,7 @@ MUTATIONS = [
         "V15",
         "box 2: a superseded token resolves by default",
         "vault.py",
-        "if record.status is VaultStatus.SUPERSEDED and not allow_superseded:",
+        "if not allow_superseded and not await self._is_live(record):",
         "if False:",
     ),
     (
@@ -116,7 +116,7 @@ MUTATIONS = [
         "V18",
         "box 2: an update builds on the current record without verifying it",
         "vault.py",
-        'return await self._read(field, token if isinstance(token, str) else "", org_id)',
+        "return await self._read(field, token, org_id)",
         "return record_from_document(docs[0])",
     ),
     (
@@ -124,6 +124,27 @@ MUTATIONS = [
         "Aadhaar stored without a consent record",
         "vault.py",
         "if field is VaultField.AADHAAR and not isinstance(consent, AadhaarConsent):",
+        "if False:",
+    ),
+    (
+        "V20",
+        "review H1: an older record still marked active resolves (replayed or half-superseded)",
+        "vault.py",
+        "if newest is None or newest.token != record.token:",
+        "if False:",
+    ),
+    (
+        "V21",
+        "review: consent record left behind when the vault insert fails",
+        "vault.py",
+        'await self._store.tenant(CONSENT_COLLECTION).delete_one({"token": record.token})',
+        "pass",
+    ),
+    (
+        "V22",
+        "review: a supersede that matched nothing is accepted without re-reading",
+        "vault.py",
+        "if now.status is VaultStatus.ACTIVE:",
         "if False:",
     ),
 ]

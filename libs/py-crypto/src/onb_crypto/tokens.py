@@ -10,7 +10,7 @@ from __future__ import annotations
 import re
 import secrets
 from datetime import UTC, datetime
-from typing import Final
+from typing import Final, TypeGuard
 
 __all__ = ["PTK_PREFIX", "TOKEN_LENGTH", "is_token", "new_token"]
 
@@ -44,6 +44,6 @@ def new_token(*, now: datetime | None = None) -> str:
     return f"{PTK_PREFIX}{_base32(ulid, _PART_CHARS)}{_base32(extra, _PART_CHARS)}"
 
 
-def is_token(value: object) -> bool:
+def is_token(value: object) -> TypeGuard[str]:
     """True for a string shaped exactly like a token this module issues."""
     return isinstance(value, str) and _SHAPE.fullmatch(value) is not None
