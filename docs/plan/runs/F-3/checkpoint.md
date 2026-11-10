@@ -10,7 +10,7 @@
 5. DEC-5 ledger row set to pass.
 
 ## Next step
-Code review, then the handoff, then goal-verifier, then the board set to `in review` (orchestrator hold).
+goal-verifier (attempt 1), then the board set to `in review` (orchestrator hold). Review is done and its findings are fixed.
 
 ## Surprises
 - No git remote, and the orchestrator says never push. Boxes 2 and 3 need hosted run links, so they stop at "workflow ready", as the card's scope allows.
