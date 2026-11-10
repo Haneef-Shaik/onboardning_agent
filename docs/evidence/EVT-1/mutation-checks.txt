@@ -1,0 +1,84 @@
+# EVT-1 mutation checks at 3fab1fd (+ uncommitted mutate.py), 2026-11-10T05:26:16Z, compose stack ob-evt-1
+# command: uv run --frozen python docs/evidence/EVT-1/mutate.py
+M1 [CAUGHT] a held job (running, lease live) is never claimable by a second worker
+   mutated libs/py-eventbus/src/onb_eventbus/documents.py: '{"status": JobStatus.PENDING.value, "available_at": {"$lte": now}},' -> '{"available_at": {"$lte": now}},'
+   FAILED libs/py-eventbus/tests/test_worker.py::test_a_consumer_reads_only_its_jobs_org
+   FAILED libs/py-eventbus/tests/test_worker.py::test_a_claimed_job_is_invisible_to_a_second_worker_until_its_lease_expires
+   FAILED libs/py-eventbus/tests/test_worker.py::test_concurrent_workers_process_each_job_exactly_once_and_never_together
+   FAILED libs/py-eventbus/tests/test_worker.py::test_a_crashed_workers_lease_expires_and_the_job_is_retried
+   FAILED libs/py-eventbus/tests/test_worker.py::test_run_processes_until_stopped_and_reports_the_count
+   FAILED libs/py-eventbus/tests/test_worker.py::test_run_keeps_going_after_an_unexpected_worker_error
+   FAILED libs/py-eventbus/tests_int/test_bus_against_mongo.py::test_two_workers_never_process_the_same_job_at_once
+   FAILED libs/py-eventbus/tests_int/test_bus_against_mongo.py::test_one_job_raced_by_eight_workers_is_claimed_once
+   FAILED libs/py-eventbus/tests_int/test_bus_against_mongo.py::test_a_crashed_workers_lease_expires_and_the_job_is_retried
+   FAILED libs/py-eventbus/tests_int/test_bus_against_mongo.py::test_a_live_heartbeat_keeps_the_job_from_other_workers
+   FAILED libs/py-eventbus/tests_int/test_bus_against_mongo.py::test_a_consumer_sees_only_the_org_of_its_job
+   restored byte-for-byte: True
+M2 [CAUGHT] a running job whose lease lapsed is claimable again (crash recovery)
+   mutated libs/py-eventbus/src/onb_eventbus/documents.py: '{"status": JobStatus.RUNNING.value, "locked_until": {"$lte": now}},' -> ''
+   FAILED libs/py-eventbus/tests/test_worker.py::test_a_crashed_workers_lease_expires_and_the_job_is_retried
+   FAILED libs/py-eventbus/tests/test_worker.py::test_a_job_whose_last_attempt_crashed_is_dead_lettered_without_running
+   FAILED libs/py-eventbus/tests/test_worker.py::test_a_worker_that_lost_its_lease_stops_its_handler_and_writes_nothing
+   FAILED libs/py-eventbus/tests/test_worker.py::test_a_failure_after_the_lease_was_lost_is_not_recorded
+   FAILED libs/py-eventbus/tests_int/test_bus_against_mongo.py::test_a_crashed_workers_lease_expires_and_the_job_is_retried
+   FAILED libs/py-eventbus/tests_int/test_bus_against_mongo.py::test_a_job_whose_last_attempt_crashed_is_dead_lettered
+   restored byte-for-byte: True
+M3 [CAUGHT] a failure on the last attempt dead-letters the job
+   mutated libs/py-eventbus/src/onb_eventbus/worker.py: 'if attempts >= job["max_attempts"]:' -> 'if attempts > job["max_attempts"]:'
+   FAILED libs/py-eventbus/tests/test_worker.py::test_an_exhausted_job_moves_to_dead_letters
+   FAILED libs/py-eventbus/tests_int/test_bus_against_mongo.py::test_an_exhausted_job_moves_to_dead_letters
+   restored byte-for-byte: True
+M4 [CAUGHT] the heartbeat renews the lease while the handler runs
+   mutated libs/py-eventbus/src/onb_eventbus/worker.py: 'while True:\n            await asyncio.sleep(self._settings.heartbeat_s' -> 'while True:\n            await asyncio.sleep(3600)'
+   FAILED libs/py-eventbus/tests/test_worker.py::test_a_heartbeat_keeps_extending_the_lease_while_the_handler_runs
+   FAILED libs/py-eventbus/tests/test_worker.py::test_a_worker_that_lost_its_lease_stops_its_handler_and_writes_nothing
+   FAILED libs/py-eventbus/tests_int/test_bus_against_mongo.py::test_a_live_heartbeat_keeps_the_job_from_other_workers
+   restored byte-for-byte: True
+M5 [CAUGHT] writes after the claim match the lease token
+   mutated libs/py-data/src/onb_data/queue.py: 'return {"_id": job_id, "lease_token": lease_token}' -> 'return {"_id": job_id}'
+   FAILED libs/py-eventbus/tests/test_worker.py::test_a_worker_that_lost_its_lease_stops_its_handler_and_writes_nothing
+   FAILED libs/py-eventbus/tests/test_worker.py::test_a_failure_after_the_lease_was_lost_is_not_recorded
+   FAILED libs/py-data/tests/test_transactions_and_queue.py::test_leased_updates_and_deletes_match_the_id_and_the_lease_token
+   FAILED libs/py-data/tests_int/test_transactions_and_queue.py::test_a_leased_write_with_a_stale_token_changes_nothing
+   restored byte-for-byte: True
+M6 [CAUGHT] a repeated idempotency key writes nothing
+   mutated libs/py-eventbus/src/onb_eventbus/bus.py: 'if existing is not None:\n            return PublishResult(event_id=exi' -> ''
+   FAILED libs/py-eventbus/tests/test_publish.py::test_a_duplicate_idempotency_key_is_ignored
+   FAILED libs/py-eventbus/tests/test_publish.py::test_a_duplicate_key_skips_the_domain_change_too
+   restored byte-for-byte: True
+M7 [CAUGHT] repository calls inside run_transaction join the transaction
+   mutated libs/py-data/src/onb_data/session.py: 'return {} if session is None else {"session": session}' -> 'return {}'
+   FAILED libs/py-eventbus/tests_int/test_bus_against_mongo.py::test_a_rolled_back_transaction_leaves_neither_change_nor_event
+   FAILED libs/py-eventbus/tests_int/test_bus_against_mongo.py::test_a_server_side_write_error_rolls_back_the_change_and_the_event
+   FAILED libs/py-data/tests/test_transactions_and_queue.py::test_every_call_inside_a_transaction_carries_the_session
+   FAILED libs/py-data/tests_int/test_transactions_and_queue.py::test_a_raising_callback_rolls_back_every_repository_write
+   restored byte-for-byte: True
+M8 [CAUGHT] the consumer span continues the job's stored traceparent
+   mutated libs/py-eventbus/src/onb_eventbus/worker.py: 'job.get("traceparent"), f"consume {context.consumer}"' -> 'None, f"consume {context.consumer}"'
+   FAILED libs/py-eventbus/tests/test_tracing.py::test_a_consumer_span_joins_the_producer_trace
+   FAILED libs/py-eventbus/tests_int/test_bus_against_mongo.py::test_a_consumer_span_joins_the_producer_trace
+   restored byte-for-byte: True
+M9 [CAUGHT] a job without a valid org_id is dead-lettered before any handler runs
+   mutated libs/py-eventbus/src/onb_eventbus/worker.py: 'org_problem = _org_problem(job)' -> 'org_problem = None'
+   FAILED libs/py-eventbus/tests/test_worker.py::test_a_job_without_a_valid_org_id_is_dead_lettered_and_never_run[missing]
+   FAILED libs/py-eventbus/tests/test_worker.py::test_a_job_without_a_valid_org_id_is_dead_lettered_and_never_run[empty]
+   FAILED libs/py-eventbus/tests/test_worker.py::test_a_job_without_a_valid_org_id_is_dead_lettered_and_never_run[operator-chars]
+   FAILED libs/py-eventbus/tests/test_worker.py::test_a_job_without_a_valid_org_id_is_dead_lettered_and_never_run[mapping]
+   FAILED libs/py-eventbus/tests_int/test_bus_against_mongo.py::test_a_job_without_org_id_is_dead_lettered
+   restored byte-for-byte: True
+M10 [CAUGHT] the consumer runs in the tenant context of its job
+   mutated libs/py-eventbus/src/onb_eventbus/worker.py: 'tenant_scope(context.org_id),' -> 'contextlib.nullcontext(),'
+   FAILED libs/py-eventbus/tests/test_worker.py::test_a_handler_gets_the_job_with_the_tenant_context_set_from_the_job
+   FAILED libs/py-eventbus/tests/test_worker.py::test_a_consumer_reads_only_its_jobs_org
+   FAILED libs/py-eventbus/tests_int/test_bus_against_mongo.py::test_a_consumer_sees_only_the_org_of_its_job
+   restored byte-for-byte: True
+M11 [CAUGHT] publish writes the change, event and jobs in one transaction
+   mutated libs/py-eventbus/src/onb_eventbus/bus.py: 'return await self._store.run_transaction(\n                    lambda: ' -> 'return await self._write(event_type, payload, idempotency_key, run_id,'
+   FAILED libs/py-eventbus/tests/test_publish.py::test_a_rolled_back_transaction_leaves_neither_change_nor_event
+   FAILED libs/py-eventbus/tests/test_publish.py::test_a_failure_while_writing_the_jobs_rolls_back_the_change_and_the_event
+   FAILED libs/py-eventbus/tests/test_publish.py::test_publish_does_not_nest_in_another_transaction
+   FAILED libs/py-eventbus/tests_int/test_bus_against_mongo.py::test_a_rolled_back_transaction_leaves_neither_change_nor_event
+   FAILED libs/py-eventbus/tests_int/test_bus_against_mongo.py::test_a_server_side_write_error_rolls_back_the_change_and_the_event
+   restored byte-for-byte: True
+ALL CAUGHT AND RESTORED
+exit=0
