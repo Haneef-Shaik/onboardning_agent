@@ -1,0 +1,30 @@
+ERROR tools/tests/test_check_env_example.py::test_finds_interpolated_variables[port: ${PORT-80}-expected3]
+ERROR tools/tests/test_check_env_example.py::test_finds_interpolated_variables[bind: ${ADDR:+x}-expected4]
+ERROR tools/tests/test_check_env_example.py::test_finds_interpolated_variables[cmd: echo $PLAIN_VAR-expected5]
+ERROR tools/tests/test_check_env_example.py::test_finds_interpolated_variables[cmd: echo $$NOT_A_VAR and $${ALSO_NOT}-expected6]
+ERROR tools/tests/test_check_env_example.py::test_finds_interpolated_variables[# a comment mentioning ${COMMENTED}\nkey: v-expected7]
+ERROR tools/tests/test_check_env_example.py::test_finds_interpolated_variables[a: ${ONE}\nb: ${TWO:-${THREE}}-expected8]
+ERROR tools/tests/test_check_env_example.py::test_reads_keys_from_env_example
+ERROR tools/tests/test_check_env_example.py::test_missing_variable_fails - Fi...
+ERROR tools/tests/test_check_env_example.py::test_complete_example_passes - F...
+ERROR tools/tests/test_check_env_example.py::test_missing_files_fail_closed
+FAILED tools/tests/test_check_env_example.py::test_repo_env_example_covers_repo_compose
+FAILED tools/tests/test_check_env_example.py::test_make_check_runs_env_example_check
+FAILED tools/tests/test_compose_static.py::test_stack_file_exists[infra/docker-compose.yml]
+FAILED tools/tests/test_compose_static.py::test_stack_file_exists[infra/mongo/rs-init.js]
+FAILED tools/tests/test_compose_static.py::test_stack_file_exists[infra/mongo/gen-keyfile.sh]
+FAILED tools/tests/test_compose_static.py::test_stack_file_exists[infra/otel/collector.yaml]
+FAILED tools/tests/test_compose_static.py::test_stack_file_exists[infra/otel/Dockerfile]
+FAILED tools/tests/test_compose_static.py::test_stack_file_exists[infra/caddy/Caddyfile.dev]
+FAILED tools/tests/test_compose_static.py::test_stack_file_exists[.env.example]
+FAILED tools/tests/test_compose_static.py::test_stack_file_exists[scripts/check_env_example.py]
+FAILED tools/tests/test_compose_static.py::test_images_are_pinned_to_exact_versions
+FAILED tools/tests/test_compose_static.py::test_mongo_runs_a_replica_set_with_auth_and_keyfile
+FAILED tools/tests/test_compose_static.py::test_keyfile_is_generated_and_ignored_never_committed
+FAILED tools/tests/test_compose_static.py::test_dev_caddyfile_protects_jaeger_with_basic_auth
+FAILED tools/tests/test_compose_static.py::test_collector_exports_traces_to_jaeger
+FAILED tools/tests/test_compose_static.py::test_makefile_has_stack_targets[up]
+FAILED tools/tests/test_compose_static.py::test_makefile_has_stack_targets[down]
+FAILED tools/tests/test_compose_static.py::test_makefile_has_stack_targets[logs]
+FAILED tools/tests/test_compose_static.py::test_make_up_waits_for_health_and_generates_the_keyfile
+19 failed, 1 passed, 13 errors in 0.09s

@@ -1,0 +1,114 @@
+# Base stack (F-2; PRD §7.11, §7.7, §7.2). Run from the repo root with `make up`: the root `.env`
+# names this file, the project and the profile (see `.env.example`).
+#
+# Only caddy publishes ports. Every other service sits on `backend`, an internal network with no
+# route to or from the host. App services (api, orchestrator, mcp-*, web) join later goals under
+# the `dev` profile (hot reload) or the `vm` profile (built images).
+
+x-service: &service
+  restart: unless-stopped
+  profiles: [dev, vm]
+  networks: [backend]
+
+services:
+  mongo:
+    <<: *service
+    image: mongo:8.0.34
+    # The keyfile arrives as a bind-mounted secret owned by the host user; mongod needs it owned by
+    # `mongodb` and mode 0400, so copy it into place before the stock entrypoint runs.
+    entrypoint:
+      - bash
+      - -c
+      - install -m 0400 -o mongodb -g mongodb /run/secrets/mongo_keyfile /etc/mongo-keyfile && exec docker-entrypoint.sh "$$@"
+      - --
+    command: [mongod, --replSet, rs0, --keyFile, /etc/mongo-keyfile, --bind_ip_all]
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME:?set MONGO_ROOT_USERNAME in .env}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:?set MONGO_ROOT_PASSWORD in .env}
+    secrets: [mongo_keyfile]
+    volumes:
+      - mongo_data:/data/db
+      - mongo_config:/data/configdb
+      - ./mongo/rs-init.js:/etc/mongo/rs-init.js:ro
+    # Initiates the replica set on first boot; healthy only once this node is a writable primary.
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - mongosh --quiet -u "$$MONGO_INITDB_ROOT_USERNAME" -p "$$MONGO_INITDB_ROOT_PASSWORD" --authenticationDatabase admin /etc/mongo/rs-init.js
+      interval: 10s
+      timeout: 10s
+      retries: 6
+      start_period: 40s
+      start_interval: 2s
+
+  otel-collector:
+    <<: *service
+    # Upstream image is distroless (no shell for a healthcheck); infra/otel/Dockerfile copies the
+    # same pinned binary onto alpine.
+    build: ./otel
+    image: onb/otel-collector:0.165.0
+    pull_policy: build
+    command: [--config=/etc/otelcol/config.yaml]
+    volumes:
+      - ./otel/collector.yaml:/etc/otelcol/config.yaml:ro
+    depends_on:
+      jaeger:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD, wget, -q, --spider, http://127.0.0.1:13133/]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 10s
+      start_interval: 2s
+
+  jaeger:
+    <<: *service
+    image: jaegertracing/jaeger:2.23.0
+    healthcheck:
+      test: [CMD, wget, -q, --spider, http://127.0.0.1:13133/status]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 10s
+      start_interval: 2s
+
+  caddy:
+    <<: *service
+    image: caddy:2.11.9-alpine
+    ports:
+      - ${CADDY_BIND_ADDRESS:-127.0.0.1}:${CADDY_HTTP_PORT:-80}:80
+      - ${CADDY_BIND_ADDRESS:-127.0.0.1}:${CADDY_HTTPS_PORT:-443}:443
+    environment:
+      JAEGER_BASIC_AUTH_USER: ${JAEGER_BASIC_AUTH_USER:?set JAEGER_BASIC_AUTH_USER in .env}
+      JAEGER_BASIC_AUTH_HASH: ${JAEGER_BASIC_AUTH_HASH:?set JAEGER_BASIC_AUTH_HASH in .env}
+    volumes:
+      - ./caddy/Caddyfile.dev:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks: [backend, edge]
+    depends_on:
+      jaeger:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD, wget, -q, --spider, --header, "Host: localhost", http://127.0.0.1/healthz]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 10s
+      start_interval: 2s
+
+networks:
+  backend:
+    internal: true
+  edge: {}
+
+volumes:
+  mongo_data:
+  mongo_config:
+  caddy_data:
+  caddy_config:
+
+secrets:
+  mongo_keyfile:
+    file: ./mongo/keyfile

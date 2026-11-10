@@ -1,0 +1,22 @@
+# Dev reverse proxy (F-2; PRD §7.11). Caddy is the only service with published ports.
+# https://localhost uses Caddy's internal CA. The VM Caddyfile with real TLS comes with deployment.
+{
+	auto_https disable_redirects
+}
+
+http://localhost, https://localhost {
+	handle /healthz {
+		respond "ok" 200
+	}
+	handle {
+		respond "not found" 404
+	}
+}
+
+# Jaeger UI, behind basic auth (PRD §7.11: "Jaeger is reached via the proxy with basic auth").
+http://jaeger.localhost, https://jaeger.localhost {
+	basic_auth {
+		{$JAEGER_BASIC_AUTH_USER} {$JAEGER_BASIC_AUTH_HASH}
+	}
+	reverse_proxy jaeger:16686
+}
