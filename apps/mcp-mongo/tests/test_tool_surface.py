@@ -19,6 +19,8 @@ from mcp.client.streamable_http import streamable_http_client
 from onb_mcp_mongo import main as main_module
 from onb_mcp_mongo.contracts import CONTRACTS
 from onb_mcp_mongo.server import HANDLERS
+from starlette.applications import Starlette
+from starlette.routing import Host, Mount, Router
 
 from .fakes import FakeDatabase, make_store
 from .harness import call
@@ -199,16 +201,49 @@ def _served_app(monkeypatch: pytest.MonkeyPatch) -> Any:
     monkeypatch.setattr(main_module, "init_telemetry", lambda *a, **k: None)
     monkeypatch.setattr(main_module, "connect", lambda *a, **k: make_store(FakeDatabase()))
     monkeypatch.setattr("uvicorn.run", lambda app, *a, **k: served.append(app))
-    main_module.main(
-        {"MCP_MONGO_URI": "mongodb://r@h/", "MCP_MONGO_WRITE_URI": "mongodb://w@h/", "MCP_CALL_CONTEXT_KEY": "k" * 40}
-    )
+    # The production path: configuration from the process environment, main() called bare.
+    for name in ("MCP_MONGO_DATABASE", "MCP_MONGO_HOST", "MCP_MONGO_PORT"):
+        monkeypatch.delenv(name, raising=False)
+    monkeypatch.setenv("MCP_MONGO_URI", "mongodb://r@h/")
+    monkeypatch.setenv("MCP_MONGO_WRITE_URI", "mongodb://w@h/")
+    monkeypatch.setenv("MCP_CALL_CONTEXT_KEY", "k" * 40)
+    main_module.main()
     assert len(served) == 1
     return served[0]
 
 
+def _route_table(app: Any, prefix: str = "") -> list[tuple[str, str, str]]:
+    """Every route reachable in a Starlette app, through Mounts, Hosts and Routers, as
+    (kind, full path, endpoint type)."""
+    table: list[tuple[str, str, str]] = []
+    for route in app.routes:
+        path = prefix + getattr(route, "path", "")
+        inner = getattr(route, "app", None)
+        if isinstance(route, Mount | Host) or isinstance(inner, Starlette | Router):
+            table.append((type(route).__name__, path, type(inner).__name__))
+            table += _route_table(inner, path) if hasattr(inner, "routes") else []
+        else:
+            table.append((type(route).__name__, path, type(inner if inner is not None else route).__name__))
+    return table
+
+
+# The whole surface main() may serve: one streamable-HTTP MCP endpoint. No health route is served
+# today; one would have to be named here, explicitly.
+EXPECTED_ROUTES = [("Route", "/mcp", "StreamableHTTPASGIApp")]
+
+
+def test_the_app_main_serves_is_exactly_one_mcp_endpoint(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Box 4: no second endpoint, mount, sub-app or middleware wrapper in what production serves."""
+    app = _served_app(monkeypatch)
+    assert type(app) is Starlette  # not a wrapper or subclass around it
+    assert _route_table(app) == EXPECTED_ROUTES
+    assert app.user_middleware == []
+
+
 def test_the_app_main_serves_lists_exactly_the_prd_tools_over_mcp(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Box 4, behaviourally: what production serves, seen by a real MCP client, has exactly the six
-    PRD tools, none named or described as delete/drop/index/admin/runCommand, none destructive."""
+    """Box 4, behaviourally: what production serves, seen by a real MCP client on its one endpoint,
+    has exactly the six PRD tools, none named or described as delete/drop/index/admin/runCommand,
+    none destructive."""
     tools = asyncio.run(_tools_over_mcp(_served_app(monkeypatch)))
     assert {tool.name for tool in tools} == PRD_TOOLS
     for tool in tools:
