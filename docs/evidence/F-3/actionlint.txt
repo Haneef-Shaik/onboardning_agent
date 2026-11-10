@@ -1,0 +1,6 @@
+$ uvx --from actionlint-py actionlint -version
+1.7.12
+installed by downloading from release page
+built with go1.26.1 compiler for darwin/arm64
+$ uvx --from actionlint-py actionlint -color=false .github/workflows/ci.yml
+exit=0

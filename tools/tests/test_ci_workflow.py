@@ -6,6 +6,7 @@ actions. A hosted run is the only proof that it is green; these tests stop the f
 
 from __future__ import annotations
 
+import json
 import re
 import tomllib
 from pathlib import Path
@@ -65,6 +66,8 @@ def test_superseded_runs_on_the_same_ref_are_cancelled() -> None:
 
 def test_workflow_has_exactly_the_check_and_integration_jobs() -> None:
     assert set(_jobs()) == {CHECK_JOB, INT_JOB}
+    # Required status checks match the job's display name, so it must equal the key.
+    assert {key: job["name"] for key, job in _jobs().items()} == {CHECK_JOB: CHECK_JOB, INT_JOB: INT_JOB}
 
 
 def test_check_job_bootstraps_then_runs_make_check() -> None:
@@ -151,5 +154,10 @@ def test_adr_records_github_actions_as_the_ci_host_and_closes_dec_5() -> None:
 def test_adr_names_the_required_status_checks_as_the_job_names() -> None:
     # Branch protection matches checks by job name; renaming a job silently drops the gate.
     text = ADR.read_text(encoding="utf-8")
-    for job in (CHECK_JOB, INT_JOB):
-        assert f'"{job}"' in text, f"ADR must list the required check {job!r}"
+    payload = re.search(r"<<'JSON'\n(.*?)\n\s*JSON\n", text, re.DOTALL)
+    assert payload is not None, "ADR must carry the branch-protection payload"
+    protection = json.loads(payload.group(1))
+    checks = protection["required_status_checks"]
+    assert sorted(checks["contexts"]) == sorted(_jobs())
+    assert checks["strict"] is True
+    assert protection["enforce_admins"] is True
