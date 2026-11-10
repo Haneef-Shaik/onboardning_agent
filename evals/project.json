@@ -1,0 +1,25 @@
+{
+  "$schema": "../node_modules/nx/schemas/project-schema.json",
+  "name": "evals",
+  "projectType": "application",
+  "root": "evals",
+  "tags": ["lang:py", "type:evals"],
+  "targets": {
+    "run": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": {
+        "command": "set -a && { [ ! -f ./.env ] || . ./.env; } && set +a && uv run --frozen python -m onb_evals run",
+        "cwd": "."
+      }
+    },
+    "selftest": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": {
+        "command": "make evals-selftest",
+        "cwd": "."
+      }
+    }
+  }
+}

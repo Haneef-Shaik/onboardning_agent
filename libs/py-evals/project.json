@@ -24,7 +24,7 @@
       "executor": "@nxlv/python:run-commands",
       "cache": true,
       "options": {
-        "command": "uv run --frozen mypy --cache-dir .mypy_cache/py-evals libs/py-evals/src libs/py-evals/tests",
+        "command": "uv run --frozen mypy --cache-dir .mypy_cache/py-evals libs/py-evals/src libs/py-evals/tests libs/py-evals/tests_int",
         "cwd": "."
       }
     },
@@ -37,6 +37,14 @@
         "env": {
           "COVERAGE_FILE": ".coverage.py-evals"
         }
+      }
+    },
+    "test-int": {
+      "executor": "@nxlv/python:run-commands",
+      "cache": false,
+      "options": {
+        "command": "uv run --frozen pytest libs/py-evals/tests_int -o cache_dir=.pytest_cache/py-evals-int",
+        "cwd": "."
       }
     }
   }

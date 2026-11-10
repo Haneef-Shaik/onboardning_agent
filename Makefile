@@ -12,7 +12,7 @@ export NX_TUI := false
 COMPOSE := docker compose
 ENV_FILE := .env
 
-.PHONY: bootstrap check plan-check env-check tooling-test contracts contracts-check lint typecheck test test-int fmt up down logs llm-health
+.PHONY: bootstrap check plan-check env-check tooling-test contracts contracts-check lint typecheck test test-int evals-selftest fmt up down logs llm-health
 
 ## Install the pinned toolchains: one uv virtualenv at the root, and node_modules.
 bootstrap:
@@ -61,6 +61,14 @@ test-int: up
 	set -a && . ./$(ENV_FILE) && set +a && \
 	uv run --frozen pytest tools/tests_int -q -o cache_dir=.pytest_cache/tools-int && \
 	$(NX) run-many -t test-int --output-style=static
+
+## Eval harness self-test (PRD §8.2, MASTER-PLAN §7): every dataset case against its scripted output on
+## the `fake` connector (no model calls), k=3, each repetition in a fresh database on the compose Mongo,
+## plus negative controls that must fail. Writes evals/reports/ and an eval_runs record.
+evals-selftest: up
+	set -a && . ./$(ENV_FILE) && set +a && \
+	LLM_CONNECTOR=fake OTEL_TRACES_EXPORTER="$${OTEL_TRACES_EXPORTER:-none}" \
+	uv run --frozen pytest libs/py-evals/tests_int/test_selftest.py -q -s -o cache_dir=.pytest_cache/py-evals-selftest
 
 ## Base stack (PRD §7.11): mongo (replica set, auth, keyfile), otel-collector, jaeger, caddy.
 ## `.env` names the compose file, project and profile, so plain `docker compose …` works too once
