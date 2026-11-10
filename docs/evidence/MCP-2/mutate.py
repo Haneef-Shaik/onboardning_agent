@@ -2,6 +2,9 @@
 named tests fail, then restore the file byte for byte. Run from the repo root:
 
     uv run --frozen python docs/evidence/MCP-2/mutate.py > docs/evidence/MCP-2/mutation-checks.txt
+
+`--tests <path> --only V2,V4` runs only those mutations against only those tests (used to show
+the box-2 property tests alone catch the operator guards).
 """
 
 from __future__ import annotations
@@ -16,9 +19,13 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[3]
 SRC = ROOT / "apps/mcp-mongo/src/onb_mcp_mongo"
 UNIT = "apps/mcp-mongo/tests"
+TESTS = sys.argv[sys.argv.index("--tests") + 1] if "--tests" in sys.argv else UNIT
+ONLY = set(sys.argv[sys.argv.index("--only") + 1].split(",")) if "--only" in sys.argv else None
 FAILED = re.compile(r"^(FAILED|ERROR) (\S+)", re.MULTILINE)
 SUMMARY = re.compile(r"^=+ (.*(passed|failed).*) =+$", re.MULTILINE)
 V = "validator.py"
+RULES = "validator_rules.py"
+OP_FORBIDDEN = '        if name in FORBIDDEN_OPERATORS:\n            raise self.fail("forbidden_operator", name)\n'
 
 
 @dataclass(frozen=True)
@@ -29,108 +36,75 @@ class Mutation:
 
 
 MUTATIONS = [
-    Mutation(
-        "V1",
-        "forbidden operators no longer named: treated as merely unknown (box 1)",
-        ((V, "        if name in FORBIDDEN_OPERATORS:\n            raise self.fail(\"forbidden_operator\", name)\n", ""),),
-    ),
+    Mutation("V1", "forbidden operators no longer named: only 'not allowed' (box 1)", ((RULES, OP_FORBIDDEN, ""),)),
     Mutation(
         "V2",
-        "$where put on the query allowlist and the denylist check removed (boxes 1-2)",
+        "$where put on the field-operator allowlist and the denylist check removed (boxes 1-2)",
         (
-            (V, '        "$expr",\n    }', '        "$expr",\n        "$where",\n    }'),
-            (V, "        if name in FORBIDDEN_OPERATORS:\n            raise self.fail(\"forbidden_operator\", name)\n", ""),
+            (RULES, '"$elemMatch", "$mod"),', '"$elemMatch", "$mod", "$where"),'),
+            (RULES, OP_FORBIDDEN, ""),
         ),
     ),
     Mutation(
         "V3",
         "$expr contents not walked (boxes 1-2: $expr with JS)",
-        ((V, "                    self.expression(value, depth + 1)\n                else:", "                    pass\n                else:"),),
+        ((RULES, '            elif name == "$expr":\n                self.expression(value, depth + 1)', '            elif name == "$expr":\n                pass'),),
     ),
     Mutation(
         "V4",
         "expression operators not checked against the allowlist (boxes 1-2)",
-        ((V, "                self.key(name, EXPRESSION_OPERATORS)\n", "                pass\n"),),
+        ((RULES, "self.key(name, EXPRESSION_OPERATORS) and name in ARRAY_ITERATORS", "name in ARRAY_ITERATORS"),),
     ),
     Mutation(
         "V5",
         "literal values (inserts, $set values) may carry operators (box 1)",
-        ((V, "                self.key(name, frozenset())\n", "                pass\n"),),
+        ((RULES, "                self.key(name, frozenset())\n", "                pass\n"),),
     ),
     Mutation(
         "V6",
-        "$match body not walked (box 1)",
-        ((V, "    walk.query(_mapping(walk, body), depth)", "    _mapping(walk, body)"),),
+        "field conditions accept any operator (box 1)",
+        ((RULES, "            operator = self.operator(name, FIELD_OPERATORS)", "            operator = str(name)"),),
     ),
+    Mutation("V7", "$match body not walked (box 1)", ((V, "    walk.query(_mapping(walk, body), depth)", "    _mapping(walk, body)"),)),
     Mutation(
-        "V7",
+        "V8",
         "$group accumulators not checked (box 1: $accumulator)",
         ((V, "        walk.operator(operator, ACCUMULATOR_OPERATORS)\n", ""),),
     ),
     Mutation(
-        "V8",
-        "forbidden stage name allowed through to the stage table check only (box 1)",
-        ((V, "        if name in FORBIDDEN_OPERATORS:\n            raise walk.fail(\"forbidden_operator\", name)\n", ""),),
-    ),
-    Mutation(
         "V9",
-        "update operators not checked against the allowlist (box 1)",
-        ((V, "        walk.operator(operator, UPDATE_OPERATORS)\n", ""),),
+        "forbidden stage names reach only the stage table check (box 1)",
+        ((V, '        if name in FORBIDDEN_OPERATORS:\n            raise walk.fail("forbidden_operator", name)\n', ""),),
     ),
-    Mutation(
-        "V10",
-        "$pull condition not walked (box 1)",
-        ((V, "                walk.query(value, 3)\n", "                pass\n"),),
-    ),
+    Mutation("V10", "update operators not checked (box 1)", ((V, "        walk.operator(operator, UPDATE_OPERATORS)\n", ""),)),
     Mutation(
         "V11",
-        "pii.* writable (box 3)",
-        ((V, "    if walk.field(name, positional=True)[0] == PII_FIELD:", "    if walk.field(name, positional=True)[0] == None:"),),
+        "$pull condition not walked (box 1)",
+        ((V, '    elif operator == "$pull" and isinstance(value, Mapping):\n        walk.element_match(value, 3)', '    elif operator == "$pull":\n        pass'),),
     ),
-    Mutation(
-        "V12",
-        "org_id allowed as a field in the validator (box 3, validator layer)",
-        ((V, "        if segments[0] == ORG_FIELD:\n", "        if False:\n"),),
-    ),
-    Mutation(
-        "V13",
-        "$-led path segments allowed (box 1: dotted)",
-        ((V, '            if not segment or (segment.startswith("$") and not (positional and segment in _POSITIONAL)):', "            if not segment:"),),
-    ),
+    Mutation("V12", "pii.* writable (box 3)", ((V, "    if first == PII_FIELD:", "    if first is None:"),)),
+    Mutation("V13", "org_id allowed as a field in the validator (box 3, validator layer)", ((RULES, "        if segments[0] == ORG_FIELD:", "        if False:"),)),
     Mutation(
         "V14",
-        "NFKC canonical-name check removed (boxes 1-2: unicode)",
-        ((V, '        if unicodedata.normalize("NFKC", name) != name:', "        if False:"),),
+        "$-led path segments allowed (box 1: dotted)",
+        ((RULES, '            if not segment or (segment.startswith("$") and not allowed_positional):', "            if not segment:"),),
     ),
+    Mutation("V15", "NFKC canonical-name check removed (boxes 1-2: unicode)", ((RULES, '        if unicodedata.normalize("NFKC", name) != name:', "        if False:"),)),
+    Mutation("V16", "invisible/control characters allowed in names (box 1: unicode)", ((RULES, '_INVISIBLE = frozenset({"Cc", "Cf", "Cs", "Co", "Cn"})', "_INVISIBLE = frozenset()"),)),
+    Mutation("V17", "depth cap removed (box 1: nested)", ((RULES, "        if depth > MAX_DEPTH:", "        if depth > 10**6:"),)),
+    Mutation("V18", "node-count cap removed (box 1)", ((RULES, "self.nodes > MAX_NODES or", "self.nodes > 10**9 or"),)),
+    Mutation("V19", "64-bit integer cap removed (review)", ((RULES, "        too_big_int = isinstance(node, int) and not -_INT64 <= node < _INT64", "        too_big_int = False"),)),
+    Mutation("V20", "$$ system-variable allowlist removed (review)", ((RULES, "not variable[:1].islower() and variable not in SYSTEM_VARIABLES", "False"),)),
+    Mutation("V21", "\"$path\" strings in expressions not checked: \"$org_id\" readable by name (review)", ((RULES, "        elif value.startswith(\"$\"):\n            self.field(value[1:])", "        elif value.startswith(\"$\"):\n            pass"),)),
+    Mutation("V22", "$map/$filter nesting cap removed (review)", ((RULES, "MAX_ARRAY_ITERATOR_NESTING = 2", "MAX_ARRAY_ITERATOR_NESTING = 99"),)),
+    Mutation("V23", "positional allowed as the first path segment (review)", ((RULES, "positional and index > 0 and segment", "positional and segment"),)),
+    Mutation("V24", "_id writable by update (review)", ((V, "    if first == ID_FIELD:", "    if first is None:"),)),
+    Mutation("V25", "validator not wired into the server (boxes 1, 3)", (("server.py", "            validator.check_call(self.name, args)", "            pass"),)),
     Mutation(
-        "V15",
-        "invisible/control characters allowed in names (box 1: unicode)",
-        ((V, '{"Cc", "Cf", "Cs", "Co", "Cn"}', "set()"),),
-    ),
-    Mutation(
-        "V16",
-        "depth cap removed (box 1: nested)",
-        ((V, "        if depth > MAX_DEPTH:", "        if depth > 10**6:"),),
-    ),
-    Mutation(
-        "V17",
-        "size cap removed (box 1)",
-        ((V, "        if self.nodes > MAX_NODES:", "        if self.nodes > 10**9:"),),
-    ),
-    Mutation(
-        "V18",
-        "validator not wired into the server (boxes 1, 3)",
-        (("server.py", "            validator.check_call(self.name, args)", "            pass"),),
-    ),
-    Mutation(
-        "V19",
+        "V26",
         "a delete_one tool added to the served tools (box 4)",
         (
-            (
-                "server.py",
-                '    "update_one": tools.update_one,\n}',
-                '    "update_one": tools.update_one,\n    "delete_one": tools.update_one,\n}',
-            ),
+            ("server.py", '    "update_one": tools.update_one,\n}', '    "update_one": tools.update_one,\n    "delete_one": tools.update_one,\n}'),
             (
                 "contracts.py",
                 "CONTRACTS: dict[str, ToolContract] = {\n",
@@ -139,7 +113,7 @@ MUTATIONS = [
         ),
     ),
     Mutation(
-        "V20",
+        "V27",
         "a driver drop call added to the tools module (box 4)",
         (("tools.py", "    return CollectionsResult(collections=sorted(ctx.readable))", "    store.drop(ctx)\n    return CollectionsResult(collections=sorted(ctx.readable))"),),
     ),
@@ -162,7 +136,7 @@ def run_one(m: Mutation) -> bool:
                 return False
             (SRC / name).write_text(text.replace(old, new, 1))
         proc = subprocess.run(
-            ["uv", "run", "--frozen", "pytest", UNIT, "-q", "-p", "no:cacheprovider", "-rfE", "--no-header"],
+            ["uv", "run", "--frozen", "pytest", TESTS, "-q", "-p", "no:cacheprovider", "-rfE", "--no-header"],
             cwd=ROOT,
             capture_output=True,
             text=True,
@@ -186,7 +160,7 @@ def run_one(m: Mutation) -> bool:
 
 
 def main() -> int:
-    results = [run_one(m) for m in MUTATIONS]
+    results = [run_one(m) for m in MUTATIONS if ONLY is None or m.mid in ONLY]
     print(f"SUMMARY: {sum(results)} of {len(results)} mutations caught, every file restored")
     return 0 if all(results) else 1
 
