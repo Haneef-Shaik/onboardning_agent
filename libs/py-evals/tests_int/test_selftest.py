@@ -12,6 +12,8 @@ import json
 import os
 import re
 import secrets
+from collections.abc import Callable
+from contextlib import AbstractContextManager
 from typing import Any
 
 import pytest
@@ -21,6 +23,9 @@ from onb_evals.scripted import find_repo_file
 from onb_evals.spans import EVAL_CASE_ID, EVAL_RUN_ID
 from onb_telemetry.testing import captured_telemetry
 from pymongo import MongoClient
+
+# The `unscoped` fixture (T-2 safety net): `with unscoped("why"):` for a root read-back across orgs.
+Unscoped = Callable[[str], AbstractContextManager[None]]
 
 RESULTS_ORG = "org_eval_selftest"
 
@@ -32,7 +37,7 @@ def _printed(pattern: str, out: str) -> str:
 
 
 def test_make_evals_selftest_passes_all_27_cases_and_records_the_run(
-    mongo_uri: str, root_client: MongoClient[dict[str, Any]], capsys: pytest.CaptureFixture[str]
+    mongo_uri: str, root_client: MongoClient[dict[str, Any]], capsys: pytest.CaptureFixture[str], unscoped: Unscoped
 ) -> None:
     results_db = f"onb_evalresults_{secrets.token_hex(4)}"
     env = {**os.environ, ENV_MONGO_URI: mongo_uri, ENV_RESULTS_DATABASE: results_db, ENV_RESULTS_ORG: RESULTS_ORG}
@@ -53,7 +58,8 @@ def test_make_evals_selftest_passes_all_27_cases_and_records_the_run(
         assert len(report["negative_controls"]) == 8
         assert all(control["caught"] for control in report["negative_controls"])
 
-        record = root_client[results_db]["eval_runs"].find_one({"_id": run_id})
+        with unscoped("root read-back by id, without assuming the org, proves which org the run was recorded under"):
+            record = root_client[results_db]["eval_runs"].find_one({"_id": run_id})
         assert record is not None
         assert record["org_id"] == RESULTS_ORG
         assert record["mode"] == "selftest"

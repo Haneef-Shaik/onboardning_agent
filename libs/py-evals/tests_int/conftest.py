@@ -9,6 +9,13 @@ from pathlib import Path
 from urllib.parse import quote_plus
 
 import pytest
+from onb_data.safety_net_pytest import (  # T-2 tenant safety net (PRD §7.9): registers these with pytest
+    pytest_configure,
+    pytest_sessionfinish,
+    tenant_safety_net,
+    tenant_safety_net_guard,
+    unscoped,
+)
 
 _PY_DATA_CONFTEST = Path(__file__).resolve().parents[2] / "py-data" / "tests_int" / "conftest.py"
 _spec = importlib.util.spec_from_file_location("onb_py_data_tests_int_conftest", _PY_DATA_CONFTEST)
@@ -19,6 +26,17 @@ _spec.loader.exec_module(_shared)
 
 mongo_tunnel = _shared.mongo_tunnel
 root_client = _shared.root_client
+
+__all__ = [
+    "mongo_tunnel",
+    "mongo_uri",
+    "pytest_configure",
+    "pytest_sessionfinish",
+    "root_client",
+    "tenant_safety_net",
+    "tenant_safety_net_guard",
+    "unscoped",
+]
 
 
 @pytest.fixture(scope="session")
