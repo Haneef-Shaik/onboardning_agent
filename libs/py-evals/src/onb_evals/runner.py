@@ -150,7 +150,10 @@ class EvalRunner:
                     chat_model=self._llm_for(case).chat_model([llm], tokens),
                     repetition=repetition,
                 )
-                output = await self._adapter_for(case).invoke(invocation)
+                returned = await self._adapter_for(case).invoke(invocation)
+                if not isinstance(returned, Mapping):
+                    raise TypeError("the agent's output is not a JSON object")
+                output = dict(returned)
             except Exception as failure:  # the agent's failure is a failed repetition, not a crashed run
                 error = f"{type(failure).__name__}: {failure}"[:_MAX_ERROR_CHARS]
         latency_ms = (time.perf_counter() - started) * 1000

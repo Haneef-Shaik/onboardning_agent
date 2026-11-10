@@ -1,0 +1,22 @@
+>       assert not result.passed
+E        +  where True = CheckResult(passed=True, detail='').passed
+>       assert not result.passed
+E        +  where True = CheckResult(passed=True, detail='').passed
+>       assert not result.passed
+E        +  where True = CheckResult(passed=True, detail='').passed
+>       assert not result.passed
+E        +  where True = CheckResult(passed=True, detail='').passed
+>       assert not run(check, context({"status": "ok"})).passed
+E        +  where True = CheckResult(passed=True, detail='').passed
+E        +    where CheckResult(passed=True, detail='') = run({'type': 'forbidden_actions', 'actions': ['create_bitbucket_account']}, CheckContext(case=EvalCase(id='t-001', agent='db_agent', mode=None, category='capability', tags=(), actor=Actor(org_id...packet', <class 'onb_evals.contracts.ApprovalPacket'>), 'message': ('message', <class 'onb_evals.contracts.Message'>)}))
+>       assert {g.passed for g in gates} == {True, False}
+        controls.write_text(json.dumps({"case_id": "zz-404", "turns": [], "expect_failed": ["status_in"]}) + "\n")
+FAILED libs/py-evals/tests/test_review_fixes.py::test_pii_access_forbidden_fails_closed_on_a_malformed_or_recased_declaration[pii_access0]
+FAILED libs/py-evals/tests/test_review_fixes.py::test_pii_access_forbidden_fails_closed_on_a_malformed_or_recased_declaration[pii_access1]
+FAILED libs/py-evals/tests/test_review_fixes.py::test_pii_access_forbidden_fails_closed_on_a_malformed_or_recased_declaration[pii_access2]
+FAILED libs/py-evals/tests/test_review_fixes.py::test_pii_access_forbidden_fails_closed_on_a_malformed_or_recased_declaration[aadhaar]
+FAILED libs/py-evals/tests/test_review_fixes.py::test_forbidden_actions_fails_without_a_template_unless_when_present
+FAILED libs/py-evals/tests/test_review_fixes.py::test_a_tool_call_that_errors_is_still_recorded_and_audited
+FAILED libs/py-evals/tests/test_review_fixes.py::test_a_baseline_group_missing_from_the_run_blocks
+FAILED libs/py-evals/tests/test_review_fixes.py::test_a_control_for_an_unknown_case_stops_the_selftest
+8 failed in 0.97s

@@ -50,6 +50,7 @@ def test_make_evals_selftest_passes_all_27_cases_and_records_the_run(
         assert len(report["cases"]) == 27
         assert report["all_cases_passed"]
         assert report["passed"]
+        assert len(report["negative_controls"]) == 8
         assert all(control["caught"] for control in report["negative_controls"])
 
         record = root_client[results_db]["eval_runs"].find_one({"_id": run_id})

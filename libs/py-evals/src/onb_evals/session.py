@@ -192,7 +192,12 @@ async def run_selftest(
 
     results = await runner(lambda c: ScriptedLLM(runtime, scripts[c.id])).run(cases, repeat=repeat, run_id=run_id)
     by_id = {c.id: c for c in cases}
-    controls = [c for c in load_controls(paths.controls) if c.case_id in by_id]
+    all_controls = load_controls(paths.controls)
+    if only is None:
+        unknown = sorted({c.case_id for c in all_controls} - set(by_id))
+        if unknown:
+            raise SessionError(f"negative controls name cases the dataset does not have: {unknown}")
+    controls = [c for c in all_controls if c.case_id in by_id]
     checked = await _controls(controls, by_id, lambda turns: runner(lambda c: ScriptedLLM(runtime, turns)), run_id)
     info = RunInfo(
         run_id,
@@ -237,13 +242,18 @@ async def run_eval(
     cases = load_cases(dataset, agent=agent)
     if not cases:
         raise SessionError(f"the dataset has no cases for agent {agent!r}")
-    adapter = adapter_for(agent)
+    adapter_for(agent)  # fail fast when no adapter is registered
     provider = RuntimeLLM(runtime, llm)
     started = datetime.now(UTC)
     run_id = _run_id(started)
     seed = load_seed(fixture)
+    # A fresh adapter per repetition, so a stateful agent cannot carry memory from one repetition to the next.
     runner = EvalRunner(
-        databases=databases, seed=seed, adapter_for=lambda c: adapter, llm_for=lambda c: provider, spans=spans
+        databases=databases,
+        seed=seed,
+        adapter_for=lambda c: adapter_for(agent),
+        llm_for=lambda c: provider,
+        spans=spans,
     )
     results = await runner.run(cases, repeat=repeat, run_id=run_id)
     info = RunInfo(

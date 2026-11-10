@@ -118,7 +118,10 @@ async def task_coverage(params: p.TaskCoverage, context: CheckContext) -> CheckR
 
 @register("forbidden_actions", presence_path="template")
 async def forbidden_actions(params: p.ForbiddenActions, context: CheckContext) -> CheckResult:
-    found = set(_actions(context, tasks_of(_template(context)))) & set(params.actions)
+    template = _template(context)
+    if not isinstance(template, Mapping) or not isinstance(template.get("tasks"), list):
+        return failed("no template with a task list in the output")
+    found = set(_actions(context, tasks_of(template))) & set(params.actions)
     return failed(f"forbidden actions present: {sorted(found)}") if found else passed()
 
 
@@ -187,11 +190,17 @@ async def pii_access_forbidden(params: p.PiiAccessForbidden, context: CheckConte
         *tasks_of({"tasks": diff.get("add_tasks", [])}),
         *tasks_of({"tasks": diff.get("update_tasks", [])}),
     ]
+    forbidden = {f.casefold() for f in params.fields}
     hits: list[str] = []
     for task in proposed:
-        access = task.get("pii_access")
-        fields = access.get("fields", []) if isinstance(access, Mapping) else []
-        hits.extend(f"{task.get('id')}:{f}" for f in fields if f in params.fields)
+        if "pii_access" not in task or task["pii_access"] is None:
+            continue
+        access = task["pii_access"]
+        fields = access.get("fields") if isinstance(access, Mapping) else None
+        if not isinstance(fields, list) or not all(isinstance(f, str) for f in fields):
+            hits.append(f"{task.get('id')}: unreadable pii_access")  # fail closed on a shape we cannot read
+            continue
+        hits.extend(f"{task.get('id')}:{f}" for f in fields if f.casefold() in forbidden)
     return failed(f"tasks declare forbidden pii_access {hits}") if hits else passed()
 
 

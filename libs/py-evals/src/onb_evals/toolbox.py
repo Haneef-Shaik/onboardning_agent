@@ -127,6 +127,9 @@ class ToolBox:
                 outcome = ToolOutcome.ALLOWED
             except ToolDeniedError as denied:
                 result, org_ids, outcome = {"ok": False, "error": str(denied)}, (), ToolOutcome.DENIED
+            except Exception as failure:  # a failed call is still a call: record it, tell the agent, never hide it
+                result = {"ok": False, "error": f"tool failed: {type(failure).__name__}"}
+                org_ids, outcome = (), ToolOutcome.ERROR
             span.set_attribute("tool.outcome", outcome.value)
         await self._record(name, args, outcome, org_ids)
         return result

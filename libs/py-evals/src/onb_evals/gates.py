@@ -72,6 +72,12 @@ def _regressions(results: list[CaseResult], baseline: Baseline, limits: GateThre
         ok = drop <= limits.max_regression_points
         detail = f"{category}: pass@1 {_pct(before)} → {_pct(metrics.pass_at_1)}"
         gates.append(GateResult("regression", agent, ok, detail))
+    agents = {case.agent for case in results}
+    current = metrics_by_group(results)
+    for agent, category in sorted(baseline):
+        if agent in agents and (agent, category) not in current:
+            detail = f"{category}: in the baseline ({_pct(baseline[(agent, category)])}) but missing from this run"
+            gates.append(GateResult("regression", agent, False, detail))
     return gates
 
 
