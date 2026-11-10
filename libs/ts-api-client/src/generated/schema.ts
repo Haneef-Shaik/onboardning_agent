@@ -4,6 +4,40 @@
  */
 
 export interface paths {
+    "/agents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Agents */
+        get: operations["listAgents"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/agents/{name}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Agent */
+        get: operations["getAgent"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/audit": {
         parameters: {
             query?: never;
@@ -76,6 +110,99 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AgentCollections */
+        AgentCollections: {
+            /** Read */
+            read: string[];
+            /** Write */
+            write: string[];
+        };
+        /**
+         * AgentEnvelope
+         * @description One registered agent.
+         */
+        AgentEnvelope: {
+            data: components["schemas"]["AgentRecord"] | null;
+            error: components["schemas"]["ErrorBody"] | null;
+            /** @default {} */
+            meta: components["schemas"]["Meta"];
+            /** Success */
+            success: boolean;
+        };
+        /**
+         * AgentLLM
+         * @description An alias from llm.yaml, or a connector and model; `params` are sampling params only.
+         */
+        AgentLLM: {
+            /** Alias */
+            alias: string | null;
+            /** Connector */
+            connector: string | null;
+            /** Model */
+            model: string | null;
+            /** Params */
+            params: {
+                [key: string]: unknown;
+            };
+        };
+        /** AgentLimits */
+        AgentLimits: {
+            /** Max Steps */
+            max_steps: number;
+            /** Max Tokens */
+            max_tokens: number;
+            /** Timeout S */
+            timeout_s: number;
+        };
+        /** AgentMcpGrant */
+        AgentMcpGrant: {
+            collections: components["schemas"]["AgentCollections"] | null;
+            /** Tools */
+            tools: string[];
+        };
+        /** AgentRecord */
+        AgentRecord: {
+            /** Active */
+            active: boolean;
+            limits: components["schemas"]["AgentLimits"];
+            llm: components["schemas"]["AgentLLM"];
+            /** Mcp */
+            mcp: {
+                [key: string]: components["schemas"]["AgentMcpGrant"];
+            };
+            /** Memory Scopes */
+            memory_scopes: string[];
+            /** Name */
+            name: string;
+            /** Purpose */
+            purpose: string;
+            /** Requires Approval */
+            requires_approval: string[];
+            /** Sha256 */
+            sha256: string;
+            /** Tools */
+            tools: string[];
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Version */
+            version: number;
+        };
+        /**
+         * AgentsEnvelope
+         * @description Every registered agent, retired ones included, by name.
+         */
+        AgentsEnvelope: {
+            /** Data */
+            data: components["schemas"]["AgentRecord"][] | null;
+            error: components["schemas"]["ErrorBody"] | null;
+            /** @default {} */
+            meta: components["schemas"]["Meta"];
+            /** Success */
+            success: boolean;
+        };
         /** AuditActor */
         AuditActor: {
             /** Id */
@@ -276,6 +403,66 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    listAgents: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentsEnvelope"];
+                };
+            };
+            /** @description Error, in the envelope */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    getAgent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentEnvelope"];
+                };
+            };
+            /** @description Error, in the envelope */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
     listAudit: {
         parameters: {
             query?: {

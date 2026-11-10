@@ -5,8 +5,8 @@ OpenAPI export can build apps freely.
 
 Auth settings default to the environment, so an app built without them fails at once when
 `JWT_SECRET` is missing (PRD §7.8). Without a user store, login and `/me` answer 503; without an audit
-log, `GET /audit` answers 503. On startup the app makes the user store's and the audit log's indexes
-and the stand-in password hash.
+log, `GET /audit` answers 503; without an agent registry, `GET /agents` answers 503. On startup the
+app makes the user store's and the audit log's indexes and the stand-in password hash.
 """
 
 from __future__ import annotations
@@ -20,6 +20,8 @@ from onb_telemetry import active_telemetry, instrument_app
 from starlette.concurrency import run_in_threadpool
 
 from onb_api import health
+from onb_api.agents import routes as agent_routes
+from onb_api.agents.reader import AgentRegistryReader
 from onb_api.audit import routes as audit_routes
 from onb_api.audit.reader import AuditReader
 from onb_api.auth import routes as auth_routes
@@ -38,7 +40,11 @@ _ERROR_RESPONSES: dict[int | str, dict[str, object]] = {
 
 
 def create_app(
-    *, auth: AuthSettings | None = None, users: UserStore | None = None, audit: AuditReader | None = None
+    *,
+    auth: AuthSettings | None = None,
+    users: UserStore | None = None,
+    audit: AuditReader | None = None,
+    agents: AgentRegistryReader | None = None,
 ) -> FastAPI:
     settings = auth if auth is not None else AuthSettings.from_env()
 
@@ -55,10 +61,12 @@ def create_app(
     app.state.auth = settings
     app.state.users = users
     app.state.audit = audit
+    app.state.agents = agents
     install_error_handling(app)
     app.include_router(health.router)
     app.include_router(auth_routes.router)
     app.include_router(audit_routes.router)
+    app.include_router(agent_routes.router)
     if telemetry_is_active():
         # `from fastapi import FastAPI` above bound the class before the instrumentor could swap
         # it, so instrument this app explicitly.

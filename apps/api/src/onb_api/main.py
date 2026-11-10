@@ -8,6 +8,8 @@ Startup fails (`ConfigError`) when `JWT_SECRET`, `MONGO_URI` or `MONGO_DATABASE`
 
 import os
 
+from onb_agents.registry import AgentRegistry
+from onb_agents.registry.mongo import MongoRegistryStore
 from onb_data import AuditLog, connect
 from onb_telemetry import init_telemetry
 
@@ -22,4 +24,6 @@ mongo_database = require_env(os.environ, "MONGO_DATABASE")
 # Telemetry before the Mongo client: PyMongo applies the tracing listener only to clients made after it.
 telemetry = init_telemetry(SERVICE_NAME)
 store = connect(mongo_uri, mongo_database)
-app = create_app(auth=auth, users=MongoUserStore(store), audit=AuditLog(store))
+audit_log = AuditLog(store)
+registry = AgentRegistry(MongoRegistryStore(store), audit_log)
+app = create_app(auth=auth, users=MongoUserStore(store), audit=audit_log, agents=registry)

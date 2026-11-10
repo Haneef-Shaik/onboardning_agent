@@ -1,6 +1,303 @@
 {
   "components": {
     "schemas": {
+      "AgentCollections": {
+        "additionalProperties": false,
+        "properties": {
+          "read": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Read",
+            "type": "array"
+          },
+          "write": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Write",
+            "type": "array"
+          }
+        },
+        "required": [
+          "read",
+          "write"
+        ],
+        "title": "AgentCollections",
+        "type": "object"
+      },
+      "AgentEnvelope": {
+        "additionalProperties": false,
+        "description": "One registered agent.",
+        "properties": {
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AgentRecord"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "error": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ErrorBody"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta",
+            "default": {}
+          },
+          "success": {
+            "title": "Success",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "success",
+          "data",
+          "error",
+          "meta"
+        ],
+        "title": "AgentEnvelope",
+        "type": "object"
+      },
+      "AgentLLM": {
+        "additionalProperties": false,
+        "description": "An alias from llm.yaml, or a connector and model; `params` are sampling params only.",
+        "properties": {
+          "alias": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Alias"
+          },
+          "connector": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Connector"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model"
+          },
+          "params": {
+            "additionalProperties": true,
+            "title": "Params",
+            "type": "object"
+          }
+        },
+        "required": [
+          "alias",
+          "connector",
+          "model",
+          "params"
+        ],
+        "title": "AgentLLM",
+        "type": "object"
+      },
+      "AgentLimits": {
+        "additionalProperties": false,
+        "properties": {
+          "max_steps": {
+            "title": "Max Steps",
+            "type": "integer"
+          },
+          "max_tokens": {
+            "title": "Max Tokens",
+            "type": "integer"
+          },
+          "timeout_s": {
+            "title": "Timeout S",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "max_steps",
+          "max_tokens",
+          "timeout_s"
+        ],
+        "title": "AgentLimits",
+        "type": "object"
+      },
+      "AgentMcpGrant": {
+        "additionalProperties": false,
+        "properties": {
+          "collections": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AgentCollections"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "tools": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Tools",
+            "type": "array"
+          }
+        },
+        "required": [
+          "tools",
+          "collections"
+        ],
+        "title": "AgentMcpGrant",
+        "type": "object"
+      },
+      "AgentRecord": {
+        "additionalProperties": false,
+        "properties": {
+          "active": {
+            "title": "Active",
+            "type": "boolean"
+          },
+          "limits": {
+            "$ref": "#/components/schemas/AgentLimits"
+          },
+          "llm": {
+            "$ref": "#/components/schemas/AgentLLM"
+          },
+          "mcp": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/AgentMcpGrant"
+            },
+            "title": "Mcp",
+            "type": "object"
+          },
+          "memory_scopes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Memory Scopes",
+            "type": "array"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "purpose": {
+            "title": "Purpose",
+            "type": "string"
+          },
+          "requires_approval": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Requires Approval",
+            "type": "array"
+          },
+          "sha256": {
+            "title": "Sha256",
+            "type": "string"
+          },
+          "tools": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Tools",
+            "type": "array"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "name",
+          "version",
+          "active",
+          "purpose",
+          "llm",
+          "mcp",
+          "tools",
+          "memory_scopes",
+          "requires_approval",
+          "limits",
+          "sha256",
+          "updated_at"
+        ],
+        "title": "AgentRecord",
+        "type": "object"
+      },
+      "AgentsEnvelope": {
+        "additionalProperties": false,
+        "description": "Every registered agent, retired ones included, by name.",
+        "properties": {
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/AgentRecord"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ErrorBody"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta",
+            "default": {}
+          },
+          "success": {
+            "title": "Success",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "success",
+          "data",
+          "error",
+          "meta"
+        ],
+        "title": "AgentsEnvelope",
+        "type": "object"
+      },
       "AuditActor": {
         "additionalProperties": false,
         "properties": {
@@ -567,6 +864,91 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/agents": {
+      "get": {
+        "operationId": "listAgents",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentsEnvelope"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error, in the envelope"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Agents",
+        "tags": [
+          "agents"
+        ]
+      }
+    },
+    "/agents/{name}": {
+      "get": {
+        "operationId": "getAgent",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "name",
+            "required": true,
+            "schema": {
+              "maxLength": 64,
+              "pattern": "^[a-z][a-z0-9_]{0,63}$",
+              "title": "Name",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentEnvelope"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error, in the envelope"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Agent",
+        "tags": [
+          "agents"
+        ]
+      }
+    },
     "/audit": {
       "get": {
         "operationId": "listAudit",

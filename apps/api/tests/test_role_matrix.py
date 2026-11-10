@@ -36,7 +36,13 @@ ROLE_MATRIX: dict[tuple[str, str], dict[Role, int]] = {
     ("GET", "/me"): ALL_200,
     # AUD-1: the audit log is HR_ADMIN only (PRD §3, §10 Registry & audit).
     ("GET", "/audit"): {Role.HR_ADMIN: 200, Role.HR: 403, Role.MANAGER: 403},
+    # REG-1: the agent registry is HR_ADMIN only (PRD U8, §10 Registry & audit).
+    ("GET", "/agents"): {Role.HR_ADMIN: 200, Role.HR: 403, Role.MANAGER: 403},
+    ("GET", "/agents/{name}"): {Role.HR_ADMIN: 200, Role.HR: 403, Role.MANAGER: 403},
 }
+
+# A concrete path for each route with path parameters: an existing record, so HR_ADMIN gets 200.
+SAMPLE_PATHS = {"/agents/{name}": "/agents/db_agent"}
 
 
 def _routes(app: FastAPI) -> list[APIRoute]:
@@ -82,13 +88,18 @@ def test_the_matrix_covers_every_role() -> None:
 def test_role_matrix(client: TestClient, route: tuple[str, str], role: Role) -> None:
     method, path = route
     user_id, org_id = ACTORS[role]
-    response = client.request(method, path, headers=bearer(token_for(user_id, org_id, role)))
+    response = client.request(method, SAMPLE_PATHS.get(path, path), headers=bearer(token_for(user_id, org_id, role)))
     assert response.status_code == ROLE_MATRIX[route][role], response.text
 
 
 @pytest.mark.parametrize("route", sorted(ROLE_MATRIX), ids=lambda k: f"{k[0]} {k[1]}")
 def test_every_guarded_route_refuses_a_missing_token(client: TestClient, route: tuple[str, str]) -> None:
-    assert client.request(*route).status_code == 401
+    method, path = route
+    assert client.request(method, SAMPLE_PATHS.get(path, path)).status_code == 401
+
+
+def test_every_path_parameter_route_has_a_sample_path() -> None:
+    assert {path for _, path in ROLE_MATRIX if "{" in path} == set(SAMPLE_PATHS)
 
 
 # --- require_role on probe routes ----------------------------------------------------------------
