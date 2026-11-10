@@ -1,18 +1,24 @@
-# Checkpoint — MCP-2 · goal/mcp-2-query-validator · ON HOLD after verifier attempt 5
+# Checkpoint — MCP-2 · goal/mcp-2-query-validator · ON HOLD after verifier attempt 6
 
-**State (6a58aa8)**
-- Boxes 1–3 pass in all five verifier runs. `make check` green (mcp-mongo 510 passed); `make test-int` green (7 projects).
-- Box 4 follows the confirmed threat model: `main()` runs bare on its production path; the served app's whole route table must be exactly `/mcp`; tools are listed over a real MCP session. Mutations: 37 of 37 caught (V35–V37 are the attempt-3 and attempt-4 survivors).
-- **Attempt 5 fail (box 4, in scope).** The production-path proof runs only with the default configuration, because `_served_app` removes `MCP_MONGO_HOST`/`PORT`/`DATABASE`. Three survivors:
-  - **P1:** an aliased FastMCP plus `Tool.from_function(db_users.run_command)` behind `if settings.host != "127.0.0.1"`.
-  - **P2:** the same, behind `settings.port != 8000`.
-  - **P3:** the same, behind an ad-hoc env flag (`MCP_MONGO_OPS_TOOLS`).
+**State (fafe580)**
+- Boxes 1–3 pass in all six verifier runs. `make check` green (mcp-mongo 516 passed); `make test-int` green (7 projects). Mutations: 40 of 40 caught, including V38–V40 (the attempt-5 survivors).
+- **Box 4** follows the confirmed threat model plus the approved attempt-6 plan:
+  - production-path `main()` in two configurations (required-only, all-non-default);
+  - the served app's route table is exactly `/mcp`;
+  - tools are listed over a real MCP session;
+  - static rules: `mcp.server` is imported only by `server.py`, and the environment is read only via `load_settings`.
+- **Attempt 6 fail (box 4).** The verifier classed both survivors as IN MODEL. Each passes all 516 tests:
+  - **A, a second endpoint through `FastMCP.run`:** `server.py` gains `build_ops_server(fn, host, port)` returning `FastMCP(..., tools=[Tool.from_function(fn, name="run_command")])`. `main.py` starts it with `threading.Thread(target=ops.run, args=("streamable-http",), daemon=True).start()` on port+1, before the normal `uvicorn.run`. The test patches only `uvicorn.run`, so a server started any other way is never captured.
+  - **B, a branch on a combination of settings:** `build_server` appends a `drop_collection` tool when `host != "127.0.0.1" and port == 8000` (a networked host on the default port). Only two configuration points are tested, so mixed combinations go unexercised.
 
-  The static layer misses them as well: the AST rule matches local names only, and `run_command` lives in the exempt `db_users.py`.
+**Next step if resumed (attempt 7, needs integrator approval; the verifier's retry guidance)**
+1. **A:** prove `main()` starts no listener other than the app it passes to `uvicorn.run`. Two options:
+   - patch or forbid `FastMCP.run*`, `uvicorn.Server`/`Config`, `anyio.run`, `threading.Thread.start` and `asyncio` loop starts during `main()`;
+   - add a static rule: `main.py`/`server.py` never call `.run*`, `uvicorn.Server` or `uvicorn.Config`, and `FastMCP(` is constructed exactly once, inside `build_server`.
 
-**Next step if resumed (small, tests only)**
-1. Parametrize `_served_app` over (a) required vars only and (b) every optional setting at a non-default, production-like value (`MCP_MONGO_HOST=0.0.0.0`, `MCP_MONGO_PORT=9001`, `MCP_MONGO_DATABASE=onb_x`). Run the route-table test and the `list_tools` test for each. This kills P1 and P2.
-2. Close P3 statically, since a test cannot enumerate unknown flags:
-   - outside `server.py`, no import from `mcp.server`, `mcp.server.fastmcp*` or `mcp.server.lowlevel` under any alias (check `ImportFrom.module` and `Import` names);
-   - `main.py` may not read `os.environ` or `getenv` except to pass it to `load_settings`.
-3. Add P1–P3 as mutations V38–V40, show each killed, and refresh `mutation-checks.txt`, `make check`, `make test-int` and the handoff (attempt 6).
+   Mutation V41.
+2. **B:** cover configuration combinations. Two options:
+   - run all 8 combinations of {default, non-default} for HOST, PORT and DATABASE;
+   - prove statically that `main`/`build_server` use host, port and database only as pass-through arguments (never compared or branched on).
+
+   Mutation V42.
