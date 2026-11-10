@@ -4,7 +4,7 @@ hypothesis profile 'default'
 rootdir: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-mcp-2
 configfile: pyproject.toml
 plugins: hypothesis-6.170.15, langsmith-0.14.17, cov-7.1.0, anyio-4.16.0
-collecting ... collected 274 items
+collecting ... collected 275 items
 
 apps/mcp-mongo/tests/test_validator.py::test_the_corpus_has_at_least_40_payloads_with_unique_ids PASSED [  0%]
 apps/mcp-mongo/tests/test_validator.py::test_the_corpus_covers_every_kind_the_card_names[$accumulator] PASSED [  0%]
@@ -79,7 +79,7 @@ apps/mcp-mongo/tests/test_validator.py::test_every_corpus_payload_is_rejected_wi
 apps/mcp-mongo/tests/test_validator.py::test_every_corpus_payload_is_rejected_with_its_named_reason[org-rename-target] PASSED [ 25%]
 apps/mcp-mongo/tests/test_validator.py::test_every_corpus_payload_is_rejected_with_its_named_reason[org-insert] PASSED [ 26%]
 apps/mcp-mongo/tests/test_validator.py::test_every_corpus_payload_is_rejected_with_its_named_reason[org-addFields] PASSED [ 26%]
-apps/mcp-mongo/tests/test_validator.py::test_every_corpus_payload_is_rejected_with_its_named_reason[org-group-output] PASSED [ 27%]
+apps/mcp-mongo/tests/test_validator.py::test_every_corpus_payload_is_rejected_with_its_named_reason[org-group-output] PASSED [ 26%]
 apps/mcp-mongo/tests/test_validator.py::test_every_corpus_payload_is_rejected_with_its_named_reason[org-count-name] PASSED [ 27%]
 apps/mcp-mongo/tests/test_validator.py::test_every_corpus_payload_is_rejected_with_its_named_reason[pii-set-mobile] PASSED [ 27%]
 apps/mcp-mongo/tests/test_validator.py::test_every_corpus_payload_is_rejected_with_its_named_reason[pii-set-whole] PASSED [ 28%]
@@ -90,7 +90,7 @@ apps/mcp-mongo/tests/test_validator.py::test_every_corpus_payload_is_rejected_wi
 apps/mcp-mongo/tests/test_validator.py::test_every_corpus_payload_is_rejected_with_its_named_reason[pii-insert] PASSED [ 29%]
 apps/mcp-mongo/tests/test_validator.py::test_every_corpus_payload_is_rejected_with_its_named_reason[pii-insert-dotted] PASSED [ 30%]
 apps/mcp-mongo/tests/test_validator.py::test_every_corpus_payload_is_rejected_with_its_named_reason[deep-nesting] PASSED [ 30%]
-apps/mcp-mongo/tests/test_validator.py::test_every_corpus_payload_is_rejected_with_its_named_reason[wide] PASSED [ 31%]
+apps/mcp-mongo/tests/test_validator.py::test_every_corpus_payload_is_rejected_with_its_named_reason[wide] PASSED [ 30%]
 apps/mcp-mongo/tests/test_validator.py::test_every_corpus_payload_is_rejected_with_its_named_reason[huge-int-limit] PASSED [ 31%]
 apps/mcp-mongo/tests/test_validator.py::test_every_corpus_payload_is_rejected_with_its_named_reason[huge-string] PASSED [ 31%]
 apps/mcp-mongo/tests/test_validator.py::test_every_corpus_payload_is_rejected_with_its_named_reason[map-nesting] PASSED [ 32%]
@@ -101,7 +101,7 @@ apps/mcp-mongo/tests/test_validator.py::test_every_corpus_payload_is_rejected_wi
 apps/mcp-mongo/tests/test_validator.py::test_every_corpus_payload_is_rejected_with_its_named_reason[set-id] PASSED [ 33%]
 apps/mcp-mongo/tests/test_validator.py::test_every_corpus_payload_is_rejected_with_its_named_reason[oid-at-root] PASSED [ 34%]
 apps/mcp-mongo/tests/test_validator.py::test_every_corpus_payload_is_rejected_with_its_named_reason[push-modifier-where] PASSED [ 34%]
-apps/mcp-mongo/tests/test_validator.py::test_every_rejection_names_its_argument_and_never_echoes_agent_text PASSED [ 35%]
+apps/mcp-mongo/tests/test_validator.py::test_every_rejection_names_its_argument_and_never_echoes_agent_text PASSED [ 34%]
 apps/mcp-mongo/tests/test_validator.py::test_the_forbidden_operators_are_exactly_the_prd_list PASSED [ 35%]
 apps/mcp-mongo/tests/test_validator.py::test_no_forbidden_operator_is_on_any_allowlist[$accumulator] PASSED [ 35%]
 apps/mcp-mongo/tests/test_validator.py::test_no_forbidden_operator_is_on_any_allowlist[$function] PASSED [ 36%]
@@ -112,7 +112,7 @@ apps/mcp-mongo/tests/test_validator.py::test_no_forbidden_operator_is_on_any_all
 apps/mcp-mongo/tests/test_validator.py::test_no_forbidden_operator_is_on_any_allowlist[$unionWith] PASSED [ 37%]
 apps/mcp-mongo/tests/test_validator.py::test_no_forbidden_operator_is_on_any_allowlist[$where] PASSED [ 38%]
 apps/mcp-mongo/tests/test_validator.py::test_a_forbidden_operator_is_named_in_the_message PASSED [ 38%]
-apps/mcp-mongo/tests/test_validator.py::test_ordinary_queries_are_accepted[list] PASSED [ 39%]
+apps/mcp-mongo/tests/test_validator.py::test_ordinary_queries_are_accepted[list] PASSED [ 38%]
 apps/mcp-mongo/tests/test_validator.py::test_ordinary_queries_are_accepted[find-empty] PASSED [ 39%]
 apps/mcp-mongo/tests/test_validator.py::test_ordinary_queries_are_accepted[find-eq] PASSED [ 39%]
 apps/mcp-mongo/tests/test_validator.py::test_ordinary_queries_are_accepted[find-ops] PASSED [ 40%]
@@ -123,7 +123,7 @@ apps/mcp-mongo/tests/test_validator.py::test_ordinary_queries_are_accepted[find-
 apps/mcp-mongo/tests/test_validator.py::test_ordinary_queries_are_accepted[count-expr] PASSED [ 41%]
 apps/mcp-mongo/tests/test_validator.py::test_ordinary_queries_are_accepted[aggregate-all-stages] PASSED [ 42%]
 apps/mcp-mongo/tests/test_validator.py::test_ordinary_queries_are_accepted[aggregate-count] PASSED [ 42%]
-apps/mcp-mongo/tests/test_validator.py::test_ordinary_queries_are_accepted[insert] PASSED [ 43%]
+apps/mcp-mongo/tests/test_validator.py::test_ordinary_queries_are_accepted[insert] PASSED [ 42%]
 apps/mcp-mongo/tests/test_validator.py::test_ordinary_queries_are_accepted[update] PASSED [ 43%]
 apps/mcp-mongo/tests/test_validator.py::test_ordinary_queries_are_accepted[update-positional] PASSED [ 43%]
 apps/mcp-mongo/tests/test_validator.py::test_the_validator_does_not_change_its_input PASSED [ 44%]
@@ -134,7 +134,7 @@ apps/mcp-mongo/tests/test_validator.py::test_every_update_operator_on_pii_mobile
 apps/mcp-mongo/tests/test_validator.py::test_every_update_operator_on_pii_mobile_is_rejected[$unset] PASSED [ 45%]
 apps/mcp-mongo/tests/test_validator.py::test_every_update_operator_on_pii_mobile_is_rejected[$inc] PASSED [ 46%]
 apps/mcp-mongo/tests/test_validator.py::test_every_update_operator_on_pii_mobile_is_rejected[$mul] PASSED [ 46%]
-apps/mcp-mongo/tests/test_validator.py::test_every_update_operator_on_pii_mobile_is_rejected[$min] PASSED [ 47%]
+apps/mcp-mongo/tests/test_validator.py::test_every_update_operator_on_pii_mobile_is_rejected[$min] PASSED [ 46%]
 apps/mcp-mongo/tests/test_validator.py::test_every_update_operator_on_pii_mobile_is_rejected[$max] PASSED [ 47%]
 apps/mcp-mongo/tests/test_validator.py::test_every_update_operator_on_pii_mobile_is_rejected[$push] PASSED [ 47%]
 apps/mcp-mongo/tests/test_validator.py::test_every_update_operator_on_pii_mobile_is_rejected[$addToSet] PASSED [ 48%]
@@ -142,10 +142,10 @@ apps/mcp-mongo/tests/test_validator.py::test_every_update_operator_on_pii_mobile
 apps/mcp-mongo/tests/test_validator.py::test_a_set_of_org_id_is_rejected PASSED [ 48%]
 apps/mcp-mongo/tests/test_validator.py::test_a_set_of_an_org_id_subfield_is_rejected PASSED [ 49%]
 apps/mcp-mongo/tests/test_validator.py::test_a_field_merely_named_like_pii_is_not_pii PASSED [ 49%]
-apps/mcp-mongo/tests/test_validator.py::test_a_value_spelled_org_id_is_data_not_a_field PASSED [ 50%]
+apps/mcp-mongo/tests/test_validator.py::test_a_value_spelled_org_id_is_data_not_a_field PASSED [ 49%]
 apps/mcp-mongo/tests/test_validator.py::test_context_rules_and_caps[find-args0-operator_not_allowed] PASSED [ 50%]
 apps/mcp-mongo/tests/test_validator.py::test_context_rules_and_caps[find-args1-operator_not_allowed] PASSED [ 50%]
-apps/mcp-mongo/tests/test_validator.py::test_context_rules_and_caps[find-args2-operator_not_allowed] PASSED [ 51%]
+apps/mcp-mongo/tests/test_validator.py::test_context_rules_and_caps[find-args2-operator_not_allowed] PASSED [ 50%]
 apps/mcp-mongo/tests/test_validator.py::test_context_rules_and_caps[find-args3-invalid_query] PASSED [ 51%]
 apps/mcp-mongo/tests/test_validator.py::test_context_rules_and_caps[find-args4-invalid_query] PASSED [ 51%]
 apps/mcp-mongo/tests/test_validator.py::test_context_rules_and_caps[find-args5-invalid_query] PASSED [ 52%]
@@ -153,10 +153,10 @@ apps/mcp-mongo/tests/test_validator.py::test_context_rules_and_caps[find-args6-o
 apps/mcp-mongo/tests/test_validator.py::test_context_rules_and_caps[aggregate-args7-operator_not_allowed] PASSED [ 52%]
 apps/mcp-mongo/tests/test_validator.py::test_context_rules_and_caps[aggregate-args8-variable_not_allowed] PASSED [ 53%]
 apps/mcp-mongo/tests/test_validator.py::test_context_rules_and_caps[aggregate-args9-org_id_not_allowed] PASSED [ 53%]
-apps/mcp-mongo/tests/test_validator.py::test_context_rules_and_caps[aggregate-args10-org_id_not_allowed] PASSED [ 54%]
+apps/mcp-mongo/tests/test_validator.py::test_context_rules_and_caps[aggregate-args10-org_id_not_allowed] PASSED [ 53%]
 apps/mcp-mongo/tests/test_validator.py::test_context_rules_and_caps[find-args11-org_id_not_allowed] PASSED [ 54%]
 apps/mcp-mongo/tests/test_validator.py::test_context_rules_and_caps[aggregate-args12-invalid_field_name] PASSED [ 54%]
-apps/mcp-mongo/tests/test_validator.py::test_context_rules_and_caps[aggregate-args13-invalid_field_name] PASSED [ 55%]
+apps/mcp-mongo/tests/test_validator.py::test_context_rules_and_caps[aggregate-args13-invalid_field_name] PASSED [ 54%]
 apps/mcp-mongo/tests/test_validator.py::test_context_rules_and_caps[aggregate-args14-too_large] PASSED [ 55%]
 apps/mcp-mongo/tests/test_validator.py::test_context_rules_and_caps[insert_one-args15-too_large] PASSED [ 55%]
 apps/mcp-mongo/tests/test_validator.py::test_context_rules_and_caps[insert_one-args16-too_large] PASSED [ 56%]
@@ -164,10 +164,10 @@ apps/mcp-mongo/tests/test_validator.py::test_context_rules_and_caps[aggregate-ar
 apps/mcp-mongo/tests/test_validator.py::test_context_rules_and_caps[update_one-args18-invalid_field_name] PASSED [ 56%]
 apps/mcp-mongo/tests/test_validator.py::test_context_rules_and_caps[update_one-args19-invalid_field_name] PASSED [ 57%]
 apps/mcp-mongo/tests/test_validator.py::test_context_rules_and_caps[update_one-args20-id_not_allowed] PASSED [ 57%]
-apps/mcp-mongo/tests/test_validator.py::test_context_rules_and_caps[update_one-args21-forbidden_operator] PASSED [ 58%]
+apps/mcp-mongo/tests/test_validator.py::test_context_rules_and_caps[update_one-args21-forbidden_operator] PASSED [ 57%]
 apps/mcp-mongo/tests/test_validator.py::test_context_rules_and_caps[update_one-args22-invalid_update] PASSED [ 58%]
 apps/mcp-mongo/tests/test_validator.py::test_array_iterators_nest_at_most_two_deep PASSED [ 58%]
-apps/mcp-mongo/tests/test_validator.py::test_common_read_and_write_shapes_are_accepted[aggregate-args0] PASSED [ 59%]
+apps/mcp-mongo/tests/test_validator.py::test_common_read_and_write_shapes_are_accepted[aggregate-args0] PASSED [ 58%]
 apps/mcp-mongo/tests/test_validator.py::test_common_read_and_write_shapes_are_accepted[aggregate-args1] PASSED [ 59%]
 apps/mcp-mongo/tests/test_validator.py::test_common_read_and_write_shapes_are_accepted[aggregate-args2] PASSED [ 59%]
 apps/mcp-mongo/tests/test_validator.py::test_common_read_and_write_shapes_are_accepted[aggregate-args3] PASSED [ 60%]
@@ -175,10 +175,10 @@ apps/mcp-mongo/tests/test_validator.py::test_common_read_and_write_shapes_are_ac
 apps/mcp-mongo/tests/test_validator.py::test_common_read_and_write_shapes_are_accepted[update_one-args5] PASSED [ 60%]
 apps/mcp-mongo/tests/test_validator.py::test_common_read_and_write_shapes_are_accepted[find-args6] PASSED [ 61%]
 apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[where-top] PASSED [ 61%]
-apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[where-in-or] PASSED [ 62%]
+apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[where-in-or] PASSED [ 61%]
 apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[where-in-count] PASSED [ 62%]
 apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[where-in-match] PASSED [ 62%]
-apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[where-in-update-filter] PASSED [ 63%]
+apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[where-in-update-filter] PASSED [ 62%]
 apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[where-under-elemMatch] PASSED [ 63%]
 apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[where-under-not] PASSED [ 63%]
 apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[where-in-pull] PASSED [ 64%]
@@ -186,10 +186,10 @@ apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_deni
 apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[expr-function-nested] PASSED [ 64%]
 apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[expr-function-in-match] PASSED [ 65%]
 apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[function-in-addFields] PASSED [ 65%]
-apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[function-in-project] PASSED [ 66%]
+apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[function-in-project] PASSED [ 65%]
 apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[function-in-group-id] PASSED [ 66%]
 apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[accumulator-in-group] PASSED [ 66%]
-apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[accumulator-in-expr] PASSED [ 67%]
+apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[accumulator-in-expr] PASSED [ 66%]
 apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[function-in-sum] PASSED [ 67%]
 apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[lookup] PASSED [ 67%]
 apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[lookup-after-match] PASSED [ 68%]
@@ -197,10 +197,10 @@ apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_deni
 apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[out] PASSED [ 68%]
 apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[out-db] PASSED [ 69%]
 apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[merge] PASSED [ 69%]
-apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[unionWith] PASSED [ 70%]
+apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[unionWith] PASSED [ 69%]
 apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[unionWith-string] PASSED [ 70%]
 apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[lookup-as-query-key] PASSED [ 70%]
-apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[facet] PASSED [ 71%]
+apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[facet] PASSED [ 70%]
 apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[set-stage] PASSED [ 71%]
 apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[collStats] PASSED [ 71%]
 apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[currentOp] PASSED [ 72%]
@@ -208,92 +208,93 @@ apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_deni
 apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[jsonSchema] PASSED [ 72%]
 apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[text] PASSED [ 73%]
 apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[comment] PASSED [ 73%]
-apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[code-ejson] PASSED [ 74%]
+apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[code-ejson] PASSED [ 73%]
 apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[setOnInsert] PASSED [ 74%]
 apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[bit-update] PASSED [ 74%]
-apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[operator-in-insert] PASSED [ 75%]
+apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[operator-in-insert] PASSED [ 74%]
 apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[unknown-in-insert] PASSED [ 75%]
 apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[operator-in-set-value] PASSED [ 75%]
 apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[dotted-dollar-segment] PASSED [ 76%]
 apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[dotted-empty-segment] PASSED [ 76%]
-apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[leading-dot] PASSED [ 77%]
+apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[leading-dot] PASSED [ 76%]
 apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[projection-operator] PASSED [ 77%]
 apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[sort-operator-key] PASSED [ 77%]
-apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[nul-in-name] PASSED [ 78%]
+apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[nul-in-name] PASSED [ 77%]
 apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[fullwidth-dollar] PASSED [ 78%]
 apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[small-dollar] PASSED [ 78%]
-apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[cyrillic-e-where] PASSED [ 79%]
+apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[cyrillic-e-where] PASSED [ 78%]
 apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[zero-width-in-op] PASSED [ 79%]
 apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[fullwidth-org-id] PASSED [ 79%]
 apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[rtl-override] PASSED [ 80%]
 apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[org-in-filter] PASSED [ 80%]
-apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[org-dotted] PASSED [ 81%]
+apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[org-dotted] PASSED [ 80%]
 apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[org-nested-or] PASSED [ 81%]
 apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[org-set] PASSED [ 81%]
-apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[org-unset] PASSED [ 82%]
+apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[org-unset] PASSED [ 81%]
 apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[org-rename-target] PASSED [ 82%]
 apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[org-insert] PASSED [ 82%]
-apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[org-addFields] PASSED [ 83%]
+apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[org-addFields] PASSED [ 82%]
 apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[org-group-output] PASSED [ 83%]
 apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[org-count-name] PASSED [ 83%]
 apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[pii-set-mobile] PASSED [ 84%]
 apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[pii-set-whole] PASSED [ 84%]
-apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[pii-unset] PASSED [ 85%]
+apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[pii-unset] PASSED [ 84%]
 apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[pii-rename-from] PASSED [ 85%]
 apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[pii-rename-to] PASSED [ 85%]
-apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[pii-push] PASSED [ 86%]
+apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[pii-push] PASSED [ 85%]
 apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[pii-insert] PASSED [ 86%]
 apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[pii-insert-dotted] PASSED [ 86%]
-apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[deep-nesting] PASSED [ 87%]
+apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[deep-nesting] PASSED [ 86%]
 apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[wide] PASSED [ 87%]
 apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[huge-int-limit] PASSED [ 87%]
 apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[huge-string] PASSED [ 88%]
 apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[map-nesting] PASSED [ 88%]
-apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[user-roles-variable] PASSED [ 89%]
+apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[user-roles-variable] PASSED [ 88%]
 apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[org-path-in-project] PASSED [ 89%]
 apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[org-path-via-root] PASSED [ 89%]
-apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[positional-first-pii] PASSED [ 90%]
+apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[positional-first-pii] PASSED [ 89%]
 apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[set-id] PASSED [ 90%]
 apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[oid-at-root] PASSED [ 90%]
-apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[push-modifier-where] PASSED [ 91%]
+apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[push-modifier-where] PASSED [ 90%]
 apps/mcp-mongo/tests/test_server_validator.py::test_an_update_touching_pii_mobile_is_denied_over_mcp PASSED [ 91%]
 apps/mcp-mongo/tests/test_server_validator.py::test_a_set_of_org_id_is_denied_over_mcp PASSED [ 91%]
 apps/mcp-mongo/tests/test_server_validator.py::test_a_very_deep_filter_sent_as_raw_json_is_a_denial_not_an_internal_error[40] PASSED [ 92%]
 apps/mcp-mongo/tests/test_server_validator.py::test_a_very_deep_filter_sent_as_raw_json_is_a_denial_not_an_internal_error[300] PASSED [ 92%]
-apps/mcp-mongo/tests/test_server_validator.py::test_an_allowed_update_still_reaches_the_driver PASSED [ 93%]
+apps/mcp-mongo/tests/test_server_validator.py::test_an_allowed_update_still_reaches_the_driver PASSED [ 92%]
 apps/mcp-mongo/tests/test_validator_properties.py::test_an_accepted_filter_never_holds_a_forbidden_operator PASSED [ 93%]
 apps/mcp-mongo/tests/test_validator_properties.py::test_an_accepted_pipeline_never_holds_a_forbidden_operator PASSED [ 93%]
-apps/mcp-mongo/tests/test_validator_properties.py::test_an_accepted_update_never_holds_a_forbidden_operator PASSED [ 94%]
+apps/mcp-mongo/tests/test_validator_properties.py::test_an_accepted_update_never_holds_a_forbidden_operator PASSED [ 93%]
 apps/mcp-mongo/tests/test_validator_properties.py::test_an_accepted_insert_never_holds_a_forbidden_operator_pii_or_org PASSED [ 94%]
 apps/mcp-mongo/tests/test_validator_properties.py::test_a_valid_filter_is_accepted_and_rejected_once_a_forbidden_operator_is_injected PASSED [ 94%]
-apps/mcp-mongo/tests/test_validator_properties.py::test_a_mutated_filter_is_accepted_only_without_a_forbidden_operator PASSED [ 95%]
+apps/mcp-mongo/tests/test_validator_properties.py::test_a_mutated_filter_is_accepted_only_without_a_forbidden_operator PASSED [ 94%]
 apps/mcp-mongo/tests/test_validator_properties.py::test_a_mutated_pipeline_is_accepted_only_without_a_forbidden_operator PASSED [ 95%]
 apps/mcp-mongo/tests/test_validator_properties.py::test_a_mutated_update_is_accepted_only_without_a_forbidden_operator_pii_or_org PASSED [ 95%]
 apps/mcp-mongo/tests/test_validator_properties.py::test_a_mutated_insert_is_accepted_only_without_a_forbidden_operator_pii_or_org PASSED [ 96%]
 apps/mcp-mongo/tests/test_tool_surface.py::test_no_delete_drop_index_admin_or_run_command_tool_is_served PASSED [ 96%]
-apps/mcp-mongo/tests/test_tool_surface.py::test_the_server_is_built_only_from_the_prd_tools PASSED [ 97%]
+apps/mcp-mongo/tests/test_tool_surface.py::test_the_server_is_built_only_from_the_prd_tools PASSED [ 96%]
 apps/mcp-mongo/tests/test_tool_surface.py::test_the_tool_closure_holds_the_tool_code_and_not_the_admin_code PASSED [ 97%]
 apps/mcp-mongo/tests/test_tool_surface.py::test_importing_the_tools_never_loads_the_admin_code PASSED [ 97%]
-apps/mcp-mongo/tests/test_tool_surface.py::test_no_source_file_but_the_admin_file_calls_a_delete_drop_index_or_command_method PASSED [ 98%]
+apps/mcp-mongo/tests/test_tool_surface.py::test_no_source_file_but_the_admin_file_calls_a_delete_drop_index_or_command_method PASSED [ 97%]
 apps/mcp-mongo/tests/test_tool_surface.py::test_the_admin_exemption_is_exactly_the_provisioning_file PASSED [ 98%]
 apps/mcp-mongo/tests/test_tool_surface.py::test_the_package_has_no_subpackages PASSED [ 98%]
-apps/mcp-mongo/tests/test_tool_surface.py::test_only_the_server_module_builds_the_mcp_server_or_registers_tools PASSED [ 99%]
+apps/mcp-mongo/tests/test_tool_surface.py::test_only_the_server_module_builds_the_mcp_server_or_registers_tools PASSED [ 98%]
+apps/mcp-mongo/tests/test_tool_surface.py::test_the_app_main_serves_is_exactly_one_mcp_endpoint PASSED [ 99%]
 apps/mcp-mongo/tests/test_tool_surface.py::test_the_app_main_serves_lists_exactly_the_prd_tools_over_mcp PASSED [ 99%]
 apps/mcp-mongo/tests/test_tool_surface.py::test_calling_a_tool_that_does_not_exist_is_an_error PASSED [100%]
 ============================ Hypothesis Statistics =============================
 
 apps/mcp-mongo/tests/test_validator_properties.py::test_an_accepted_filter_never_holds_a_forbidden_operator:
 
-  - during generate phase (2.16 seconds):
+  - during generate phase (2.57 seconds):
     - Typical runtimes: ~ 0-1 ms, of which ~ 0-1 ms in data generation
-    - 600 passing, 0 failing, and 1864 invalid test cases
+    - 600 passing, 0 failing, and 2016 invalid test cases
     - Events:
-      * 69.48%, gave up because: failed to satisfy assume() in test_an_accepted_filter_never_holds_a_forbidden_operator (line 131)
-      * 23.25%, count: rejected
-      * 23.25%, find: rejected
-      * 1.10%, count: accepted
-      * 1.10%, find: accepted
-      * 0.85%, Retried draw from one_of(sampled_from(['$abs', '$add', '$addFields', '$addToSet', '$all', '$and', '$arrayElemAt', '$avg', '$ceil', '$cmp', '$concat', '$concatArrays', '$cond', '$count', '$currentDate', '$dateAdd', '$dateDiff', '$dateSubtract', '$dateToString', '$dayOfMonth', '$dayOfWeek', '$dayOfYear', '$divide', '$each', '$elemMatch', '$eq', '$exists', '$expr', '$filter', '$first', '$floor', '$group', '$gt', '$gte', '$hour', '$ifNull', '$in', '$inc', '$isArray', '$last', '$limit', '$literal', '$lt', '$lte', '$map', '$match', '$max', '$min', '$minute', '$mod', '$month', '$mul', '$multiply', '$ne', '$nin', '$nor', '$not', '$oid', '$or', '$project', '$pull', '$push', '$rename', '$round', '$set', '$size', '$slice', '$sort', '$split', '$strLenCP', '$substrCP', '$subtract', '$sum', '$switch', '$toBool', '$toDate', '$toDouble', '$toInt', '$toLower', '$toString', '$toUpper', '$trim', '$trunc', '$type', '$unset', '$unwind', '$week', '$year']), sampled_from(['$accumulator', '$function', '$graphLookup', '$lookup', '$merge', '$out', '$unionWith', '$where']), sampled_from(['＄where', '﹩function', '$whеre', '$\u200bwhere', '$WHERE', '$where ', ' $where', '$lookup\x00', '$func\xadtion']), sampled_from(['status', 'a', 'a.b', 'pii.mobile', 'org_id', 'tags', 'items.$', 'x.$where', '$']), text(min_size=1, max_size=8), text(min_size=1, max_size=6).map(lambda s: '$' + s)).filter(not_yet_in_unique_list) to satisfy filter
+      * 71.10%, gave up because: failed to satisfy assume() in test_an_accepted_filter_never_holds_a_forbidden_operator (line 131)
+      * 21.87%, count: rejected
+      * 21.87%, find: rejected
+      * 1.41%, Retried draw from one_of(sampled_from(['$abs', '$add', '$addFields', '$addToSet', '$all', '$and', '$arrayElemAt', '$avg', '$ceil', '$cmp', '$concat', '$concatArrays', '$cond', '$count', '$currentDate', '$dateAdd', '$dateDiff', '$dateSubtract', '$dateToString', '$dayOfMonth', '$dayOfWeek', '$dayOfYear', '$divide', '$each', '$elemMatch', '$eq', '$exists', '$expr', '$filter', '$first', '$floor', '$group', '$gt', '$gte', '$hour', '$ifNull', '$in', '$inc', '$isArray', '$last', '$limit', '$literal', '$lt', '$lte', '$map', '$match', '$max', '$min', '$minute', '$mod', '$month', '$mul', '$multiply', '$ne', '$nin', '$nor', '$not', '$oid', '$or', '$project', '$pull', '$push', '$rename', '$round', '$set', '$size', '$slice', '$sort', '$split', '$strLenCP', '$substrCP', '$subtract', '$sum', '$switch', '$toBool', '$toDate', '$toDouble', '$toInt', '$toLower', '$toString', '$toUpper', '$trim', '$trunc', '$type', '$unset', '$unwind', '$week', '$year']), sampled_from(['$accumulator', '$function', '$graphLookup', '$lookup', '$merge', '$out', '$unionWith', '$where']), sampled_from(['＄where', '﹩function', '$whеre', '$\u200bwhere', '$WHERE', '$where ', ' $where', '$lookup\x00', '$func\xadtion']), sampled_from(['status', 'a', 'a.b', 'pii.mobile', 'org_id', 'tags', 'items.$', 'x.$where', '$']), text(min_size=1, max_size=8), text(min_size=1, max_size=6).map(lambda s: '$' + s)).filter(not_yet_in_unique_list) to satisfy filter
+      * 1.07%, count: accepted
+      * 1.07%, find: accepted
       * 0.04%, Draw for recursive(one_of(none(), booleans(), integers(min_value=-5, max_value=5), sampled_from(['$a', '$$NOW', 'open', 'org_id', '$where', 'function () { return 1; }']), text(max_size=6)), lambda children: st.one_of(st.lists(children, max_size=3), st.dictionaries(KEYS, children, max_size=3)), min_leaves=None, max_leaves=25) exceeded max_leaves=25 and had to be retried
 
   - Stopped because settings.max_examples=600
@@ -301,104 +302,103 @@ apps/mcp-mongo/tests/test_validator_properties.py::test_an_accepted_filter_never
 
 apps/mcp-mongo/tests/test_validator_properties.py::test_an_accepted_pipeline_never_holds_a_forbidden_operator:
 
-  - during generate phase (1.23 seconds):
-    - Typical runtimes: ~ 0-3 ms, of which ~ 0-3 ms in data generation
-    - 600 passing, 0 failing, and 129 invalid test cases
+  - during generate phase (1.62 seconds):
+    - Typical runtimes: ~ 0-6 ms, of which ~ 0-5 ms in data generation
+    - 600 passing, 0 failing, and 100 invalid test cases
     - Events:
-      * 82.17%, aggregate: rejected
-      * 1.78%, Retried draw from one_of(sampled_from(['$abs', '$add', '$addFields', '$addToSet', '$all', '$and', '$arrayElemAt', '$avg', '$ceil', '$cmp', '$concat', '$concatArrays', '$cond', '$count', '$currentDate', '$dateAdd', '$dateDiff', '$dateSubtract', '$dateToString', '$dayOfMonth', '$dayOfWeek', '$dayOfYear', '$divide', '$each', '$elemMatch', '$eq', '$exists', '$expr', '$filter', '$first', '$floor', '$group', '$gt', '$gte', '$hour', '$ifNull', '$in', '$inc', '$isArray', '$last', '$limit', '$literal', '$lt', '$lte', '$map', '$match', '$max', '$min', '$minute', '$mod', '$month', '$mul', '$multiply', '$ne', '$nin', '$nor', '$not', '$oid', '$or', '$project', '$pull', '$push', '$rename', '$round', '$set', '$size', '$slice', '$sort', '$split', '$strLenCP', '$substrCP', '$subtract', '$sum', '$switch', '$toBool', '$toDate', '$toDouble', '$toInt', '$toLower', '$toString', '$toUpper', '$trim', '$trunc', '$type', '$unset', '$unwind', '$week', '$year']), sampled_from(['$accumulator', '$function', '$graphLookup', '$lookup', '$merge', '$out', '$unionWith', '$where']), sampled_from(['＄where', '﹩function', '$whеre', '$\u200bwhere', '$WHERE', '$where ', ' $where', '$lookup\x00', '$func\xadtion']), sampled_from(['status', 'a', 'a.b', 'pii.mobile', 'org_id', 'tags', 'items.$', 'x.$where', '$']), text(min_size=1, max_size=8), text(min_size=1, max_size=6).map(lambda s: '$' + s)).filter(not_yet_in_unique_list) to satisfy filter
-      * 0.14%, aggregate: accepted
+      * 85.71%, aggregate: rejected
+      * 2.14%, Retried draw from one_of(sampled_from(['$abs', '$add', '$addFields', '$addToSet', '$all', '$and', '$arrayElemAt', '$avg', '$ceil', '$cmp', '$concat', '$concatArrays', '$cond', '$count', '$currentDate', '$dateAdd', '$dateDiff', '$dateSubtract', '$dateToString', '$dayOfMonth', '$dayOfWeek', '$dayOfYear', '$divide', '$each', '$elemMatch', '$eq', '$exists', '$expr', '$filter', '$first', '$floor', '$group', '$gt', '$gte', '$hour', '$ifNull', '$in', '$inc', '$isArray', '$last', '$limit', '$literal', '$lt', '$lte', '$map', '$match', '$max', '$min', '$minute', '$mod', '$month', '$mul', '$multiply', '$ne', '$nin', '$nor', '$not', '$oid', '$or', '$project', '$pull', '$push', '$rename', '$round', '$set', '$size', '$slice', '$sort', '$split', '$strLenCP', '$substrCP', '$subtract', '$sum', '$switch', '$toBool', '$toDate', '$toDouble', '$toInt', '$toLower', '$toString', '$toUpper', '$trim', '$trunc', '$type', '$unset', '$unwind', '$week', '$year']), sampled_from(['$accumulator', '$function', '$graphLookup', '$lookup', '$merge', '$out', '$unionWith', '$where']), sampled_from(['＄where', '﹩function', '$whеre', '$\u200bwhere', '$WHERE', '$where ', ' $where', '$lookup\x00', '$func\xadtion']), sampled_from(['status', 'a', 'a.b', 'pii.mobile', 'org_id', 'tags', 'items.$', 'x.$where', '$']), text(min_size=1, max_size=8), text(min_size=1, max_size=6).map(lambda s: '$' + s)).filter(not_yet_in_unique_list) to satisfy filter
 
   - Stopped because settings.max_examples=600
 
 
 apps/mcp-mongo/tests/test_validator_properties.py::test_an_accepted_update_never_holds_a_forbidden_operator:
 
-  - during generate phase (2.46 seconds):
-    - Typical runtimes: ~ 0-2 ms, of which ~ 0-2 ms in data generation
-    - 600 passing, 0 failing, and 1188 invalid test cases
+  - during generate phase (2.68 seconds):
+    - Typical runtimes: ~ 0-3 ms, of which ~ 0-2 ms in data generation
+    - 600 passing, 0 failing, and 1141 invalid test cases
     - Events:
-      * 59.23%, gave up because: failed to satisfy assume() in test_an_accepted_update_never_holds_a_forbidden_operator (line 145)
-      * 33.56%, update_one: rejected
-      * 3.91%, Retried draw from one_of(sampled_from(['$abs', '$add', '$addFields', '$addToSet', '$all', '$and', '$arrayElemAt', '$avg', '$ceil', '$cmp', '$concat', '$concatArrays', '$cond', '$count', '$currentDate', '$dateAdd', '$dateDiff', '$dateSubtract', '$dateToString', '$dayOfMonth', '$dayOfWeek', '$dayOfYear', '$divide', '$each', '$elemMatch', '$eq', '$exists', '$expr', '$filter', '$first', '$floor', '$group', '$gt', '$gte', '$hour', '$ifNull', '$in', '$inc', '$isArray', '$last', '$limit', '$literal', '$lt', '$lte', '$map', '$match', '$max', '$min', '$minute', '$mod', '$month', '$mul', '$multiply', '$ne', '$nin', '$nor', '$not', '$oid', '$or', '$project', '$pull', '$push', '$rename', '$round', '$set', '$size', '$slice', '$sort', '$split', '$strLenCP', '$substrCP', '$subtract', '$sum', '$switch', '$toBool', '$toDate', '$toDouble', '$toInt', '$toLower', '$toString', '$toUpper', '$trim', '$trunc', '$type', '$unset', '$unwind', '$week', '$year']), sampled_from(['$accumulator', '$function', '$graphLookup', '$lookup', '$merge', '$out', '$unionWith', '$where']), sampled_from(['＄where', '﹩function', '$whеre', '$\u200bwhere', '$WHERE', '$where ', ' $where', '$lookup\x00', '$func\xadtion']), sampled_from(['status', 'a', 'a.b', 'pii.mobile', 'org_id', 'tags', 'items.$', 'x.$where', '$']), text(min_size=1, max_size=8), text(min_size=1, max_size=6).map(lambda s: '$' + s)).filter(not_yet_in_unique_list) to satisfy filter
+      * 58.64%, gave up because: failed to satisfy assume() in test_an_accepted_update_never_holds_a_forbidden_operator (line 145)
+      * 34.46%, update_one: rejected
+      * 4.48%, Retried draw from one_of(sampled_from(['$abs', '$add', '$addFields', '$addToSet', '$all', '$and', '$arrayElemAt', '$avg', '$ceil', '$cmp', '$concat', '$concatArrays', '$cond', '$count', '$currentDate', '$dateAdd', '$dateDiff', '$dateSubtract', '$dateToString', '$dayOfMonth', '$dayOfWeek', '$dayOfYear', '$divide', '$each', '$elemMatch', '$eq', '$exists', '$expr', '$filter', '$first', '$floor', '$group', '$gt', '$gte', '$hour', '$ifNull', '$in', '$inc', '$isArray', '$last', '$limit', '$literal', '$lt', '$lte', '$map', '$match', '$max', '$min', '$minute', '$mod', '$month', '$mul', '$multiply', '$ne', '$nin', '$nor', '$not', '$oid', '$or', '$project', '$pull', '$push', '$rename', '$round', '$set', '$size', '$slice', '$sort', '$split', '$strLenCP', '$substrCP', '$subtract', '$sum', '$switch', '$toBool', '$toDate', '$toDouble', '$toInt', '$toLower', '$toString', '$toUpper', '$trim', '$trunc', '$type', '$unset', '$unwind', '$week', '$year']), sampled_from(['$accumulator', '$function', '$graphLookup', '$lookup', '$merge', '$out', '$unionWith', '$where']), sampled_from(['＄where', '﹩function', '$whеre', '$\u200bwhere', '$WHERE', '$where ', ' $where', '$lookup\x00', '$func\xadtion']), sampled_from(['status', 'a', 'a.b', 'pii.mobile', 'org_id', 'tags', 'items.$', 'x.$where', '$']), text(min_size=1, max_size=8), text(min_size=1, max_size=6).map(lambda s: '$' + s)).filter(not_yet_in_unique_list) to satisfy filter
 
   - Stopped because settings.max_examples=600
 
 
 apps/mcp-mongo/tests/test_validator_properties.py::test_an_accepted_insert_never_holds_a_forbidden_operator_pii_or_org:
 
-  - during generate phase (0.85 seconds):
-    - Typical runtimes: ~ 0-3 ms, of which ~ 0-2 ms in data generation
-    - 600 passing, 0 failing, and 32 invalid test cases
+  - during generate phase (0.92 seconds):
+    - Typical runtimes: ~ 0-3 ms, of which ~ 0-3 ms in data generation
+    - 600 passing, 0 failing, and 33 invalid test cases
     - Events:
-      * 91.46%, insert_one: rejected
-      * 6.96%, Retried draw from one_of(sampled_from(['$abs', '$add', '$addFields', '$addToSet', '$all', '$and', '$arrayElemAt', '$avg', '$ceil', '$cmp', '$concat', '$concatArrays', '$cond', '$count', '$currentDate', '$dateAdd', '$dateDiff', '$dateSubtract', '$dateToString', '$dayOfMonth', '$dayOfWeek', '$dayOfYear', '$divide', '$each', '$elemMatch', '$eq', '$exists', '$expr', '$filter', '$first', '$floor', '$group', '$gt', '$gte', '$hour', '$ifNull', '$in', '$inc', '$isArray', '$last', '$limit', '$literal', '$lt', '$lte', '$map', '$match', '$max', '$min', '$minute', '$mod', '$month', '$mul', '$multiply', '$ne', '$nin', '$nor', '$not', '$oid', '$or', '$project', '$pull', '$push', '$rename', '$round', '$set', '$size', '$slice', '$sort', '$split', '$strLenCP', '$substrCP', '$subtract', '$sum', '$switch', '$toBool', '$toDate', '$toDouble', '$toInt', '$toLower', '$toString', '$toUpper', '$trim', '$trunc', '$type', '$unset', '$unwind', '$week', '$year']), sampled_from(['$accumulator', '$function', '$graphLookup', '$lookup', '$merge', '$out', '$unionWith', '$where']), sampled_from(['＄where', '﹩function', '$whеre', '$\u200bwhere', '$WHERE', '$where ', ' $where', '$lookup\x00', '$func\xadtion']), sampled_from(['status', 'a', 'a.b', 'pii.mobile', 'org_id', 'tags', 'items.$', 'x.$where', '$']), text(min_size=1, max_size=8), text(min_size=1, max_size=6).map(lambda s: '$' + s)).filter(not_yet_in_unique_list) to satisfy filter
-      * 3.48%, insert_one: accepted
+      * 91.79%, insert_one: rejected
+      * 5.53%, Retried draw from one_of(sampled_from(['$abs', '$add', '$addFields', '$addToSet', '$all', '$and', '$arrayElemAt', '$avg', '$ceil', '$cmp', '$concat', '$concatArrays', '$cond', '$count', '$currentDate', '$dateAdd', '$dateDiff', '$dateSubtract', '$dateToString', '$dayOfMonth', '$dayOfWeek', '$dayOfYear', '$divide', '$each', '$elemMatch', '$eq', '$exists', '$expr', '$filter', '$first', '$floor', '$group', '$gt', '$gte', '$hour', '$ifNull', '$in', '$inc', '$isArray', '$last', '$limit', '$literal', '$lt', '$lte', '$map', '$match', '$max', '$min', '$minute', '$mod', '$month', '$mul', '$multiply', '$ne', '$nin', '$nor', '$not', '$oid', '$or', '$project', '$pull', '$push', '$rename', '$round', '$set', '$size', '$slice', '$sort', '$split', '$strLenCP', '$substrCP', '$subtract', '$sum', '$switch', '$toBool', '$toDate', '$toDouble', '$toInt', '$toLower', '$toString', '$toUpper', '$trim', '$trunc', '$type', '$unset', '$unwind', '$week', '$year']), sampled_from(['$accumulator', '$function', '$graphLookup', '$lookup', '$merge', '$out', '$unionWith', '$where']), sampled_from(['＄where', '﹩function', '$whеre', '$\u200bwhere', '$WHERE', '$where ', ' $where', '$lookup\x00', '$func\xadtion']), sampled_from(['status', 'a', 'a.b', 'pii.mobile', 'org_id', 'tags', 'items.$', 'x.$where', '$']), text(min_size=1, max_size=8), text(min_size=1, max_size=6).map(lambda s: '$' + s)).filter(not_yet_in_unique_list) to satisfy filter
+      * 3.00%, insert_one: accepted
 
   - Stopped because settings.max_examples=600
 
 
 apps/mcp-mongo/tests/test_validator_properties.py::test_a_valid_filter_is_accepted_and_rejected_once_a_forbidden_operator_is_injected:
 
-  - during generate phase (1.00 seconds):
+  - during generate phase (1.01 seconds):
     - Typical runtimes: ~ 0-2 ms, of which ~ 0-2 ms in data generation
-    - 600 passing, 0 failing, and 49 invalid test cases
+    - 600 passing, 0 failing, and 69 invalid test cases
     - Events:
-      * 1.69%, Draw for recursive(dictionaries(keys=sampled_from(['status', 'team', 'profile.name', 'tasks', 'start']), values=one_of(one_of(integers(min_value=-3, max_value=3), sampled_from(['open', 'done', 'eng']), booleans()), dictionaries(keys=sampled_from(['$eq', '$ne', '$gt', '$gte', '$lt', '$lte']), values=one_of(integers(min_value=-3, max_value=3), sampled_from(['open', 'done', 'eng']), booleans()), min_size=1, max_size=2), builds(lambda xs: {'$in': xs}, lists(one_of(integers(min_value=-3, max_value=3), sampled_from(['open', 'done', 'eng']), booleans()), max_size=3)), builds(lambda v: {'$exists': v}, booleans())), min_size=1, max_size=3), lambda inner: st.one_of(st.builds(lambda xs: {'$and': xs}, st.lists(inner, min_size=1, max_size=3)), st.builds(lambda xs: {'$or': xs}, st.lists(inner, min_size=1, max_size=3)), st.builds(lambda f, c: {f: {'$elemMatch': c}}, FIELDS, inner)), min_leaves=None, max_leaves=8) exceeded max_leaves=8 and had to be retried
+      * 1.64%, Draw for recursive(dictionaries(keys=sampled_from(['status', 'team', 'profile.name', 'tasks', 'start']), values=one_of(one_of(integers(min_value=-3, max_value=3), sampled_from(['open', 'done', 'eng']), booleans()), dictionaries(keys=sampled_from(['$eq', '$ne', '$gt', '$gte', '$lt', '$lte']), values=one_of(integers(min_value=-3, max_value=3), sampled_from(['open', 'done', 'eng']), booleans()), min_size=1, max_size=2), builds(lambda xs: {'$in': xs}, lists(one_of(integers(min_value=-3, max_value=3), sampled_from(['open', 'done', 'eng']), booleans()), max_size=3)), builds(lambda v: {'$exists': v}, booleans())), min_size=1, max_size=3), lambda inner: st.one_of(st.builds(lambda xs: {'$and': xs}, st.lists(inner, min_size=1, max_size=3)), st.builds(lambda xs: {'$or': xs}, st.lists(inner, min_size=1, max_size=3)), st.builds(lambda f, c: {f: {'$elemMatch': c}}, FIELDS, inner)), min_leaves=None, max_leaves=8) exceeded max_leaves=8 and had to be retried
 
   - Stopped because settings.max_examples=600
 
 
 apps/mcp-mongo/tests/test_validator_properties.py::test_a_mutated_filter_is_accepted_only_without_a_forbidden_operator:
 
-  - during generate phase (0.61 seconds):
-    - Typical runtimes: ~ 0-1 ms, of which ~ 0-1 ms in data generation
-    - 600 passing, 0 failing, and 21 invalid test cases
+  - during generate phase (0.83 seconds):
+    - Typical runtimes: ~ 0-2 ms, of which ~ 0-2 ms in data generation
+    - 600 passing, 0 failing, and 17 invalid test cases
     - Events:
-      * 80.68%, find: accepted
-      * 15.94%, find: rejected
-      * 12.08%, Retried draw from integers(min_value=0, max_value=19).flatmap(lambda n: DANGER if n == 0 else valid).filter(not_yet_in_unique_list) to satisfy filter
+      * 79.09%, find: accepted
+      * 18.15%, find: rejected
+      * 8.43%, Retried draw from integers(min_value=0, max_value=19).flatmap(lambda n: DANGER if n == 0 else valid).filter(not_yet_in_unique_list) to satisfy filter
 
   - Stopped because settings.max_examples=600
 
 
 apps/mcp-mongo/tests/test_validator_properties.py::test_a_mutated_pipeline_is_accepted_only_without_a_forbidden_operator:
 
-  - during generate phase (0.80 seconds):
+  - during generate phase (0.76 seconds):
     - Typical runtimes: ~ 0-1 ms, of which ~ 0-1 ms in data generation
-    - 600 passing, 0 failing, and 208 invalid test cases
+    - 600 passing, 0 failing, and 231 invalid test cases
     - Events:
-      * 42.82%, aggregate: accepted
-      * 31.44%, aggregate: rejected
-      * 5.32%, Retried draw from integers(min_value=0, max_value=19).flatmap(lambda n: DANGER if n == 0 else valid).filter(not_yet_in_unique_list) to satisfy filter
+      * 41.16%, aggregate: accepted
+      * 31.05%, aggregate: rejected
+      * 4.21%, Retried draw from integers(min_value=0, max_value=19).flatmap(lambda n: DANGER if n == 0 else valid).filter(not_yet_in_unique_list) to satisfy filter
 
   - Stopped because settings.max_examples=600
 
 
 apps/mcp-mongo/tests/test_validator_properties.py::test_a_mutated_update_is_accepted_only_without_a_forbidden_operator_pii_or_org:
 
-  - during generate phase (1.32 seconds):
+  - during generate phase (1.21 seconds):
     - Typical runtimes: ~ 0-1 ms, of which ~ 0-1 ms in data generation
-    - 600 passing, 0 failing, and 433 invalid test cases
+    - 600 passing, 0 failing, and 366 invalid test cases
     - Events:
-      * 44.43%, update_one: rejected
-      * 13.65%, update_one: accepted
-      * 10.16%, Retried draw from integers(min_value=0, max_value=19).flatmap(lambda n: DANGER if n == 0 else valid).filter(not_yet_in_unique_list) to satisfy filter
+      * 47.00%, update_one: rejected
+      * 15.11%, update_one: accepted
+      * 11.28%, Retried draw from integers(min_value=0, max_value=19).flatmap(lambda n: DANGER if n == 0 else valid).filter(not_yet_in_unique_list) to satisfy filter
 
   - Stopped because settings.max_examples=600
 
 
 apps/mcp-mongo/tests/test_validator_properties.py::test_a_mutated_insert_is_accepted_only_without_a_forbidden_operator_pii_or_org:
 
-  - during generate phase (0.47 seconds):
+  - during generate phase (0.48 seconds):
     - Typical runtimes: ~ 0-1 ms, of which < 1ms in data generation
-    - 600 passing, 0 failing, and 17 invalid test cases
+    - 600 passing, 0 failing, and 14 invalid test cases
     - Events:
-      * 80.55%, insert_one: accepted
-      * 30.63%, Retried draw from integers(min_value=0, max_value=19).flatmap(lambda n: DANGER if n == 0 else valid).filter(not_yet_in_unique_list) to satisfy filter
-      * 16.69%, insert_one: rejected
+      * 80.78%, insert_one: accepted
+      * 29.15%, Retried draw from integers(min_value=0, max_value=19).flatmap(lambda n: DANGER if n == 0 else valid).filter(not_yet_in_unique_list) to satisfy filter
+      * 16.94%, insert_one: rejected
 
   - Stopped because settings.max_examples=600
 
 
-============================= 274 passed in 13.69s =============================
+============================= 275 passed in 14.66s =============================
