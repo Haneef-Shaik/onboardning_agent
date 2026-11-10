@@ -1,18 +1,14 @@
 import react from "@vitejs/plugin-react";
-import { fileURLToPath } from "node:url";
 import { defineConfig } from "vitest/config";
+import { aliases } from "./aliases";
 
 export default defineConfig({
   root: import.meta.dirname,
   plugins: [react()],
-  resolve: {
-    alias: {
-      "@onb/ts-ui": fileURLToPath(new URL("../../libs/ts-ui/src/index.ts", import.meta.url)),
-      "@onb/ts-api-client": fileURLToPath(new URL("../../libs/ts-api-client/src/index.ts", import.meta.url)),
-    },
-  },
+  resolve: { alias: aliases },
   test: {
     include: ["src/**/*.test.{ts,tsx}"],
-    environment: "node",
+    environment: "jsdom",
+    setupFiles: ["./vitest.setup.ts"],
   },
 });

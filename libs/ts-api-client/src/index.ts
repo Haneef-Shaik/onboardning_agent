@@ -7,8 +7,12 @@ export type {
   ErrorEnvelope,
   Health,
   HealthEnvelope,
+  LoginRequest,
+  Me,
   Meta,
   PageMeta,
+  Role,
+  Token,
   components,
   paths,
 } from "./client";

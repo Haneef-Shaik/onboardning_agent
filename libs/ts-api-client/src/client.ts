@@ -16,6 +16,10 @@ export type Meta = Schemas["Meta"];
 export type PageMeta = Schemas["PageMeta"];
 export type Health = Schemas["Health"];
 export type HealthEnvelope = Schemas["HealthEnvelope"];
+export type LoginRequest = Schemas["LoginRequest"];
+export type Me = Schemas["Me"];
+export type Role = Schemas["Role"];
+export type Token = Schemas["Token"];
 
 export type ApiClient = Client<paths>;
 
