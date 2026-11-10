@@ -5,12 +5,16 @@
       "node"
     ],
     "lib": [
-      "ES2022"
+      "ES2022",
+      "DOM",
+      "DOM.Iterable"
     ]
   },
   "include": [
     "vitest.config.ts",
     "vite.config.ts",
-    "aliases.ts"
+    "aliases.ts",
+    "playwright.config.ts",
+    "e2e/**/*.ts"
   ]
 }

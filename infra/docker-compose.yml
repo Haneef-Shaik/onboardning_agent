@@ -82,6 +82,12 @@ services:
     environment:
       JAEGER_BASIC_AUTH_USER: ${JAEGER_BASIC_AUTH_USER:?set JAEGER_BASIC_AUTH_USER in .env}
       JAEGER_BASIC_AUTH_HASH: ${JAEGER_BASIC_AUTH_HASH:?set JAEGER_BASIC_AUTH_HASH in .env}
+      # Dev servers on the host (UI-1): `uvicorn onb_api.main:app` and the web Vite server.
+      API_DEV_UPSTREAM: ${API_DEV_UPSTREAM:-host.docker.internal:8000}
+      WEB_DEV_UPSTREAM: ${WEB_DEV_UPSTREAM:-host.docker.internal:5173}
+    # Linux needs the mapping; Docker Desktop has the name already.
+    extra_hosts:
+      - host.docker.internal:host-gateway
     volumes:
       - ./caddy/Caddyfile.dev:/etc/caddy/Caddyfile:ro
       - caddy_data:/data

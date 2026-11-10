@@ -152,3 +152,20 @@ def test_make_up_waits_for_health_and_generates_the_keyfile() -> None:
     assert up
     assert "gen-keyfile.sh" in up.group(0)
     assert "up -d --wait" in up.group(0)
+
+
+def test_dev_caddyfile_serves_the_web_app_and_the_api_on_localhost() -> None:
+    """UI-1: the browser reaches the web dev server at `/` and the API under `/api` (prefix stripped)."""
+    caddyfile = _text(ROOT / "infra" / "caddy" / "Caddyfile.dev")
+    site = caddyfile.split("http://localhost, https://localhost {", 1)[1].split("\n}\n", 1)[0]
+    assert re.search(r"handle_path /api/\* \{\n\t\treverse_proxy \{\$API_DEV_UPSTREAM\}", site)
+    assert re.search(r"\thandle \{\n\t\treverse_proxy \{\$WEB_DEV_UPSTREAM\}", site)
+    assert site.index("handle /healthz") < site.index("handle {"), "/healthz must stay ahead of the web fallback"
+
+
+def test_caddy_can_reach_dev_servers_on_the_host() -> None:
+    compose = _text(ROOT / "infra" / "docker-compose.yml")
+    caddy = compose.split("\n  caddy:\n", 1)[1].split("\nnetworks:\n", 1)[0]
+    assert "host.docker.internal:host-gateway" in caddy
+    assert "API_DEV_UPSTREAM: ${API_DEV_UPSTREAM:-host.docker.internal:" in caddy
+    assert "WEB_DEV_UPSTREAM: ${WEB_DEV_UPSTREAM:-host.docker.internal:" in caddy

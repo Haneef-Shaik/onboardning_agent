@@ -4,12 +4,17 @@
 	auto_https disable_redirects
 }
 
+# The app (UI-1): `/api/*` goes to the API with the prefix stripped, everything else to the web dev
+# server (Vite, hot reload). Both run on the host in dev; compose sets the upstreams (`.env.example`).
 http://localhost, https://localhost {
 	handle /healthz {
 		respond "ok" 200
 	}
+	handle_path /api/* {
+		reverse_proxy {$API_DEV_UPSTREAM}
+	}
 	handle {
-		respond "not found" 404
+		reverse_proxy {$WEB_DEV_UPSTREAM}
 	}
 }
 
