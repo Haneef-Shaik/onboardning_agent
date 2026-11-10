@@ -18,11 +18,14 @@ _FROZEN = ConfigDict(frozen=True, extra="forbid")
 
 # The filter bounds `GET /audit` accepts.
 AUDIT_ACTION_PATTERN = r"^[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)*$"
-AUDIT_ACTOR_ID_PATTERN = r"^[A-Za-z0-9_.:@-]{1,128}$"
+AUDIT_ACTOR_ID_PATTERN = r"^[A-Za-z0-9_.:-]{1,128}$"
+AUDIT_TARGET_PATTERN = r"^[a-z][a-z0-9_]*:[A-Za-z0-9_.:/-]+$"
 MAX_AUDIT_ACTION_LENGTH = 64
 MAX_AUDIT_TARGET_LENGTH = 256
 MAX_AUDIT_LIMIT = 200
 DEFAULT_AUDIT_LIMIT = 50
+# Paging reaches at most this many records deep ((page - 1) * limit).
+MAX_AUDIT_SKIP = 10_000
 
 
 class AuditActorType(StrEnum):

@@ -20,15 +20,19 @@ from onb_data import (
     ActorType,
     AppendOnlyRepository,
     AuditLog,
+    Auditor,
     AuditOutcome,
     AuditQuery,
+    InvalidIndexError,
     NoTenantContextError,
     TenantViolationError,
     UnknownCollectionError,
+    build_record,
     tenant_scope,
 )
 from onb_data import audit as audit_module
 from onb_data.repository import _Repository
+from onb_data.testing import InMemoryAuditLog
 from opentelemetry import trace
 from opentelemetry.sdk.trace import TracerProvider
 
@@ -189,7 +193,7 @@ def test_audit_without_a_tenant_context_raises_and_writes_nothing() -> None:
     log, coll = _log()
 
     async def run() -> None:
-        await log.audit(actor=Actor.user("u1"), action="pii.reveal", target="t", outcome=AuditOutcome.SUCCESS)
+        await log.audit(actor=Actor.user("u1"), action="pii.reveal", target="hire:h_1", outcome=AuditOutcome.SUCCESS)
 
     with pytest.raises(NoTenantContextError):
         asyncio.run(run())
@@ -423,3 +427,143 @@ def test_list_needs_an_audit_query() -> None:
     with pytest.raises(TypeError, match="AuditQuery"):
         _list(log, cast(Any, {"action": "x"}))
     assert coll.calls == []
+
+
+# --- Review fixes: bounds, grammar, shared validation, failure contract ---------------------------
+
+
+def test_deep_pages_are_refused_before_the_driver() -> None:
+    log, coll = _log()
+    _list(log, AuditQuery(), page=51, limit=200)  # skip 10 000: the last allowed
+    coll.calls.clear()
+    for page, limit in [(52, 200), (10**30, 200), (10_002, 1)]:
+        with pytest.raises(ValueError, match="10000"):
+            _list(log, AuditQuery(), page=page, limit=limit)
+    assert coll.calls == []
+
+
+@pytest.mark.parametrize(
+    "target",
+    ["hire:jane@example.com", "hire:h_1 pan", "no-kind", ":h_1", "Hire:h_1", "hire:"],
+)
+def test_a_target_is_a_kind_and_an_id_with_no_free_text(target: str) -> None:
+    log, coll = _log()
+    with pytest.raises(ValueError, match="target"):
+        _record(log, target=target)
+    with pytest.raises(ValueError, match="target"):
+        AuditQuery(target=target)
+    assert coll.calls == []
+
+
+@pytest.mark.parametrize("target", ["hire:h_123/pan", "find:pii_vault", "run:r_1/t_2", "pii:ptk_ab12-CD.3"])
+def test_id_and_token_targets_are_accepted(target: str) -> None:
+    log, coll = _log()
+    _record(log, target=target)
+    assert coll.last("insert_one").args[0]["target"] == target
+
+
+def test_an_email_is_not_an_actor_id() -> None:
+    with pytest.raises(ValueError, match="actor id"):
+        Actor.user("jane@example.com")
+
+
+def test_a_naive_clock_is_refused() -> None:
+    log, coll = _log(clock=lambda: datetime(2026, 11, 10, 9, 30))
+    with pytest.raises(ValueError, match="time zone"):
+        _record(log)
+    assert coll.calls == []
+
+
+def test_build_record_is_the_one_record_shape() -> None:
+    document = build_record(
+        actor=Actor.agent("db_agent"),
+        action="mcp.tool_call",
+        target="find:hires",
+        outcome=AuditOutcome.DENIED,
+        reason=None,
+        trace_id="ab" * 16,
+        at=NOW,
+    )
+    assert set(document) == {"_id", "actor", "action", "target", "outcome", "reason", "trace_id", "at"}
+    assert "org_id" not in document  # the repository sets it from the tenant context
+
+
+def test_a_driver_error_propagates_from_audit() -> None:
+    """Fail closed: audit() never swallows a failed write, so a caller cannot report an unaudited success."""
+
+    class BrokenCollection(FakeCollection):
+        async def insert_one(self, document: dict[str, Any], *args: Any, **kwargs: Any) -> Any:
+            raise ConnectionError("mongo down")
+
+    db = FakeDatabase(collections={"audit_log": BrokenCollection(name="audit_log")})
+    log, _ = _log(db)
+    with pytest.raises(ConnectionError):
+        _record(log)
+
+
+def test_a_unique_index_on_the_audit_log_is_refused() -> None:
+    db = FakeDatabase()
+    with pytest.raises(InvalidIndexError, match="append-only"):
+        asyncio.run(make_store(db).ensure_index("audit_log", [("org_id", 1), ("action", 1)], unique=True))
+    assert db["audit_log"].calls == []
+
+
+def test_both_logs_satisfy_the_auditor_protocol() -> None:
+    log, _ = _log()
+    writers: list[Auditor] = [log, InMemoryAuditLog()]
+    assert all(callable(writer.audit) for writer in writers)
+
+
+@pytest.mark.parametrize(
+    "overrides",
+    [{"action": "Not Dotted"}, {"target": "hire:a@b.com"}, {"reason": ""}, {"outcome": "success"}],
+    ids=lambda o: next(iter(o)),
+)
+def test_the_in_memory_log_refuses_what_the_real_one_refuses(overrides: dict[str, Any]) -> None:
+    fields: dict[str, Any] = {
+        "actor": Actor.user("u_acme_hr1"),
+        "action": "pii.reveal",
+        "target": "hire:h_1",
+        "outcome": AuditOutcome.SUCCESS,
+        **overrides,
+    }
+
+    async def run() -> None:
+        with tenant_scope(ORG):
+            await InMemoryAuditLog().audit(**fields)
+
+    with pytest.raises((TypeError, ValueError)):
+        asyncio.run(run())
+
+
+def test_the_in_memory_log_takes_the_current_spans_trace_id(tracer: trace.Tracer) -> None:
+    fake = InMemoryAuditLog()
+
+    async def run() -> str:
+        with tracer.start_as_current_span("op") as span, tenant_scope(ORG):
+            await fake.audit(
+                actor=Actor.user("u1"), action="pii.reveal", target="hire:h_1", outcome=AuditOutcome.SUCCESS
+            )
+            page = await fake.list(AuditQuery(), page=1, limit=10)
+            assert page.entries[0].trace_id == f"{span.get_span_context().trace_id:032x}"
+            return page.entries[0].org_id
+
+    assert asyncio.run(run()) == ORG
+
+
+def test_the_in_memory_log_is_per_org_and_paged_like_the_real_one() -> None:
+    fake = InMemoryAuditLog()
+
+    async def run() -> tuple[int, int]:
+        for org in (ORG, ORG, "org_globex"):
+            with tenant_scope(org):
+                await fake.audit(
+                    actor=Actor.user("u1"), action="pii.reveal", target="hire:h_1", outcome=AuditOutcome.SUCCESS
+                )
+        with tenant_scope(ORG):
+            page = await fake.list(AuditQuery(), page=2, limit=1)
+            with pytest.raises(ValueError, match="10000"):
+                await fake.list(AuditQuery(), page=10**9, limit=200)
+        return page.total, len(page.entries)
+
+    assert asyncio.run(run()) == (2, 1)

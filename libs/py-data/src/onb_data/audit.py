@@ -7,7 +7,7 @@ One call records a privileged action, inside the caller's tenant scope:
         await audit_log.audit(
             actor=Actor.user(principal.user_id),      # or Actor.agent("db_agent")
             action="pii.reveal",                      # dotted, lower case
-            target="hire:h_123/pan",                  # ids and ptk_ tokens only, never raw PII
+            target="hire:h_123/pan",                  # kind:id; ids and ptk_ tokens only, never raw PII
             outcome=AuditOutcome.SUCCESS,             # or DENIED / FAILED
             reason="verifying documents",             # optional, free text, no raw PII
         )
@@ -16,7 +16,16 @@ The record is `{_id, org_id, actor: {type, id}, action, target, outcome, reason,
 `org_id` comes from the tenant context, `trace_id` from the current OpenTelemetry span (32 hex
 digits, or null outside a span) and `at` from the clock (UTC). The log is append-only: it is backed by
 `store.append_only("audit_log")`, which has no update or delete path. HR_ADMIN reads it through
-`list(...)` (filters, newest first, paged).
+`list(...)` (filters, newest first, paged, at most `MAX_AUDIT_SKIP` records deep).
+
+Failure contract: `audit(...)` raises on bad input (`TypeError`/`ValueError`), without a tenant
+context (`NoTenantContextError`) and on any database error; it never swallows one. Callers fail
+closed: a privileged action whose audit write failed must not be reported as done. Inside
+`store.run_transaction(...)` the record joins the transaction, so it is rolled back with it: write
+DENIED/FAILED records outside the transaction that failed.
+
+Writers depend on the `Auditor` protocol; `onb_data.testing.InMemoryAuditLog` is the test double.
+Both build the record with `build_record(...)`, so they accept and refuse the same input.
 """
 
 from __future__ import annotations
@@ -27,7 +36,7 @@ from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from enum import StrEnum
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Protocol
 
 from opentelemetry import trace
 
@@ -37,6 +46,7 @@ if TYPE_CHECKING:
 __all__ = [
     "AUDIT_COLLECTION",
     "MAX_AUDIT_PAGE_LIMIT",
+    "MAX_AUDIT_SKIP",
     "Actor",
     "ActorType",
     "AuditEntry",
@@ -44,17 +54,26 @@ __all__ = [
     "AuditOutcome",
     "AuditPage",
     "AuditQuery",
+    "Auditor",
+    "build_record",
+    "check_page",
     "current_trace_id",
 ]
 
 AUDIT_COLLECTION = "audit_log"
 MAX_AUDIT_PAGE_LIMIT = 200
+# How deep paging may go, as (page - 1) * limit: a huge page can neither overflow the skip nor make
+# Mongo walk the org's whole log.
+MAX_AUDIT_SKIP = 10_000
 MAX_TARGET_LENGTH = 256
 MAX_REASON_LENGTH = 1000
 
 _ACTION = re.compile(r"^[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)*$")
 _MAX_ACTION_LENGTH = 64
-_ACTOR_ID = re.compile(r"^[A-Za-z0-9_.:@-]{1,128}$")
+# No `@`: an email address is not an actor id.
+_ACTOR_ID = re.compile(r"^[A-Za-z0-9_.:-]{1,128}$")
+# `kind:ref`, e.g. `hire:h_123/pan`, `find:pii_vault`, `pii:ptk_...`: no spaces or `@`, so no free text.
+_TARGET = re.compile(r"^[a-z][a-z0-9_]*:[A-Za-z0-9_.:/-]+$")
 
 
 class ActorType(StrEnum):
@@ -72,7 +91,7 @@ def _actor_id(value: object) -> str:
     if not isinstance(value, str):
         raise TypeError("an actor id must be a string")
     if not _ACTOR_ID.fullmatch(value):
-        raise ValueError("an actor id is 1-128 characters of letters, digits and _ . : @ -")
+        raise ValueError("an actor id is 1-128 characters of letters, digits and _ . : -")
     return value
 
 
@@ -90,6 +109,13 @@ def _text(value: object, *, what: str, limit: int) -> str:
     if not value or len(value) > limit:
         raise ValueError(f"{what} must be 1-{limit} characters")
     return value
+
+
+def _target(value: object) -> str:
+    text = _text(value, what="target", limit=MAX_TARGET_LENGTH)
+    if not _TARGET.fullmatch(text):
+        raise ValueError("a target is kind:id such as 'hire:h_123/pan' (no spaces or @)")
+    return text
 
 
 def _enum[E: StrEnum](value: object, kind: type[E]) -> E:
@@ -178,7 +204,7 @@ class AuditQuery:
         if self.action is not None:
             _action(self.action)
         if self.target is not None:
-            _text(self.target, what="target", limit=MAX_TARGET_LENGTH)
+            _target(self.target)
         since = None if self.since is None else _aware(self.since, what="since")
         until = None if self.until is None else _aware(self.until, what="until")
         if since is not None and until is not None and since > until:
@@ -213,6 +239,52 @@ def current_trace_id() -> str | None:
     return f"{context.trace_id:032x}" if context.is_valid else None
 
 
+def check_page(page: int, limit: int) -> int:
+    """The skip for `page` (from 1) of `limit` records; `ValueError` outside the allowed bounds."""
+    if page < 1:
+        raise ValueError("page starts at 1")
+    if not 1 <= limit <= MAX_AUDIT_PAGE_LIMIT:
+        raise ValueError(f"limit must be 1-{MAX_AUDIT_PAGE_LIMIT}")
+    skip = (page - 1) * limit
+    if skip > MAX_AUDIT_SKIP:
+        raise ValueError(f"pages reach at most {MAX_AUDIT_SKIP} records deep: narrow the filters")
+    return skip
+
+
+def build_record(
+    *,
+    actor: Actor,
+    action: str,
+    target: str,
+    outcome: AuditOutcome,
+    reason: str | None,
+    trace_id: str | None,
+    at: datetime,
+) -> dict[str, Any]:
+    """The validated record, without `org_id` (the repository sets it from the tenant context)."""
+    if not isinstance(actor, Actor):
+        raise TypeError("actor must be an Actor (Actor.user(...) or Actor.agent(...))")
+    return {
+        "_id": uuid.uuid4().hex,
+        "actor": {"type": actor.type.value, "id": actor.id},
+        "action": _action(action),
+        "target": _target(target),
+        "outcome": _enum(outcome, AuditOutcome).value,
+        "reason": None if reason is None else _text(reason, what="reason", limit=MAX_REASON_LENGTH),
+        "trace_id": trace_id,
+        "at": _aware(at, what="the audit clock"),
+    }
+
+
+class Auditor(Protocol):
+    """What a writer of audit records depends on (MCP hub, guardrails, orchestrator, API)."""
+
+    async def audit(
+        self, *, actor: Actor, action: str, target: str, outcome: AuditOutcome, reason: str | None = None
+    ) -> str:
+        """Append one record in the current tenant scope and return its id."""
+
+
 def _utc_now() -> datetime:
     return datetime.now(UTC)
 
@@ -243,35 +315,26 @@ class AuditLog:
         outcome: AuditOutcome,
         reason: str | None = None,
     ) -> str:
-        """Append one record in the current tenant scope and return its id."""
-        if not isinstance(actor, Actor):
-            raise TypeError("actor must be an Actor (Actor.user(...) or Actor.agent(...))")
-        record_id = uuid.uuid4().hex
-        document = {
-            "_id": record_id,
-            "actor": {"type": actor.type.value, "id": actor.id},
-            "action": _action(action),
-            "target": _text(target, what="target", limit=MAX_TARGET_LENGTH),
-            "outcome": _enum(outcome, AuditOutcome).value,
-            "reason": None if reason is None else _text(reason, what="reason", limit=MAX_REASON_LENGTH),
-            "trace_id": self._trace_id(),
-            "at": self._clock(),
-        }
+        """Append one record in the current tenant scope and return its id (see the failure contract)."""
+        document = build_record(
+            actor=actor,
+            action=action,
+            target=target,
+            outcome=outcome,
+            reason=reason,
+            trace_id=self._trace_id(),
+            at=self._clock(),
+        )
         await self._repo.insert_one(document)
-        return record_id
+        return str(document["_id"])
 
     async def list(self, query: AuditQuery, *, page: int, limit: int) -> AuditPage:
         """One page of the current org's records matching `query`, newest first."""
         if not isinstance(query, AuditQuery):
             raise TypeError("query must be an AuditQuery")
-        if page < 1:
-            raise ValueError("page starts at 1")
-        if not 1 <= limit <= MAX_AUDIT_PAGE_LIMIT:
-            raise ValueError(f"limit must be 1-{MAX_AUDIT_PAGE_LIMIT}")
+        skip = check_page(page, limit)
         mongo_filter = query.to_filter()
-        documents = await self._repo.find(
-            mongo_filter, sort=[("at", -1), ("_id", -1)], skip=(page - 1) * limit, limit=limit
-        )
+        documents = await self._repo.find(mongo_filter, sort=[("at", -1), ("_id", -1)], skip=skip, limit=limit)
         total = await self._repo.count(mongo_filter)
         entries = tuple(AuditEntry.from_document(document) for document in documents)
         return AuditPage(entries=entries, total=total, page=page, limit=limit)

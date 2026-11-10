@@ -15,7 +15,19 @@ No collection, database or client object is exported.
 """
 
 from .append_only import APPEND_ONLY_COLLECTIONS, AppendOnlyRepository
-from .audit import Actor, ActorType, AuditEntry, AuditLog, AuditOutcome, AuditPage, AuditQuery
+from .audit import (
+    MAX_AUDIT_SKIP,
+    Actor,
+    ActorType,
+    AuditEntry,
+    AuditLog,
+    Auditor,
+    AuditOutcome,
+    AuditPage,
+    AuditQuery,
+    build_record,
+    check_page,
+)
 from .context import TenantContext, current_tenant, tenant_scope
 from .errors import (
     DataAccessError,
@@ -35,6 +47,7 @@ from .store import GLOBAL_COLLECTIONS, DataStore, connect
 __all__ = [
     "APPEND_ONLY_COLLECTIONS",
     "GLOBAL_COLLECTIONS",
+    "MAX_AUDIT_SKIP",
     "PROJECT",
     "QUEUE_COLLECTIONS",
     "Actor",
@@ -45,6 +58,7 @@ __all__ = [
     "AuditOutcome",
     "AuditPage",
     "AuditQuery",
+    "Auditor",
     "DataAccessError",
     "DataStore",
     "GlobalRepository",
@@ -59,6 +73,8 @@ __all__ = [
     "TransactionError",
     "UnknownCollectionError",
     "UpdateOutcome",
+    "build_record",
+    "check_page",
     "connect",
     "current_tenant",
     "in_transaction",

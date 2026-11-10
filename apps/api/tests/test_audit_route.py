@@ -15,8 +15,9 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from onb_api import create_app
 from onb_api.testing import TEST_SETTINGS, InMemoryAuditLog, bearer, token_for
-from onb_contracts.audit import AuditActorType, AuditOutcome
+from onb_contracts.audit import MAX_AUDIT_SKIP, AuditActorType, AuditOutcome
 from onb_contracts.auth import Role
+from onb_data import MAX_AUDIT_SKIP as DATA_MAX_SKIP
 from onb_data import Actor, ActorType, tenant_scope
 from onb_data import AuditOutcome as DataOutcome
 
@@ -191,6 +192,11 @@ def test_pagination(seeded: TestClient) -> None:
         {"action": "Not An Action"},
         {"actor_id": "has space"},
         {"target": "x" * 257},
+        {"target": "hire:jane@example.com"},
+        {"actor_id": "jane@example.com"},
+        {"page": 10**30},
+        {"page": 52, "limit": 200},
+        {"page": 10_002, "limit": 1},
         {"since": "2026-11-01T08:00:00"},
         {"since": "yesterday"},
         {"since": "2026-11-02T00:00:00Z", "until": "2026-11-01T00:00:00Z"},
@@ -214,3 +220,13 @@ def test_startup_makes_the_audit_indexes(users: Any) -> None:
     with TestClient(create_app(auth=TEST_SETTINGS, users=users, audit=log)):
         pass
     assert log.indexes_ensured == 1
+
+
+def test_the_last_allowed_page_is_10000_records_deep(seeded: TestClient) -> None:
+    response = _get(seeded, ADMIN, page=51, limit=200)
+    assert response.status_code == 200
+    assert response.json()["data"] == []
+
+
+def test_the_api_contract_bounds_match_the_data_layer() -> None:
+    assert MAX_AUDIT_SKIP == DATA_MAX_SKIP

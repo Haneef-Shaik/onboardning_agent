@@ -2,7 +2,8 @@
 
 HR and MANAGER get 403 before the log is touched. The org is the token's (the route runs inside its
 tenant scope); no parameter names an org. Filters match exactly; `since`/`until` must carry a time
-zone. Records come newest first, and `meta.page` carries the total.
+zone. Records come newest first, and `meta.page` carries the total. Paging stops at
+`MAX_AUDIT_SKIP` records deep (422 beyond), so a huge page cannot overflow the skip or scan the log.
 """
 
 from __future__ import annotations
@@ -14,9 +15,11 @@ from onb_contracts import Envelope, ErrorCode, ErrorDetail, PageMeta
 from onb_contracts.audit import (
     AUDIT_ACTION_PATTERN,
     AUDIT_ACTOR_ID_PATTERN,
+    AUDIT_TARGET_PATTERN,
     DEFAULT_AUDIT_LIMIT,
     MAX_AUDIT_ACTION_LENGTH,
     MAX_AUDIT_LIMIT,
+    MAX_AUDIT_SKIP,
     MAX_AUDIT_TARGET_LENGTH,
     AuditActor,
     AuditActorType,
@@ -40,6 +43,7 @@ __all__ = ["audit_reader", "router"]
 router = APIRouter(tags=["audit"])
 
 HrAdmin = Annotated[Principal, Depends(require_role(Role.HR_ADMIN))]
+TargetQuery = Query(min_length=1, max_length=MAX_AUDIT_TARGET_LENGTH, pattern=AUDIT_TARGET_PATTERN)
 
 
 def audit_reader(request: Request) -> AuditReader:
@@ -71,16 +75,21 @@ async def list_audit(
     actor_id: Annotated[str | None, Query(pattern=AUDIT_ACTOR_ID_PATTERN)] = None,
     action: Annotated[str | None, Query(max_length=MAX_AUDIT_ACTION_LENGTH, pattern=AUDIT_ACTION_PATTERN)] = None,
     outcome: AuditOutcome | None = None,
-    target: Annotated[str | None, Query(min_length=1, max_length=MAX_AUDIT_TARGET_LENGTH)] = None,
+    target: Annotated[str | None, TargetQuery] = None,
     since: AwareDatetime | None = None,
     until: AwareDatetime | None = None,
-    page: Annotated[int, Query(ge=1)] = 1,
+    page: Annotated[int, Query(ge=1, le=MAX_AUDIT_SKIP + 1)] = 1,
     limit: Annotated[int, Query(ge=1, le=MAX_AUDIT_LIMIT)] = DEFAULT_AUDIT_LIMIT,
 ) -> Envelope[list[AuditRecord]]:
     if since is not None and until is not None and since > until:
         raise AppError(
             ErrorCode.VALIDATION_ERROR,
             details=(ErrorDetail(field="query.since", issue="must not be after until"),),
+        )
+    if (page - 1) * limit > MAX_AUDIT_SKIP:
+        raise AppError(
+            ErrorCode.VALIDATION_ERROR,
+            details=(ErrorDetail(field="query.page", issue=f"pages reach at most {MAX_AUDIT_SKIP} records deep"),),
         )
     query = AuditQuery(
         actor_type=None if actor_type is None else ActorType(actor_type.value),

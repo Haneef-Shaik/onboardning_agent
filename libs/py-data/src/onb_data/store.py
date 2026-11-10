@@ -114,6 +114,8 @@ class DataStore:
         there may lead with another field (`status`); a unique one must still start with `org_id`.
         """
         coll = _collection_name(collection)
+        if coll in APPEND_ONLY_COLLECTIONS and unique:
+            raise InvalidIndexError("no unique index on an append-only collection: it would refuse records")
         queue_lookup = coll in QUEUE_COLLECTIONS and not unique
         spec = validate_index_keys(keys, tenant=coll not in GLOBAL_COLLECTIONS and not queue_lookup)
         if coll in QUEUE_COLLECTIONS and unique and spec[0][0] != ORG_FIELD:

@@ -594,7 +594,7 @@
             "schema": {
               "anyOf": [
                 {
-                  "pattern": "^[A-Za-z0-9_.:@-]{1,128}$",
+                  "pattern": "^[A-Za-z0-9_.:-]{1,128}$",
                   "type": "string"
                 },
                 {
@@ -647,6 +647,7 @@
                 {
                   "maxLength": 256,
                   "minLength": 1,
+                  "pattern": "^[a-z][a-z0-9_]*:[A-Za-z0-9_.:/-]+$",
                   "type": "string"
                 },
                 {
@@ -696,6 +697,7 @@
             "required": false,
             "schema": {
               "default": 1,
+              "maximum": 10001,
               "minimum": 1,
               "title": "Page",
               "type": "integer"

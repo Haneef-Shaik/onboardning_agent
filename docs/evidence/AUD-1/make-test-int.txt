@@ -1,0 +1,70 @@
+ Image onb/otel-collector:0.165.0 Building 
+ Image onb/otel-collector:0.165.0 Built 
+ Container ob-aud-1-mongo-1 Running 
+ Container ob-aud-1-otel-collector-1 Running 
+ Container ob-aud-1-jaeger-1 Running 
+ Container ob-aud-1-caddy-1 Running 
+ Container ob-aud-1-jaeger-1 Waiting 
+ Container ob-aud-1-jaeger-1 Waiting 
+ Container ob-aud-1-jaeger-1 Healthy 
+ Container ob-aud-1-jaeger-1 Healthy 
+ Container ob-aud-1-mongo-1 Waiting 
+ Container ob-aud-1-otel-collector-1 Waiting 
+ Container ob-aud-1-jaeger-1 Waiting 
+ Container ob-aud-1-caddy-1 Waiting 
+ Container ob-aud-1-otel-collector-1 Healthy 
+ Container ob-aud-1-mongo-1 Healthy 
+ Container ob-aud-1-jaeger-1 Healthy 
+ Container ob-aud-1-caddy-1 Healthy 
+infra/mongo/gen-keyfile.sh
+gen-keyfile: keeping existing infra/mongo/keyfile
+docker compose up -d --wait --build
+#1 [internal] load local bake definitions
+#1 reading from stdin 647B done
+#1 DONE 0.0s
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 578B done
+#2 DONE 0.0s
+#3 [internal] load metadata for docker.io/library/alpine:3.24.4@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf
+#3 DONE 1.5s
+#4 [internal] load metadata for docker.io/otel/opentelemetry-collector-contrib:0.165.0@sha256:e40d61f10c9a617cca1ffd1be4d7e2b3a4b0f0001798ff07e58cabe82e618cea
+#4 DONE 1.5s
+#5 [internal] load .dockerignore
+#5 transferring context: 2B done
+#5 DONE 0.1s
+#6 [stage-1 1/3] FROM docker.io/library/alpine:3.24.4@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf
+#6 resolve docker.io/library/alpine:3.24.4@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf
+#6 resolve docker.io/library/alpine:3.24.4@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf 0.0s done
+#6 DONE 0.0s
+#7 [upstream 1/1] FROM docker.io/otel/opentelemetry-collector-contrib:0.165.0@sha256:e40d61f10c9a617cca1ffd1be4d7e2b3a4b0f0001798ff07e58cabe82e618cea
+#7 resolve docker.io/otel/opentelemetry-collector-contrib:0.165.0@sha256:e40d61f10c9a617cca1ffd1be4d7e2b3a4b0f0001798ff07e58cabe82e618cea 0.0s done
+#7 DONE 0.0s
+#8 [stage-1 2/3] RUN adduser -D -H -u 10001 otel
+#8 CACHED
+#9 [stage-1 3/3] COPY --from=upstream /otelcol-contrib /otelcol-contrib
+#9 CACHED
+#10 exporting to image
+#10 exporting layers done
+#10 exporting manifest sha256:b883ebb02353683f75604d797fc6ccf4e39654350388399cb05f8cb8f1c9cc04 done
+#10 exporting config sha256:1e747458a0fbba702546ca4813b0300d40d55b618755c25d935f913a67d6343c done
+#10 exporting attestation manifest sha256:2682db0e2a88f9db7347c70741ea1dd58f60537519cf19e688c628edf292595b 0.0s done
+#10 exporting manifest list sha256:6774ac9c18a96cd8523026589377ccbf01273c0cf519eed5c7da8f814207477f done
+#10 naming to docker.io/onb/otel-collector:0.165.0 done
+#10 unpacking to docker.io/onb/otel-collector:0.165.0 done
+#10 DONE 0.1s
+#11 resolving provenance for metadata file
+#11 DONE 0.1s
+set -a && . ./.env && set +a && \
+	uv run --frozen pytest tools/tests_int -q -o cache_dir=.pytest_cache/tools-int && \
+	node_modules/.bin/nx run-many -t test-int --output-style=static
+............                                                             [100%]
+12 passed in 2.52s
+ NX   Running target test-int for 6 projects:
+- py-telemetry
+- py-eventbus
+- mcp-mongo
+- py-crypto
+- py-data
+- api
+... (82 lines truncated)
+exit=0
