@@ -18,7 +18,9 @@ from onb_contracts.errors import ErrorCode
 
 MAX_PAGE_LIMIT = 1000
 
-_FROZEN = ConfigDict(frozen=True, extra="forbid")
+# Response fields with defaults are always sent, so the schema marks them required (the TS client then
+# types `meta`, `data`, `error` and `details` as always present).
+_FROZEN = ConfigDict(frozen=True, extra="forbid", json_schema_serialization_defaults_required=True)
 
 
 class ErrorDetail(BaseModel):
