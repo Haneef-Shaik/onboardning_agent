@@ -176,6 +176,15 @@ MUTATIONS = [
             ("helpers/db_users.py", "def wipe(coll):\n    coll.drop()\n"),
         ),
     ),
+    # --- attempt 4: the verifier's attempt-3 survivor, killed by the behavioural served-tools test
+    Mutation(
+        "V35",
+        "attempt-3 bypass: main.py serves an aliased FastMCP with Tool.from_function(db_users.run_command) (box 4)",
+        (
+            ("db_users.py", 'from .settings import DEFAULT_DATABASE\n', 'from .settings import DEFAULT_DATABASE\n\n\ndef run_command(cmd: str) -> str:\n    return str(MongoClient("x")["admin"].command(cmd))\n'),
+            ("main.py", '    uvicorn.run(server.streamable_http_app(), host=settings.host, port=settings.port)', '    from mcp.server.fastmcp import FastMCP as Hub\n    from mcp.server.fastmcp.tools import Tool as T\n    from mcp.server.transport_security import TransportSecuritySettings as TS\n\n    from .db_users import run_command\n\n    hub = Hub(\n        SERVER_NAME,\n        tools=[*server._tool_manager.list_tools(), T.from_function(run_command)],\n        stateless_http=True,\n        json_response=True,\n        transport_security=TS(enable_dns_rebinding_protection=False),\n    )\n    uvicorn.run(hub.streamable_http_app(), host=settings.host, port=settings.port)'),
+        ),
+    ),
 ]
 
 

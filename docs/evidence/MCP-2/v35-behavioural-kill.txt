@@ -1,0 +1,3 @@
+E   AssertionError: assert {'aggregate',...command', ...} == {'aggregate',... 'update_one'}
+/Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-mcp-2/apps/mcp-mongo/tests/test_tool_surface.py:213: AssertionError: assert {'aggregate',...command', ...} == {'aggregate',... 'update_one'}
+1 failed, 9 deselected in 0.43s

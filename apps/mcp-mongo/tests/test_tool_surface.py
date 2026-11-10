@@ -12,11 +12,13 @@ import sys
 from pathlib import Path
 from typing import Any
 
+import httpx
 import pytest
 from mcp import ClientSession
+from mcp.client.streamable_http import streamable_http_client
 from onb_mcp_mongo import main as main_module
 from onb_mcp_mongo.contracts import CONTRACTS
-from onb_mcp_mongo.server import HANDLERS, build_server
+from onb_mcp_mongo.server import HANDLERS
 
 from .fakes import FakeDatabase, make_store
 from .harness import call
@@ -170,30 +172,50 @@ def test_only_the_server_module_builds_the_mcp_server_or_registers_tools() -> No
     assert _registrations(SRC / f"{TOOL_ENTRY}.py")  # the rule is not vacuous: server.py does build it
 
 
-def test_the_server_main_serves_has_exactly_the_prd_tools(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Run the real entry point with its I/O patched, then list the tools of the server it hands to
-    uvicorn: what production serves, not only what build_server returns in a test."""
-    built: list[Any] = []
+_FORBIDDEN_WORD = re.compile(
+    r"\b(delete|remove|drop|index(es)?|admin|run_?command|command|eval|rename|replace)\b", re.I
+)
 
-    def keep(*args: Any, **kwargs: Any) -> Any:
-        server = build_server(*args, **kwargs)
-        built.append(server)
-        return server
 
+async def _tools_over_mcp(app: Any) -> list[Any]:
+    """List tools through a real MCP client session against `app`, running the app's own lifespan
+    (which starts its session manager), exactly as uvicorn would serve it."""
+    async with app.router.lifespan_context(app):
+        transport = httpx.ASGITransport(app=app)
+        async with (
+            httpx.AsyncClient(transport=transport, base_url="http://mcp-mongo") as http,
+            streamable_http_client("http://mcp-mongo/mcp", http_client=http) as (read, write, _),
+            ClientSession(read, write) as session,
+        ):
+            await session.initialize()
+            return list((await session.list_tools()).tools)
+
+
+def _served_app(monkeypatch: pytest.MonkeyPatch) -> Any:
+    """Run the real entry point with only its I/O patched and return the exact app it hands to
+    uvicorn.run: whatever main() builds, wraps or substitutes is what gets checked."""
     served: list[Any] = []
     monkeypatch.setattr(main_module, "assert_least_privilege", lambda *a, **k: None)
     monkeypatch.setattr(main_module, "init_telemetry", lambda *a, **k: None)
     monkeypatch.setattr(main_module, "connect", lambda *a, **k: make_store(FakeDatabase()))
-    monkeypatch.setattr(main_module, "build_server", keep)
-    monkeypatch.setattr("uvicorn.run", lambda app, **k: served.append(app))
+    monkeypatch.setattr("uvicorn.run", lambda app, *a, **k: served.append(app))
     main_module.main(
         {"MCP_MONGO_URI": "mongodb://r@h/", "MCP_MONGO_WRITE_URI": "mongodb://w@h/", "MCP_CALL_CONTEXT_KEY": "k" * 40}
     )
-    assert len(built) == 1
     assert len(served) == 1
-    tools = asyncio.run(built[0].list_tools())
+    return served[0]
+
+
+def test_the_app_main_serves_lists_exactly_the_prd_tools_over_mcp(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Box 4, behaviourally: what production serves, seen by a real MCP client, has exactly the six
+    PRD tools, none named or described as delete/drop/index/admin/runCommand, none destructive."""
+    tools = asyncio.run(_tools_over_mcp(_served_app(monkeypatch)))
     assert {tool.name for tool in tools} == PRD_TOOLS
-    assert all(tool.annotations is not None and tool.annotations.destructiveHint is False for tool in tools)
+    for tool in tools:
+        assert not _FORBIDDEN_WORD.search(tool.name), tool.name
+        assert not _FORBIDDEN_WORD.search(tool.description or ""), tool.name
+        assert tool.annotations is not None
+        assert tool.annotations.destructiveHint is False, tool.name
 
 
 def test_calling_a_tool_that_does_not_exist_is_an_error(db: FakeDatabase) -> None:
