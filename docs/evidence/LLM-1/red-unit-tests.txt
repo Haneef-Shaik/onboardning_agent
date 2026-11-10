@@ -1,0 +1,15 @@
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+libs/py-llm/tests/test_runtime.py:11: in <module>
+    from onb_llm import (
+E   ImportError: cannot import name 'ConnectorEnvironmentError' from 'onb_llm' (/Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-llm-1/libs/py-llm/src/onb_llm/__init__.py)
+=========================== short test summary info ============================
+ERROR libs/py-llm/tests/test_config.py
+ERROR libs/py-llm/tests/test_fake_connector.py
+ERROR libs/py-llm/tests/test_health.py
+ERROR libs/py-llm/tests/test_provider_connectors.py
+ERROR libs/py-llm/tests/test_registry.py
+ERROR libs/py-llm/tests/test_resolution.py
+ERROR libs/py-llm/tests/test_runtime.py
+!!!!!!!!!!!!!!!!!!! Interrupted: 7 errors during collection !!!!!!!!!!!!!!!!!!!!
+7 errors in 1.22s

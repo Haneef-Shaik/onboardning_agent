@@ -1,0 +1,2 @@
+[onboarding.llm_connectors]
+echo = onb_llm_echo_connector:EchoConnector
