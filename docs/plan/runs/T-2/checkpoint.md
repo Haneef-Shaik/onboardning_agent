@@ -1,6 +1,6 @@
 # Checkpoint — T-2 · Catch any unscoped query at runtime
 
-**Branch:** goal/t-2-query-safety-net · **Status:** all three boxes built and proved; handoff written; waiting for the verifier.
+**Branch:** goal/t-2-query-safety-net · **Status:** attempt 2 (rebased on main 707b60c, queue allowance added); handoff updated; verifier next.
 
 ## Steps done
 1. Listener `onb_data.safety_net` with unit tests (RED, then GREEN, 100% coverage).

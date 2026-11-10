@@ -1,5 +1,8 @@
-# make test-int, 2026-11-10T05:23:47Z, goal/t-2-query-safety-net @ d175d2d, compose project ob-t-2
-12 passed in 3.21s
-============================== 33 passed in 8.02s ==============================
- NX   Successfully ran target test-int for project py-data
+# make test-int, 2026-11-10T06:20:44Z, goal/t-2-query-safety-net @ db2b119, compose project ob-t-2
+12 passed in 3.44s
+============================== 3 passed in 5.58s ===============================
+============================== 49 passed in 7.01s ==============================
+============================== 2 passed in 1.65s ===============================
+============================= 19 passed in 14.03s ==============================
+ NX   Successfully ran target test-int for 4 projects
 make test-int exit=0

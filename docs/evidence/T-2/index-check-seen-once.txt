@@ -1,19 +1,26 @@
-# T-2 box 3: index check seen failing once, 2026-11-10T05:07:16Z, compose project ob-t-2
+# T-2 box 3: index check seen failing once, 2026-11-10T06:21:14Z, compose project ob-t-2
 ## 1. plant: db.seen_once_t2.hires.createIndex({email_hash: 1}) (no org_id prefix), as root via mongosh
 email_only
 ## 2. make test-int with the planted index (expect failure)
 make test-int exit=2
-12 passed in 7.79s
+12 passed in 2.26s
+============================== 3 passed in 6.22s ===============================
+============================== 2 passed in 2.75s ===============================
+============================= 19 passed in 19.04s ==============================
+                    ss.failed(self._error_message(selector), self.description)
 E       AssertionError: assert ['seen_once_t... with org_id'] == []
 E         Left contains one more item: 'seen_once_t2.hires index email_only: index on tenant collection hires does not start with org_id'
 libs/py-data/tests_int/test_tenant_indexes.py:46: AssertionError
 FAILED libs/py-data/tests_int/test_tenant_indexes.py::test_every_tenant_index_on_the_server_starts_with_org_id - AssertionError: assert ['seen_once_t... with org_id'] == []
-========================= 1 failed, 32 passed in 7.98s =========================
- NX   Running target test-int for project py-data failed
+=================== 1 failed, 47 passed, 2 errors in 28.34s ====================
+ NX   Running target test-int for 4 projects failed
 ## 3. remove the planted database
 1
 ## 4. make test-int again (expect green)
 make test-int exit=0
-12 passed in 8.24s
-============================= 33 passed in 14.43s ==============================
- NX   Successfully ran target test-int for project py-data
+12 passed in 2.41s
+============================== 3 passed in 4.66s ===============================
+============================== 49 passed in 6.51s ==============================
+============================== 2 passed in 1.43s ===============================
+============================= 19 passed in 15.29s ==============================
+ NX   Successfully ran target test-int for 4 projects

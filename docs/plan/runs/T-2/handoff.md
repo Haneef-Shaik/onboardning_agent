@@ -1,31 +1,65 @@
-# Handoff — T-2 · Catch any unscoped query at runtime        attempt 1 · goal/t-2-query-safety-net · see `git log -1` (evidence captured at d175d2d)
+# Handoff — T-2 · Catch any unscoped query at runtime        attempt 2 · goal/t-2-query-safety-net · see `git log -1` (evidence captured at db2b119)
 
 **Outcome claimed.** `onb_data.safety_net` adds a PyMongo command listener (`TenantCommandListener`).
 It flags every command on a tenant collection that is not pinned to exactly one `org_id`.
-`install_safety_net()` registers it globally. The integration suite installs it before any client
-exists and wraps every test in `listener.guard()`, so a test that sends an unscoped command fails.
-`make test-int` also checks every index on every database on the server and fails on a tenant
-index that does not start with `org_id`.
+`install_safety_net()` registers it globally. Every Mongo integration suite (`libs/py-data/tests_int`
+and `libs/py-eventbus/tests_int`) installs it before any client exists and wraps each test in
+`listener.guard()`, so a test that sends an unscoped command fails. The event bus worker's
+deliberate cross-org commands (ADR 0002) are allowed by exact collection and command shape, and
+nothing else on `jobs`/`dead_letters` is. `make test-int` also checks every index on every
+database on the server and fails on a tenant index that does not start with `org_id`. The one
+exception is the ADR 0002 rule that non-unique indexes on the queue collections may lead with
+queue state.
+
+**Attempt 2 changes.**
+- Rebased onto main `707b60c` (PII-3 fix and EVT-1). One conflict, in `errors.py`; both
+  `TransactionError` and `UnscopedCommandError` are kept.
+- Added the worker-queue allowance (`onb_data/queue_allowance.py`) and the queue index rule.
+- Put the eventbus integration suite under the guard and marked its root read-backs.
+- Added 10 more mutation checks. Both gates now pass.
 
 ## Done when
 | Box | Met | Evidence |
 |-----|-----|----------|
-| A raw unscoped `find` through a deliberately leaked client trips the listener (test) | yes | `libs/py-data/tests_int/test_safety_net.py::test_an_unscoped_find_through_a_leaked_client_trips_the_listener` takes `store._client` from `connect()` (the deliberate leak) and runs `find({})` on `hires`. It asserts that rows from both orgs came back, then that `tenant_safety_net.check()` raises `UnscopedCommandError` matching `unscoped find on <db>.hires`. A sibling test does the same with a raw `MongoClient` that has no listener argument: `test_an_unscoped_find_through_a_raw_client_trips_the_listener`. Run with `make test-int`: `33 passed`, exit 0 (`docs/evidence/T-2/make-test-int.txt`). Mutants M1, M2 and M4 each fail this test (`docs/evidence/T-2/mutation-checks.txt`). |
-| The listener is on for every integration test, asserted by a fixture test | yes | `libs/py-data/tests_int/conftest.py`: `pytest_configure` calls `install_safety_net()` before any client is built. The autouse `tenant_safety_net_guard` wraps each test in `listener.guard()`, which runs `check()` before and after the test. `pytest_sessionfinish` fails the run on violations left after the last test. The fixture tests are in `tests_int/test_safety_net.py`:<br>• `test_every_integration_test_runs_under_the_safety_net_guard` asserts every collected item has the guard in its `fixturenames`. M3 (guard not autouse) fails it.<br>• `test_the_listener_is_registered_globally_before_any_client` asserts the listener is in the global registry. M4 fails it.<br>• `test_a_client_made_inside_a_test_reports_to_the_listener` gives a fresh client no listener argument and still sees its command reported.<br>• Unit tests `test_the_guard_fails_on_a_violation_sent_inside_it` (M5) and `…_left_before_it` cover the guard itself.<br>The first guarded run caught 17 real unscoped root read-backs in the existing T-1 and F-2 integration tests (`docs/evidence/T-2/first-guarded-run.txt`). That shows the guard fails tests in practice. |
-| An index check in `make test-int` fails on a tenant index not prefixed with `org_id` (seen once) | yes | `libs/py-data/tests_int/test_tenant_indexes.py::test_every_tenant_index_on_the_server_starts_with_org_id` walks every non-system database and every collection, including time-series ones. It runs `find_index_violation` on each index. Seen once (`docs/evidence/T-2/index-check-seen-once.txt`, script `seen_once.sh`): I planted `seen_once_t2.hires {email_hash: 1}` with mongosh. `make test-int` then gave exit 2 with `FAILED …test_every_tenant_index_on_the_server_starts_with_org_id`: `seen_once_t2.hires index email_only: index on tenant collection hires does not start with org_id`. After dropping the database, `make test-int` gave exit 0 with `33 passed`. `test_the_index_check_catches_a_tenant_index_not_led_by_org_id` keeps that case as a permanent test. M6 fails it. |
+| A raw unscoped `find` through a deliberately leaked client trips the listener (test) | yes | `libs/py-data/tests_int/test_safety_net.py::test_an_unscoped_find_through_a_leaked_client_trips_the_listener` takes `store._client` from `connect()` (the deliberate leak) and runs `find({})` on `hires`. It asserts that rows from both orgs came back, then that `tenant_safety_net.check()` raises `UnscopedCommandError` matching `unscoped find on <db>.hires`. `test_an_unscoped_find_through_a_raw_client_trips_the_listener` does the same with a raw `MongoClient`. Its value sentinel is now `Bina-sentinel-xyz`, which can't occur in a hex database name; the old `b1` collided once with a random name. Run with `make test-int`: py-data `49 passed`, exit 0 (`docs/evidence/T-2/make-test-int.txt`). Mutants M1, M2 and M4 fail it (`docs/evidence/T-2/mutation-checks.txt`). |
+| The listener is on for every integration test, asserted by a fixture test | yes | Both Mongo integration suites have the same hooks: `pytest_configure` calls `install_safety_net()`, the autouse `tenant_safety_net_guard` wraps each test in `listener.guard()`, and `pytest_sessionfinish` fails the run on leftovers. The hooks are in `libs/py-data/tests_int/conftest.py` and `libs/py-eventbus/tests_int/conftest.py`.<br>Fixture tests:<br>• `libs/py-data/tests_int/test_safety_net.py::test_every_integration_test_runs_under_the_safety_net_guard`, `::test_the_listener_is_registered_globally_before_any_client` and `::test_a_client_made_inside_a_test_reports_to_the_listener`.<br>• `libs/py-eventbus/tests_int/test_safety_net_guard.py::test_every_event_bus_integration_test_runs_under_the_safety_net_guard` and `::test_the_listener_is_registered_globally`.<br>Mutants M3 (guard not autouse) and M4 (not registered) fail them; M5 (no post-check) fails the guard unit test.<br>When the guard was first switched on it caught real unscoped root read-backs: 17 in T-1/F-2 (`first-guarded-run.txt`) and every root read-back in EVT-1's suite (`eventbus-first-guarded-run.txt`). It flagged none of the worker's own commands. `libs/py-telemetry/tests_int` (the Jaeger round-trip) sends no Mongo commands, so it has no guard. |
+| An index check in `make test-int` fails on a tenant index not prefixed with `org_id` (seen once) | yes | `libs/py-data/tests_int/test_tenant_indexes.py::test_every_tenant_index_on_the_server_starts_with_org_id` walks every non-system database and every collection, including time-series ones. The check passes each index's `unique` flag. Seen once, re-run at db2b119 (`docs/evidence/T-2/index-check-seen-once.txt`, script `seen_once.sh`): I planted `seen_once_t2.hires {email_hash: 1}`. `make test-int` then gave exit 2 with `FAILED …test_every_tenant_index_on_the_server_starts_with_org_id`: `seen_once_t2.hires index email_only: index on tenant collection hires does not start with org_id`. After dropping it, `make test-int` gave exit 0 for 4 projects. EVT-1's real queue index (`status, consumer, available_at`, non-unique) passes the same server-wide walk under ADR 0002 §3. A unique queue index not led by `org_id` is still flagged (`test_a_unique_queue_index_must_still_start_with_org_id`, mutant Q10). |
+
+## The worker-queue allowance (orchestrator request, ADR 0002)
+`onb_data/queue_allowance.py::queue_command_allowed` is called from `find_violation` only for tenant
+collections. It returns True only for these shapes:
+
+| Command | Collection | Exact shape allowed |
+|---------|------------|---------------------|
+| `findAndModify` (the claim) | `jobs` only | The filter uses only queue-state fields (`consumer`, `status`, `available_at`, `locked_until`, `attempts`, `max_attempts`) combined with `$or`/`$and`. The update is `$set`/`$unset` of `WORKER_STATE_FIELDS` plus `$inc` of `attempts`. No `remove`, no `upsert`. |
+| `update` (leased) | `jobs`, `dead_letters` | Exactly one statement. `q` is exactly `{_id: <scalar>, lease_token: <non-empty str>}`. `u` is a worker-state update. Not multi, not upsert. |
+| `delete` (leased) | `jobs`, `dead_letters` | Exactly one statement. `q` is exactly `{_id, lease_token}`, with `limit: 1`. |
+| `insert` (orphan dead letter) | `dead_letters` only | Each document either has a string `org_id` (an ordinary dead letter) or is `status: "dead"` with `reason` in {`missing_org_id`, `invalid_org_id`}. |
+
+The orphan dead letter goes beyond the two shapes named in the request. It is the worker's
+dead-letter move of a job that has no `org_id`, which PRD §7.9 Event bus and EVT-1's box 5 require,
+so I allowed it narrowly rather than make the bus fail. Everything else on the queue collections is
+checked as usual and stays flagged when unscoped. That includes `QueueRepository.find` on
+`dead_letters` (the operator read), which is not a worker command; see "Found for other goals".
+
+| Proof | Test |
+|-------|------|
+| The worker's shapes pass (12 cases) | `libs/py-data/tests/test_safety_net_queue.py::test_the_worker_queue_commands_pass[*]` |
+| Every other unscoped queue command is flagged (47 cases): claim on `dead_letters` or `hires`, claim by org, `_id` or payload, `$nor`/`$where`, claim moving org, payload or consumer, `$rename`, replacement, pipeline, `remove`/`upsert`; update by `_id` only, extra filter fields, operator `_id`, empty token, multi, upsert, moving org; two-statement updates; delete by `_id` or `limit 0`; find, count, aggregate, distinct; job insert without org; orphan letters for other reasons; leased shapes on non-queue collections | `…::test_every_other_unscoped_queue_command_is_flagged[*]` |
+| Real `QueueRepository` traffic passes against Mongo: claim, heartbeat, retry, reclaim, complete | `libs/py-data/tests_int/test_safety_net_queue.py::test_the_worker_queue_cycle_passes_the_net` |
+| Orphan claim and dead-letter move in one transaction passes | `…::test_the_orphan_dead_letter_move_passes_the_net` |
+| Raw unscoped ops on the queue are still flagged against Mongo (9 cases) | `…::test_any_other_unscoped_queue_command_is_still_flagged[*]`, `…::test_the_operator_dead_letter_read_is_flagged` |
+| The real event bus worker passes the net: all 17 EVT-1 integration tests, including the 6-worker concurrency run, crashed lease, exhausted and orphan dead-lettering | `make test-int`, py-eventbus `19 passed` |
 
 ## Claims the next goals may rely on
 | Claim | Proved by |
 |-------|-----------|
-| `from onb_data.safety_net import install_safety_net`. Calling `install_safety_net()` once, before the first client, registers one global `TenantCommandListener`; calling it again returns the same listener. Staging app startup should call it there too. | `test_install_registers_one_global_listener`, `test_the_listener_is_registered_globally_before_any_client` |
-| PyMongo swallows listener exceptions, so the listener cannot stop a command. It records the violation and logs `tenant safety net: unscoped <cmd> on <db>.<coll>: <reason>` at ERROR (logger `onb_data.safety_net`), and `check()`/`guard()` raise `UnscopedCommandError` (a `DataAccessError`). Staging should alert on that log line. | `test_the_listener_logs_violations_without_values`, `test_the_listener_records_an_unscoped_command_and_check_raises_it` |
-| Violations and logs carry only db, collection, command name and a fixed reason, never values from the command. | `test_the_listener_logs_violations_without_values`, the `ORG not in reason` asserts |
-| "Scoped" means a top-level `org_id: "<str>"` or `{"$eq": "<str>"}`, or such a branch inside `$and`. `$or`, `$in`, `$ne`, `$exists` and a missing `org_id` never count. | `test_an_unscoped_command_on_a_tenant_collection_is_flagged[*]` (45 cases) |
-| These are checked: `find`, `count`, `distinct`, `findAndModify` (filter and update body), `update` (each `q` and `u`), `delete`, `insert` (string `org_id` on every document), `aggregate` (first stage `$match` on `org_id`; no `$out`/`$merge`; `$lookup`/`$graphLookup`/`$unionWith` into a tenant collection is refused at any depth), database-level `$changeStream`, `explain` (unwrapped), `create` of a view, `createIndexes` (`org_id` first), client `bulkWrite` on a tenant namespace, and `mapReduce`. An update body may not write `org_id` except `$setOnInsert` of the filter's own org, which is what T-1's upsert sends. A replacement must keep the filter's `org_id`. Pipeline updates are refused. | `tests/test_safety_net.py` |
-| Out of scope by design: global collections (`orgs`, `agent_registry`, `tool_catalog`), `system.*`, and the `admin`/`config`/`local` databases. | `test_commands_outside_tenant_data_pass[*]` |
-| All TenantRepository traffic passes the net with no false positives. | `test_scoped_repository_traffic_is_not_flagged`, and the whole T-1 suite running under the guard |
-| An integration test that must read across orgs as root wraps the read in `with unscoped("reason"):` (conftest fixture) or scopes its filter by `org_id`. | `test_tenant_repository.py`, `test_compose_mongo_transaction.py` |
-| `find_index_violation(collection, key)` and `is_tenant_collection(db, coll)` are public helpers. The `_id` index is the only tenant index that may skip `org_id`. | `test_the_id_index_is_the_only_index_not_led_by_org_id` |
+| `from onb_data.safety_net import install_safety_net`. Call it once, before the first client, to register one global `TenantCommandListener`. Staging app startup should call it there too. | `test_install_registers_one_global_listener`, `test_the_listener_is_registered_globally_before_any_client` |
+| PyMongo swallows listener exceptions, so the listener records the violation and logs `tenant safety net: unscoped <cmd> on <db>.<coll>: <reason>` at ERROR (logger `onb_data.safety_net`). `check()`/`guard()` then raise `UnscopedCommandError`. Violations never carry command values. | `test_the_listener_logs_violations_without_values`, `test_the_listener_records_an_unscoped_command_and_check_raises_it` |
+| "Scoped" means a top-level `org_id: "<str>"` or `{"$eq": "<str>"}`, or such a branch inside `$and`. Checked: find, count, distinct, findAndModify (filter and update body), update (`q` and `u`), delete, insert, aggregate (leading `$match`, cross-collection stages), database-level `$changeStream`, explain, view create, createIndexes, client bulkWrite, mapReduce. | `tests/test_safety_net.py` |
+| The worker queue (`store.queue("jobs"/"dead_letters")`, EVT-1) passes the net as it is. A new kind of cross-org queue command needs a matching shape in `queue_allowance.py` with tests, not a wider net. | the table above |
+| Integration tests that read across orgs as root use `with unscoped("reason"):` (py-data conftest) or `scratch.find/find_one/count` (py-eventbus `Scratch`). New Mongo integration suites copy the three conftest hooks. | both suites |
+| `find_index_violation(collection, key, *, unique=False)` and `is_tenant_collection(db, coll)` are public. The `_id` index and non-unique queue indexes are the only tenant indexes that may skip `org_id`. | `test_the_id_index_is_the_only_index_not_led_by_org_id`, `test_a_non_unique_queue_index_may_lead_with_queue_state` |
 
 ## Acceptance evidence
 | Ledger row | Environment, date | Result | Evidence | Row written here? |
@@ -33,78 +67,82 @@ index that does not start with `org_id`.
 | — | — | — | `plan.py show T-2` lists no ledger rows for T-2 | no |
 
 ## Gates
+All run at db2b119 on compose project `ob-t-2`, after rebasing onto main `707b60c`.
+
 | Gate | Command | Result |
 |------|---------|--------|
-| Check | `make check` | **exit 2, from a defect outside this diff.** `py-guardrails:test` fails `test_redact_property.py::test_no_character_of_a_value_survives_in_any_glue` on a Hypothesis counterexample (`value='account number 000000000', before='_'`). It reproduces without Hypothesis: `redact("_account number 000000000")` returns the input unchanged (`docs/evidence/T-2/py-guardrails-repro.txt`). The code is PII-3's (`libs/py-guardrails`, last changed in `3c917b3` on main), and this diff does not touch it (`git diff main...HEAD --name-only` lists only `libs/py-data/**`, `docs/evidence/T-2/**` and `docs/plan/runs/T-2/**`). All other targets pass: plan check, `lint` and `typecheck` for 17 projects, and `test` for 16 of 17 (`docs/evidence/T-2/make-check.txt`). |
-| Check, the project this diff touches | `nx run-many -t lint typecheck test -p py-data` | exit 0. `All checks passed!`, `Success: no issues found in 20 source files`, `238 passed`, `TOTAL 577 0 100%` |
-| Integration | `make test-int` | exit 0. Stack checks `12 passed`, py-data `33 passed` (`docs/evidence/T-2/make-test-int.txt`) |
-
-These ran on compose project `ob-t-2` (Caddy 127.0.0.1:18300/18301). The other gates (test-xt, contracts, evals, PII, e2e) do not cover this diff.
+| Check | `make check` | exit 0. `plan ok`; `Successfully ran target lint/typecheck/test for 17 projects`; py-guardrails `210 passed`, so PII-3's fix is in (`docs/evidence/T-2/make-check.txt`). The first run failed only in `tools/tests/test_contracts.py`, because C-1 added `openapi-typescript` and this worktree's `node_modules` predated it. `make bootstrap` fixed that; no code changed. |
+| Check, py-data alone | `nx run-many -t lint typecheck test -p py-data` | exit 0. `350 passed`, `TOTAL 776 2 99%`; `safety_net.py` and `queue_allowance.py` are each at 100%. The 2 missed lines are in EVT-1 code. |
+| Integration | `make test-int` | exit 0. Stack `12 passed`, py-telemetry `3 passed`, py-data `49 passed`, the T-2 eventbus guard file `2 passed`, py-eventbus `19 passed`, `Successfully ran target test-int for 4 projects` (`docs/evidence/T-2/make-test-int.txt`) |
 
 ## Inherited and used
 | From | Claim | Held? |
 |------|-------|-------|
-| T-1 | `connect(..., event_listeners=[...])` hook | Held, but not needed: global registration also covers clients built outside `onb_data`, which is the point of a safety net. |
-| T-1 | Repository filters are `{**query, org_id}`, pipelines start with `$match {org_id}`, upserts add `$setOnInsert {org_id}` | Held. No false positives across the whole T-1 integration suite. |
-| T-1 | `GLOBAL_COLLECTIONS == {orgs, agent_registry, tool_catalog}` | Held. The net imports it from `onb_data.store`. |
-| F-2 | `root_client`/`mongo_tunnel` fixtures and `make test-int` with `.env` | Held |
+| T-1 | Repository filters `{**query, org_id}`, pipelines start `$match {org_id}`, upserts `$setOnInsert {org_id}` | yes. No false positives across the T-1 suite. |
+| EVT-1 | `QueueRepository` sends only claim, `{_id, lease_token}` writes and dead-letter insert/find (ADR 0002) | yes. Every worker command in the 17 EVT-1 integration tests passes the allowance; only test root reads were flagged (`eventbus-first-guarded-run.txt`). |
+| EVT-1 | ADR 0002 §3, the queue index exception | yes. The net and the index walk match `store.ensure_index`. |
+| PII-3 | The redaction fix on main | yes. py-guardrails is green in `make check`. |
 
 ## Mutation checks
-Full output: `docs/evidence/T-2/mutation-checks.txt`, made by `docs/evidence/T-2/mutate.py`. Each file is restored after its mutant, and the last line reads `worktree after all mutations: clean`. All 12 mutants were caught.
-- M1 (box 1): every filter counts as scoped. 28 unit failures, plus int `test_an_unscoped_find_through_a_leaked_client_trips_the_listener`, `…_raw_client_…` and `test_a_client_made_inside_a_test_reports_to_the_listener`.
-- M2 (box 1): the listener records nothing. 8 unit and 4 int failures, including the leaked-client test.
-- M3 (box 2): the guard fixture is not autouse. `test_every_integration_test_runs_under_the_safety_net_guard` FAILED.
-- M4 (box 2): the listener is not registered globally. `test_the_listener_is_registered_globally_before_any_client` and 4 more int tests FAILED.
-- M5 (box 2): the guard does not check after the test. `test_the_guard_fails_on_a_violation_sent_inside_it` FAILED.
-- M6 (box 3): the index check is off. `test_the_index_check_catches_a_tenant_index_not_led_by_org_id` (int) and 2 unit tests FAILED.
-- M7: `org_id` operators count as one org. 3 unit cases FAILED.
-- M8: cross-collection stages are not checked. 7 unit cases FAILED.
-- M9: the allowance never resets. `test_allowing_unscoped_is_explicit_and_scoped_to_the_block` FAILED.
-- M10: update bodies are not checked. 9 unit cases FAILED.
-- M11: database-level change streams pass. 2 unit tests FAILED.
-- M12: `explain` is not unwrapped. 2 unit cases FAILED.
+`docs/evidence/T-2/mutation-checks.txt`, made by `docs/evidence/T-2/mutate.py`. Each run covers py-data unit, py-data integration and py-eventbus integration. All 22 mutants were caught, and the last line reads `worktree after all mutations: clean`.
 
-RED before GREEN: `red-unit-tests.txt` (ImportError before the module existed), `red-int-tests.txt` (fixtures missing: 1 failed, 6 errors), `red-review-fixes.txt` (17 failed before the review fixes).
+Attempt 1 guards, re-run after the rebase:
+- M1: every filter counts as scoped. 61 unit and 10 int failures, including `test_an_unscoped_find_through_a_leaked_client_trips_the_listener`.
+- M2: the listener records nothing. 14 int failures, including the leaked-client test.
+- M3: the guard is not autouse. `test_every_integration_test_runs_under_the_safety_net_guard` FAILED.
+- M4: the listener is not registered globally. `test_the_listener_is_registered_globally_before_any_client` and 14 more FAILED.
+- M5: no post-check. `test_the_guard_fails_on_a_violation_sent_inside_it` FAILED.
+- M6: the index check is off. `test_the_index_check_catches_a_tenant_index_not_led_by_org_id` and 5 unit tests FAILED.
+- M7 to M12: org operators, cross-collection stages, allowance reset, update bodies, change streams and explain. Each was caught by unit cases.
+
+Queue allowance:
+- Q1: allowance removed. 11 unit failures, 4 py-data int errors, and **10 py-eventbus integration tests error**, so the real bus needs exactly this.
+- Q2: allowance on any tenant collection. 2 unit cases, the leased shapes on `hires`.
+- Q3: claim allowed on `dead_letters`. Unit `[claim on dead_letters]` and int `[claim a dead letter]`.
+- Q4: claim may filter on any field. 5 unit cases (`aimed at an org`, `by id`, `searching payloads`, …).
+- Q5: worker update may write any field. 6 unit cases and int `[move a job to another org]`.
+- Q6: leased write with any filter. 5 unit cases and int `[update a job by id only]`.
+- Q7: leased delete may remove many. Unit `[delete leased many]`.
+- Q8: multi/upsert leased update. Unit `[update leased multi]`, `[update leased upsert]`.
+- Q9: orphan letter for any reason. 3 unit cases and int `[orphan dead letter for another reason]`.
+- Q10: index exception extends to unique. `test_a_unique_queue_index_must_still_start_with_org_id` and the createIndexes case.
+
+RED before GREEN:
+- `red-unit-tests.txt`
+- `red-int-tests.txt`
+- `red-review-fixes.txt` (17 failed)
+- `red-queue-allowance.txt` (15 failed before `queue_allowance.py` existed)
 
 ## Review findings left open
-I ran a code review and a security review: two general-purpose agents with reviewer briefs, on `git diff main...HEAD`.
+Attempt 1 ran a code review and a security review. Every high and medium finding was fixed except the one listed first below.
 
-Fixed:
-- **High:** the update body was unchecked, so `$set org_id` to another org, `$unset`/`$rename`, replacements and `findAndModify` updates all passed.
-- **Medium:** database-level `$changeStream` passed.
-- **Medium/low:** `explain` was not unwrapped.
-- **Medium/low:** a view that joins tenant data passed.
-- **Low:** insert accepted `org_id: {"$eq": …}` as a value.
-- **Low:** a `$lookup` with a `from` that is a mapping passed.
-- **Low:** an exception inside the check would have been silently lost. It is now recorded as a violation.
-- **Low:** violations sent after the last test were never raised. `pytest_sessionfinish` now fails the run.
-- **Low:** time-series collections were skipped by the index walk.
-
-Still open:
-- **medium · `safety_net.py:find_violation` · Admin and introspection commands on tenant collections pass:** `drop`, `dropIndexes`, `collMod`, `renameCollection`, `collStats`, `dataSize`, `validate` and `listIndexes`. They leak only totals or act on the whole collection (all orgs), and they are not filter-bearing queries, which is what the PRD line covers. Left because a default-deny allowlist needs the real set of commands migrations and ops use. Suggested for DEP-1/staging: add an allowlist mode.
-- **low · `safety_net.py` · A non-simple `collation` (e.g. `strength: 1`) can widen an `org_id` equality to case variants.** Org ids match `[A-Za-z0-9_-]` (T-1), so case-only variants are possible in principle. Left: org ids should be server-generated in one case. Recorded for AUTH-1/org creation.
-- **low (goal-verifier, attempt 1: pass) · `safety_net.py` `guard()` · There is no `try/finally`, so when a test body raises, its post-check is skipped.** The violation then surfaces at the next test's pre-check or at `pytest_sessionfinish`. Nothing is lost, but it can be blamed on the wrong test. Left as is: a `finally` check would replace the test's own exception with `UnscopedCommandError`.
-- **low · `allowing_unscoped` · An asyncio task created inside the block stays exempt for life (contextvar copy).** Documented in the docstring. Also, nothing stops application code from calling it. Recorded: a lint or grep rule should limit `allowing_unscoped` to `tests_int/`.
+- **medium · `safety_net.py:find_violation` · Admin and introspection commands on tenant collections pass:** `drop`, `dropIndexes`, `collMod`, `renameCollection`, `collStats`, `dataSize`, `validate` and `listIndexes`. They are not filter-bearing queries. A default-deny allowlist needs the real set of commands migrations use, so I suggest it for DEP-1/staging.
+- **low · a non-simple `collation` can widen an `org_id` equality to case variants.** Org ids should be generated in one case (AUTH-1/org creation).
+- **low · `allowing_unscoped`:** an asyncio task created inside the block stays exempt (documented). Nothing stops application code from calling it; recorded as a lint rule.
+- **low (goal-verifier, attempt 1) · `guard()` has no `try/finally`.** A test that raises reports its violation at the next test or at session end. Left as is: a `finally` check would replace the test's own exception.
+- **low (attempt 2) · the queue allowance mirrors `QueueRepository`'s field sets** by importing `CLAIM_FILTER_FIELDS` and `WORKER_STATE_FIELDS` from `onb_data.queue`. Widening those sets widens both together. That is intended (one source of truth), but a change there should be reviewed as a net change too.
 
 ## Left undone, and why
 - I couldn't set the `/goal` condition from this orchestrated background session, so I worked to the text printed by `plan.py goal T-2`.
-- `make check` is not exit 0 because of the `py-guardrails` defect above. Fixing it belongs to PII-3 (standing rule 4). This needs Haneef or the orchestrator: either fix PII-3's redaction first or accept T-2 with this known red gate.
-- Staging wiring (calling `install_safety_net()` at app startup when the environment is staging) is left to the app/deploy goals (API-*, DEP-1). The function and log contract are ready.
+- Staging wiring (`install_safety_net()` at app startup) is left to the API/DEP goals.
 
 ## Found for other goals
-- **PII-3 / py-guardrails (blocking `make check` on every branch once the counterexample is found):** `redact("_account number 000000000")` leaks the account number. Underscore-prefixed context defeats the bank-account detector. Hypothesis saved the example in `.hypothesis/` of this worktree, so it replays here. Other worktrees will hit it whenever Hypothesis finds it.
-- **API goals / DEP-1:** call `install_safety_net()` at startup in staging, and alert on the `onb_data.safety_net` ERROR log line.
-- **Every future project with integration tests that touch Mongo** (apps/api, workers, MCP Mongo): copy or share the three conftest hooks (`pytest_configure` install, autouse `tenant_safety_net_guard`, `pytest_sessionfinish`). The fixture test only covers `libs/py-data/tests_int`. A shared pytest plugin module would be a better home once a second project needs it.
-- **EVT-1:** job claiming across orgs (T-1 open finding) will show up as violations here. Use `GLOBAL_COLLECTIONS` for a system queue, or an explicit narrow exemption; don't widen the net.
-- **Lint rule:** forbid `allowing_unscoped` and `pymongo` imports outside `libs/py-data` and `tests_int`.
+- **EVT-1 / ops:** `QueueRepository.find` on `dead_letters` (the operator read across orgs) is flagged by the net, because it is not a worker command and the request allowed only the worker's. Nothing calls it today. An ops/admin goal that needs it should add a named shape (with a limit and audit) or read per org.
+- **API goals / DEP-1:** call `install_safety_net()` at startup in staging, and alert on the `onb_data.safety_net` ERROR line.
+- **Every future Mongo integration suite** (apps/api, workers, MCP Mongo) should copy the three conftest hooks and add the "every test is guarded" fixture test. A shared pytest plugin module is the better home once a third suite needs it.
+- **Lint rule:** forbid `allowing_unscoped` and `pymongo` imports outside `libs/py-data` and the test suites.
+- **Worktrees:** after rebasing onto a main with new npm devDependencies (C-1's `openapi-typescript`), run `make bootstrap` before `make check`.
 
 ## Decisions forced (ADRs written)
-None needed an ADR:
-- **"Fails any command" with a listener.** PyMongo 4.19 `publish_command_start` wraps every listener in `try/except → _handle_exception()`, so a listener cannot abort a command. In tests the command is failed through the guard fixture, which fails the test. In staging it is an ERROR log line to alert on. This matches PRD §7.9 ("tests + staging"). Production enforcement stays with `TenantRepository`.
-- **Global registration rather than T-1's `event_listeners=` hook,** so raw and leaked clients are covered too.
-- **The T-1 and F-2 integration tests were changed, not weakened.** Root read-backs across orgs are wrapped in `unscoped("reason")` with identical assertions. F-2's transaction counts add `org_id: "org_test"`, which every document they insert carries.
+None needed a new ADR. The allowance implements ADR 0002 "Consequences" as written.
+- **"Fails any command" with a listener.** PyMongo swallows listener exceptions, so tests fail through the guard fixture and staging alerts on the ERROR log line.
+- **Global registration**, so raw and leaked clients are covered.
+- **Allowance by shape in the library**, not a `with unscoped(...)` block in the bus. Shape matching keeps production staging traffic quiet without any bypass in application code, and keeps the net blind to nothing but those exact commands.
+- **Changed test files are not weakened.** Root read-backs in the T-1, F-2 and EVT-1 integration tests now run in a named `unscoped(...)` block, or through `Scratch.find/find_one/count`, with identical assertions. F-2's counts add the `org_id` every inserted document carries. The one deliberate orphan-job plant in EVT-1's test has its own named block.
 
 ## Traps hit
-- Listener exceptions are swallowed by PyMongo (see above). The first design, raising in `started()`, would have passed silently.
-- `--import-mode=importlib` means conftest helpers cannot be imported by tests, so the guard logic lives in the library (`listener.guard()`) where it can be unit- and mutation-tested.
+- Listener exceptions are swallowed by PyMongo.
+- `--import-mode=importlib` means guard logic must live in the library (`listener.guard()`) to be unit- and mutation-tested.
+- A random hex database name contained `b1`, the test's "value never echoed" sentinel. Fixed with a non-hex sentinel.
+- After the rebase, `make check` needed `make bootstrap` for C-1's new npm devDependency.
 - The session's shell hook refuses heredocs and complex compound commands. Scripts live in the job temp directory or `docs/evidence/T-2/`.
