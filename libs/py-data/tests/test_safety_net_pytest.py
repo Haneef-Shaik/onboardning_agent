@@ -7,6 +7,7 @@ Each case runs a throwaway pytest session in a subprocess, with a conftest that 
 
 from __future__ import annotations
 
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -41,9 +42,13 @@ def run_session(tmp_path: Path, test_body: str) -> subprocess.CompletedProcess[s
     (tmp_path / "pytest.ini").write_text("[pytest]\n")
     (tmp_path / "conftest.py").write_text(CONFTEST)
     (tmp_path / "test_case.py").write_text(f"from conftest import send\n\n{test_body}\n")
+    # Plain output whatever the parent forces (nx sets FORCE_COLOR), so the summary line is matchable.
+    env = {k: v for k, v in os.environ.items() if k not in {"FORCE_COLOR", "PY_COLORS", "CLICOLOR_FORCE"}}
+    args = ["-q", "--color=no", "-p", "no:cacheprovider", "--rootdir", str(tmp_path), str(tmp_path)]
     return subprocess.run(
-        [sys.executable, "-m", "pytest", "-q", "-p", "no:cacheprovider", "--rootdir", str(tmp_path), str(tmp_path)],
+        [sys.executable, "-m", "pytest", *args],
         cwd=tmp_path,
+        env=env,
         capture_output=True,
         text=True,
         check=False,
