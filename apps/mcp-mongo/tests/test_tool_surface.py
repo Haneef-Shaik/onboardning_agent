@@ -5,17 +5,20 @@ built from, and on the source, so a new tool or a driver call for one cannot sli
 from __future__ import annotations
 
 import ast
+import asyncio
 import re
 import subprocess
 import sys
 from pathlib import Path
 from typing import Any
 
+import pytest
 from mcp import ClientSession
+from onb_mcp_mongo import main as main_module
 from onb_mcp_mongo.contracts import CONTRACTS
-from onb_mcp_mongo.server import HANDLERS
+from onb_mcp_mongo.server import HANDLERS, build_server
 
-from .fakes import FakeDatabase
+from .fakes import FakeDatabase, make_store
 from .harness import call
 
 PRD_TOOLS = {"list_collections", "find", "count", "aggregate", "insert_one", "update_one"}
@@ -26,6 +29,8 @@ TOOL_ENTRY = "server"
 # MCP-3's database-user provisioning and start-up privilege check: admin code by design, run by
 # `main` and the provisioning CLI, never reachable from a tool (asserted below).
 ADMIN_MODULES = frozenset({"db_users"})
+# The exemption is by exact path, so a file of the same name elsewhere is still scanned.
+ADMIN_FILES = frozenset({(SRC / "db_users.py").resolve()})
 # Driver and database methods that delete, drop, index or run arbitrary commands.
 FORBIDDEN_CALLS = re.compile(
     r"\.(delete_one|delete_many|drop|drop_collection|drop_database|drop_index|drop_indexes|create_index|"
@@ -117,19 +122,78 @@ def test_importing_the_tools_never_loads_the_admin_code() -> None:
     assert loaded.isdisjoint(ADMIN_MODULES), loaded
 
 
-def test_no_source_module_but_the_named_admin_code_calls_a_delete_drop_index_or_command_method() -> None:
-    """Every module is scanned except the named admin modules, which the tests above keep out of
-    the tools' reach; so the scan covers the whole tool closure and any new module."""
-    files = sorted(path for path in SRC.rglob("*.py") if path.stem not in ADMIN_MODULES)
-    scanned = {path.stem for path in files}
-    assert tool_closure() <= scanned
-    hits = [f"{path.name}: {m.group(0)}" for path in files for m in FORBIDDEN_CALLS.finditer(path.read_text())]
+def test_no_source_file_but_the_admin_file_calls_a_delete_drop_index_or_command_method() -> None:
+    """Every file under src/ is scanned, at any depth, except the one admin file by exact path,
+    which the tests above keep out of the tools' reach."""
+    files = sorted(path for path in SRC.rglob("*.py") if path.resolve() not in ADMIN_FILES)
+    assert {SRC / f"{name}.py" for name in tool_closure()} <= set(files)
+    hits = [
+        f"{path.relative_to(SRC)}: {m.group(0)}" for path in files for m in FORBIDDEN_CALLS.finditer(path.read_text())
+    ]
     assert hits == []
 
 
-def test_the_admin_exemption_is_only_the_provisioning_module() -> None:
-    assert frozenset({"db_users"}) == ADMIN_MODULES
-    assert all((SRC / f"{name}.py").exists() for name in ADMIN_MODULES)
+def test_the_admin_exemption_is_exactly_the_provisioning_file() -> None:
+    assert frozenset({(SRC / "db_users.py").resolve()}) == ADMIN_FILES
+    assert all(path.is_file() for path in ADMIN_FILES)
+
+
+def test_the_package_has_no_subpackages() -> None:
+    """The import closure follows top-level modules only; a subpackage would need it extended."""
+    nested = [path.relative_to(SRC) for path in SRC.rglob("*.py") if path.parent != SRC]
+    assert nested == []
+
+
+# --- what production serves -------------------------------------------------------------------
+
+_REGISTERING_ATTRS = frozenset({"add_tool", "tool", "remove_tool", "add_resource", "resource", "prompt"})
+_SERVER_CONSTRUCTORS = frozenset({"FastMCP", "Server", "Tool", "TracedTool", "FuncMetadata"})
+
+
+def _registrations(path: Path) -> list[str]:
+    """Calls that build an MCP server or register a tool, resource or prompt (decorators too)."""
+    found: list[str] = []
+    for node in ast.walk(ast.parse(path.read_text())):
+        targets = [node.func] if isinstance(node, ast.Call) else []
+        if isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef):
+            targets += node.decorator_list
+        for target in targets:
+            name = target.attr if isinstance(target, ast.Attribute) else getattr(target, "id", "")
+            if (isinstance(target, ast.Attribute) and name in _REGISTERING_ATTRS) or name in _SERVER_CONSTRUCTORS:
+                found.append(f"{path.relative_to(SRC)}:{getattr(target, 'lineno', '?')} {name}")
+    return found
+
+
+def test_only_the_server_module_builds_the_mcp_server_or_registers_tools() -> None:
+    others = sorted(path for path in SRC.rglob("*.py") if path != SRC / f"{TOOL_ENTRY}.py")
+    assert [hit for path in others for hit in _registrations(path)] == []
+    assert _registrations(SRC / f"{TOOL_ENTRY}.py")  # the rule is not vacuous: server.py does build it
+
+
+def test_the_server_main_serves_has_exactly_the_prd_tools(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Run the real entry point with its I/O patched, then list the tools of the server it hands to
+    uvicorn: what production serves, not only what build_server returns in a test."""
+    built: list[Any] = []
+
+    def keep(*args: Any, **kwargs: Any) -> Any:
+        server = build_server(*args, **kwargs)
+        built.append(server)
+        return server
+
+    served: list[Any] = []
+    monkeypatch.setattr(main_module, "assert_least_privilege", lambda *a, **k: None)
+    monkeypatch.setattr(main_module, "init_telemetry", lambda *a, **k: None)
+    monkeypatch.setattr(main_module, "connect", lambda *a, **k: make_store(FakeDatabase()))
+    monkeypatch.setattr(main_module, "build_server", keep)
+    monkeypatch.setattr("uvicorn.run", lambda app, **k: served.append(app))
+    main_module.main(
+        {"MCP_MONGO_URI": "mongodb://r@h/", "MCP_MONGO_WRITE_URI": "mongodb://w@h/", "MCP_CALL_CONTEXT_KEY": "k" * 40}
+    )
+    assert len(built) == 1
+    assert len(served) == 1
+    tools = asyncio.run(built[0].list_tools())
+    assert {tool.name for tool in tools} == PRD_TOOLS
+    assert all(tool.annotations is not None and tool.annotations.destructiveHint is False for tool in tools)
 
 
 def test_calling_a_tool_that_does_not_exist_is_an_error(db: FakeDatabase) -> None:

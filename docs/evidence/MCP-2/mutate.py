@@ -33,6 +33,7 @@ class Mutation:
     mid: str
     what: str
     edits: tuple[tuple[str, str, str], ...]  # (file, old, new)
+    creates: tuple[tuple[str, str], ...] = ()  # (new file under SRC, content), removed afterwards
 
 
 MUTATIONS = [
@@ -138,6 +139,43 @@ MUTATIONS = [
         "a .drop( call added to a module outside the tool closure that is not admin code (box 4)",
         (("settings.py", "from .call_context import MIN_KEY_LENGTH\n", "from .call_context import MIN_KEY_LENGTH\n\n\ndef _drop(collection):\n    collection.drop()\n"),),
     ),
+    # --- attempt 3: the verifier's two survivors on attempt 2 (Mb, Md) and a decorator variant
+    Mutation(
+        "V32",
+        "Mb: a run_command tool, body in the exempt db_users.py, registered by main.py (box 4)",
+        (
+            (
+                "db_users.py",
+                "from .settings import DEFAULT_DATABASE\n",
+                'from .settings import DEFAULT_DATABASE\n\n\ndef run_command(cmd: str) -> str:\n    return str(MongoClient("x").admin.command(cmd))\n',
+            ),
+            (
+                "main.py",
+                "    uvicorn.run(server.streamable_http_app(),",
+                "    from .db_users import run_command\n\n    server.add_tool(run_command, name=\"run_command\")\n    uvicorn.run(server.streamable_http_app(),",
+            ),
+        ),
+    ),
+    Mutation(
+        "V33",
+        "Mb variant: main.py registers a tool with the @server.tool() decorator (box 4)",
+        (
+            (
+                "main.py",
+                "    uvicorn.run(server.streamable_http_app(),",
+                "    @server.tool()\n    def drop_everything() -> str:\n        return \"\"\n\n    uvicorn.run(server.streamable_http_app(),",
+            ),
+        ),
+    ),
+    Mutation(
+        "V34",
+        "Md: a nested helpers/db_users.py with .drop() imported by tools.py (box 4: stem exemption)",
+        (("tools.py", "from . import policy\n", "from . import policy\nfrom .helpers import db_users as _helper  # noqa: F401\n"),),
+        creates=(
+            ("helpers/__init__.py", ""),
+            ("helpers/db_users.py", "def wipe(coll):\n    coll.drop()\n"),
+        ),
+    ),
 ]
 
 
@@ -149,7 +187,11 @@ def run_one(m: Mutation) -> bool:
     names = {name for name, _, _ in m.edits}
     originals = {name: (SRC / name).read_bytes() for name in names}
     before = {name: _digest(SRC / name) for name in names}
+    created = [SRC / rel for rel, _ in m.creates]
     try:
+        for rel, content in m.creates:
+            (SRC / rel).parent.mkdir(parents=True, exist_ok=True)
+            (SRC / rel).write_text(content)
         for name, old, new in m.edits:
             text = (SRC / name).read_text()
             if text.count(old) != 1:
@@ -166,7 +208,12 @@ def run_one(m: Mutation) -> bool:
     finally:
         for name, data in originals.items():
             (SRC / name).write_bytes(data)
+        for path in created:
+            path.unlink(missing_ok=True)
+            if path.parent != SRC and not any(path.parent.iterdir()):
+                path.parent.rmdir()
     restored = all(_digest(SRC / name) == before[name] for name in names)
+    restored = restored and not any(path.exists() for path in created)
     failed = FAILED.findall(proc.stdout)
     summary = SUMMARY.findall(proc.stdout)
     print(f"{m.mid}: {m.what}")
