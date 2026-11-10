@@ -12,7 +12,7 @@ export NX_TUI := false
 COMPOSE := docker compose
 ENV_FILE := .env
 
-.PHONY: bootstrap check plan-check env-check tooling-test contracts contracts-check lint typecheck test test-int fmt up down logs
+.PHONY: bootstrap check plan-check env-check tooling-test contracts contracts-check lint typecheck test test-int fmt up down logs llm-health
 
 ## Install the pinned toolchains: one uv virtualenv at the root, and node_modules.
 bootstrap:
@@ -75,6 +75,13 @@ down:
 
 logs:
 	$(COMPOSE) logs -f --tail=200
+
+## Call every model alias once through one connector (PRD §7.1), e.g. `make llm-health CONNECTOR=bedrock`.
+## Loads .env when present; LLM_CONNECTOR is set to CONNECTOR so every alias goes through it.
+llm-health:
+	@test -n "$(CONNECTOR)" || { echo "usage: make llm-health CONNECTOR=<bedrock|langchain|fake|…>" >&2; exit 2; }
+	set -a && { [ ! -f ./$(ENV_FILE) ] || . ./$(ENV_FILE); } && set +a && \
+	LLM_CONNECTOR='$(CONNECTOR)' uv run --frozen python -m onb_llm.health --connector '$(CONNECTOR)'
 
 $(ENV_FILE):
 	@echo "No $(ENV_FILE): copy .env.example to $(ENV_FILE) and fill in the empty values." >&2
