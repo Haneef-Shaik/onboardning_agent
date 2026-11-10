@@ -4,7 +4,7 @@ M1: the read-only role may also insert and update (box 1)  [apps/mcp-mongo/tests
     FAILED apps/mcp-mongo/tests_int/test_db_users_int.py::test_the_read_only_user_cannot_update_with_the_policy_bypassed
     FAILED apps/mcp-mongo/tests_int/test_db_users_int.py::test_an_insert_tool_on_the_read_only_store_is_refused_by_mongodb
     FAILED apps/mcp-mongo/tests_int/test_db_users_int.py::test_the_read_only_user_reads_its_collections
-    result: ['5 failed, 41 passed in 6.17s']
+    result: ['5 failed, 54 passed in 11.82s']
     caught: True; restored byte-for-byte: True
 M2: the read-only role names pii_vault, org_keys and users (box 2)  [apps/mcp-mongo/tests_int/test_db_users_int.py]
     FAILED apps/mcp-mongo/tests_int/test_db_users_int.py::test_no_mcp_user_can_find_in_a_denied_collection[mcp_mongo_ro-org_keys]
@@ -16,9 +16,11 @@ M2: the read-only role names pii_vault, org_keys and users (box 2)  [apps/mcp-mo
     FAILED apps/mcp-mongo/tests_int/test_db_users_int.py::test_a_find_tool_on_a_denied_collection_with_the_policy_bypassed_is_refused[mcp_mongo_ro-org_keys]
     FAILED apps/mcp-mongo/tests_int/test_db_users_int.py::test_a_find_tool_on_a_denied_collection_with_the_policy_bypassed_is_refused[mcp_mongo_ro-pii_vault]
     FAILED apps/mcp-mongo/tests_int/test_db_users_int.py::test_a_find_tool_on_a_denied_collection_with_the_policy_bypassed_is_refused[mcp_mongo_ro-users]
+    FAILED apps/mcp-mongo/tests_int/test_db_users_int.py::test_no_pipeline_stage_reaches_a_denied_collection_with_a_raw_driver[mcp_mongo_ro-graphLookup]
+    FAILED apps/mcp-mongo/tests_int/test_db_users_int.py::test_no_pipeline_stage_reaches_a_denied_collection_with_a_raw_driver[mcp_mongo_ro-lookup]
     FAILED apps/mcp-mongo/tests_int/test_db_users_int.py::test_each_user_passes_the_start_up_privilege_check[mcp_mongo_ro]
     FAILED apps/mcp-mongo/tests_int/test_db_users_int.py::test_the_start_up_check_refuses_the_read_only_user_granted_an_extra_role
-    result: ['11 failed, 35 passed in 19.75s']
+    result: ['13 failed, 46 passed in 7.29s']
     caught: True; restored byte-for-byte: True
 M3: the read-write role names pii_vault_aadhaar and pii_access_log (box 2)  [apps/mcp-mongo/tests_int/test_db_users_int.py]
     FAILED apps/mcp-mongo/tests_int/test_db_users_int.py::test_no_mcp_user_can_find_in_a_denied_collection[mcp_mongo_rw-pii_access_log]
@@ -27,16 +29,19 @@ M3: the read-write role names pii_vault_aadhaar and pii_access_log (box 2)  [app
     FAILED apps/mcp-mongo/tests_int/test_db_users_int.py::test_no_mcp_user_can_count_or_aggregate_a_denied_collection[mcp_mongo_rw-pii_vault_aadhaar]
     FAILED apps/mcp-mongo/tests_int/test_db_users_int.py::test_a_find_tool_on_a_denied_collection_with_the_policy_bypassed_is_refused[mcp_mongo_rw-pii_access_log]
     FAILED apps/mcp-mongo/tests_int/test_db_users_int.py::test_a_find_tool_on_a_denied_collection_with_the_policy_bypassed_is_refused[mcp_mongo_rw-pii_vault_aadhaar]
+    FAILED apps/mcp-mongo/tests_int/test_db_users_int.py::test_no_pipeline_stage_reaches_a_denied_collection_with_a_raw_driver[mcp_mongo_rw-merge]
+    FAILED apps/mcp-mongo/tests_int/test_db_users_int.py::test_no_pipeline_stage_reaches_a_denied_collection_with_a_raw_driver[mcp_mongo_rw-out]
+    FAILED apps/mcp-mongo/tests_int/test_db_users_int.py::test_no_pipeline_stage_reaches_a_denied_collection_with_a_raw_driver[mcp_mongo_rw-unionWith]
     FAILED apps/mcp-mongo/tests_int/test_db_users_int.py::test_each_user_passes_the_start_up_privilege_check[mcp_mongo_rw]
-    result: ['7 failed, 39 passed in 16.20s']
+    result: ['10 failed, 49 passed in 15.70s']
     caught: True; restored byte-for-byte: True
 M4: the read-write role may also remove (no delete)  [apps/mcp-mongo/tests_int/test_db_users_int.py]
     FAILED apps/mcp-mongo/tests_int/test_db_users_int.py::test_no_mcp_user_can_delete[mcp_mongo_rw]
-    result: ['1 failed, 45 passed in 7.25s']
+    result: ['1 failed, 58 passed in 6.78s']
     caught: True; restored byte-for-byte: True
 M5: the start-up privilege check accepts anything  [apps/mcp-mongo/tests_int/test_db_users_int.py]
     FAILED apps/mcp-mongo/tests_int/test_db_users_int.py::test_the_start_up_check_refuses_the_read_only_user_granted_an_extra_role
-    result: ['1 failed, 45 passed in 6.33s']
+    result: ['1 failed, 58 passed in 6.18s']
     caught: True; restored byte-for-byte: True
 M5u: the start-up privilege check accepts anything (unit)  [apps/mcp-mongo/tests]
     FAILED apps/mcp-mongo/tests/test_db_users.py::test_a_wider_read_only_privilege_is_refused[privilege0-insert]
@@ -47,19 +52,31 @@ M5u: the start-up privilege check accepts anything (unit)  [apps/mcp-mongo/tests
     FAILED apps/mcp-mongo/tests/test_db_users.py::test_a_wider_read_only_privilege_is_refused[privilege5-cluster]
     FAILED apps/mcp-mongo/tests/test_db_users.py::test_a_wider_read_only_privilege_is_refused[privilege6-any
     FAILED apps/mcp-mongo/tests/test_db_users.py::test_the_read_write_user_may_not_remove
-    result: ['8 failed, 219 passed in 1.17s']
+    result: ['8 failed, 227 passed in 1.89s']
     caught: True; restored byte-for-byte: True
 M6: write tools use the read-only store  [apps/mcp-mongo/tests]
     FAILED apps/mcp-mongo/tests/test_store_routing.py::test_each_tool_reaches_only_its_own_connection[insert_one]
     FAILED apps/mcp-mongo/tests/test_store_routing.py::test_each_tool_reaches_only_its_own_connection[update_one]
-    result: ['2 failed, 225 passed in 1.04s']
+    result: ['2 failed, 233 passed in 1.25s']
     caught: True; restored byte-for-byte: True
 M7: main serves without checking the users  [apps/mcp-mongo/tests]
     FAILED apps/mcp-mongo/tests/test_main.py::test_main_checks_both_users_before_serving_and_routes_writes
-    result: ['1 failed, 226 passed in 0.87s']
+    result: ['1 failed, 234 passed in 1.60s']
     caught: True; restored byte-for-byte: True
 M8: main hands the read-only store to the write tools  [apps/mcp-mongo/tests]
     FAILED apps/mcp-mongo/tests/test_main.py::test_main_checks_both_users_before_serving_and_routes_writes
-    result: ['1 failed, 226 passed in 0.90s']
+    result: ['1 failed, 234 passed in 1.04s']
     caught: True; restored byte-for-byte: True
-SUMMARY: 9 of 9 mutations caught, every file restored
+M9: approvals become writable by the read-write user (review fix)  [apps/mcp-mongo/tests_int/test_db_users_int.py]
+    FAILED apps/mcp-mongo/tests_int/test_db_users_int.py::test_the_read_write_user_cannot_decide_an_approval
+    result: ['1 failed, 58 passed in 11.25s']
+    caught: True; restored byte-for-byte: True
+M10: the identity check ignores the user's auth database (review fix)  [apps/mcp-mongo/tests]
+    FAILED apps/mcp-mongo/tests/test_db_users.py::test_the_connection_check_refuses_any_other_identity[user-in-app-db]
+    result: ['1 failed, 234 passed in 6.24s']
+    caught: True; restored byte-for-byte: True
+M11: the start-up check accepts a user missing part of its role (review fix)  [apps/mcp-mongo/tests]
+    FAILED apps/mcp-mongo/tests/test_db_users.py::test_the_connection_check_refuses_a_user_missing_part_of_its_role
+    result: ['1 failed, 234 passed in 3.47s']
+    caught: True; restored byte-for-byte: True
+SUMMARY: 12 of 12 mutations caught, every file restored

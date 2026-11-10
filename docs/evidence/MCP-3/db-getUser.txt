@@ -2,7 +2,7 @@
 // db.getUser("mcp_mongo_ro", {showPrivileges: true})
 {
   _id: 'admin.mcp_mongo_ro',
-  userId: UUID('73635360-2bac-4308-b547-6e8378e2044c'),
+  userId: UUID('e6c963b0-e45e-47ff-8aeb-47cd9beb995d'),
   user: 'mcp_mongo_ro',
   db: 'admin',
   mechanisms: [
@@ -311,7 +311,7 @@
 // db.getUser("mcp_mongo_rw", {showPrivileges: true})
 {
   _id: 'admin.mcp_mongo_rw',
-  userId: UUID('b195b39a-2196-4c25-b40a-e77b5c6762b0'),
+  userId: UUID('4b524578-08f7-4b30-aeb5-bdfd4a8fe2b9'),
   user: 'mcp_mongo_rw',
   db: 'admin',
   mechanisms: [
@@ -346,17 +346,6 @@
       resource: {
         db: 'onboarding',
         collection: 'run_tasks'
-      },
-      actions: [
-        'find',
-        'insert',
-        'update'
-      ]
-    },
-    {
-      resource: {
-        db: 'onboarding',
-        collection: 'approvals'
       },
       actions: [
         'find',
@@ -409,17 +398,6 @@
     {
       resource: {
         db: 'onboarding',
-        collection: 'approvals'
-      },
-      actions: [
-        'find',
-        'insert',
-        'update'
-      ]
-    },
-    {
-      resource: {
-        db: 'onboarding',
         collection: 'documents_meta'
       },
       actions: [
@@ -447,17 +425,6 @@
       resource: {
         db: 'onboarding',
         collection: 'run_tasks'
-      },
-      actions: [
-        'find',
-        'insert',
-        'update'
-      ]
-    },
-    {
-      resource: {
-        db: 'onboarding',
-        collection: 'approvals'
       },
       actions: [
         'find',

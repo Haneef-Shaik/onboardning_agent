@@ -16,6 +16,7 @@ from onb_mcp_mongo.db_users import (
     READ_ONLY,
     READ_WRITE,
     PrivilegeError,
+    check_auth_info,
     check_privileges,
     provision,
     role_privileges,
@@ -50,6 +51,41 @@ def test_the_read_write_role_can_find_insert_and_update_but_never_remove() -> No
     assert privileges
     assert all(p["actions"] == ["find", "insert", "update"] for p in privileges)
     assert set(READ_WRITE.collections) <= set(READ_ONLY.collections)
+
+
+def test_approvals_are_not_writable_by_any_mcp_user() -> None:
+    """Approval decisions are human-only (PRD §6.3, FR-H1); a policy bug must not approve a task."""
+    assert "approvals" not in READ_WRITE.collections
+
+
+def _auth(users: list[dict[str, str]], spec: db_users.AccessSpec) -> dict[str, Any]:
+    return {"authenticatedUsers": users, "authenticatedUserPrivileges": role_privileges(spec, DB)}
+
+
+def test_the_connection_check_accepts_the_user_in_admin() -> None:
+    check_auth_info(_auth([{"user": READ_ONLY.user, "db": "admin"}], READ_ONLY), READ_ONLY, DB)
+
+
+@pytest.mark.parametrize(
+    "users",
+    [
+        [],
+        [{"user": READ_ONLY.user, "db": DB}],
+        [{"user": READ_WRITE.user, "db": "admin"}],
+        [{"user": READ_ONLY.user, "db": "admin"}, {"user": "root", "db": "admin"}],
+    ],
+    ids=["unauthenticated", "user-in-app-db", "other-user", "two-users"],
+)
+def test_the_connection_check_refuses_any_other_identity(users: list[dict[str, str]]) -> None:
+    with pytest.raises(PrivilegeError, match="must authenticate as mcp_mongo_ro in admin"):
+        check_auth_info(_auth(users, READ_ONLY), READ_ONLY, DB)
+
+
+def test_the_connection_check_refuses_a_user_missing_part_of_its_role() -> None:
+    auth = _auth([{"user": READ_ONLY.user, "db": "admin"}], READ_ONLY)
+    auth["authenticatedUserPrivileges"] = auth["authenticatedUserPrivileges"][1:]
+    with pytest.raises(PrivilegeError, match="lacks 1 privileges"):
+        check_auth_info(auth, READ_ONLY, DB)
 
 
 def test_the_two_users_and_roles_are_distinct() -> None:

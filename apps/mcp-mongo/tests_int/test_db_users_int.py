@@ -171,6 +171,51 @@ def test_a_find_tool_on_a_denied_collection_with_the_policy_bypassed_is_refused(
     )
 
 
+CROSS_COLLECTION_STAGES: dict[str, list[dict[str, Any]]] = {
+    "lookup": [{"$lookup": {"from": "pii_vault", "localField": "org_id", "foreignField": "org_id", "as": "v"}}],
+    "graphLookup": [
+        {
+            "$graphLookup": {
+                "from": "org_keys",
+                "startWith": "$org_id",
+                "connectFromField": "org_id",
+                "connectToField": "org_id",
+                "as": "k",
+            }
+        }
+    ],
+    "unionWith": [{"$unionWith": {"coll": "pii_vault_aadhaar"}}],
+    "out": [{"$out": "users"}],
+    "merge": [{"$merge": {"into": "pii_access_log"}}],
+}
+
+
+@pytest.mark.parametrize("stage", sorted(CROSS_COLLECTION_STAGES))
+@pytest.mark.parametrize("spec", [READ_ONLY, READ_WRITE], ids=lambda s: s.user)
+def test_no_pipeline_stage_reaches_a_denied_collection_with_a_raw_driver(
+    users: Users, root_db: Any, spec: AccessSpec, stage: str
+) -> None:
+    """No policy and no repository: the MCP user runs the stage straight from a readable collection."""
+    client: RootClient = MongoClient(users.uri(spec))
+    try:
+        with pytest.raises(OperationFailure) as caught:
+            list(client[DATABASE]["run_tasks"].aggregate(CROSS_COLLECTION_STAGES[stage]))
+    finally:
+        client.close()
+    assert caught.value.code == UNAUTHORIZED
+    assert _count(root_db, "users", {"task": "seed"}) == 0
+    assert _count(root_db, "pii_access_log", {"task": "seed"}) == 0
+
+
+def test_the_read_write_user_cannot_decide_an_approval(users: Users, root_db: Any) -> None:
+    root_db["approvals"].insert_one({"org_id": ORG, "approval": "seed", "status": "pending"})
+    _refused(
+        users.write_uri,
+        lambda s: s.tenant("approvals").update_one({"approval": "seed"}, {"$set": {"status": "approved"}}),
+    )
+    assert _count(root_db, "approvals", {"approval": "seed", "status": "pending"}) == 1
+
+
 def test_the_read_write_user_cannot_write_into_a_denied_collection(users: Users, root_db: Any) -> None:
     _refused(users.write_uri, lambda s: s.tenant("pii_vault").insert_one({"marker": "evil-vault"}))
     assert _count(root_db, "pii_vault", {"marker": "evil-vault"}) == 0
@@ -182,6 +227,34 @@ def test_the_read_write_user_cannot_write_into_a_denied_collection(users: Users,
 def test_the_read_only_user_reads_its_collections(users: Users) -> None:
     docs = run(lambda: _as_user(users.read_uri, lambda s: s.tenant("run_tasks").find({"task": "seed"}, limit=5)))
     assert [d["state"] for d in docs] == ["pending"]
+
+
+def test_the_read_only_user_counts_aggregates_and_sorts_its_collections(users: Users) -> None:
+    async def work(store: DataStore) -> tuple[int, list[Any], list[Any]]:
+        repo = store.tenant("run_tasks")
+        total = await repo.count({})
+        groups = await repo.aggregate([{"$group": {"_id": "$state", "n": {"$sum": 1}}}])
+        page = await repo.find({}, projection={"task": 1}, sort=[("task", 1)], skip=0, limit=5)
+        return total, groups, page
+
+    total, groups, page = run(lambda: _as_user(users.read_uri, work))
+    assert total >= 1
+    assert groups
+    assert page
+
+
+def test_the_write_tools_work_on_the_read_write_store(users: Users, root_db: Any) -> None:
+    ctx_insert = _ctx("insert_one", write={"run_tasks"})
+    ctx_update = _ctx("update_one", write={"run_tasks"})
+
+    async def work(store: DataStore) -> None:
+        await tools.insert_one(store, ctx_insert, collection="run_tasks", document={"task": "tool-ok", "state": "new"})
+        await tools.update_one(
+            store, ctx_update, collection="run_tasks", filter={"task": "tool-ok"}, update={"$set": {"state": "done"}}
+        )
+
+    run(lambda: _as_user(users.write_uri, work))
+    assert _count(root_db, "run_tasks", {"task": "tool-ok", "state": "done", "org_id": ORG}) == 1
 
 
 def test_the_read_write_user_inserts_and_updates_its_collections(users: Users, root_db: Any) -> None:

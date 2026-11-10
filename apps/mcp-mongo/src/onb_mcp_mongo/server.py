@@ -39,7 +39,7 @@ TRACER_NAME = "onb_mcp_mongo"
 _log = logging.getLogger("onb_mcp_mongo")
 
 # These reach MongoDB as the read-write user; every other tool as the read-only one (MCP-3).
-WRITE_TOOLS = frozenset({"insert_one", "update_one"})
+WRITE_TOOLS = frozenset(name for name, contract in CONTRACTS.items() if not contract.read_only)
 
 Handler = Callable[..., Awaitable[BaseModel]]
 HANDLERS: dict[str, Handler] = {

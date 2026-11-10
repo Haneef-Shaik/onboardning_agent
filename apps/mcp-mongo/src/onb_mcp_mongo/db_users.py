@@ -26,6 +26,8 @@ from typing import Any, Protocol
 
 from pymongo import MongoClient
 
+from .settings import DEFAULT_DATABASE
+
 __all__ = [
     "DENIED_COLLECTIONS",
     "READ_ONLY",
@@ -33,6 +35,7 @@ __all__ = [
     "AccessSpec",
     "PrivilegeError",
     "assert_least_privilege",
+    "check_auth_info",
     "check_privileges",
     "provision",
     "role_privileges",
@@ -59,7 +62,7 @@ _READABLE = (
     "conversations",
     "messages",
 )
-_WRITABLE = ("new_hires", "run_tasks", "approvals", "documents_meta")
+_WRITABLE = ("new_hires", "run_tasks", "documents_meta")
 
 
 @dataclass(frozen=True)
@@ -145,22 +148,40 @@ def provision(admin: AdminDatabase, database: str, *, read_password: str, write_
         admin.command(verb, spec.user, pwd=password, roles=[{"role": spec.role, "db": ROLE_DATABASE}])
 
 
-def _authenticated_privileges(uri: str) -> tuple[list[str], list[Mapping[str, Any]]]:
+def _auth_info(uri: str) -> Mapping[str, Any]:
     client: MongoClient[dict[str, Any]] = MongoClient(uri, serverSelectionTimeoutMS=10_000)
     try:
-        status = client[ROLE_DATABASE].command("connectionStatus", showPrivileges=True)["authInfo"]
+        status: Mapping[str, Any] = client[ROLE_DATABASE].command("connectionStatus", showPrivileges=True)
     finally:
         client.close()
-    users = [str(u.get("user")) for u in status.get("authenticatedUsers", [])]
-    return users, list(status.get("authenticatedUserPrivileges", []))
+    auth_info: Mapping[str, Any] = status["authInfo"]
+    return auth_info
+
+
+def _grants(privileges: Iterable[Mapping[str, Any]]) -> set[tuple[str, str]]:
+    return {
+        (str(p.get("resource", {}).get("collection")), str(action))
+        for p in privileges
+        for action in p.get("actions", [])
+    }
+
+
+def check_auth_info(auth_info: Mapping[str, Any], spec: AccessSpec, database: str) -> None:
+    """Raise `PrivilegeError` unless the connection is exactly `spec.user` in `admin` holding exactly
+    its role: nothing wider (a policy bug could use it) and nothing missing (calls would fail later)."""
+    users = [(u.get("user"), u.get("db")) for u in auth_info.get("authenticatedUsers", [])]
+    if users != [(spec.user, ROLE_DATABASE)]:
+        raise PrivilegeError(f"the connection must authenticate as {spec.user} in {ROLE_DATABASE} only")
+    privileges = list(auth_info.get("authenticatedUserPrivileges", []))
+    check_privileges(privileges, spec, database)
+    missing = _grants(role_privileges(spec, database)) - _grants(privileges)
+    if missing:
+        raise PrivilegeError(f"{spec.user} lacks {len(missing)} privileges of its role: re-run provisioning")
 
 
 def assert_least_privilege(uri: str, spec: AccessSpec, database: str) -> None:
     """Refuse to serve unless `uri` authenticates as exactly `spec.user`, within its role."""
-    users, privileges = _authenticated_privileges(uri)
-    if users != [spec.user]:
-        raise PrivilegeError(f"the connection must authenticate as {spec.user} only")
-    check_privileges(privileges, spec, database)
+    check_auth_info(_auth_info(uri), spec, database)
 
 
 def _env(env: Mapping[str, str], name: str) -> str:
@@ -178,7 +199,7 @@ def main(env: Mapping[str, str] | None = None) -> None:
     try:
         provision(
             client[ROLE_DATABASE],
-            source.get("MCP_MONGO_DATABASE") or "onboarding",
+            source.get("MCP_MONGO_DATABASE") or DEFAULT_DATABASE,
             read_password=_env(source, "MCP_MONGO_READ_PASSWORD"),
             write_password=_env(source, "MCP_MONGO_WRITE_PASSWORD"),
         )

@@ -107,6 +107,23 @@ MUTATIONS = [
         (("main.py", "write_store=write_store, host", "write_store=store, host"),),
         UNIT,
     ),
+    Mutation(
+        "M9",
+        "approvals become writable by the read-write user (review fix)",
+        (("db_users.py", '_WRITABLE = ("new_hires",', '_WRITABLE = ("approvals", "new_hires",'),),
+    ),
+    Mutation(
+        "M10",
+        "the identity check ignores the user's auth database (review fix)",
+        (("db_users.py", 'users = [(u.get("user"), u.get("db"))', 'users = [(u.get("user"), ROLE_DATABASE)'),),
+        UNIT,
+    ),
+    Mutation(
+        "M11",
+        "the start-up check accepts a user missing part of its role (review fix)",
+        (("db_users.py", "    if missing:\n", "    if False:\n"),),
+        UNIT,
+    ),
 ]
 
 FAILED = re.compile(r"^(FAILED|ERROR) (\S+)", re.MULTILINE)

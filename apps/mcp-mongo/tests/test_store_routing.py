@@ -12,6 +12,7 @@ import pytest
 from mcp import ClientSession
 from mcp.client.streamable_http import streamable_http_client
 from mcp.types import CallToolResult
+from onb_mcp_mongo.contracts import CONTRACTS
 from onb_mcp_mongo.server import WRITE_TOOLS, build_server
 
 from .fakes import FakeDatabase, make_store
@@ -44,6 +45,10 @@ async def _call(read: FakeDatabase, write: FakeDatabase | None, tool: str) -> Ca
 
 def test_the_write_tools_are_insert_one_and_update_one() -> None:
     assert frozenset({"insert_one", "update_one"}) == WRITE_TOOLS
+
+
+def test_every_tool_has_a_routing_case() -> None:
+    assert set(CALLS) == set(CONTRACTS)
 
 
 @pytest.mark.parametrize("tool", sorted(CALLS))
