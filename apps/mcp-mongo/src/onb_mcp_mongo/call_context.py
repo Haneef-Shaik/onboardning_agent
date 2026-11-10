@@ -23,6 +23,7 @@ __all__ = [
     "MIN_KEY_LENGTH",
     "CallContext",
     "CallContextError",
+    "check_key",
     "sign_call_context",
     "verify_call_context",
 ]
@@ -61,7 +62,7 @@ class CallContext:
         return self.read | self.write
 
 
-def _check_key(key: str) -> None:
+def check_key(key: str) -> None:
     if not isinstance(key, str) or len(key) < MIN_KEY_LENGTH:
         raise ValueError(f"the call-context key must be at least {MIN_KEY_LENGTH} characters")
 
@@ -96,7 +97,7 @@ def _from_claims(claims: Mapping[str, Any]) -> CallContext:
 
 def verify_call_context(token: str | None, key: str) -> CallContext:
     """The context in `token`, or `CallContextError`. Only HS256 with `key` is accepted."""
-    _check_key(key)
+    check_key(key)
     if not token:
         raise CallContextError("no call context: mcp-mongo is reached only through the MCP hub")
     try:
@@ -119,7 +120,7 @@ def _sorted(names: Iterable[str]) -> list[str]:
 
 def sign_call_context(ctx: CallContext, key: str, *, lifetime_s: int = DEFAULT_LIFETIME_S) -> str:
     """The header value for `ctx`. Used by the hub (HUB-1) and by tests."""
-    _check_key(key)
+    check_key(key)
     if not 0 < lifetime_s <= MAX_LIFETIME_S:
         raise ValueError(f"lifetime must be 1..{MAX_LIFETIME_S} seconds")
     now = int(time.time())

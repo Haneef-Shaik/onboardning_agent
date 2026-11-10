@@ -5,9 +5,8 @@ from __future__ import annotations
 from typing import Any
 
 import pytest
-from pydantic import ValidationError
-
 from onb_mcp_mongo.contracts import CONTRACTS, MAX_FIND_LIMIT
+from pydantic import ValidationError
 
 TOOLS = {"list_collections", "find", "count", "aggregate", "insert_one", "update_one"}
 
@@ -82,7 +81,10 @@ def test_a_collection_name_outside_the_pattern_is_rejected(name: str) -> None:
     [
         ("list_collections", {}),
         ("find", {"collection": "new_hires", "limit": 100}),
-        ("find", {"collection": "new_hires", "filter": {"a": 1}, "projection": {"a": 1}, "sort": [["a", -1]], "limit": 1}),
+        (
+            "find",
+            {"collection": "new_hires", "filter": {"a": 1}, "projection": {"a": 1}, "sort": [["a", -1]], "limit": 1},
+        ),
         ("count", {"collection": "new_hires", "filter": {}}),
         ("aggregate", {"collection": "new_hires", "pipeline": [{"$match": {}}]}),
         ("insert_one", {"collection": "run_tasks", "document": {"title": "x"}}),

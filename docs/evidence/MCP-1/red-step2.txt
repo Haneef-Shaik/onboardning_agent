@@ -1,0 +1,6 @@
+E   ModuleNotFoundError: No module named 'onb_mcp_mongo.server'
+=========================== short test summary info ============================
+ERROR apps/mcp-mongo/tests/test_server.py
+ERROR apps/mcp-mongo/tests/test_spans.py
+!!!!!!!!!!!!!!!!!!! Interrupted: 2 errors during collection !!!!!!!!!!!!!!!!!!!!
+2 errors in 0.36s

@@ -8,11 +8,10 @@ from __future__ import annotations
 
 import pytest
 from bson import ObjectId
-
 from onb_mcp_mongo.call_context import CallContext
 from onb_mcp_mongo.policy import (
     ALLOWED_STAGES,
-    ToolRejected,
+    ToolRejectedError,
     check_pipeline,
     check_readable,
     check_writable,
@@ -46,7 +45,7 @@ CTX = CallContext(
     ],
 )
 def test_org_id_anywhere_is_rejected(value: object) -> None:
-    with pytest.raises(ToolRejected) as caught:
+    with pytest.raises(ToolRejectedError) as caught:
         reject_org_id(value, "filter")
     assert caught.value.reason == "org_id_not_allowed"
 
@@ -57,7 +56,7 @@ def test_values_without_org_id_pass(value: object) -> None:
 
 
 def test_the_rejection_names_the_argument_but_not_the_value() -> None:
-    with pytest.raises(ToolRejected) as caught:
+    with pytest.raises(ToolRejectedError) as caught:
         reject_org_id({"org_id": "secret-org-value"}, "filter")
     assert "filter" in str(caught.value)
     assert "secret-org-value" not in str(caught.value)
@@ -66,14 +65,14 @@ def test_the_rejection_names_the_argument_but_not_the_value() -> None:
 def test_readable_collections_come_from_the_context() -> None:
     check_readable(CTX, "new_hires")
     check_readable(CTX, "run_tasks")  # writable implies readable
-    with pytest.raises(ToolRejected) as caught:
+    with pytest.raises(ToolRejectedError) as caught:
         check_readable(CTX, "pii_vault")
     assert caught.value.reason == "collection_not_allowed"
 
 
 def test_writable_collections_come_from_the_context() -> None:
     check_writable(CTX, "run_tasks")
-    with pytest.raises(ToolRejected) as caught:
+    with pytest.raises(ToolRejectedError) as caught:
         check_writable(CTX, "new_hires")
     assert caught.value.reason == "collection_not_allowed"
 
@@ -90,14 +89,14 @@ def test_an_allowlisted_pipeline_passes() -> None:
 
 @pytest.mark.parametrize("stage", ["$lookup", "$out", "$merge", "$unionWith", "$graphLookup", "$facet", "$set"])
 def test_a_stage_off_the_allowlist_is_rejected(stage: str) -> None:
-    with pytest.raises(ToolRejected) as caught:
+    with pytest.raises(ToolRejectedError) as caught:
         check_pipeline([{"$match": {}}, {stage: {}}])
     assert caught.value.reason == "stage_not_allowed"
 
 
 @pytest.mark.parametrize("pipeline", [[{}], [{"$match": {}, "$sort": {"a": 1}}], [{"match": {}}]])
 def test_a_malformed_stage_is_rejected(pipeline: list[dict[str, object]]) -> None:
-    with pytest.raises(ToolRejected) as caught:
+    with pytest.raises(ToolRejectedError) as caught:
         check_pipeline(pipeline)
     assert caught.value.reason == "invalid_stage"
 

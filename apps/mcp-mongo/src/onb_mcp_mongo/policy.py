@@ -2,7 +2,7 @@
 
 MCP-1 owns: `org_id` never comes from the agent, collections come from the call context, aggregate
 stages are allowlisted. The recursive operator validator (`$where`, `pii.*` and the rest) is MCP-2.
-Every function leaves its input unchanged. A `ToolRejected` names the argument, never its value.
+Every function leaves its input unchanged. A `ToolRejectedError` names the argument, never its value.
 """
 
 from __future__ import annotations
@@ -18,9 +18,10 @@ from .call_context import CallContext
 __all__ = [
     "ALLOWED_STAGES",
     "ORG_FIELD",
-    "ToolRejected",
+    "ToolRejectedError",
     "check_pipeline",
     "check_readable",
+    "check_update_operators",
     "check_writable",
     "decode_ids",
     "reject_org_id",
@@ -31,7 +32,7 @@ ALLOWED_STAGES = frozenset({"$match", "$project", "$group", "$sort", "$limit", "
 _HEX24 = re.compile(r"[0-9a-fA-F]{24}")
 
 
-class ToolRejected(Exception):
+class ToolRejectedError(Exception):
     """A call refused by policy. `reason` is a stable code for spans and audit."""
 
     def __init__(self, reason: str, message: str) -> None:
@@ -54,25 +55,33 @@ def _mentions_org(node: object) -> bool:
 def reject_org_id(value: object, argument: str) -> None:
     """Refuse `org_id` as a key at any depth (and as a `$rename` target): tenant scope is the hub's."""
     if _mentions_org(value):
-        raise ToolRejected("org_id_not_allowed", f"{argument} may not name org_id: tenant scope comes from the hub")
+        raise ToolRejectedError(
+            "org_id_not_allowed", f"{argument} may not name org_id: tenant scope comes from the hub"
+        )
 
 
 def check_readable(ctx: CallContext, collection: str) -> None:
     if collection not in ctx.readable:
-        raise ToolRejected("collection_not_allowed", "collection is not readable by this agent")
+        raise ToolRejectedError("collection_not_allowed", "collection is not readable by this agent")
 
 
 def check_writable(ctx: CallContext, collection: str) -> None:
     if collection not in ctx.write:
-        raise ToolRejected("collection_not_allowed", "collection is not writable by this agent")
+        raise ToolRejectedError("collection_not_allowed", "collection is not writable by this agent")
 
 
 def check_pipeline(pipeline: Sequence[Mapping[str, Any]]) -> None:
     for stage in pipeline:
         if not isinstance(stage, Mapping) or len(stage) != 1 or not str(next(iter(stage))).startswith("$"):
-            raise ToolRejected("invalid_stage", "each pipeline stage must be one $stage operator")
+            raise ToolRejectedError("invalid_stage", "each pipeline stage must be one $stage operator")
         if next(iter(stage)) not in ALLOWED_STAGES:
-            raise ToolRejected("stage_not_allowed", "pipeline stage is not on the allowlist")
+            raise ToolRejectedError("stage_not_allowed", "pipeline stage is not on the allowlist")
+
+
+def check_update_operators(update: Mapping[str, Any]) -> None:
+    """An update is operators only (`$set`, `$inc`, ...): a replacement document could drop fields."""
+    if not update or not all(isinstance(op, str) and op.startswith("$") for op in update):
+        raise ToolRejectedError("invalid_update", "an update must use update operators such as $set")
 
 
 def _as_object_id(node: Mapping[str, Any]) -> ObjectId | None:

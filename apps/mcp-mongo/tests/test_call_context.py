@@ -6,7 +6,6 @@ import time
 
 import jwt
 import pytest
-
 from onb_mcp_mongo.call_context import (
     AUDIENCE,
     ISSUER,
@@ -98,7 +97,7 @@ def test_a_context_for_another_audience_or_issuer_is_refused() -> None:
 
 
 def test_an_unsigned_context_is_refused() -> None:
-    token = jwt.encode(_claims(), None, algorithm="none")
+    token = jwt.encode(_claims(), "", algorithm="none")
     with pytest.raises(CallContextError):
         verify_call_context(token, KEY)
 
