@@ -1,0 +1,37 @@
+
+==================================== ERRORS ====================================
+_____________ ERROR collecting libs/py-data/tests/test_context.py ______________
+ImportError while importing test module '/Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-t-1/libs/py-data/tests/test_context.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+libs/py-data/tests/test_context.py:9: in <module>
+    from onb_data import NoTenantContext, TenantContext, current_tenant, tenant_scope
+E   ImportError: cannot import name 'NoTenantContext' from 'onb_data' (/Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-t-1/libs/py-data/src/onb_data/__init__.py)
+_____________ ERROR collecting libs/py-data/tests/test_exports.py ______________
+ImportError while importing test module '/Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-t-1/libs/py-data/tests/test_exports.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+libs/py-data/tests/test_exports.py:24: in <module>
+    from onb_data import GlobalRepository, TenantRepository, connect
+E   ImportError: cannot import name 'GlobalRepository' from 'onb_data' (/Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-t-1/libs/py-data/src/onb_data/__init__.py)
+____________ ERROR collecting libs/py-data/tests/test_repository.py ____________
+ImportError while importing test module '/Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-t-1/libs/py-data/tests/test_repository.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+libs/py-data/tests/test_repository.py:15: in <module>
+    from onb_data import NotFound, NoTenantContext, TenantRepository, TenantViolation, tenant_scope
+E   ImportError: cannot import name 'NotFound' from 'onb_data' (/Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-t-1/libs/py-data/src/onb_data/__init__.py)
+______________ ERROR collecting libs/py-data/tests/test_store.py _______________
+ImportError while importing test module '/Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-t-1/libs/py-data/tests/test_store.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+libs/py-data/tests/test_store.py:10: in <module>
+    from onb_data import (
+E   ImportError: cannot import name 'GLOBAL_COLLECTIONS' from 'onb_data' (/Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-t-1/libs/py-data/src/onb_data/__init__.py)
+=========================== short test summary info ============================
+ERROR libs/py-data/tests/test_context.py
+ERROR libs/py-data/tests/test_exports.py
+ERROR libs/py-data/tests/test_repository.py
+ERROR libs/py-data/tests/test_store.py
+!!!!!!!!!!!!!!!!!!! Interrupted: 4 errors during collection !!!!!!!!!!!!!!!!!!!!
+4 errors in 0.12s
