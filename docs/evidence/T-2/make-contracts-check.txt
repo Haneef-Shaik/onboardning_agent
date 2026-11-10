@@ -1,0 +1,4 @@
+# make contracts-check, 2026-11-10T18:22:07Z, goal/t-2-query-safety-net @ 7d6d922
+uv run --frozen python scripts/contracts.py check
+contracts-check: openapi.json and the TS client are up to date
+make contracts-check exit=0
