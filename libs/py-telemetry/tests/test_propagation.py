@@ -81,3 +81,13 @@ def test_continue_from_sets_attributes_and_kind(telemetry: CapturedTelemetry) ->
     resume = next(s for s in telemetry.spans() if s.name == "resume")
     assert resume.kind is trace.SpanKind.CONSUMER
     assert dict(resume.attributes or {}) == {"run_id": "run_1"}
+
+
+@pytest.mark.parametrize("stored", [None, "garbage"])
+def test_bad_traceparent_never_adopts_the_ambient_span(telemetry: CapturedTelemetry, stored: str | None) -> None:
+    """The stored record decides the parent: a damaged one starts a new trace, even inside a span."""
+    tracer = trace.get_tracer("test")
+    with tracer.start_as_current_span("ambient") as ambient, continue_from(stored, "orphan") as orphan:
+        assert orphan.get_span_context().trace_id != ambient.get_span_context().trace_id
+    by_name = {s.name: s for s in telemetry.spans()}
+    assert by_name["orphan"].parent is None

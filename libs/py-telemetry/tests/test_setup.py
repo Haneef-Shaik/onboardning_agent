@@ -16,9 +16,15 @@ from onb_telemetry.settings import TelemetrySettings
 from onb_telemetry.testing import CapturedTelemetry, captured_telemetry, reset_telemetry_globals
 from opentelemetry import trace
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
-from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace import ReadableSpan, TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExporter, SimpleSpanProcessor
 from opentelemetry.trace import SpanKind
+
+FASTAPI_SCOPE = "opentelemetry.instrumentation.fastapi"
+
+
+def _scope(span: ReadableSpan) -> str | None:
+    return span.instrumentation_scope.name if span.instrumentation_scope else None
 
 
 @pytest.fixture
@@ -145,7 +151,8 @@ def test_fastapi_app_created_after_init_gets_server_spans() -> None:
         response = TestClient(app).get("/ping")
         assert response.status_code == 200
         server = [s for s in captured.spans() if s.kind is SpanKind.SERVER]
-        assert [s.name for s in server] == ["GET /ping"]
+        # FastAPI also has native tracing (scope "fastapi"); the span must come from the instrumentation.
+        assert [(s.name, _scope(s)) for s in server] == [("GET /ping", FASTAPI_SCOPE)]
         assert server[0].resource.attributes["service.name"] == "svc-api"
 
 
@@ -166,7 +173,8 @@ def test_instrument_app_covers_an_app_built_before_init() -> None:
     with captured_telemetry("svc-early", instrument=False) as captured:
         instrument_app(app)
         TestClient(app).get("/early")
-        assert [s.name for s in captured.spans() if s.kind is SpanKind.SERVER] == ["GET /early"]
+        server = [(s.name, _scope(s)) for s in captured.spans() if s.kind is SpanKind.SERVER]
+        assert server == [("GET /early", FASTAPI_SCOPE)]
 
 
 def test_instrument_app_without_init_is_an_error() -> None:

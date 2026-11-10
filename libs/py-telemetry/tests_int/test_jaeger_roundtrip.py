@@ -65,14 +65,14 @@ def _jaeger_trace(jaeger: str, trace_id: str) -> dict[str, Any] | None:
         raise
 
 
-def _spans(body: dict[str, Any]) -> list[tuple[str, str, dict[str, Any]]]:
-    """(service.name, span name, span) for every span in an OTLP-JSON Jaeger v3 response."""
-    found: list[tuple[str, str, dict[str, Any]]] = []
+def _spans(body: dict[str, Any]) -> list[tuple[str, str, str, dict[str, Any]]]:
+    """(service.name, scope, span name, span) for every span in an OTLP-JSON Jaeger v3 response."""
+    found: list[tuple[str, str, str, dict[str, Any]]] = []
     for resource_spans in body["result"]["resourceSpans"]:
         attrs = {a["key"]: a["value"] for a in resource_spans["resource"]["attributes"]}
         service = attrs["service.name"]["stringValue"]
         for scope in resource_spans["scopeSpans"]:
-            found.extend((service, span["name"], span) for span in scope["spans"])
+            found.extend((service, scope["scope"]["name"], span["name"], span) for span in scope["spans"])
     return found
 
 
@@ -112,10 +112,11 @@ def test_fastapi_span_is_returned_by_jaeger_through_the_collector(tunnels: Tunne
     body = _wait_for_trace(tunnels.open("jaeger", 16686), trace_id)
 
     spans = _spans(body)
-    names = {(svc, name) for svc, name, _ in spans}
-    assert (service, "GET /ping") in names
-    assert (service, "f4.resumed-after-wait") in names  # the continuation joined the same trace
-    server_json = next(s for svc, name, s in spans if name == "GET /ping")
+    names = {(svc, scope, name) for svc, scope, name, _ in spans}
+    # From the auto-instrumentation init_telemetry turned on, not FastAPI's native tracing.
+    assert (service, "opentelemetry.instrumentation.fastapi", "GET /ping") in names
+    assert (service, "onb_telemetry", "f4.resumed-after-wait") in names  # the continuation joined the trace
+    server_json = next(s for _, _, name, s in spans if name == "GET /ping")
     assert server_json["traceId"].lower() == trace_id
     print(f"\nJaeger returned trace {trace_id} for service {service}: {sorted(names)}")
 
