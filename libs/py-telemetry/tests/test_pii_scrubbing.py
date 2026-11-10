@@ -282,6 +282,7 @@ def test_init_telemetry_installs_log_scrubbing_by_default(
 
 def test_init_telemetry_adds_the_log_filter_to_the_root_handlers_and_shutdown_removes_it() -> None:
     reset_telemetry_globals()
+    original_make_record = logging.Logger.makeRecord
     root_handler = logging.NullHandler()
     logging.getLogger().addHandler(root_handler)
     try:
@@ -289,8 +290,9 @@ def test_init_telemetry_adds_the_log_filter_to_the_root_handlers_and_shutdown_re
         assert any(isinstance(f, PiiScrubbingLogFilter) for f in root_handler.filters)
         handle.shutdown()
         assert not any(isinstance(f, PiiScrubbingLogFilter) for f in root_handler.filters)
-        assert _record("pan %s", PAN).getMessage() == f"pan {PAN}"  # record factory restored
-        assert logging.getLogRecordFactory() is logging.LogRecord
+        assert logging.Logger.makeRecord is original_make_record
+        made = logging.getLogger("obs-1.after").makeRecord("x", logging.INFO, __file__, 1, "pan %s", (PAN,), None)
+        assert made.getMessage() == f"pan {PAN}"  # no longer scrubbed: the process is back as it was
     finally:
         logging.getLogger().removeHandler(root_handler)
         reset_telemetry_globals()
