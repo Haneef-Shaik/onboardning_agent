@@ -1,0 +1,4 @@
+ERROR libs/py-crypto/tests/test_vault.py
+ERROR libs/py-crypto/tests/test_vault_aadhaar.py
+!!!!!!!!!!!!!!!!!!! Interrupted: 2 errors during collection !!!!!!!!!!!!!!!!!!!!
+2 errors in 0.22s

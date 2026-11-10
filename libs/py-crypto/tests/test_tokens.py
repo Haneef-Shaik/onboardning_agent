@@ -46,7 +46,7 @@ def test_tokens_use_secrets_for_every_random_bit(monkeypatch: pytest.MonkeyPatch
         calls.append(n)
         return bytes([0xFF]) * n
 
-    monkeypatch.setattr(tokens.secrets, "token_bytes", fake_token_bytes)
+    monkeypatch.setattr("onb_crypto.tokens.secrets.token_bytes", fake_token_bytes)
     token = new_token(now=_EPOCH_2026)
     assert calls == [10, 16], "80 ULID bits and 128 extra bits, both from secrets.token_bytes"
     assert _decode(token[14:30]) == 2**80 - 1

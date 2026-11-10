@@ -8,7 +8,13 @@ __all__ = [
     "KeyVersionConflictError",
     "MasterKeyError",
     "NoOrgKeysError",
+    "SupersededTokenError",
+    "TokenBindingError",
+    "TokenNotFoundError",
     "UnknownKeyVersionError",
+    "VaultConflictError",
+    "VaultError",
+    "VaultIntegrityError",
 ]
 
 
@@ -42,3 +48,28 @@ class KeyVersionConflictError(CryptoError):
 
 class KeyRewrapConflictError(CryptoError):
     """A master-key re-wrap could not complete cleanly (a concurrent change); run it again."""
+
+
+class VaultError(CryptoError):
+    """Base class for vault failures. A read that raises one releases no value (fails closed)."""
+
+
+class VaultIntegrityError(VaultError):
+    """A vault record is malformed, in the wrong partition, or its `sig` does not verify: it was
+    changed outside the vault (PRD §7.10 Integrity)."""
+
+
+class TokenNotFoundError(VaultError):
+    """No record with that token in this org and partition (or the token is not one the vault issues)."""
+
+
+class TokenBindingError(VaultError):
+    """The record is intact but belongs to another subject or field than the reader expected."""
+
+
+class SupersededTokenError(VaultError):
+    """The token's value was replaced by a newer version; read it only with `allow_superseded=True`."""
+
+
+class VaultConflictError(VaultError):
+    """Another write to the same subject and field won the race; reload and try again."""
