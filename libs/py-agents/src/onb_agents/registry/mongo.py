@@ -42,8 +42,12 @@ class MongoRegistryStore:
     async def agent(self, name: str) -> Document | None:
         return await self._store.shared(AGENT_REGISTRY).find_one({"_id": name})
 
-    async def insert_agent(self, document: Document) -> None:
-        await self._store.shared(AGENT_REGISTRY).insert_one(document)
+    async def insert_agent(self, document: Document) -> bool:
+        try:
+            await self._store.shared(AGENT_REGISTRY).insert_one(document)
+        except DuplicateKeyError:
+            return False
+        return True
 
     async def replace_agent(self, name: str, expected_version: int, document: Document) -> bool:
         outcome = await self._store.shared(AGENT_REGISTRY).update_one(

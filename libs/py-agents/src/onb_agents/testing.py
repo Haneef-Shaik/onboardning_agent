@@ -35,11 +35,12 @@ class InMemoryRegistryStore:
         found = self._agents.get(name)
         return None if found is None else copy.deepcopy(found)
 
-    async def insert_agent(self, document: Document) -> None:
+    async def insert_agent(self, document: Document) -> bool:
         name = str(document["_id"])
         if name in self._agents:
-            raise KeyError(f"duplicate key {name}")
+            return False
         self._agents = {**self._agents, name: copy.deepcopy(document)}
+        return True
 
     async def replace_agent(self, name: str, expected_version: int, document: Document) -> bool:
         current = self._agents.get(name)

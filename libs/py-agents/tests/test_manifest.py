@@ -108,7 +108,7 @@ def test_the_forbidden_names_are_the_vault_the_keys_and_the_access_log() -> None
         (("mcp", "mongo", "tools"), ["find", "drop"], "drop"),
         (("mcp", "mongo", "tools"), [], "tool"),
         (("mcp", "mongo", "tools"), ["find", "find"], "repeat"),
-        (("mcp", "mongo", "collections", "write"), ["run_tasks", "onboarding_runs"], "read"),
+        (("mcp", "mongo", "collections"), {"read": ["run_tasks"], "write": ["run_tasks", "documents_meta"]}, "read"),
         (("mcp", "mongo", "collections"), {"read": ["run_tasks"], "write": []}, "write"),
         (("mcp", "mongo", "collections"), {"read": ["users"], "write": []}, "users"),
         (("mcp", "mongo", "collections"), {"read": ["audit_log"], "write": []}, "audit_log"),

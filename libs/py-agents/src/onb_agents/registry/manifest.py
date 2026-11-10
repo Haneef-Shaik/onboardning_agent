@@ -19,13 +19,16 @@ The registry owns `version`: a manifest file does not carry one, and each change
 Rules beyond the shape:
 - No string anywhere in a manifest may name `pii_vault*`, `org_keys` or `pii_access_log`. The vault is
   unreachable through MCP (§7.4, §7.10), so no manifest can even ask for it.
-- Collections are only granted on the `mongo` server, only for tenant collections an agent may use (no
-  global, append-only, queue or `users` collection), and `write` must be a subset of `read`.
+- Collections are only granted on the `mongo` server, only from an allowlist of tenant collections
+  (`AGENT_READABLE_COLLECTIONS`; writes only to `AGENT_WRITABLE_COLLECTIONS`), and `write` must be a
+  subset of `read`.
   Mongo tools come from the server's tool set (§7.5); a write tool needs write collections, and
   write collections need a write tool.
 - `requires_approval` names a granted tool (`create_bitbucket_account`) or, for Mongo writes,
   `tool:collection` where the agent may write that collection (`update_one:documents_meta`).
-- `llm` has the shape of `onb_llm.LLMSelection`, and may set only sampling params.
+- `llm` has the shape of `onb_llm.LLMSelection`, and may set only typed, bounded sampling params.
+- Every string is strict: a YAML value that is not text (`!!binary`, a number) is refused, never
+  coerced, and the vault check runs again on the parsed manifest.
 
 Errors are `ManifestError` with a message naming the field, never a stack of Pydantic internals.
 """
@@ -39,9 +42,20 @@ from collections.abc import Iterator, Mapping
 from typing import Annotated, Any, Self
 
 from onb_data import APPEND_ONLY_COLLECTIONS, GLOBAL_COLLECTIONS, QUEUE_COLLECTIONS
-from pydantic import BaseModel, ConfigDict, Field, StringConstraints, ValidationError, field_validator, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    StrictStr,
+    StringConstraints,
+    ValidationError,
+    field_validator,
+    model_validator,
+)
 
 __all__ = [
+    "AGENT_READABLE_COLLECTIONS",
+    "AGENT_WRITABLE_COLLECTIONS",
     "FORBIDDEN_NAMES",
     "MONGO_READ_TOOLS",
     "MONGO_SERVER",
@@ -50,6 +64,7 @@ __all__ = [
     "SELECTION_PARAMS",
     "AgentManifest",
     "CollectionGrant",
+    "LLMParams",
     "Limits",
     "ManifestError",
     "ManifestLLM",
@@ -58,7 +73,8 @@ __all__ = [
     "parse_manifest",
 ]
 
-# Never grantable, matched as a prefix of any identifier in the manifest (`pii_vault_aadhaar` too).
+# Never grantable, matched anywhere inside any identifier in the manifest (`pii_vault_aadhaar`,
+# `x_pii_vault` too).
 FORBIDDEN_NAMES = ("pii_vault", "org_keys", "pii_access_log")
 
 MONGO_SERVER = "mongo"
@@ -66,9 +82,26 @@ MONGO_READ_TOOLS = frozenset({"list_collections", "find", "count", "aggregate"})
 MONGO_WRITE_TOOLS = frozenset({"insert_one", "update_one"})
 MONGO_TOOLS = MONGO_READ_TOOLS | MONGO_WRITE_TOOLS
 
-# Tenant collections no manifest may list: the logins' user records, and every collection that is not
-# an agent's to read (global, append-only and queue collections).
-_NOT_GRANTABLE = frozenset({"users"}) | GLOBAL_COLLECTIONS | APPEND_ONLY_COLLECTIONS | QUEUE_COLLECTIONS
+# The only tenant collections a manifest may grant: an allowlist, the same sets the MCP database users
+# hold (`onb_mcp_mongo.db_users`, MCP-3; a test keeps them equal). Templates, approvals and checkpoints
+# are not writable: publishing and deciding stay with humans (PRD U1, U5).
+AGENT_READABLE_COLLECTIONS = frozenset(
+    {
+        "new_hires",
+        "onboarding_runs",
+        "run_tasks",
+        "approvals",
+        "documents_meta",
+        "templates",
+        "template_versions",
+        "knowledge_docs",
+        "conversations",
+        "messages",
+    }
+)
+AGENT_WRITABLE_COLLECTIONS = frozenset({"new_hires", "run_tasks", "documents_meta"})
+# Never grantable, whatever the allowlists above say (defence in depth).
+_NEVER_GRANTABLE = frozenset({"users"}) | GLOBAL_COLLECTIONS | APPEND_ONLY_COLLECTIONS | QUEUE_COLLECTIONS
 
 # Same rule as onb_llm.resolution.SELECTION_PARAMS (a test keeps them equal): provider wiring comes
 # only from llm.yaml.
@@ -77,9 +110,13 @@ SELECTION_PARAMS = frozenset({"temperature", "max_tokens", "top_p", "stop"})
 _IDENTIFIER = r"^[a-z][a-z0-9_]{0,63}$"
 _WORDS = re.compile(r"[a-z0-9_]+")
 
-Identifier = Annotated[str, StringConstraints(pattern=_IDENTIFIER)]
-MemoryScope = Annotated[str, StringConstraints(pattern=r"^[a-z][a-z0-9_]*:[a-z][a-z0-9_]*$", max_length=64)]
-ApprovalRule = Annotated[str, StringConstraints(pattern=r"^[a-z][a-z0-9_]*(?::[a-z][a-z0-9_]*)?$", max_length=128)]
+# Strict strings: a YAML value that is not text is refused, never coerced into a name.
+Identifier = Annotated[StrictStr, StringConstraints(pattern=_IDENTIFIER)]
+MemoryScope = Annotated[StrictStr, StringConstraints(pattern=r"^[a-z][a-z0-9_]*:[a-z][a-z0-9_]*$", max_length=64)]
+ApprovalRule = Annotated[
+    StrictStr, StringConstraints(pattern=r"^[a-z][a-z0-9_]*(?::[a-z][a-z0-9_]*)?$", max_length=128)
+]
+Text = Annotated[StrictStr, StringConstraints(min_length=1, max_length=500, strip_whitespace=True)]
 
 _FROZEN = ConfigDict(frozen=True, extra="forbid")
 
@@ -89,13 +126,15 @@ class ManifestError(ValueError):
 
 
 def names_a_forbidden_collection(text: str) -> bool:
-    """Whether any identifier in `text` is, or starts with, a forbidden name (case-insensitive)."""
-    return any(word.startswith(FORBIDDEN_NAMES) for word in _WORDS.findall(text.lower()))
+    """Whether any identifier in `text` contains a forbidden name (case-insensitive)."""
+    return any(name in word for word in _WORDS.findall(text.lower()) for name in FORBIDDEN_NAMES)
 
 
 def _strings(value: Any) -> Iterator[str]:
     if isinstance(value, str):
         yield value
+    elif isinstance(value, bytes | bytearray):
+        yield bytes(value).decode("utf-8", errors="replace")
     elif isinstance(value, Mapping):
         for key, item in value.items():
             yield str(key)
@@ -112,6 +151,23 @@ def _unique(values: tuple[str, ...], what: str) -> tuple[str, ...]:
     return values
 
 
+class LLMParams(BaseModel):
+    """Sampling params only (`SELECTION_PARAMS`), typed and bounded; provider settings live in llm.yaml."""
+
+    model_config = _FROZEN
+
+    temperature: Annotated[float, Field(ge=0, le=2, strict=True)] | None = None
+    max_tokens: Annotated[int, Field(ge=1, le=200_000, strict=True)] | None = None
+    top_p: Annotated[float, Field(gt=0, le=1, strict=True)] | None = None
+    stop: tuple[Annotated[StrictStr, StringConstraints(min_length=1, max_length=32)], ...] | None = Field(
+        default=None, max_length=4
+    )
+
+    def values(self) -> dict[str, Any]:
+        """The params that are set, as plain data."""
+        return self.model_dump(mode="json", exclude_none=True)
+
+
 class ManifestLLM(BaseModel):
     """`llm:`: an alias from llm.yaml, or an explicit connector and model (both from configuration)."""
 
@@ -119,8 +175,8 @@ class ManifestLLM(BaseModel):
 
     alias: Identifier | None = None
     connector: Identifier | None = None
-    model: Annotated[str, StringConstraints(min_length=1, max_length=256, strip_whitespace=True)] | None = None
-    params: dict[str, Any] = Field(default_factory=dict)
+    model: Annotated[StrictStr, StringConstraints(min_length=1, max_length=256, strip_whitespace=True)] | None = None
+    params: LLMParams = Field(default_factory=LLMParams)
 
     @model_validator(mode="after")
     def _alias_xor_connector_and_model(self) -> Self:
@@ -129,9 +185,6 @@ class ManifestLLM(BaseModel):
                 raise ValueError("give either `alias` or `connector` and `model`, not both")
         elif self.connector is None or self.model is None:
             raise ValueError("give `alias`, or both `connector` and `model`")
-        extra = sorted(set(self.params) - SELECTION_PARAMS)
-        if extra:
-            raise ValueError(f"params may only set {', '.join(sorted(SELECTION_PARAMS))}, not {', '.join(extra)}")
         return self
 
 
@@ -144,13 +197,16 @@ class CollectionGrant(BaseModel):
     @field_validator("read", "write")
     @classmethod
     def _grantable(cls, value: tuple[str, ...]) -> tuple[str, ...]:
-        refused = sorted(set(value) & _NOT_GRANTABLE)
+        refused = sorted((set(value) - AGENT_READABLE_COLLECTIONS) | (set(value) & _NEVER_GRANTABLE))
         if refused:
             raise ValueError(f"{', '.join(refused)} cannot be granted to an agent")
         return _unique(value, "collections")
 
     @model_validator(mode="after")
     def _write_within_read(self) -> Self:
+        not_writable = sorted(set(self.write) - AGENT_WRITABLE_COLLECTIONS)
+        if not_writable:
+            raise ValueError(f"{', '.join(not_writable)} cannot be written by an agent")
         outside = sorted(set(self.write) - set(self.read))
         if outside:
             raise ValueError(f"write collections must also be read collections: {', '.join(outside)}")
@@ -183,7 +239,7 @@ class AgentManifest(BaseModel):
     model_config = _FROZEN
 
     name: Identifier
-    purpose: Annotated[str, StringConstraints(min_length=1, max_length=500, strip_whitespace=True)]
+    purpose: Text
     llm: ManifestLLM
     mcp: dict[Identifier, McpGrant] = Field(default_factory=dict)
     tools: tuple[Identifier, ...] = ()
@@ -203,6 +259,21 @@ class AgentManifest(BaseModel):
     @classmethod
     def _unique_entries(cls, value: tuple[str, ...]) -> tuple[str, ...]:
         return _unique(value, "entries")
+
+    @model_validator(mode="after")
+    def _still_never_names_the_vault(self) -> Self:
+        """The same check on the parsed manifest, so no coercion can bring a vault name in."""
+        named = sorted({s for s in _strings(self.document()) if names_a_forbidden_collection(s)})
+        if named:
+            raise ValueError(f"a manifest may not name a vault collection ({', '.join(named)})")
+        return self
+
+    @model_validator(mode="after")
+    def _llm_within_limits(self) -> Self:
+        max_tokens = self.llm.params.max_tokens
+        if max_tokens is not None and max_tokens > self.limits.max_tokens:
+            raise ValueError("llm.params.max_tokens may not exceed limits.max_tokens")
+        return self
 
     @model_validator(mode="after")
     def _grants_are_consistent(self) -> Self:
@@ -229,7 +300,7 @@ class AgentManifest(BaseModel):
 
     def document(self) -> dict[str, Any]:
         """The manifest as plain JSON data, as stored in the registry."""
-        return self.model_dump(mode="json")
+        return self.model_dump(mode="json", exclude_none=True)
 
     def sha256(self) -> str:
         """A content hash independent of key order, so an unchanged file never bumps the version."""

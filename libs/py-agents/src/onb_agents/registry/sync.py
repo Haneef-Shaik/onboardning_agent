@@ -25,7 +25,7 @@ from typing import Any, Literal, Protocol
 from onb_data import Actor, Auditor, AuditOutcome, tenant_scope
 
 from .catalog import ToolCatalog
-from .manifest import AgentManifest, parse_manifest
+from .manifest import AgentManifest, ManifestError, parse_manifest
 
 __all__ = [
     "CATALOG_ID",
@@ -63,7 +63,9 @@ class RegistryStore(Protocol):
 
     async def agent(self, name: str) -> Document | None: ...
 
-    async def insert_agent(self, document: Document) -> None: ...
+    async def insert_agent(self, document: Document) -> bool:
+        """Insert a new agent; False when one with that name already exists."""
+        ...
 
     async def replace_agent(self, name: str, expected_version: int, document: Document) -> bool:
         """Store `document` only if the stored version is still `expected_version`."""
@@ -82,7 +84,8 @@ class RegistryStore(Protocol):
 
 @dataclass(frozen=True, slots=True)
 class RegisteredAgent:
-    """One stored agent. `manifest` is re-validated on read, so a tampered record cannot load."""
+    """One stored agent. On read the manifest is re-validated and must match its stored hash and name,
+    so a tampered record cannot load (`ManifestError`)."""
 
     name: str
     version: int
@@ -93,12 +96,16 @@ class RegisteredAgent:
 
     @classmethod
     def from_document(cls, document: Mapping[str, Any]) -> RegisteredAgent:
+        name = str(document["_id"])
+        manifest = parse_manifest(document["manifest"])
+        if manifest.name != name or manifest.sha256() != document["sha256"]:
+            raise ManifestError(f"the stored record of {name} does not match its manifest hash")
         return cls(
-            name=str(document["_id"]),
+            name=name,
             version=int(document["version"]),
             sha256=str(document["sha256"]),
             active=bool(document["active"]),
-            manifest=parse_manifest(document["manifest"]),
+            manifest=manifest,
             updated_at=document["updated_at"],
         )
 
@@ -235,8 +242,7 @@ class AgentRegistry:
         if change.kind == "catalog_update":
             stored = await self._store.put_catalog(write.expected_version, write.document)
         elif write.expected_version is None:
-            await self._store.insert_agent(write.document)
-            stored = True
+            stored = await self._store.insert_agent(write.document)
         else:
             stored = await self._store.replace_agent(change.name, write.expected_version, write.document)
         if not stored:

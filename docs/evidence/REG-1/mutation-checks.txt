@@ -1,0 +1,68 @@
+M1 vault validators (before and after parse) off: CAUGHT · 10 failed, 35 passed in 0.51s
+    test_a_manifest_listing_a_vault_collection_to_read_is_rejected[org_keys]
+    test_a_manifest_listing_a_vault_collection_to_read_is_rejected[pii_access_log]
+    test_a_manifest_listing_a_vault_collection_to_read_is_rejected[PII_VAULT]
+M2 vault match case-sensitive: CAUGHT · 2 failed, 43 passed in 0.26s
+    test_a_manifest_listing_a_vault_collection_to_read_is_rejected[PII_VAULT]
+    test_a_manifest_listing_a_vault_collection_to_write_is_rejected[PII_VAULT]
+M5 no version bump on update: CAUGHT · 2 failed, 9 passed in 0.71s
+    test_changing_a_yaml_and_resyncing_bumps_the_version_and_writes_an_audit_record
+    test_a_removed_manifest_retires_the_agent_and_a_restored_one_comes_back
+M6 change not audited: CAUGHT · 6 failed, 5 passed in 0.46s
+    test_the_first_sync_registers_every_agent_at_version_1_and_audits_it
+    test_changing_a_yaml_and_resyncing_bumps_the_version_and_writes_an_audit_record
+    test_resyncing_unchanged_files_writes_and_audits_nothing
+M7 audited in one org only: CAUGHT · 3 failed, 8 passed in 0.40s
+    test_the_first_sync_registers_every_agent_at_version_1_and_audits_it
+    test_changing_a_yaml_and_resyncing_bumps_the_version_and_writes_an_audit_record
+    test_a_catalog_change_bumps_the_catalog_version
+M8 no-org check removed: CAUGHT · 1 failed, 10 passed in 0.46s
+    test_a_change_with_no_org_to_audit_in_is_refused_and_stores_nothing
+M9 writes outside the transaction: CAUGHT · 3 failed, 8 passed in 0.40s
+    test_resyncing_unchanged_files_writes_and_audits_nothing
+    test_a_failed_audit_write_stores_no_registry_change
+    test_a_concurrent_change_is_refused_not_overwritten
+M10 stored manifest not re-validated: CAUGHT · 3 failed, 8 passed, 11 warnings in 0.43s
+    test_changing_a_yaml_and_resyncing_bumps_the_version_and_writes_an_audit_record
+    test_a_concurrent_change_is_refused_not_overwritten
+    test_a_tampered_stored_manifest_does_not_load
+M11 retire skipped: CAUGHT · 1 failed, 10 passed in 0.48s
+    test_a_removed_manifest_retires_the_agent_and_a_restored_one_comes_back
+M12 replace ignores the stored version: CAUGHT · 1 failed, 7 passed in 0.30s
+    test_a_replace_is_checked_against_the_stored_version
+M13 /agents open to HR: CAUGHT · 5 failed, 47 passed in 1.16s
+    test_the_registry_is_hr_admin_only[hr-/agents]
+    test_the_registry_is_hr_admin_only[hr-/agents/db_agent]
+    test_hr_and_managers_are_refused_before_the_registry_is_read
+M14 catalog drifts from the fixture: CAUGHT · 1 failed, 17 passed in 0.55s
+    test_the_catalog_matches_the_eval_fixture_action_catalog
+M15 catalog accepts unknown agents: CAUGHT · 1 failed, 17 passed in 0.45s
+    test_a_bad_catalog_is_refused[data2-without
+M16 binary: strict strings, bytes scan and post-parse scan all off: CAUGHT · 3 failed, 74 passed in 0.36s
+    test_a_vault_name_as_yaml_binary_is_rejected[b3JnX2tleXM=]
+    test_a_vault_name_as_yaml_binary_is_rejected[cGlpX2FjY2Vzc19sb2c=]
+    test_a_collection_that_is_not_text_is_rejected[run_tasks]
+M4 users grantable: added to the read allowlist and dropped from the never-grantable set: CAUGHT · 2 failed, 75 passed in 0.36s
+    test_the_allowlists_equal_the_mcp_database_users_sets
+    test_an_invalid_manifest_is_rejected_with_the_reason[path9-value9-users]
+M17 strict strings only off (other layers hold): CAUGHT · 1 failed, 76 passed in 0.33s
+    test_a_collection_that_is_not_text_is_rejected[run_tasks]
+M18 vault match back to prefix: CAUGHT · 3 failed, 74 passed in 0.40s
+    test_a_name_with_the_vault_inside_it_is_rejected[copy
+    test_a_name_with_the_vault_inside_it_is_rejected[see
+    test_a_name_with_the_vault_inside_it_is_rejected[tmp_pii_access_log_2]
+M19 read allowlist off: CAUGHT · 5 failed, 72 passed in 0.34s
+    test_a_collection_outside_the_allowlist_cannot_be_read[checkpoints]
+    test_a_collection_outside_the_allowlist_cannot_be_read[run_task]
+    test_a_collection_outside_the_allowlist_cannot_be_read[events]
+M20 write allowlist off: CAUGHT · 4 failed, 73 passed in 0.34s
+    test_a_collection_outside_the_write_allowlist_cannot_be_written[approvals]
+    test_a_collection_outside_the_write_allowlist_cannot_be_written[templates]
+    test_a_collection_outside_the_write_allowlist_cannot_be_written[template_versions]
+M21 params max_tokens may exceed limits: CAUGHT · 1 failed, 76 passed in 0.48s
+    test_llm_params_are_typed_and_bounded[params3]
+M22 stored hash not checked on read: CAUGHT · 2 failed, 75 passed in 0.36s
+    test_a_stored_manifest_widened_behind_the_registry_does_not_load
+    test_a_stored_manifest_under_another_name_does_not_load
+M23 lost insert race ignored: CAUGHT · 1 failed, 76 passed in 0.51s
+    test_a_concurrent_first_registration_is_refused_cleanly

@@ -53,7 +53,12 @@ def _record(agent: RegisteredAgent) -> AgentRecord:
         version=agent.version,
         active=agent.active,
         purpose=manifest.purpose,
-        llm=AgentLLM.model_validate(manifest.llm.model_dump(mode="json")),
+        llm=AgentLLM(
+            alias=manifest.llm.alias,
+            connector=manifest.llm.connector,
+            model=manifest.llm.model,
+            params=manifest.llm.params.values(),
+        ),
         mcp={
             server: AgentMcpGrant(
                 tools=list(grant.tools),
