@@ -1,0 +1,10 @@
+# Field → sink policy (PRD §7.10 Signed grants). Which vault fields each agent sink may resolve with an
+# orchestrator-signed grant. A template's `pii_access` is checked against this at publish (FR-T3), and
+# every sink checks it again before releasing a value.
+#
+# Aadhaar, PAN and the bank fields (bank_account, ifsc, account_holder_name) have no agent sink at all.
+# The loader (onb_crypto.sink_policy) refuses this file if any sink lists one of them.
+version: 1
+sinks:
+  notify.telegram: [mobile]
+  notify.email: [email]

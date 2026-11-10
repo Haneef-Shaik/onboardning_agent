@@ -37,6 +37,7 @@ from onb_crypto.masks import (
     mask_pan,
 )
 from onb_crypto.rotation import rewrap_orgs, rotate_orgs, verify_orgs
+from onb_crypto.sink_policy import NEVER_SINKABLE, SinkPolicy, SinkPolicyError, load_sink_policy
 from onb_crypto.tokens import PTK_PREFIX, TOKEN_LENGTH, is_token, new_token
 from onb_crypto.vault import CONSENT_COLLECTION, PURGED, AadhaarConsent, Vault, VaultRepository, VaultStore
 from onb_crypto.vault_indexes import ensure_vault_indexes
@@ -55,6 +56,7 @@ __all__ = [
     "KEY_BYTES",
     "MASTER_KEY_ENV",
     "MIN_INDEX_KEY_BYTES",
+    "NEVER_SINKABLE",
     "ORG_KEYS_COLLECTION",
     "PROJECT",
     "PTK_PREFIX",
@@ -81,6 +83,8 @@ __all__ = [
     "RepositoryOrgKeyStore",
     "Sealed",
     "SecretKey",
+    "SinkPolicy",
+    "SinkPolicyError",
     "SubjectType",
     "SupersededTokenError",
     "TokenBindingError",
@@ -101,6 +105,7 @@ __all__ = [
     "ensure_org_keys_index",
     "ensure_vault_indexes",
     "is_token",
+    "load_sink_policy",
     "mask",
     "mask_aadhaar",
     "mask_bank_account",

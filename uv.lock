@@ -908,6 +908,7 @@ dependencies = [
     { name = "cryptography" },
     { name = "onb-data" },
     { name = "pymongo" },
+    { name = "pyyaml" },
 ]
 
 [package.metadata]
@@ -915,6 +916,7 @@ requires-dist = [
     { name = "cryptography", specifier = ">=46,<47" },
     { name = "onb-data", editable = "libs/py-data" },
     { name = "pymongo", specifier = ">=4.10,<5" },
+    { name = "pyyaml", specifier = ">=6" },
 ]
 
 [[package]]
