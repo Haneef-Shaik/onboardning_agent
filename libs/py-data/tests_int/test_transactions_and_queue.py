@@ -8,7 +8,8 @@ from __future__ import annotations
 import asyncio
 import os
 import uuid
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
+from contextlib import AbstractContextManager
 from urllib.parse import quote_plus
 
 import pytest
@@ -17,6 +18,8 @@ from pymongo import MongoClient
 from pymongo.database import Database
 
 Client = MongoClient[dict[str, object]]
+# The `unscoped` fixture from conftest (T-2): `with unscoped("why"):` for a root read-back by id.
+Unscoped = Callable[[str], AbstractContextManager[None]]
 ORG = "org_alpha"
 
 
@@ -37,7 +40,7 @@ def scratch(root_client: Client) -> Iterator[tuple[str, Database[dict[str, objec
 
 
 def test_a_transaction_commits_every_repository_write_together(
-    scratch: tuple[str, Database[dict[str, object]]],
+    scratch: tuple[str, Database[dict[str, object]]], unscoped: Unscoped
 ) -> None:
     uri, db = scratch
 
@@ -55,12 +58,14 @@ def test_a_transaction_commits_every_repository_write_together(
             await store.close()
 
     asyncio.run(main())
-    assert db.runs.find_one({"_id": "r1"}) == {"_id": "r1", "org_id": ORG}
+    with unscoped("root read-back by id, without assuming the org, proves the write carried it"):
+        run = db.runs.find_one({"_id": "r1"})
+    assert run == {"_id": "r1", "org_id": ORG}
     assert db.events.count_documents({"run_id": "r1", "org_id": ORG}) == 1
 
 
 def test_a_raising_callback_rolls_back_every_repository_write(
-    scratch: tuple[str, Database[dict[str, object]]],
+    scratch: tuple[str, Database[dict[str, object]]], unscoped: Unscoped
 ) -> None:
     uri, db = scratch
 
@@ -80,11 +85,14 @@ def test_a_raising_callback_rolls_back_every_repository_write(
             await store.close()
 
     asyncio.run(main())
-    assert db.runs.count_documents({}) == 0
-    assert db.dead_letters.count_documents({}) == 0
+    with unscoped("root count across every org proves the rollback left nothing anywhere"):
+        counts = (db.runs.count_documents({}), db.dead_letters.count_documents({}))
+    assert counts == (0, 0)
 
 
-def test_concurrent_claims_on_one_document_succeed_once(scratch: tuple[str, Database[dict[str, object]]]) -> None:
+def test_concurrent_claims_on_one_document_succeed_once(
+    scratch: tuple[str, Database[dict[str, object]]], unscoped: Unscoped
+) -> None:
     uri, db = scratch
     db.jobs.insert_one({"_id": "j1", "org_id": ORG, "status": "pending"})
 
@@ -104,7 +112,9 @@ def test_concurrent_claims_on_one_document_succeed_once(scratch: tuple[str, Data
     assert len(results) == 1
     [winner] = results
     assert isinstance(winner, dict)
-    assert db.jobs.find_one({"_id": "j1"}) == {
+    with unscoped("root read-back by id of the claimed job"):
+        job = db.jobs.find_one({"_id": "j1"})
+    assert job == {
         "_id": "j1",
         "org_id": ORG,
         "status": "running",
@@ -112,7 +122,9 @@ def test_concurrent_claims_on_one_document_succeed_once(scratch: tuple[str, Data
     }
 
 
-def test_a_leased_write_with_a_stale_token_changes_nothing(scratch: tuple[str, Database[dict[str, object]]]) -> None:
+def test_a_leased_write_with_a_stale_token_changes_nothing(
+    scratch: tuple[str, Database[dict[str, object]]], unscoped: Unscoped
+) -> None:
     uri, db = scratch
     db.jobs.insert_one({"_id": "j1", "org_id": ORG, "status": "running", "lease_token": "current"})
 
@@ -127,7 +139,9 @@ def test_a_leased_write_with_a_stale_token_changes_nothing(scratch: tuple[str, D
             await store.close()
 
     assert asyncio.run(main()) == (False, False)
-    assert db.jobs.find_one({"_id": "j1"}) == {
+    with unscoped("root read-back by id proves the stale-token writes changed nothing"):
+        job = db.jobs.find_one({"_id": "j1"})
+    assert job == {
         "_id": "j1",
         "org_id": ORG,
         "status": "running",

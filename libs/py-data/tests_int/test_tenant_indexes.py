@@ -29,7 +29,7 @@ def tenant_index_violations(client: Client, databases: list[str] | None = None) 
             if not is_tenant_collection(db_name, collection):
                 continue
             for index in database[collection].list_indexes():
-                reason = find_index_violation(collection, index["key"])
+                reason = find_index_violation(collection, index["key"], unique=bool(index.get("unique")))
                 if reason:
                     found.append(f"{db_name}.{collection} index {index['name']}: {reason}")
     return found

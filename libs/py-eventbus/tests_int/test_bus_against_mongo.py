@@ -75,7 +75,7 @@ async def publish(bus: MongoEventBus, org: str, key: str, **kwargs: Any) -> Publ
 
 
 def jobs(scratch: Scratch, **query: Any) -> list[dict[str, Any]]:
-    return list(scratch.db.jobs.find(query))
+    return scratch.find("jobs", query)
 
 
 async def _ok(job: JobContext) -> None:
@@ -270,7 +270,7 @@ def test_an_exhausted_job_moves_to_dead_letters(scratch: Scratch) -> None:
     outcomes = run_with_bus(scratch, keep_failing)
     assert outcomes == [WorkOutcome.RETRIED, WorkOutcome.DEAD_LETTERED]
     assert jobs(scratch) == []
-    [dead] = scratch.db.dead_letters.find()
+    [dead] = scratch.find("dead_letters")
     assert dead["_id"] == result.job_ids[0]
     assert dead["org_id"] == ORG_A
     assert dead["reason"] == DeadLetterReason.EXHAUSTED.value
@@ -300,7 +300,7 @@ def test_a_job_whose_last_attempt_crashed_is_dead_lettered(scratch: Scratch) -> 
 
     processed = run_with_bus(scratch, crash_then_reclaim, once)
     assert processed.outcome is WorkOutcome.DEAD_LETTERED
-    [dead] = scratch.db.dead_letters.find()
+    [dead] = scratch.find("dead_letters")
     assert (dead["reason"], dead["last_error"]) == (DeadLetterReason.EXHAUSTED.value, "lease expired")
 
 
@@ -315,8 +315,8 @@ def test_a_duplicate_idempotency_key_is_ignored(scratch: Scratch) -> None:
     assert not first.duplicate
     assert second.duplicate
     assert second.event_id == first.event_id
-    assert scratch.db.events.count_documents({}) == 1
-    assert scratch.db.jobs.count_documents({}) == 1
+    assert scratch.count("events") == 1
+    assert scratch.count("jobs") == 1
 
 
 def test_concurrent_publishes_with_one_key_write_one_event(scratch: Scratch) -> None:
@@ -326,8 +326,8 @@ def test_concurrent_publishes_with_one_key_write_one_event(scratch: Scratch) -> 
     results = run_with_bus(scratch, race)
     assert [r.duplicate for r in results].count(False) == 1
     assert len({r.event_id for r in results}) == 1
-    assert scratch.db.events.count_documents({}) == 1
-    assert scratch.db.jobs.count_documents({}) == 1
+    assert scratch.count("events") == 1
+    assert scratch.count("jobs") == 1
 
 
 def test_concurrent_publishes_with_one_key_apply_the_domain_change_once(scratch: Scratch) -> None:
@@ -343,13 +343,13 @@ def test_concurrent_publishes_with_one_key_apply_the_domain_change_once(scratch:
 
     results = run_with_bus(scratch, race)
     assert [r.duplicate for r in results].count(False) == 1
-    assert scratch.db.onboarding_runs.find_one({"_id": "run-1"}) == {
+    assert scratch.find_one("onboarding_runs", {"_id": "run-1"}) == {
         "_id": "run-1",
         "org_id": ORG_A,
         "starts": 1,
         "state": "started",
     }
-    assert scratch.db.events.count_documents({}) == 1
+    assert scratch.count("events") == 1
 
 
 def test_a_job_with_a_corrupt_attempt_count_does_not_block_the_queue(scratch: Scratch) -> None:
@@ -375,7 +375,7 @@ def test_a_job_with_a_corrupt_attempt_count_does_not_block_the_queue(scratch: Sc
     assert first is not None
     assert first.job_id == good
     assert second is None
-    assert scratch.db.jobs.find_one({"_id": "corrupt"}, {"status": 1}) == {"_id": "corrupt", "status": "pending"}
+    assert scratch.find_one("jobs", {"_id": "corrupt"}, {"status": 1}) == {"_id": "corrupt", "status": "pending"}
 
 
 def test_the_key_is_unique_per_org_not_globally(scratch: Scratch) -> None:
@@ -385,7 +385,7 @@ def test_the_key_is_unique_per_org_not_globally(scratch: Scratch) -> None:
     a, b = run_with_bus(scratch, both)
     assert not a.duplicate
     assert not b.duplicate
-    assert sorted(str(e["org_id"]) for e in scratch.db.events.find()) == [ORG_A, ORG_B]
+    assert sorted(str(e["org_id"]) for e in scratch.find("events")) == [ORG_A, ORG_B]
     with pytest.raises(DuplicateKeyError):
         scratch.db.events.insert_one({"org_id": ORG_A, "idempotency_key": "k1"})
 
@@ -400,9 +400,9 @@ def test_a_rolled_back_transaction_leaves_neither_change_nor_event(scratch: Scra
 
     with pytest.raises(RuntimeError, match="domain rule"):
         run_with_bus(scratch, failing_change)
-    assert scratch.db.onboarding_runs.count_documents({}) == 0
-    assert scratch.db.events.count_documents({}) == 0
-    assert scratch.db.jobs.count_documents({}) == 0
+    assert scratch.count("onboarding_runs") == 0
+    assert scratch.count("events") == 0
+    assert scratch.count("jobs") == 0
 
 
 def test_a_server_side_write_error_rolls_back_the_change_and_the_event(scratch: Scratch) -> None:
@@ -418,9 +418,9 @@ def test_a_server_side_write_error_rolls_back_the_change_and_the_event(scratch: 
 
     with pytest.raises(DuplicateKeyError):
         run_with_bus(scratch, conflicting_change)
-    assert [d["_id"] for d in scratch.db.onboarding_runs.find()] == ["taken"]
-    assert scratch.db.events.count_documents({}) == 0
-    assert scratch.db.jobs.count_documents({}) == 0
+    assert [d["_id"] for d in scratch.find("onboarding_runs")] == ["taken"]
+    assert scratch.count("events") == 0
+    assert scratch.count("jobs") == 0
 
 
 def test_a_committed_publish_writes_change_event_and_jobs_together(scratch: Scratch) -> None:
@@ -431,13 +431,13 @@ def test_a_committed_publish_writes_change_event_and_jobs_together(scratch: Scra
         return await publish(bus, ORG_A, "k1", change=change)
 
     result = run_with_bus(scratch, ok)
-    assert scratch.db.onboarding_runs.find_one({"_id": "run-1"}) == {
+    assert scratch.find_one("onboarding_runs", {"_id": "run-1"}) == {
         "_id": "run-1",
         "state": "started",
         "org_id": ORG_A,
     }
-    [event] = scratch.db.events.find()
-    [job] = scratch.db.jobs.find()
+    [event] = scratch.find("events")
+    [job] = scratch.find("jobs")
     assert event["_id"] == result.event_id
     assert set(event) == {
         "_id", "org_id", "type", "payload", "run_id", "idempotency_key", "traceparent", "created_at",
@@ -489,19 +489,20 @@ def test_a_consumer_span_joins_the_producer_trace(scratch: Scratch) -> None:
 
 def test_a_job_without_org_id_is_dead_lettered(scratch: Scratch) -> None:
     now = datetime.now(UTC)
-    scratch.db.jobs.insert_one(
-        {
-            "_id": "orphan",
-            "consumer": CONSUMER,
-            "event_id": "e1",
-            "event_type": EVENT,
-            "payload": {},
-            "status": JobStatus.PENDING.value,
-            "attempts": 0,
-            "max_attempts": 3,
-            "available_at": now,
-        }
-    )
+    with scratch.listener.allowing_unscoped("test setup: plant a job that has no org_id"):
+        scratch.db.jobs.insert_one(
+            {
+                "_id": "orphan",
+                "consumer": CONSUMER,
+                "event_id": "e1",
+                "event_type": EVENT,
+                "payload": {},
+                "status": JobStatus.PENDING.value,
+                "attempts": 0,
+                "max_attempts": 3,
+                "available_at": now,
+            }
+        )
     ran: list[str] = []
 
     async def record(job: JobContext) -> None:
@@ -512,7 +513,7 @@ def test_a_job_without_org_id_is_dead_lettered(scratch: Scratch) -> None:
     assert processed.outcome is WorkOutcome.DEAD_LETTERED
     assert ran == []
     assert jobs(scratch) == []
-    [dead] = scratch.db.dead_letters.find()
+    [dead] = scratch.find("dead_letters")
     assert dead["_id"] == "orphan"
     assert dead["reason"] == DeadLetterReason.MISSING_ORG_ID.value
     assert "org_id" not in dead

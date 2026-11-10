@@ -1,0 +1,49 @@
+E       AssertionError: assert 'findAndModify filter has no org_id equality' is None
+libs/py-data/tests/test_safety_net_queue.py:86: AssertionError
+E       AssertionError: assert 'findAndModify filter has no org_id equality' is None
+libs/py-data/tests/test_safety_net_queue.py:86: AssertionError
+E       AssertionError: assert 'a statement in updates has no org_id filter' is None
+libs/py-data/tests/test_safety_net_queue.py:86: AssertionError
+E       AssertionError: assert 'a statement in updates has no org_id filter' is None
+libs/py-data/tests/test_safety_net_queue.py:86: AssertionError
+command = {'update': 'jobs', 'ordered': True, 'updates': [{'q': {'_id': 'job-1', 'lease_token': 'tok-1'}, 'u': {'$set': {'status....timezone.utc), 'last_error': 'RuntimeError'}, '$unset': {'lease_token': '', 'lease_owner': '', 'locked_until': ''}}}]}
+E       AssertionError: assert 'a statement in updates has no org_id filter' is None
+E        +  where 'a statement in updates has no org_id filter' = find_violation('update', {'update': 'jobs', 'ordered': True, 'updates': [{'q': {'_id': 'job-1', 'lease_token': 'tok-1'}, 'u': {'$set': {'status....timezone.utc), 'last_error': 'RuntimeError'}, '$unset': {'lease_token': '', 'lease_owner': '', 'locked_until': ''}}}]}, 'app')
+E        +      where <dict_keyiterator object at 0x10ac467f0> = iter({'update': 'jobs', 'ordered': True, 'updates': [{'q': {'_id': 'job-1', 'lease_token': 'tok-1'}, 'u': {'$set': {'status....timezone.utc), 'last_error': 'RuntimeError'}, '$unset': {'lease_token': '', 'lease_owner': '', 'locked_until': ''}}}]})
+libs/py-data/tests/test_safety_net_queue.py:86: AssertionError
+E       AssertionError: assert 'a statement in updates has no org_id filter' is None
+libs/py-data/tests/test_safety_net_queue.py:86: AssertionError
+E       AssertionError: assert 'a statement in updates has no org_id filter' is None
+libs/py-data/tests/test_safety_net_queue.py:86: AssertionError
+E       AssertionError: assert 'a statement in deletes has no org_id filter' is None
+libs/py-data/tests/test_safety_net_queue.py:86: AssertionError
+E       AssertionError: assert 'a statement in deletes has no org_id filter' is None
+libs/py-data/tests/test_safety_net_queue.py:86: AssertionError
+E       AssertionError: assert 'insert of a document without a string org_id' is None
+libs/py-data/tests/test_safety_net_queue.py:86: AssertionError
+E       AssertionError: assert 'insert of a document without a string org_id' is None
+libs/py-data/tests/test_safety_net_queue.py:86: AssertionError
+E       TypeError: find_index_violation() got an unexpected keyword argument 'unique'
+libs/py-data/tests/test_safety_net_queue.py:160: TypeError
+E       TypeError: find_index_violation() got an unexpected keyword argument 'unique'
+libs/py-data/tests/test_safety_net_queue.py:165: TypeError
+E       TypeError: find_index_violation() got an unexpected keyword argument 'unique'
+libs/py-data/tests/test_safety_net_queue.py:170: TypeError
+E       AssertionError: assert 'index on tenant collection jobs does not start with org_id' is None
+libs/py-data/tests/test_safety_net_queue.py:177: AssertionError
+FAILED libs/py-data/tests/test_safety_net_queue.py::test_the_worker_queue_commands_pass[claim]
+FAILED libs/py-data/tests/test_safety_net_queue.py::test_the_worker_queue_commands_pass[claim with sort]
+FAILED libs/py-data/tests/test_safety_net_queue.py::test_the_worker_queue_commands_pass[heartbeat]
+FAILED libs/py-data/tests/test_safety_net_queue.py::test_the_worker_queue_commands_pass[complete]
+FAILED libs/py-data/tests/test_safety_net_queue.py::test_the_worker_queue_commands_pass[retry]
+FAILED libs/py-data/tests/test_safety_net_queue.py::test_the_worker_queue_commands_pass[leased update with explicit defaults]
+FAILED libs/py-data/tests/test_safety_net_queue.py::test_the_worker_queue_commands_pass[leased update on dead_letters]
+FAILED libs/py-data/tests/test_safety_net_queue.py::test_the_worker_queue_commands_pass[delete leased]
+FAILED libs/py-data/tests/test_safety_net_queue.py::test_the_worker_queue_commands_pass[delete leased dead letter]
+FAILED libs/py-data/tests/test_safety_net_queue.py::test_the_worker_queue_commands_pass[orphan dead letter]
+FAILED libs/py-data/tests/test_safety_net_queue.py::test_the_worker_queue_commands_pass[invalid-org dead letter]
+FAILED libs/py-data/tests/test_safety_net_queue.py::test_a_non_unique_queue_index_may_lead_with_queue_state
+FAILED libs/py-data/tests/test_safety_net_queue.py::test_a_unique_queue_index_must_still_start_with_org_id
+FAILED libs/py-data/tests/test_safety_net_queue.py::test_other_tenant_collections_keep_the_org_prefix_rule
+FAILED libs/py-data/tests/test_safety_net_queue.py::test_create_indexes_on_the_queue_follows_the_same_rule
+15 failed, 41 passed in 0.55s

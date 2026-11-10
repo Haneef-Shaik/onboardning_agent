@@ -26,6 +26,8 @@ from typing import Any
 from pymongo import monitoring
 
 from .errors import UnscopedCommandError
+from .queue import QUEUE_COLLECTIONS
+from .queue_allowance import queue_command_allowed
 from .scoping import CROSS_COLLECTION_STAGES, ORG_FIELD, _touches_org
 from .store import GLOBAL_COLLECTIONS
 
@@ -162,12 +164,16 @@ def _explain_violation(command: Mapping[str, Any], database: str) -> str | None:
     return find_violation(str(next(iter(inner))), inner, database)
 
 
-def find_index_violation(collection: str, key: object) -> str | None:
-    """Why an index on a tenant collection is not allowed, or None. `_id` is the only exception."""
+def find_index_violation(collection: str, key: object, *, unique: bool = False) -> str | None:
+    """Why an index on a tenant collection is not allowed, or None.
+
+    Exceptions: the `_id` index, and a non-unique index on a queue collection (ADR 0002 §3: the
+    worker's claim index leads with `status`). A unique index there still starts with `org_id`.
+    """
     if not isinstance(key, Mapping) or not key:
         return "index key is not a non-empty document"
     fields = list(key)
-    if fields == ["_id"]:
+    if fields == ["_id"] or (collection in QUEUE_COLLECTIONS and not unique):
         return None
     if fields[0] != ORG_FIELD:
         return f"index on tenant collection {collection} does not start with org_id"
@@ -179,7 +185,9 @@ def _create_indexes_violation(command: Mapping[str, Any], collection: str) -> st
     if not isinstance(indexes, list):
         return "createIndexes without an index list"
     for index in indexes:
-        reason = find_index_violation(collection, index.get("key") if isinstance(index, Mapping) else None)
+        if not isinstance(index, Mapping):
+            return "createIndexes with a malformed index"
+        reason = find_index_violation(collection, index.get("key"), unique=bool(index.get("unique")))
         if reason:
             return reason
     return None
@@ -270,6 +278,8 @@ def find_violation(command_name: str, command: Mapping[str, Any], database: str)
     collection = command.get(command_name)
     if not is_tenant_collection(database, collection):
         return None
+    if queue_command_allowed(command_name, command, str(collection)):
+        return None  # the worker queue's deliberate cross-org commands (ADR 0002), matched exactly
     if command_name in _NEVER_SCOPED:
         return f"{command_name} cannot be scoped to one org"
     if command_name == "findAndModify":

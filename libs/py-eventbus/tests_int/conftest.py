@@ -10,12 +10,15 @@ from __future__ import annotations
 import os
 import subprocess
 import uuid
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
+from contextlib import AbstractContextManager
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Any
 from urllib.parse import quote_plus
 
 import pytest
+from onb_data.safety_net import TenantCommandListener, install_safety_net
 from pymongo import MongoClient
 from pymongo.database import Database
 
@@ -25,6 +28,42 @@ SOCAT_IMAGE = "alpine/socat:1.8.1.3@sha256:e8a6e8868a8e6e01d9c2c321a8f8d4474d2d7
 TUNNEL_LABEL_KEY = "onb.test.eventbus-mongo-tunnel"
 
 Client = MongoClient[dict[str, object]]
+
+
+# --- T-2 tenant safety net (PRD §7.9), the same hooks as libs/py-data/tests_int/conftest.py -------
+
+
+def pytest_configure(config: pytest.Config) -> None:
+    """One global command listener, registered before any client exists."""
+    install_safety_net()
+
+
+def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
+    """Unscoped commands sent after the last test's guard fail the run too."""
+    leftover = install_safety_net().drain()
+    if leftover:
+        lines = "\n".join(v.describe() for v in leftover)
+        session.config.get_terminal_writer().line(f"tenant safety net, after the last test:\n{lines}", red=True)
+        session.exitstatus = pytest.ExitCode.TESTS_FAILED
+
+
+@pytest.fixture(scope="session")
+def tenant_safety_net() -> TenantCommandListener:
+    return install_safety_net()
+
+
+@pytest.fixture(autouse=True)
+def tenant_safety_net_guard(tenant_safety_net: TenantCommandListener) -> Iterator[None]:
+    """Fails the test if any unscoped command on a tenant collection was sent. The worker queue's
+    claim and leased writes are allowed by shape (ADR 0002); root read-backs use `unscoped(reason)`."""
+    with tenant_safety_net.guard():
+        yield
+
+
+@pytest.fixture
+def unscoped(tenant_safety_net: TenantCommandListener) -> Callable[[str], AbstractContextManager[None]]:
+    """`with unscoped("why"):` for a root read-back across orgs or a deliberately broken job."""
+    return tenant_safety_net.allowing_unscoped
 
 
 def _run(*args: str) -> str:
@@ -78,19 +117,40 @@ def root_client(mongo_uri: str) -> Iterator[Client]:
 
 @dataclass(frozen=True)
 class Scratch:
+    """The scratch database. `db` is the root handle for org-scoped setup; reads across orgs go
+    through `find`/`find_one`/`count`, which say so to the T-2 safety net (`unscoped`)."""
+
     uri: str = field(repr=False)  # carries the root password: never in a repr or assertion message
     name: str
     db: Database[dict[str, object]]
+    listener: TenantCommandListener = field(repr=False)
+
+    def root_read(self) -> AbstractContextManager[None]:
+        return self.listener.allowing_unscoped("root read-back of the scratch database, across orgs")
+
+    def find(self, collection: str, query: dict[str, Any] | None = None) -> list[dict[str, Any]]:
+        with self.root_read():
+            return list(self.db[collection].find(query or {}))
+
+    def find_one(
+        self, collection: str, query: dict[str, Any], projection: dict[str, Any] | None = None
+    ) -> dict[str, Any] | None:
+        with self.root_read():
+            return self.db[collection].find_one(query, projection)
+
+    def count(self, collection: str, query: dict[str, Any] | None = None) -> int:
+        with self.root_read():
+            return self.db[collection].count_documents(query or {})
 
 
 @pytest.fixture
-def scratch(root_client: Client, mongo_uri: str) -> Iterator[Scratch]:
+def scratch(root_client: Client, mongo_uri: str, tenant_safety_net: TenantCommandListener) -> Iterator[Scratch]:
     """A fresh database with the bus collections created up front, dropped afterwards."""
     name = f"it_evt1_{uuid.uuid4().hex[:12]}"
     db = root_client[name]
     for collection in ("events", "jobs", "dead_letters", "onboarding_runs", "hires"):
         db.create_collection(collection)
     try:
-        yield Scratch(mongo_uri, name, db)
+        yield Scratch(mongo_uri, name, db, tenant_safety_net)
     finally:
         root_client.drop_database(name)

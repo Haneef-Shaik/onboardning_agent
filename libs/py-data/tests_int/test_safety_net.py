@@ -117,9 +117,9 @@ def test_an_unscoped_find_through_a_raw_client_trips_the_listener(
 ) -> None:
     raw: Client = MongoClient(_uri(root_client), serverSelectionTimeoutMS=10_000)
     try:
-        raw[scratch][COLLECTION].find_one({"_id": "b1"})
+        raw[scratch][COLLECTION].find_one({"_id": "b1", "name": "Bina-sentinel-xyz"})
     finally:
         raw.close()
     drained = tenant_safety_net.drain()
     assert [(v.collection, v.command) for v in drained] == [(COLLECTION, "find")]
-    assert "b1" not in drained[0].describe(), "a violation never repeats values from the command"
+    assert "Bina-sentinel-xyz" not in drained[0].describe(), "a violation never repeats values from the command"
