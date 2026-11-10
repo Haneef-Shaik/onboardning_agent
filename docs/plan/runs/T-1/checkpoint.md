@@ -10,9 +10,11 @@ Branch `goal/t-1-tenant-repository`, from main @ 42301cc.
    119 unit tests pass with 100% coverage. `make test-int` passes (12 stack + 24 py-data).
 3. Mutation checks: `docs/evidence/T-1/mutation-checks.txt`, M1–M15, all restored.
 
+4. Reviews: fixed the High (tuple sub-pipelines) and the cheap Lows (`cc60c5a`). Mutation checks
+   re-run, M1–M19. Gates and evidence are in `f65865d`. The handoff is written.
+
 ## Next
-Code and security review of `git diff main...HEAD`, `make check`, the evidence files, the handoff,
-then `goal-verifier`.
+`goal-verifier` attempt 1, then `in review` on the board (orchestrator holds the merge).
 
 ## Surprises
 - N818 wants an `Error` suffix. The errors are `*Error`, and `NotFound` (the card's name) is an
