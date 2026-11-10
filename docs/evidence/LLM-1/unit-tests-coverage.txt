@@ -71,13 +71,13 @@ libs/py-llm/tests/test_health.py::test_reports_an_unhealthy_alias_and_exits_1 PA
 libs/py-llm/tests/test_health.py::test_a_config_error_exits_2 PASSED     [ 41%]
 libs/py-llm/tests/test_health.py::test_bedrock_without_aws_region_fails_at_startup_from_the_command_line PASSED [ 42%]
 libs/py-llm/tests/test_no_model_ids_in_code.py::test_no_model_ids_outside_config_env_example_and_tests PASSED [ 43%]
-libs/py-llm/tests/test_no_model_ids_in_code.py::test_git_grep_catches_real_looking_ids[anthropic.claude-3-5-sonnet-20241022-v2:0] PASSED [ 43%]
-libs/py-llm/tests/test_no_model_ids_in_code.py::test_git_grep_catches_real_looking_ids[us.anthropic.claude-sonnet-4-20250514-v1:0] PASSED [ 44%]
-libs/py-llm/tests/test_no_model_ids_in_code.py::test_git_grep_catches_real_looking_ids[amazon.nova-pro-v1:0] PASSED [ 45%]
-libs/py-llm/tests/test_no_model_ids_in_code.py::test_git_grep_catches_real_looking_ids[meta.llama3-1-70b-instruct-v1:0] PASSED [ 46%]
-libs/py-llm/tests/test_no_model_ids_in_code.py::test_git_grep_catches_real_looking_ids[claude-opus-4-1] PASSED [ 47%]
-libs/py-llm/tests/test_no_model_ids_in_code.py::test_git_grep_catches_real_looking_ids[gpt-4o-mini] PASSED [ 47%]
-libs/py-llm/tests/test_no_model_ids_in_code.py::test_git_grep_catches_real_looking_ids[gemini-2.5-pro] PASSED [ 48%]
+libs/py-llm/tests/test_no_model_ids_in_code.py::test_git_grep_catches_real_looking_ids[bedrock-anthropic] PASSED [ 43%]
+libs/py-llm/tests/test_no_model_ids_in_code.py::test_git_grep_catches_real_looking_ids[bedrock-regional] PASSED [ 44%]
+libs/py-llm/tests/test_no_model_ids_in_code.py::test_git_grep_catches_real_looking_ids[bedrock-amazon] PASSED [ 45%]
+libs/py-llm/tests/test_no_model_ids_in_code.py::test_git_grep_catches_real_looking_ids[bedrock-meta] PASSED [ 46%]
+libs/py-llm/tests/test_no_model_ids_in_code.py::test_git_grep_catches_real_looking_ids[claude-bare] PASSED [ 47%]
+libs/py-llm/tests/test_no_model_ids_in_code.py::test_git_grep_catches_real_looking_ids[openai] PASSED [ 47%]
+libs/py-llm/tests/test_no_model_ids_in_code.py::test_git_grep_catches_real_looking_ids[gemini] PASSED [ 48%]
 libs/py-llm/tests/test_no_model_ids_in_code.py::test_git_grep_ignores_ordinary_names[langchain-aws] PASSED [ 49%]
 libs/py-llm/tests/test_no_model_ids_in_code.py::test_git_grep_ignores_ordinary_names[metadata.version-1] PASSED [ 50%]
 libs/py-llm/tests/test_no_model_ids_in_code.py::test_git_grep_ignores_ordinary_names[init_chat_model] PASSED [ 51%]
@@ -166,15 +166,15 @@ libs/py-llm/src/onb_llm/telemetry.py                 56      3    95%   48, 55, 
 -------------------------------------------------------------------------------
 TOTAL                                               584      7    99%
 Required test coverage of 80% reached. Total coverage: 98.80%
-============================= 123 passed in 2.79s ==============================
+============================= 123 passed in 2.71s ==============================
 
 
 
  NX   Successfully ran target test for project py-llm
 
 
-  Run duration:      4.3s
+  Run duration:      3.8s
   Cache:             Skipped (--skip-nx-cache)
-  Critical path:     4.2s (1 task)
+  Critical path:     3.7s (1 task)
   Recoverable time:  <1ms
 exit=0

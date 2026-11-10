@@ -76,6 +76,8 @@ def _git_grep_file(tmp_path: Path, text: str) -> bool:
         "gpt-4o-mini",
         "gemini-2.5-pro",
     ],
+    # Neutral ids: `pytest -v` output lands in evidence files, which the scan covers.
+    ids=["bedrock-anthropic", "bedrock-regional", "bedrock-amazon", "bedrock-meta", "claude-bare", "openai", "gemini"],
 )
 def test_git_grep_catches_real_looking_ids(tmp_path: Path, text: str) -> None:
     assert _git_grep_file(tmp_path, text)
