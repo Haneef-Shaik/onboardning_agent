@@ -83,6 +83,7 @@ Fixed:
 Still open:
 - **medium · `safety_net.py:find_violation` · Admin and introspection commands on tenant collections pass:** `drop`, `dropIndexes`, `collMod`, `renameCollection`, `collStats`, `dataSize`, `validate` and `listIndexes`. They leak only totals or act on the whole collection (all orgs), and they are not filter-bearing queries, which is what the PRD line covers. Left because a default-deny allowlist needs the real set of commands migrations and ops use. Suggested for DEP-1/staging: add an allowlist mode.
 - **low · `safety_net.py` · A non-simple `collation` (e.g. `strength: 1`) can widen an `org_id` equality to case variants.** Org ids match `[A-Za-z0-9_-]` (T-1), so case-only variants are possible in principle. Left: org ids should be server-generated in one case. Recorded for AUTH-1/org creation.
+- **low (goal-verifier, attempt 1: pass) · `safety_net.py` `guard()` · There is no `try/finally`, so when a test body raises, its post-check is skipped.** The violation then surfaces at the next test's pre-check or at `pytest_sessionfinish`. Nothing is lost, but it can be blamed on the wrong test. Left as is: a `finally` check would replace the test's own exception with `UnscopedCommandError`.
 - **low · `allowing_unscoped` · An asyncio task created inside the block stays exempt for life (contextvar copy).** Documented in the docstring. Also, nothing stops application code from calling it. Recorded: a lint or grep rule should limit `allowing_unscoped` to `tests_int/`.
 
 ## Left undone, and why
