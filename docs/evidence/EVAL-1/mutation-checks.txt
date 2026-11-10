@@ -1,0 +1,73 @@
+M1 status_in always passes: KILLED
+    FAILED libs/py-evals/tests/test_check_catalog.py::test_the_failing_example_fails[status_in]
+M2 field_equals ignores the value: KILLED
+    FAILED libs/py-evals/tests/test_check_catalog.py::test_the_failing_example_fails[field_equals]
+M3 field_contains on arrays always true: KILLED
+    FAILED libs/py-evals/tests/test_check_catalog.py::test_the_failing_example_fails[field_contains]
+M4 regex_absent never finds: KILLED
+    FAILED libs/py-evals/tests/test_check_catalog.py::test_the_failing_example_fails[regex_absent]
+M5 tool_called counts denied attempts: KILLED
+    FAILED libs/py-evals/tests/test_check_rules.py::test_tool_called_does_not_count_a_denied_attempt
+M6 tool_not_called ignores calls: KILLED
+    FAILED libs/py-evals/tests/test_check_catalog.py::test_the_failing_example_fails[tool_not_called]
+M7 final_state ignores mismatches: KILLED
+    FAILED libs/py-evals/tests/test_check_catalog.py::test_the_failing_example_fails[final_state]
+M8 no_raw_pii skips fixture values: KILLED
+    FAILED libs/py-evals/tests/test_check_rules.py::test_no_raw_pii_catches_a_fixture_value_the_detectors_miss
+M9 no_raw_pii skips the detectors: KILLED
+    FAILED libs/py-evals/tests/test_check_rules.py::test_no_raw_pii_reads_each_scope[llm_input-kwargs0]
+M10 pii_token_binding always bound: KILLED
+    FAILED libs/py-evals/tests/test_check_catalog.py::test_the_failing_example_fails[pii_token_binding]
+M11 pii_tokens_allowed_fields ignores owner: KILLED
+    FAILED libs/py-evals/tests/test_check_catalog.py::test_the_failing_example_fails[pii_tokens_allowed_fields]
+M12 audit_no_cross_tenant ignores result orgs: KILLED
+    FAILED libs/py-evals/tests/test_check_catalog.py::test_the_failing_example_fails[audit_no_cross_tenant]
+M13 dag_valid ignores cycles: KILLED
+    FAILED libs/py-evals/tests/test_check_catalog.py::test_the_failing_example_fails[dag_valid]
+M14 dependency ignores unlinked targets: KILLED
+    FAILED libs/py-evals/tests/test_check_catalog.py::test_the_failing_example_fails[dependency]
+M15 when_present applies without the flag: KILLED
+    FAILED libs/py-evals/tests/test_check_rules.py::test_field_empty_accepts_null_and_empty_string_but_not_missing
+M16 a raising check passes: KILLED
+    FAILED libs/py-evals/tests/test_check_rules.py::test_a_check_that_raises_fails_rather_than_passing
+M17 safety gate at 90%: KILLED
+    FAILED libs/py-evals/tests/test_metrics_gates.py::test_one_failed_safety_repetition_blocks
+M18 capability pass@1 boundary excluded: KILLED
+    FAILED libs/py-evals/tests/test_metrics_gates.py::test_capability_exactly_at_both_thresholds_passes
+M19 capability ignores pass^k: KILLED
+    FAILED libs/py-evals/tests/test_metrics_gates.py::test_capability_below_80_pass_hat_k_blocks_even_with_pass_at_1_at_90
+M19b safety gate ignores failed repetitions: KILLED
+    FAILED libs/py-evals/tests/test_metrics_gates.py::test_one_failed_safety_repetition_blocks
+M20 gates ignore the repetition count: KILLED
+    FAILED libs/py-evals/tests/test_metrics_gates.py::test_fewer_than_three_repetitions_cannot_meet_the_gates
+M21 regression boundary excluded: KILLED
+    FAILED libs/py-evals/tests/test_metrics_gates.py::test_a_drop_of_more_than_5_points_against_the_baseline_blocks
+M22 vault probe binds anything: KILLED
+    FAILED libs/py-evals/tests/test_fixture.py::test_the_vault_probe_binds_seed_names_to_the_right_subject_and_field
+M23 fixture keeps seed token names: KILLED
+    FAILED libs/py-evals/tests/test_fixture.py::test_every_plain_value_is_encrypted_and_no_plain_value_or_seed_token_is_stored
+M24 toolbox lets code-running operators through: KILLED
+    FAILED libs/py-evals/tests/test_runner.py::test_a_denied_call_is_captured_and_the_state_checks_still_run
+M25 toolbox lets agents write new_hires: KILLED
+    FAILED libs/py-evals/tests/test_toolbox.py::test_the_hub_stand_in_denies_and_audits[update_one-args5-collection]
+M26 eval_runs record under another org: KILLED
+    FAILED libs/py-evals/tests/test_reporting.py::test_the_eval_runs_record_is_written_through_the_tenant_repository
+M27 drop without the prefix guard: KILLED
+    FAILED libs/py-evals/tests/test_reporting.py::test_dropping_refuses_a_database_without_the_eval_prefix
+M28 spans not stamped: KILLED
+    FAILED libs/py-evals/tests/test_runner.py::test_every_span_of_a_case_carries_the_run_and_case_ids
+M29 an uncaught control counts as caught: KILLED
+    FAILED libs/py-evals/tests/test_session.py::test_a_control_that_is_not_caught_fails_the_selftest
+M30 another harness module imports the vault: KILLED
+    FAILED libs/py-evals/tests/test_harness_boundary.py::test_only_the_fixture_seeder_imports_the_vault_inside_the_harness
+M32 pii_access_forbidden skips an unreadable declaration: KILLED
+    FAILED libs/py-evals/tests/test_review_fixes.py::test_pii_access_forbidden_fails_closed_on_a_malformed_or_recased_declaration[pii_access0]
+M33 a failed tool call is not recorded: KILLED
+    FAILED libs/py-evals/tests/test_review_fixes.py::test_a_tool_call_that_errors_is_still_recorded_and_audited
+M34 a baseline group missing from the run is ignored: KILLED
+    FAILED libs/py-evals/tests/test_review_fixes.py::test_a_baseline_group_missing_from_the_run_blocks
+M31 report details not redacted: KILLED
+    FAILED libs/py-evals/tests/test_reporting.py::test_a_check_detail_that_quotes_raw_pii_is_redacted_in_the_report
+
+35 of 35 mutations killed; every file restored byte-for-byte
+exit=0
