@@ -1,4 +1,7 @@
-/** Join class names, dropping falsy values (shadcn/ui convention). */
-export function cn(...classes: ReadonlyArray<string | false | null | undefined>): string {
-  return classes.filter((c): c is string => typeof c === "string" && c.length > 0).join(" ");
+import { clsx, type ClassValue } from "clsx";
+import { twMerge } from "tailwind-merge";
+
+/** Join class names, dropping falsy values and resolving Tailwind conflicts (shadcn/ui convention). */
+export function cn(...classes: ClassValue[]): string {
+  return twMerge(clsx(classes));
 }
