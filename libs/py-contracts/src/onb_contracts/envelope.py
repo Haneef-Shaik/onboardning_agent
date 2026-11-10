@@ -2,13 +2,15 @@
 
 Build it with `ok(data)` or `fail(code, message)`. Exactly one of `data`/`error` carries the answer:
 success means no error, failure means an error and no data.
+
+Give every response its own named subclass, `class HealthEnvelope(Envelope[Health])`, and use it as
+the route's `response_model`: OpenAPI (and so the TS client) then calls it `HealthEnvelope` rather
+than `Envelope_Health_`.
 """
 
 from __future__ import annotations
 
-import types
-import typing
-from typing import Any, Self
+from typing import Self
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -69,23 +71,9 @@ class Envelope[DataT](BaseModel):
             raise ValueError("a failure envelope carries no data")
         return self
 
-    @classmethod
-    def model_parametrized_name(cls, params: tuple[Any, ...]) -> str:
-        """`Envelope[Health]` is `HealthEnvelope` in OpenAPI and the TS client; `Envelope[None]` is `ErrorEnvelope`."""
-        return f"{_type_name(params[0])}Envelope"
 
-
-def _type_name(tp: Any) -> str:
-    if tp is None or tp is types.NoneType:
-        return "Error"
-    origin = typing.get_origin(tp)
-    if origin in (list, tuple, set, frozenset):
-        args = typing.get_args(tp)
-        return f"{_type_name(args[0]) if args else 'Any'}List"
-    return getattr(tp, "__name__", "Any")
-
-
-ErrorEnvelope = Envelope[None]
+class ErrorEnvelope(Envelope[None]):
+    """An error answer: `success` is false, `error` says why, `data` is null."""
 
 
 def ok[DataT](data: DataT, *, meta: Meta | None = None) -> Envelope[DataT]:
@@ -98,7 +86,7 @@ def fail(
     *,
     details: tuple[ErrorDetail, ...] = (),
     meta: Meta | None = None,
-) -> Envelope[None]:
+) -> ErrorEnvelope:
     return ErrorEnvelope(
         success=False,
         error=ErrorBody(code=code, message=message, details=details),

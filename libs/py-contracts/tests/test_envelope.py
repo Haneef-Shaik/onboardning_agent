@@ -7,12 +7,14 @@ from onb_contracts import (
     ErrorBody,
     ErrorCode,
     ErrorDetail,
+    ErrorEnvelope,
     Meta,
     PageMeta,
     code_for_status,
     fail,
     ok,
 )
+from onb_contracts.health import Health, HealthEnvelope
 from pydantic import BaseModel, ValidationError
 
 
@@ -82,10 +84,21 @@ def test_envelopes_are_immutable() -> None:
         env.success = False
 
 
-def test_parametrised_envelopes_have_readable_schema_names() -> None:
-    assert Envelope[Thing].__name__ == "ThingEnvelope"
-    assert Envelope[None].__name__ == "ErrorEnvelope"
-    assert Envelope[list[Thing]].__name__ == "ThingListEnvelope"
+def test_named_envelope_subclasses_keep_their_names_in_json_schema() -> None:
+    class ThingEnvelope(Envelope[Thing]):
+        pass
+
+    assert ThingEnvelope.model_json_schema()["title"] == "ThingEnvelope"
+    assert ErrorEnvelope.model_json_schema()["title"] == "ErrorEnvelope"
+
+
+def test_fail_returns_the_error_envelope() -> None:
+    assert isinstance(fail(ErrorCode.CONFLICT, "x"), ErrorEnvelope)
+
+
+def test_health_envelope_wraps_health() -> None:
+    env = HealthEnvelope(success=True, data=Health(status="ok", service="api"))
+    assert env.model_dump(mode="json")["data"] == {"status": "ok", "service": "api"}
 
 
 def test_error_details_name_a_field_and_an_issue_only() -> None:

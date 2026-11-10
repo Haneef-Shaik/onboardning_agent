@@ -1,0 +1,4 @@
+ImportError while loading conftest '/Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-c-1/apps/api/tests/conftest.py'.
+apps/api/tests/conftest.py:10: in <module>
+    from onb_api import create_app
+E   ImportError: cannot import name 'create_app' from 'onb_api' (/Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-c-1/apps/api/src/onb_api/__init__.py)

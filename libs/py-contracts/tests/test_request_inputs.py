@@ -12,12 +12,26 @@ from onb_contracts.inputs import tenant_inputs_in_openapi
 from pydantic import BaseModel, Field, ValidationError
 
 
-@pytest.mark.parametrize("name", ["org_id", "orgId", "ORG-ID", "organization_id", "tenant_id", "tenantId"])
+@pytest.mark.parametrize(
+    "name",
+    [
+        "org_id",
+        "orgId",
+        "ORG-ID",
+        "organization_id",
+        "tenant_id",
+        "tenantId",
+        "X-Org-Id",
+        "parent_org_id",
+        "orgid",
+        "OrgID",
+    ],
+)
 def test_tenant_keys_are_recognised_in_any_spelling(name: str) -> None:
     assert is_tenant_key(name)
 
 
-@pytest.mark.parametrize("name", ["org", "organisation_name", "origin_id", "id", "run_id"])
+@pytest.mark.parametrize("name", ["org", "organisation_name", "origin_id", "id", "run_id", "org_name", "orgs", ""])
 def test_other_keys_are_not_tenant_keys(name: str) -> None:
     assert not is_tenant_key(name)
 

@@ -27,8 +27,15 @@ class RequestModel(BaseModel):
 
 
 def is_tenant_key(name: str) -> bool:
-    """True for `org_id` in any spelling (`orgId`, `ORG-ID`, `organization_id`, `tenant_id`)."""
-    return re.sub(r"[^a-z0-9]", "", name.lower()) in _TENANT_KEYS
+    """True for `org_id` in any spelling, alone or inside a longer name.
+
+    `orgId`, `ORG-ID`, `organization_id`, `tenant_id`, `X-Org-Id` and `parent_org_id` all count;
+    `origin_id` and `organisation_name` do not. Words are split on case changes and separators.
+    """
+    spaced = re.sub(r"([a-z0-9])([A-Z])", r"\1 \2", name)
+    words = [w for w in re.split(r"[^A-Za-z0-9]+", spaced.lower()) if w]
+    pairs = {"".join(words[i : i + 2]) for i in range(len(words) - 1)}
+    return bool((pairs | set(words)) & _TENANT_KEYS)
 
 
 def request_model_classes() -> list[type[RequestModel]]:
