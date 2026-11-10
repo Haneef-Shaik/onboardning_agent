@@ -1,0 +1,44 @@
+$ node_modules/.bin/nx run web:typecheck --skip-nx-cache
+
+> nx run web:typecheck
+
+> tsc -p apps/web/tsconfig.json && tsc -p apps/web/tsconfig.node.json
+
+
+
+
+ NX   Successfully ran target typecheck for project web
+
+
+  Run duration:      2.5s
+  Cache:             Skipped (--skip-nx-cache)
+  Critical path:     2.3s (1 task)
+  Recoverable time:  <1ms
+exit=0
+
+$ node_modules/.bin/nx run web:test --skip-nx-cache
+
+> nx run web:test
+
+> vitest run --config apps/web/vitest.config.ts
+
+
+ RUN  v5.1.0 /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-c-1/apps/web
+
+
+ Test Files  2 passed (2)
+      Tests  4 passed (4)
+   Start at  11:08:25
+   Duration  184ms (import 48%, transform 30%, worker 11%, tests 10%)
+
+
+
+
+ NX   Successfully ran target test for project web
+
+
+  Run duration:      668ms
+  Cache:             Skipped (--skip-nx-cache)
+  Critical path:     602ms (1 task)
+  Recoverable time:  <1ms
+exit=0
