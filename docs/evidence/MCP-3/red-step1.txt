@@ -1,0 +1,5 @@
+E   ImportError: cannot import name 'db_users' from 'onb_mcp_mongo' (/Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-mcp-3/apps/mcp-mongo/src/onb_mcp_mongo/__init__.py)
+=========================== short test summary info ============================
+ERROR apps/mcp-mongo/tests/test_db_users.py
+!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+1 error in 1.07s
