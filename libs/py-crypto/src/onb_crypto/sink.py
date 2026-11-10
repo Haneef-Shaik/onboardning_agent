@@ -4,11 +4,12 @@
       → vault: token binding (org, subject, field) + record signature → decrypt
       → write one masked `pii_access_log` entry per value → release
 
-`resolve_at_sink` releases every value or none. Any refusal raises `GrantRejected` with a
-`RejectReason` and emits one `GrantAuditRecord`; nothing is logged to `pii_access_log` and no value
-leaves. A grant's `jti` is single-use: it is kept in `pii_grant_jti` until the grant expires, and a
-second use is `REPLAYED`. Run `ensure_grant_indexes(store)` at startup so concurrent replays have one
-winner.
+`resolve_at_sink` releases every value or none. Any refusal, and any store failure, raises
+`GrantRejected` with a `RejectReason` and emits one `GrantAuditRecord`; nothing is logged to
+`pii_access_log` and no value leaves. A grant's `jti` is single-use: it is recorded in
+`pii_grant_jti` with the grant's expiry, and any later use is `REPLAYED` (after expiry the grant is
+`EXPIRED` anyway, so expired rows may be deleted). Run `ensure_grant_indexes(store)` at startup:
+concurrent replays have exactly one winner only with its unique index.
 
 Every call runs inside `tenant_scope(org_id)`, and the grant must be for that org.
 """
@@ -148,7 +149,17 @@ def _checked_tokens(tokens: object) -> tuple[SinkToken, ...]:
         raise _reject(RejectReason.MALFORMED, f"a sink resolves 1-{MAX_TOKENS_PER_CALL} tokens per call")
     if not all(isinstance(t, SinkToken) and isinstance(t.field, VaultField) and is_token(t.token) for t in tokens):
         raise _reject(RejectReason.MALFORMED, "every token must be a SinkToken holding a ptk_ token")
+    if len({t.token for t in tokens}) != len(tokens):
+        raise _reject(RejectReason.MALFORMED, "a token is presented twice")
     return tuple(tokens)
+
+
+def _auditable_tokens(tokens: object) -> tuple[str, ...]:
+    """Only well-formed `ptk_` tokens go into an audit record: whatever else was presented may be a raw value."""
+    if not isinstance(tokens, list | tuple):
+        return ()
+    found = [t.token for t in tokens[:MAX_TOKENS_PER_CALL] if isinstance(t, SinkToken) and is_token(t.token)]
+    return tuple(dict.fromkeys(found))
 
 
 _VAULT_REASONS: Final[tuple[tuple[type[CryptoError], RejectReason], ...]] = (
@@ -194,15 +205,23 @@ class SinkResolver:
         return cls(Vault(keyring, store, clock=clock), verifier, policy, store, audit, clock=clock)
 
     async def resolve_at_sink(self, grant: str, sink_id: str, tokens: Sequence[SinkToken]) -> dict[str, str]:
-        """`{token: value}` for every token, or `GrantRejected` and nothing."""
+        """`{token: value}` for every token, or `GrantRejected` and nothing.
+
+        The caller's tenant scope must come from its own signed context (the agent token the MCP hub
+        verified), never from the grant: the grant's org is checked against it (`WRONG_ORG`)."""
         org_id = current_tenant().org_id
         verified: Grant | None = None
-        listed = tuple(t.token for t in tokens if isinstance(t, SinkToken)) if isinstance(tokens, list | tuple) else ()
         try:
-            verified = self._verifier.verify(grant)
-            return await self._resolve(verified, org_id, sink_id, _checked_tokens(tokens))
+            try:
+                verified = self._verifier.verify(grant)
+                return await self._resolve(verified, org_id, sink_id, _checked_tokens(tokens))
+            except GrantRejected:
+                raise
+            except Exception as error:  # a store or clock failure: fail closed as a rejection, cause logged
+                log.error("grant resolution failed: org=%s sink=%s error=%s", org_id, sink_id, type(error).__name__)
+                raise _reject(RejectReason.VAULT_ERROR, "the resolution could not complete") from None
         except GrantRejected as rejected:
-            await self._record_rejection(org_id, sink_id, rejected, verified, listed)
+            await self._record_rejection(org_id, sink_id, rejected, verified, _auditable_tokens(tokens))
             raise
 
     async def _resolve(self, grant: Grant, org_id: str, sink_id: str, tokens: tuple[SinkToken, ...]) -> dict[str, str]:

@@ -46,6 +46,8 @@ ISSUER: Final = "onb.orchestrator"
 _ALG: Final = "EdDSA"
 _TYP: Final = "onb-pii-grant+jws"
 _CLOCK_SKEW: Final = timedelta(seconds=30)
+_MIN_GRANT_TTL: Final = timedelta(seconds=1)
+_MAX_NUMERIC_DATE: Final = 2**33  # year 2242: bounds fromtimestamp
 _MAX_GRANT_CHARS: Final = 4096
 _JTI_BYTES: Final = 16
 _JTI_PATTERN: Final = re.compile(r"[A-Za-z0-9_-]{22}")
@@ -129,7 +131,7 @@ def _encode_part(value: Mapping[str, Any]) -> str:
     return _b64(json.dumps(value, separators=(",", ":"), sort_keys=True).encode("utf-8"))
 
 
-def check_id(value: object, what: str) -> str:
+def _check_id(value: object, what: str) -> str:
     if not isinstance(value, str) or not _ID_PATTERN.fullmatch(value):
         raise ValueError(f"{what} must be 1-128 letters, digits or _ . : -")
     return value
@@ -176,14 +178,14 @@ class GrantIssuer:
         """A grant letting `sink` resolve `fields` of `subject_id` for this run's task, for `ttl`."""
         org_id = _check_org(org_id)
         for value, name in ((run_id, "run_id"), (task_id, "task_id"), (subject_id, "subject_id")):
-            check_id(value, name)
+            _check_id(value, name)
         check_sink_id(sink)
         granted = _check_fields(fields)
         refused = [f.value for f in granted if not self._policy.allows(f, sink)]
         if refused:
             raise SinkPolicyError(f"the sink policy does not let {sink} resolve {', '.join(refused)}")
-        if not timedelta(0) < ttl <= MAX_GRANT_TTL:
-            raise ValueError("a grant lives more than 0 and at most 10 minutes")
+        if not _MIN_GRANT_TTL <= ttl <= MAX_GRANT_TTL:
+            raise ValueError("a grant lives at least 1 second and at most 10 minutes")
         now = int(self._clock().timestamp())
         claims = {
             "iss": ISSUER,
@@ -228,7 +230,7 @@ class GrantVerifier:
         return claims
 
     def _verified_payload(self, grant: object) -> dict[str, Any]:
-        if not isinstance(grant, str) or len(grant) > _MAX_GRANT_CHARS or grant.count(".") != 2:
+        if not isinstance(grant, str) or len(grant) > _MAX_GRANT_CHARS or not grant.isascii() or grant.count(".") != 2:
             raise GrantRejected(RejectReason.MALFORMED, "not a compact JWS")
         head, body, signature = grant.split(".")
         header = _json_part(head)
@@ -245,14 +247,14 @@ class GrantVerifier:
 def _claim_str(payload: Mapping[str, Any], name: str) -> str:
     value = payload[name]
     try:
-        return check_id(value, name)
+        return _check_id(value, name)
     except ValueError:
         raise GrantRejected(RejectReason.MALFORMED, f"claim {name} is malformed") from None
 
 
 def _claim_time(payload: Mapping[str, Any], name: str) -> datetime:
     value = payload[name]
-    if type(value) is not int or value < 0:
+    if type(value) is not int or not 0 <= value <= _MAX_NUMERIC_DATE:
         raise GrantRejected(RejectReason.MALFORMED, f"claim {name} is not a NumericDate")
     return datetime.fromtimestamp(value, UTC)
 

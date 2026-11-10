@@ -110,7 +110,10 @@ def test_the_default_lifetime_is_five_minutes_and_at_most_ten_is_allowed() -> No
     assert timedelta(minutes=10) == MAX_GRANT_TTL
 
 
-@pytest.mark.parametrize("ttl", [timedelta(minutes=10, seconds=1), timedelta(hours=1), timedelta(0), timedelta(-1)])
+@pytest.mark.parametrize(
+    "ttl",
+    [timedelta(minutes=10, seconds=1), timedelta(hours=1), timedelta(0), timedelta(-1), timedelta(milliseconds=500)],
+)
 def test_the_issuer_refuses_a_lifetime_outside_zero_to_ten_minutes(ttl: timedelta) -> None:
     _, issuer, _ = make()
     with pytest.raises(ValueError, match="10 minutes"):
@@ -264,6 +267,9 @@ def test_a_grant_issued_in_the_future_is_rejected() -> None:
         {"iat": "now"},
         {"exp": True},
         {"exp": 1.5},
+        {"exp": 10**12},
+        {"iat": 10**12},
+        {"iat": -1},
         {"extra": "claim"},
     ],
 )
@@ -389,3 +395,9 @@ def test_a_grant_never_holds_a_value_only_ids_and_field_names() -> None:
     payload = json.loads(unb64(grant.split(".")[1]))
     assert payload["fields"] == ["email"]
     assert all(isinstance(v, str | int | list) for v in payload.values())
+
+
+def test_a_non_ascii_grant_is_rejected_as_malformed() -> None:
+    _, issuer, verifier = make()
+    head, _, sig = issue(issuer).split(".")
+    assert rejected(verifier, f"{head}.\u00e9.{sig}") is RejectReason.MALFORMED

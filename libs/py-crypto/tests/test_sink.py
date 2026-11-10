@@ -381,9 +381,49 @@ def test_nothing_is_released_when_the_access_log_cannot_be_written() -> None:
     world = World()
     token = world.put(HIRE_1, VaultField.MOBILE, MOBILE_1)
     world.store.tenant(ACCESS_LOG_COLLECTION).fail_next_insert = True
-    with pytest.raises(RuntimeError, match="refused the write"):
+    assert world.rejection(world.grant(), TELEGRAM, [mobile(token)]) is RejectReason.VAULT_ERROR
+
+
+def test_an_unexpected_store_failure_is_a_rejection_and_is_audited(monkeypatch: pytest.MonkeyPatch) -> None:
+    world = World()
+    token = world.put(HIRE_1, VaultField.MOBILE, MOBILE_1)
+
+    async def down(*_: Any, **__: Any) -> Any:
+        raise ConnectionError("mongo is down")
+
+    monkeypatch.setattr(world.store.tenant(JTI_COLLECTION), "insert_one", down)
+    with pytest.raises(GrantRejected) as caught:
         world.resolve(world.grant(), TELEGRAM, [mobile(token)])
-    assert world.access_log() == []
+    assert caught.value.reason is RejectReason.VAULT_ERROR
+    assert "mongo is down" not in str(caught.value)
+    assert caught.value.__cause__ is None
+    assert [r.reason for r in world.audit.records] == [RejectReason.VAULT_ERROR]
+
+
+def test_a_raw_value_put_where_a_token_belongs_never_reaches_the_audit_record() -> None:
+    world = World()
+    token = world.put(HIRE_1, VaultField.MOBILE, MOBILE_1)
+    presented = [mobile(token), SinkToken(VaultField.AADHAAR, AADHAAR), mobile(MOBILE_2)]
+    assert world.rejection(world.grant(), TELEGRAM, presented) is RejectReason.MALFORMED
+    [record] = world.audit.records
+    assert record.tokens == (token,)
+    assert AADHAAR not in repr(record)
+    assert MOBILE_2 not in repr(record)
+    assert AADHAAR not in json.dumps(record.to_document(), default=str)
+
+
+def test_a_raw_value_never_reaches_the_audit_record_of_a_forged_grant() -> None:
+    world = World()
+    forged = sign(GrantSigningKey.generate(), claims(ORG_A))
+    world.rejection(forged, TELEGRAM, [mobile(MOBILE_2)] * 100)
+    [record] = world.audit.records
+    assert record.tokens == ()
+
+
+def test_rejects_the_same_token_twice() -> None:
+    world = World()
+    token = world.put(HIRE_1, VaultField.MOBILE, MOBILE_1)
+    assert world.rejection(world.grant(), TELEGRAM, [mobile(token), mobile(token)]) is RejectReason.MALFORMED
 
 
 def test_a_failing_audit_store_does_not_turn_a_rejection_into_a_release() -> None:

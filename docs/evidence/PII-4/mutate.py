@@ -100,7 +100,7 @@ MUTATIONS = [
         "G17",
         "issuer: lifetime not capped at 10 minutes",
         "grants.py",
-        "if not timedelta(0) < ttl <= MAX_GRANT_TTL:",
+        "if not _MIN_GRANT_TTL <= ttl <= MAX_GRANT_TTL:",
         "if False:",
     ),
 ]
