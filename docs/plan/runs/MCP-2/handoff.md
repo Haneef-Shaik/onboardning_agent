@@ -1,4 +1,14 @@
-# Handoff — MCP-2 · Reject dangerous and cross-tenant queries        attempt 1 · goal/mcp-2-query-validator · see `git log -1` (code at 491e0e4)
+# Handoff — MCP-2 · Reject dangerous and cross-tenant queries        attempt 2 · goal/mcp-2-query-validator · see `git log -1` (code at a47be57)
+
+**Attempt 2 (after the orchestrator rebased onto main, which now has MCP-3 and EVAL-1).** On the
+rebased branch, `make check` failed on one test. The box-4 source scan flagged MCP-3's
+`db_users.py`, which calls `.command()` for role provisioning and the start-up privilege check.
+That module is admin code, not a tool. The scan now covers every module **except** the named admin
+module (`ADMIN_MODULES = {"db_users"}`). New tests prove that no tool reaches it, both statically
+(the AST import closure from `server.py`) and at run time (a fresh interpreter that imports every
+tool module never loads it). Four new mutations (V28–V31) show that the narrowed guard still bites.
+The property test now pins two look-alike-path examples, so it catches V15 every time. Commit
+hashes below are the rebased ones.
 
 **Outcome claimed.** Every mcp-mongo call now passes a recursive validator first
 (`apps/mcp-mongo/src/onb_mcp_mongo/validator.py` with `validator_rules.py`). It runs once in
@@ -25,7 +35,7 @@ It rejects:
 | An injection corpus of 40+ payloads (nested, dotted, unicode, `$where`, `$function`, `$accumulator`, `$expr` with JS, `$lookup`, `$graphLookup`, `$out`, `$merge`, `$unionWith`) is all rejected, each with a named reason (test) | yes | **Corpus:** `apps/mcp-mongo/tests/corpus.py` has **82 payloads**, each with an expected `denial.reason`. `REQUIRED_KINDS` maps every kind the card names to corpus ids. **Validator level:** `test_validator.py::test_every_corpus_payload_is_rejected_with_its_named_reason[*]` passes 82 of 82. **Supporting tests:** `test_the_corpus_has_at_least_40_payloads_with_unique_ids` and `test_the_corpus_covers_every_kind_the_card_names[*]` (12 kinds). **Over MCP with a real client:** `test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[*]` passes 82 of 82. Each call is `isError`, the driver gets no calls, and the span has `outcome=denied` and `denial.reason` equal to the expected reason. Command: `uv run --frozen pytest apps/mcp-mongo/tests/test_validator.py apps/mcp-mongo/tests/test_server_validator.py apps/mcp-mongo/tests/test_validator_properties.py apps/mcp-mongo/tests/test_tool_surface.py -v` → `268 passed` (`docs/evidence/MCP-2/box-tests.txt`; it lists 82 PASSED for each corpus test). |
 | A hypothesis test never produces an accepted query containing a forbidden operator | yes | `apps/mcp-mongo/tests/test_validator_properties.py`, 9 properties at 600 examples each. **Random trees:** `test_an_accepted_{filter,pipeline,update,insert}_never_holds_a_forbidden_operator`. Keys mix allowlisted operators, forbidden ones, look-alikes (fullwidth `＄`, Cyrillic `е`, zero-width, soft hyphen, case, padding) and random `$x`. **Grammar-built calls:** `test_a_mutated_{filter,pipeline,update,insert}_*`, where 1 key in 20 is replaced by a dangerous one; acceptance is 76% for find, 41% aggregate, 14% update and 81% insert (statistics in `box-tests.txt`), so the property is not vacuous. **Injection:** `test_a_valid_filter_is_accepted_and_rejected_once_a_forbidden_operator_is_injected` puts each forbidden operator at a random depth and checks both find and `$match`. **Oracle:** every name and dotted segment of an accepted call is checked, after NFKC, against the forbidden set and the allowlists. Per context, filters hold only query and expression operators, inserts no operator, and updates only update operators; `pii` and `org_id` are never written. Result: `600 passing, 0 failing` for each property (`box-tests.txt`). The property tests alone catch 8 of 10 operator and name mutations (`mutation-checks-properties.txt`); the 2 misses only change the reason, see Mutation checks. |
 | An update touching `pii.mobile` and a `$set` of `org_id` are rejected (tests) | yes | **Validator:** `test_validator.py::test_an_update_touching_pii_mobile_is_rejected` (`pii_read_only`); `test_every_update_operator_on_pii_mobile_is_rejected[$set,$unset,$inc,$mul,$min,$max,$push,$addToSet,$pull]`; `test_a_set_of_org_id_is_rejected` and `test_a_set_of_an_org_id_subfield_is_rejected` (`org_id_not_allowed`). **Over MCP:** `test_server_validator.py::test_an_update_touching_pii_mobile_is_denied_over_mcp` (the stored `pii.mobile` is unchanged, the driver gets no calls, `denial.reason=pii_read_only`) and `test_a_set_of_org_id_is_denied_over_mcp` (`org_id` stays `org_a`). **Corpus:** `pii-*` (8 payloads) and `org-*` (10). All PASSED (`box-tests.txt`). |
-| A test asserts no delete, drop, index, admin or `runCommand` tool exists | yes | `apps/mcp-mongo/tests/test_tool_surface.py` has four tests. `test_no_delete_drop_index_admin_or_run_command_tool_is_served` checks that `tools/list` over MCP is exactly the six PRD tools, that no name contains delete/remove/drop/index/admin/command/runcommand/eval/rename/replace, and that each tool has `destructiveHint=False`. `test_the_server_is_built_only_from_the_prd_tools` checks `CONTRACTS` and `HANDLERS`. `test_no_source_file_calls_a_delete_drop_index_or_command_method` scans `src/` for `.delete_*`, `.drop*`, `.create_index*`, `.command(`, `replace_one`, `bulk_write` and others. `test_calling_a_tool_that_does_not_exist_is_an_error` tries `delete_one`, `drop_collection`, `create_index`, `run_command` and `admin_command`. All PASSED. Mutations V26 and V27 fail them. |
+| A test asserts no delete, drop, index, admin or `runCommand` tool exists | yes | `apps/mcp-mongo/tests/test_tool_surface.py` has seven tests. **Served tools:** `test_no_delete_drop_index_admin_or_run_command_tool_is_served` checks that `tools/list` over MCP is exactly the six PRD tools, that no name contains delete/remove/drop/index/admin/command/runcommand/eval/rename/replace, and that each tool has `destructiveHint=False`. **Built tools:** `test_the_server_is_built_only_from_the_prd_tools` checks `CONTRACTS` and `HANDLERS`. **Source scan:** `test_no_source_module_but_the_named_admin_code_calls_a_delete_drop_index_or_command_method` scans every `src/` module except `db_users.py` for `.delete_*`, `.drop*`, `.create_index*`, `.command(`, `replace_one`, `bulk_write` and others, and asserts the scanned set covers the whole tool closure. **Admin code unreachable:** `test_the_tool_closure_holds_the_tool_code_and_not_the_admin_code` builds the AST import closure from `server.py`; it must contain every handler's and contract's module (plus tools, policy, validator and validator_rules) and must not contain `db_users`. `test_importing_the_tools_never_loads_the_admin_code` uses a fresh interpreter that imports every closure module and checks `db_users` is not in `sys.modules`. **The exemption itself:** `test_the_admin_exemption_is_only_the_provisioning_module` pins the exemption to exactly `{"db_users"}`. **Missing tools:** `test_calling_a_tool_that_does_not_exist_is_an_error` tries `delete_one`, `drop_collection`, `create_index`, `run_command` and `admin_command`. All 7 PASSED (`box-tests.txt`). Mutations V26–V31 fail them. |
 
 ## Claims the next goals may rely on
 | Claim | Proved by |
@@ -44,8 +54,9 @@ It rejects:
 ## Gates
 | Gate | Command | Result |
 |------|---------|--------|
-| Check | `make check` | `make check: all passed`, exit=0. Lint, typecheck and test for 17 projects; mcp-mongo `459 passed` (`docs/evidence/MCP-2/make-check.txt`) |
-| Integration | `make test-int` | exit=0. Stack `12 passed`, then `3`, `28`, `6`, `18` (mcp-mongo) and `17 passed`; `Successfully ran target test-int for 5 projects` (`docs/evidence/MCP-2/make-test-int.txt`, compose project `ob-mcp-2` on 19500/19501) |
+| Check | `rtk proxy make check` (rebased branch, a47be57) | `make check: all passed`, exit=0. Lint, typecheck and test for 17 projects; mcp-mongo `506 passed` (`docs/evidence/MCP-2/make-check.txt`) |
+| Integration | `rtk proxy make test-int` (rebased branch) | exit=0. `12`, `10`, `3`, `28`, `77`, `17`, `8` and `2 passed`; `Successfully ran target test-int for 7 projects` (`docs/evidence/MCP-2/make-test-int.txt`, compose project `ob-mcp-2` on 19500/19501) |
+| Box tests | `uv run --frozen pytest apps/mcp-mongo/tests/test_validator.py …/test_server_validator.py …/test_validator_properties.py …/test_tool_surface.py -v` | `271 passed`; 164 corpus PASSED lines (82 payloads × 2 tests) (`box-tests.txt`) |
 | Plan | `python3 scripts/plan/plan.py check` | `plan ok: 67 goals, 34 ledger rows` |
 
 `make test-xt`, evals and contracts-check do not cover this diff or do not exist yet.
@@ -55,10 +66,11 @@ It rejects:
 |------|-------|-------|
 | MCP-1 | Denials are MCP tool errors with `outcome=denied` and `denial.reason`; `ToolRejectedError` maps to them | yes. The validator raises `ToolRejectedError`, and the server tests read the reason from the span |
 | MCP-1 | Arguments are validated by the closed contracts before the handler; `model_dump_one_level()` gives the handler kwargs | yes. The validator receives exactly those kwargs |
+| MCP-3 (via the rebase) | `db_users.py` provisions roles and checks least privilege at start-up through `.command()`; `main.py` calls it, and the tools do not | yes. The AST closure from `server.py` and the runtime import check both show `db_users` is outside tool code |
 | MCP-1 | "MCP-2 should cap depth; narrow `_mentions_org`; include sort keys" | Depth is capped and sort and projection keys are checked. `_mentions_org` in `policy.py` was **not** narrowed: it is MCP-1's code, and MCP-3 also edits this app, so it is left for a merge-safe follow-up. It still refuses a value equal to `"org_id"` after the validator accepts it, which is safe |
 
 ## Mutation checks
-**All guards:** `docs/evidence/MCP-2/mutation-checks.txt` (script `docs/evidence/MCP-2/mutate.py`) gives `SUMMARY: 27 of 27 mutations caught, every file restored` (byte-for-byte sha256).
+**All guards:** `docs/evidence/MCP-2/mutation-checks.txt` (script `docs/evidence/MCP-2/mutate.py`) gives `SUMMARY: 31 of 31 mutations caught, every file restored` (byte-for-byte sha256), run on the rebased branch.
 
 | # | Guard broken | Failed |
 |---|--------------|--------|
@@ -88,9 +100,15 @@ It rejects:
 | V24 | `_id` writable | 3 |
 | V25 | Validator not wired into the server | 71 |
 | V26 | A `delete_one` tool added | 5, the `test_tool_surface.py` tests |
-| V27 | A `.drop(` call added | 4, including `test_no_source_file_calls_a_delete_drop_index_or_command_method` |
+| V27 | A `.drop(` call added to `tools.py` | 5, including `test_no_source_module_but_the_named_admin_code_calls_a_delete_drop_index_or_command_method` |
+| V28 | A `.command(` call added to tool code (`tools.py`) | 5, including the source scan |
+| V29 | `tools.py` imports `db_users` | 3: `test_the_tool_closure_holds_the_tool_code_and_not_the_admin_code`, `test_importing_the_tools_never_loads_the_admin_code`, and the scan's closure-covered check |
+| V30 | `validator_rules.py`, deep in the closure, loads `db_users` with `importlib` (invisible to the AST) | 1: `test_importing_the_tools_never_loads_the_admin_code` |
+| V31 | A `.drop(` call added to `settings.py`, outside the tool closure but not admin code | 1: the source scan |
 
-**Property tests alone (box 2):** `mutation-checks-properties.txt` reruns V1, V2, V4, V5, V6 and V12–V16 against `test_validator_properties.py` only and catches 8 of 10. The two it does not catch are expected:
+V28–V31 test the attempt-2 narrowing. A destructive call in any non-admin module fails, and the admin module cannot become reachable from a tool, statically or dynamically.
+
+**Property tests alone (box 2):** `mutation-checks-properties.txt` reruns V1, V2, V4, V5, V6 and V12–V16 against `test_validator_properties.py` only and catches 8 of 10. In attempt 2, the update property pins `{"$set": {"＄where": 1}}` and `{"$set": {"a.﹩function": 1}}` as `@example`s. Before that, V15 (NFKC) was caught only when hypothesis happened to put a look-alike in a plain path position. The two it does not catch are expected:
 - **V1** only changes the denial reason; the operator is still rejected.
 - **V16** with a `$`-led look-alike is still rejected as not allowlisted, and an invisible character in a plain field name is not dangerous.
 
@@ -102,7 +120,7 @@ The corpus tests catch both.
 - The tool-surface tests passed from the start: MCP-1 already serves no destructive tool, so they are a guard against regression (V26 and V27 show they bite).
 
 ## Review findings left open
-I ran a code review and a security review (general-purpose agents with reviewer briefs). Neither found a critical or high issue, and the security review found **no bypass** (no JavaScript, no cross-collection or cross-org access, no `pii`/`org_id` write). These were fixed in 2019078:
+I ran a code review and a security review (general-purpose agents with reviewer briefs). Neither found a critical or high issue, and the security review found **no bypass** (no JavaScript, no cross-collection or cross-org access, no `pii`/`org_id` write). These were fixed in 839bf45 (rebased hash):
 - Query and condition contexts are now separate.
 - ObjectId is accepted only in value position.
 - `$$` system-variable allowlist; `"$org_id"` paths refused.
@@ -133,7 +151,7 @@ Left open:
 - `tests_int/test_mcp_mongo_int.py::test_a_query_mongodb_refuses_is_a_denial_not_an_internal_error`: the input changes from `{"$bogus": 1}`, which the validator now refuses, to `{"$mod": [0, 0]}`, which passes the validator and is refused by MongoDB. The assertions are unchanged, so the `OperationFailure → query_rejected` path stays covered.
 
 ## Found for other goals
-- **MCP-3:** expect the one-line `validator.check_call` in `server._run_traced` when merging. The validator is pure and takes no database or settings.
+- **MCP-3 (merged):** `db_users.py` is the only module allowed to call `.command()` and similar admin methods, and only while no tool reaches it. A future admin module must be added to `ADMIN_MODULES` in `test_tool_surface.py`, which `test_the_admin_exemption_is_only_the_provisioning_module` pins, so that is a deliberate, reviewed change. If tool code needs anything from `db_users` (such as the role constants), move it to a module that has no admin calls.
 - **HUB-1:** the `denial.reason` values above can feed the audit record. Consider a request-body byte cap.
 - **py-data / ops:** `maxTimeMS` on every repository call (see open findings).
 - **MCP-1 follow-up:** `$date` decoding; narrow `_mentions_org`.
