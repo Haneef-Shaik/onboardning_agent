@@ -63,7 +63,7 @@ for (const c of CASES) {
     expect(apiCalls).toEqual(["POST /api/auth/login", "GET /api/me"]);
 
     if (c.refused !== null) {
-      // A full page load drops the in-memory token (ADR 0002), so go there through the app.
+      // A full page load drops the in-memory token (ADR 0005), so go there through the app.
       await page.evaluate((path) => {
         window.history.pushState({}, "", path);
         window.dispatchEvent(new PopStateEvent("popstate"));

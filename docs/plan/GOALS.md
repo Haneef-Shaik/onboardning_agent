@@ -981,7 +981,7 @@ only through the generated client.
 
 **PRD.** §11 Frontend, §7.8, FR-P1.
 
-**Scope.** Login; token handling decided in `docs/adr/0002-web-token-storage.md`; role-based nav;
+**Scope.** Login; token handling decided in `docs/adr/0005-web-token-storage.md`; role-based nav;
 `MaskedField`; envelope-aware error handling; served through Caddy in dev; Playwright set up.
 
 **Done when.**

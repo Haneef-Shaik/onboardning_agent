@@ -1,5 +1,5 @@
 /**
- * The signed-in session: the access token, held in memory only (docs/adr/0002-web-token-storage.md).
+ * The signed-in session: the access token, held in memory only (docs/adr/0005-web-token-storage.md).
  * Nothing goes to localStorage, sessionStorage or a cookie, so a page reload signs the user out.
  */
 

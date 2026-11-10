@@ -2,7 +2,7 @@
 
 - Board: claimed (goals/UI-1), branch goal/ui-1-web-shell from main @ 946f27b.
 - Done: deps; MaskedField (ts-ui); role nav and guard; login, in-memory session, /me, envelope
-  errors; ADR 0002; Caddy routes (HTTPS only) and Vite proxy; Playwright smoke (direct and through
+  errors; ADR 0005; Caddy routes (HTTPS only) and Vite proxy; Playwright smoke (direct and through
   Caddy); 21/21 mutations; code and security review fixes; make check, make test-int,
   contracts-check green; handoff attempt 1.
 - Next: goal-verifier (attempt 1) → board `in review` → `make down`. Hold for Haneef's review (no

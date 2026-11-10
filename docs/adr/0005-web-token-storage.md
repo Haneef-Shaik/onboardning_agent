@@ -1,9 +1,9 @@
-# 0002 · The web app keeps the access token in memory only
+# 0005 · The web app keeps the access token in memory only
 
 - **Status:** accepted · 2026-11-10 · goal UI-1
-- **Number:** the card names `0002-web-token-storage.md`, and AUTH-1's ADR 0004 reserved 0002 for
-  this decision. EVT-1 then used 0002 too (`0002-cross-org-job-queue.md`), so two ADRs share the
-  number. Both are referenced by their full file names; renumbering is left to Haneef.
+- **Number:** the card first named `0002-web-token-storage.md`, but EVT-1's
+  `0002-cross-org-job-queue.md` already held 0002, so the orchestrator renumbered this ADR to 0005
+  when integrating UI-1 (the card now names 0005).
 - **Context:** PRD §7.8: the API issues an HS256 JWT (`sub`, `org_id`, `role`, `exp`) from a password
   login, with no refresh tokens in MVP. AUTH-1 returns it in the response body as
   `{access_token, token_type: "bearer", expires_at}` and reads it from the `Authorization: Bearer`
