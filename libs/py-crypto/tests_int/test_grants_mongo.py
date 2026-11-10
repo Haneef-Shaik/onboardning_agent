@@ -11,6 +11,7 @@ import os
 import secrets
 import uuid
 from collections.abc import Callable, Coroutine, Iterator
+from contextlib import AbstractContextManager
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -42,6 +43,8 @@ from onb_data import DataStore, connect, tenant_scope
 from pymongo import MongoClient
 
 Client = MongoClient[dict[str, object]]
+# The `unscoped` fixture (T-2 safety net): `with unscoped("why"):` for a root action across orgs.
+Unscoped = Callable[[str], AbstractContextManager[None]]
 ORG_A, ORG_B = "org_alpha", "org_beta"
 HIRE_1, HIRE_2 = "hire_0001", "hire_0002"
 HR = "user_hr_01"
@@ -105,7 +108,7 @@ def grant_for(setup: Setup, org: str = ORG_A, subject: str = HIRE_1) -> str:
 
 
 def test_a_resolution_writes_one_masked_access_log_entry_in_mongo(
-    scratch: tuple[str, str], root_client: Client
+    scratch: tuple[str, str], root_client: Client, unscoped: Unscoped
 ) -> None:
     db = root_client[scratch[1]]
 
@@ -120,12 +123,13 @@ def test_a_resolution_writes_one_masked_access_log_entry_in_mongo(
                 await s.resolver.resolve_at_sink(grant, TELEGRAM, [SinkToken(VaultField.MOBILE, token)])
             assert caught.value.reason is RejectReason.REPLAYED
 
-        entries = list(db["pii_access_log"].find())
+        with unscoped("root read-back of every org's access log and jti records"):
+            entries = list(db["pii_access_log"].find())
+            jtis = list(db["pii_grant_jti"].find())
         assert len(entries) == 1
         assert entries[0]["org_id"] == ORG_A
         assert entries[0]["masked"] == "90XXXXXX01"
         assert MOBILE_1 not in json.dumps(entries[0], default=str)
-        jtis = list(db["pii_grant_jti"].find())
         assert len(jtis) == 1
         assert jtis[0]["org_id"] == ORG_A
         expires_at = jtis[0]["expires_at"]
@@ -136,7 +140,9 @@ def test_a_resolution_writes_one_masked_access_log_entry_in_mongo(
     with_sink(scratch, body)
 
 
-def test_concurrent_uses_of_one_grant_have_exactly_one_winner(scratch: tuple[str, str], root_client: Client) -> None:
+def test_concurrent_uses_of_one_grant_have_exactly_one_winner(
+    scratch: tuple[str, str], root_client: Client, unscoped: Unscoped
+) -> None:
     db = root_client[scratch[1]]
 
     async def body(s: Setup) -> None:
@@ -152,13 +158,15 @@ def test_concurrent_uses_of_one_grant_have_exactly_one_winner(scratch: tuple[str
         assert len(wins) == 1
         assert len(losses) == 5
         assert {o.reason for o in losses} == {RejectReason.REPLAYED}
-        assert db["pii_access_log"].count_documents({}) == 1
+        with unscoped("root count across orgs proves exactly one access was logged"):
+            logged = db["pii_access_log"].count_documents({})
+        assert logged == 1
 
     with_sink(scratch, body)
 
 
 def test_another_hires_and_another_orgs_tokens_are_refused_in_mongo(
-    scratch: tuple[str, str], root_client: Client
+    scratch: tuple[str, str], root_client: Client, unscoped: Unscoped
 ) -> None:
     db = root_client[scratch[1]]
 
@@ -173,7 +181,9 @@ def test_another_hires_and_another_orgs_tokens_are_refused_in_mongo(
                 with pytest.raises(GrantRejected) as caught:
                     await s.resolver.resolve_at_sink(grant_for(s), TELEGRAM, [SinkToken(VaultField.MOBILE, token)])
                 assert caught.value.reason is reason
-        assert db["pii_access_log"].count_documents({}) == 0
+        with unscoped("root count across orgs proves no refused resolution was logged"):
+            logged = db["pii_access_log"].count_documents({})
+        assert logged == 0
 
     with_sink(scratch, body)
 

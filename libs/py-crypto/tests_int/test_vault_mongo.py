@@ -12,6 +12,7 @@ import os
 import secrets
 import uuid
 from collections.abc import Callable, Coroutine, Iterator
+from contextlib import AbstractContextManager
 from typing import Any
 from urllib.parse import quote_plus
 
@@ -37,6 +38,8 @@ from pymongo import MongoClient
 from pymongo.errors import DuplicateKeyError
 
 Client = MongoClient[dict[str, object]]
+# The `unscoped` fixture (T-2 safety net): `with unscoped("why"):` for a root action across orgs.
+Unscoped = Callable[[str], AbstractContextManager[None]]
 ORG_A, ORG_B = "org_alpha", "org_beta"
 HIRE_1, HIRE_2 = "hire_0001", "hire_0002"
 HR = "user_hr_01"
@@ -72,7 +75,9 @@ def with_vault[T](scratch: tuple[str, str], body: Callable[[Vault], Coroutine[An
     return asyncio.run(main())
 
 
-def test_put_update_resolve_and_tamper_against_mongo(scratch: tuple[str, str], root_client: Client) -> None:
+def test_put_update_resolve_and_tamper_against_mongo(
+    scratch: tuple[str, str], root_client: Client, unscoped: Unscoped
+) -> None:
     db = root_client[scratch[1]]
 
     async def body(vault: Vault) -> None:
@@ -92,13 +97,15 @@ def test_put_update_resolve_and_tamper_against_mongo(scratch: tuple[str, str], r
             }
             assert all(MOBILE_1 not in repr(d) and MOBILE_2 not in repr(d) for d in stored.values())
 
-            db["pii_vault"].update_one({"token": new}, {"$set": {"subject.id": HIRE_2}})  # re-point the token
+            with unscoped("deliberate tamper as root: re-point the token to another hire"):
+                db["pii_vault"].update_one({"token": new}, {"$set": {"subject.id": HIRE_2}})
             with pytest.raises(VaultIntegrityError):
                 await vault.resolve(new, org_id=ORG_A, subject_id=HIRE_2, field=VaultField.MOBILE)
 
             await vault.purge(old, **kw)
             assert await vault.resolve(old, **kw) == PURGED
-            purged = db["pii_vault"].find_one({"token": old}) or {}
+            with unscoped("root read-back by token proves the purge wiped the ciphertext"):
+                purged = db["pii_vault"].find_one({"token": old}) or {}
             assert (purged["status"], purged["ciphertext"], purged["nonce"]) == ("purged", b"", b"")
 
         with tenant_scope(ORG_B), pytest.raises(TokenNotFoundError):
@@ -107,7 +114,9 @@ def test_put_update_resolve_and_tamper_against_mongo(scratch: tuple[str, str], r
     with_vault(scratch, body)
 
 
-def test_aadhaar_lands_only_in_its_partition_with_consent(scratch: tuple[str, str], root_client: Client) -> None:
+def test_aadhaar_lands_only_in_its_partition_with_consent(
+    scratch: tuple[str, str], root_client: Client, unscoped: Unscoped
+) -> None:
     db = root_client[scratch[1]]
 
     async def body(vault: Vault) -> None:
@@ -121,9 +130,12 @@ def test_aadhaar_lands_only_in_its_partition_with_consent(scratch: tuple[str, st
                 consent=AadhaarConsent(purpose="employment onboarding KYC"),
             )
             assert await vault.resolve(token, org_id=ORG_A, subject_id=HIRE_1, field=VaultField.AADHAAR) == AADHAAR
-        assert [d["token"] for d in db["pii_vault_aadhaar"].find()] == [token]
-        assert db["pii_vault"].count_documents({}) == 0
-        consent = db["pii_consent"].find_one({"token": token}) or {}
+        with unscoped("root read-back of every org's vault records proves where the Aadhaar landed"):
+            aadhaar_tokens = [d["token"] for d in db["pii_vault_aadhaar"].find()]
+            general_count = db["pii_vault"].count_documents({})
+            consent = db["pii_consent"].find_one({"token": token}) or {}
+        assert aadhaar_tokens == [token]
+        assert general_count == 0
         assert (consent["org_id"], consent["field"], consent["purpose"]) == (
             ORG_A,
             "aadhaar",
@@ -131,7 +143,9 @@ def test_aadhaar_lands_only_in_its_partition_with_consent(scratch: tuple[str, st
         )
         for name in db.list_collection_names():
             if name != "pii_vault_aadhaar":
-                assert all(AADHAAR not in repr(d) for d in db[name].find())
+                with unscoped("root scan of every collection proves the raw Aadhaar is nowhere else"):
+                    others = list(db[name].find())
+                assert all(AADHAAR not in repr(d) for d in others)
 
     with_vault(scratch, body)
 

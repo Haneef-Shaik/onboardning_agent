@@ -12,7 +12,8 @@ import hashlib
 import os
 import secrets
 import uuid
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
+from contextlib import AbstractContextManager
 from urllib.parse import quote_plus
 
 import pytest
@@ -27,6 +28,8 @@ from onb_data import DataStore, connect, tenant_scope
 from pymongo import MongoClient
 
 Client = MongoClient[dict[str, object]]
+# The `unscoped` fixture (T-2 safety net): `with unscoped("why"):` for a root read-back across orgs.
+Unscoped = Callable[[str], AbstractContextManager[None]]
 SETTINGS = AuthSettings(jwt_secret=secrets.token_urlsafe(48), bcrypt_rounds=4)
 PASSWORD = secrets.token_urlsafe(12)
 OTHER_HASH = hash_password(secrets.token_urlsafe(12), rounds=4)
@@ -92,9 +95,10 @@ def test_the_directory_holds_only_the_email_hash_org_and_user(
 
 
 def test_user_records_are_tenant_documents(
-    root_client: Client, scratch: tuple[str, str], seeded: dict[str, str]
+    root_client: Client, scratch: tuple[str, str], seeded: dict[str, str], unscoped: Unscoped
 ) -> None:
-    docs = {d["email"]: d for d in root_client[scratch[1]]["users"].find()}
+    with unscoped("root read-back of both orgs' user records proves each carries its own org_id"):
+        docs = {d["email"]: d for d in root_client[scratch[1]]["users"].find()}
     assert {email: d["org_id"] for email, d in docs.items()} == {
         "acme.hr@example.com": "org_acme",
         "globex.mgr@example.com": "org_globex",

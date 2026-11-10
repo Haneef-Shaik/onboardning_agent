@@ -6,6 +6,7 @@ from __future__ import annotations
 import asyncio
 import json
 from collections.abc import Awaitable, Callable
+from contextlib import AbstractContextManager
 from typing import Any
 
 import httpx
@@ -19,6 +20,8 @@ from pymongo.database import Database
 
 from .conftest import McpServer
 
+# The `unscoped` fixture (T-2 safety net): `with unscoped("why"):` for a root read-back across orgs.
+Unscoped = Callable[[str], AbstractContextManager[None]]
 TOOLS = {"list_collections", "find", "count", "aggregate", "insert_one", "update_one"}
 CONTENT = "Zq7-int-document-content"
 
@@ -73,9 +76,10 @@ def _error(result: CallToolResult) -> str:
 
 
 @pytest.fixture
-def seeded(root_db: Database[dict[str, Any]]) -> Database[dict[str, Any]]:
-    for name in ("new_hires", "run_tasks"):
-        root_db[name].delete_many({})
+def seeded(root_db: Database[dict[str, Any]], unscoped: Unscoped) -> Database[dict[str, Any]]:
+    with unscoped("test setup: clear both orgs' seed documents as root"):
+        for name in ("new_hires", "run_tasks"):
+            root_db[name].delete_many({})
     root_db["new_hires"].insert_many(
         [
             {"org_id": "org_a", "name": "ptk_a1", "status": "open", "note": CONTENT},
@@ -122,13 +126,17 @@ def test_find_sees_only_the_callers_org(mcp_server: McpServer, seeded: Any) -> N
     assert [d["name"] for d in other["documents"]] == ["ptk_b1"]
 
 
-def test_find_by_object_id_round_trips(mcp_server: McpServer, seeded: Database[dict[str, Any]]) -> None:
-    doc = seeded["new_hires"].find_one({"name": "ptk_a2"})
+def test_find_by_object_id_round_trips(
+    mcp_server: McpServer, seeded: Database[dict[str, Any]], unscoped: Unscoped
+) -> None:
+    with unscoped("root lookup of a seeded document's _id, to hand the tool a real ObjectId"):
+        doc = seeded["new_hires"].find_one({"name": "ptk_a2"})
     assert doc is not None
     args = {"collection": "new_hires", "filter": {"_id": {"$oid": str(doc["_id"])}}, "limit": 1}
     data = _data(_call(mcp_server, "org_a", "find", args))
     assert [d["_id"] for d in data["documents"]] == [str(doc["_id"])]
-    foreign = seeded["new_hires"].find_one({"name": "ptk_b1"})
+    with unscoped("root lookup of the other org's document _id, to try it from org_a"):
+        foreign = seeded["new_hires"].find_one({"name": "ptk_b1"})
     assert foreign is not None
     args = {"collection": "new_hires", "filter": {"_id": {"$oid": str(foreign["_id"])}}, "limit": 1}
     assert _data(_call(mcp_server, "org_a", "find", args))["documents"] == []
@@ -147,24 +155,35 @@ def test_aggregate_groups_within_the_callers_org(mcp_server: McpServer, seeded: 
     assert data["documents"] == [{"_id": "done", "n": 1}, {"_id": "open", "n": 2}]
 
 
-def test_insert_one_takes_org_id_from_the_context(mcp_server: McpServer, seeded: Database[dict[str, Any]]) -> None:
+def test_insert_one_takes_org_id_from_the_context(
+    mcp_server: McpServer, seeded: Database[dict[str, Any]], unscoped: Unscoped
+) -> None:
     data = _data(_call(mcp_server, "org_a", "insert_one", {"collection": "run_tasks", "document": {"state": "new"}}))
-    stored = seeded["run_tasks"].find_one({"_id": ObjectId(data["inserted_id"])})
+    with unscoped("root read-back by id, without assuming the org, proves which org the tool stamped"):
+        stored = seeded["run_tasks"].find_one({"_id": ObjectId(data["inserted_id"])})
     assert stored is not None
     assert stored["org_id"] == "org_a"
     assert stored["state"] == "new"
 
 
-def test_update_one_cannot_reach_another_org(mcp_server: McpServer, seeded: Database[dict[str, Any]]) -> None:
+def test_update_one_cannot_reach_another_org(
+    mcp_server: McpServer, seeded: Database[dict[str, Any]], unscoped: Unscoped
+) -> None:
     args = {"collection": "run_tasks", "filter": {"_id": "task_2"}, "update": {"$set": {"state": "done"}}}
     assert _data(_call(mcp_server, "org_a", "update_one", args)) == {"matched": 0, "modified": 0, "count": 0}
-    assert seeded["run_tasks"].find_one({"_id": "task_2"}) == {"_id": "task_2", "org_id": "org_b", "state": "todo"}
+    with unscoped("root read-back by id proves the other org's task is unchanged"):
+        task_2 = seeded["run_tasks"].find_one({"_id": "task_2"})
+    assert task_2 == {"_id": "task_2", "org_id": "org_b", "state": "todo"}
     args["filter"] = {"_id": "task_1"}
     assert _data(_call(mcp_server, "org_a", "update_one", args)) == {"matched": 1, "modified": 1, "count": 1}
-    assert seeded["run_tasks"].find_one({"_id": "task_1"}) == {"_id": "task_1", "org_id": "org_a", "state": "done"}
+    with unscoped("root read-back by id proves the own org's task was updated"):
+        task_1 = seeded["run_tasks"].find_one({"_id": "task_1"})
+    assert task_1 == {"_id": "task_1", "org_id": "org_a", "state": "done"}
 
 
-def test_an_id_from_find_updates_the_document_as_oid(mcp_server: McpServer, seeded: Database[dict[str, Any]]) -> None:
+def test_an_id_from_find_updates_the_document_as_oid(
+    mcp_server: McpServer, seeded: Database[dict[str, Any]], unscoped: Unscoped
+) -> None:
     created = _data(_call(mcp_server, "org_a", "insert_one", {"collection": "run_tasks", "document": {"state": "a"}}))
     found = _data(_call(mcp_server, "org_a", "find", {"collection": "run_tasks", "filter": {"state": "a"}, "limit": 1}))
     assert found["documents"][0]["_id"] == created["inserted_id"]
@@ -174,7 +193,8 @@ def test_an_id_from_find_updates_the_document_as_oid(mcp_server: McpServer, seed
         "update": {"$set": {"state": "b"}},
     }
     assert _data(_call(mcp_server, "org_a", "update_one", args)) == {"matched": 1, "modified": 1, "count": 1}
-    stored = seeded["run_tasks"].find_one({"_id": ObjectId(created["inserted_id"])})
+    with unscoped("root read-back by id proves the $oid update landed"):
+        stored = seeded["run_tasks"].find_one({"_id": ObjectId(created["inserted_id"])})
     assert stored is not None
     assert stored["state"] == "b"
 
@@ -214,11 +234,14 @@ def test_find_without_limit_or_over_100_is_rejected(mcp_server: McpServer, seede
     ],
 )
 def test_an_agent_supplied_org_id_is_rejected(
-    mcp_server: McpServer, seeded: Database[dict[str, Any]], tool: str, args: dict[str, Any]
+    mcp_server: McpServer, seeded: Database[dict[str, Any]], tool: str, args: dict[str, Any], unscoped: Unscoped
 ) -> None:
-    before = sorted((d["_id"], d["org_id"]) for d in seeded["run_tasks"].find())
+    with unscoped("root snapshot of every org's tasks before the attempt"):
+        before = sorted((d["_id"], d["org_id"]) for d in seeded["run_tasks"].find())
     assert "org_id" in _error(_call(mcp_server, "org_a", tool, args))
-    assert sorted((d["_id"], d["org_id"]) for d in seeded["run_tasks"].find()) == before
+    with unscoped("root snapshot of every org's tasks proves nothing moved"):
+        after = sorted((d["_id"], d["org_id"]) for d in seeded["run_tasks"].find())
+    assert after == before
 
 
 # --- box 4: spans, through the real process -----------------------------------------------------

@@ -10,12 +10,14 @@ from __future__ import annotations
 import asyncio
 import secrets
 from collections.abc import Callable, Coroutine, Iterator
+from contextlib import AbstractContextManager
 from dataclasses import dataclass
 from typing import Any
 from urllib.parse import urlsplit
 
 import pytest
 from onb_data import APPEND_ONLY_COLLECTIONS, DataStore, connect, tenant_scope
+from onb_data.safety_net import install_safety_net
 from onb_mcp_mongo import policy, tools
 from onb_mcp_mongo.call_context import CallContext
 from onb_mcp_mongo.db_users import (
@@ -35,6 +37,8 @@ from .conftest import DATABASE
 UNAUTHORIZED = 13
 ORG = "org_a"
 RootClient = MongoClient[dict[str, Any]]
+# The `unscoped` fixture (T-2 safety net): `with unscoped("why"):` for a deliberate unscoped command.
+Unscoped = Callable[[str], AbstractContextManager[None]]
 
 
 @dataclass(frozen=True)
@@ -96,7 +100,8 @@ def _writable(store: DataStore, collection: str) -> Any:
 
 
 def _count(root_db: Any, name: str, query: dict[str, Any]) -> int:
-    return int(root_db[name].count_documents(query))
+    with install_safety_net().allowing_unscoped("root count across orgs proves the refused write left nothing"):
+        return int(root_db[name].count_documents(query))
 
 
 # --- Box 1: with the policy layer bypassed, a write using the read-only user is refused ---------
@@ -198,12 +203,15 @@ CROSS_COLLECTION_STAGES: dict[str, list[dict[str, Any]]] = {
 @pytest.mark.parametrize("stage", sorted(CROSS_COLLECTION_STAGES))
 @pytest.mark.parametrize("spec", [READ_ONLY, READ_WRITE], ids=lambda s: s.user)
 def test_no_pipeline_stage_reaches_a_denied_collection_with_a_raw_driver(
-    users: Users, root_db: Any, spec: AccessSpec, stage: str
+    users: Users, root_db: Any, spec: AccessSpec, stage: str, unscoped: Unscoped
 ) -> None:
     """No policy and no repository: the MCP user runs the stage straight from a readable collection."""
     client: RootClient = MongoClient(users.uri(spec))
     try:
-        with pytest.raises(OperationFailure) as caught:
+        with (
+            unscoped("deliberate raw-driver cross-collection stage: MongoDB itself must refuse it"),
+            pytest.raises(OperationFailure) as caught,
+        ):
             list(client[DATABASE]["run_tasks"].aggregate(CROSS_COLLECTION_STAGES[stage]))
     finally:
         client.close()

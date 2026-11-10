@@ -17,6 +17,13 @@ from dataclasses import dataclass
 import pytest
 import uvicorn
 from onb_data import connect
+from onb_data.safety_net_pytest import (  # T-2 tenant safety net (PRD §7.9): registers these with pytest
+    pytest_configure,
+    pytest_sessionfinish,
+    tenant_safety_net,
+    tenant_safety_net_guard,
+    unscoped,
+)
 from onb_mcp_mongo.server import build_server
 from onb_telemetry.testing import CapturedTelemetry, captured_telemetry
 from pymongo import MongoClient
@@ -28,6 +35,9 @@ MONGO_IMAGE = "mongo:8.0.34@sha256:b9924c330a8bbc5800fe9c69f04a84e221eca7b28fd04
 DATABASE = "onb_mcp_int"
 CONTEXT_KEY = secrets.token_urlsafe(48)
 RootClient = MongoClient[dict[str, object]]
+
+# Re-exported so pytest registers the safety net hooks and fixtures for this suite.
+__all__ = ["pytest_configure", "pytest_sessionfinish", "tenant_safety_net", "tenant_safety_net_guard", "unscoped"]
 
 
 @dataclass(frozen=True)

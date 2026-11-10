@@ -17,7 +17,17 @@ from pathlib import Path
 from urllib.parse import quote_plus
 
 import pytest
+from onb_data.safety_net_pytest import (  # T-2 tenant safety net (PRD §7.9): registers these with pytest
+    pytest_configure,
+    pytest_sessionfinish,
+    tenant_safety_net,
+    tenant_safety_net_guard,
+    unscoped,
+)
 from pymongo import MongoClient
+
+# Re-exported so pytest registers the safety net hooks and fixtures for this suite.
+__all__ = ["pytest_configure", "pytest_sessionfinish", "tenant_safety_net", "tenant_safety_net_guard", "unscoped"]
 
 ROOT = Path(__file__).resolve().parents[3]
 # Pinned by digest: this container carries the root login across the tunnel.
