@@ -9,10 +9,10 @@ Branch `goal/f-2-compose-stack`. Session 1, 2026-11-10.
 2. GREEN: `infra/docker-compose.yml`, mongo init/keyfile scripts, collector Dockerfile + config,
    `Caddyfile.dev`, `.env.example`, `scripts/check_env_example.py`, Makefile `up/down/logs/env-check`,
    `test-int: up`, py-data `test-int` target + pymongo.
-3. Evidence for all five boxes in `docs/evidence/F-2/`; 11 mutation checks recorded.
+3. Evidence for all five boxes in `docs/evidence/F-2/`; 15 mutation checks recorded (re-run after review fixes).
 
 ## Next
-Code and security review of `git diff main...HEAD`, handoff, goal-verifier, board to `in review`.
+Reviews done and fixed (c4abe53); handoff written. Next: goal-verifier, then board to `in review` (hold for Haneef).
 
 ## Surprises
 - Collector 0.165 deprecates the `otlp` exporter alias; it is `otlp_grpc` now.

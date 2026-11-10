@@ -1,3 +1,4 @@
+# F-2 box 5 at c4abe53
 $ docker compose exec -T mongo mongosh --quiet --eval "db.adminCommand({listDatabases: 1})"   # no credentials
 MongoServerError: Command listDatabases requires authentication
 exit=1
@@ -11,7 +12,7 @@ MongoServerError: Authentication failed.
 exit=1
 
 # From the host: mongo publishes no port, so there is nothing to connect to.
-$ nc -z -w 2 127.0.0.1 27017   # is anything published on the host?
+$ nc -z -w 2 127.0.0.1 27017
 exit=1
 
 $ docker compose exec -T mongo sh -c 'mongosh --quiet -u "$MONGO_INITDB_ROOT_USERNAME" -p "$MONGO_INITDB_ROOT_PASSWORD" --eval "db.runCommand({ping: 1}).ok"'   # control: with credentials

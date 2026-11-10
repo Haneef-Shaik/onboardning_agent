@@ -1,14 +1,11 @@
+# F-2 box 2 at c4abe53
 $ make test-int
-infra/mongo/gen-keyfile.sh
-gen-keyfile: keeping existing infra/mongo/keyfile
-docker compose up -d --wait --build
- Image onb/otel-collector:0.165.0 Building
  Image onb/otel-collector:0.165.0 Built
 set -a && . ./.env && set +a && \
 	uv run --frozen pytest tools/tests_int -q -o cache_dir=.pytest_cache/tools-int && \
 	node_modules/.bin/nx run-many -t test-int --output-style=static
-..........                                                               [100%]
-10 passed in 1.87s
+............                                                             [100%]
+12 passed in 2.67s
  NX   Running target test-int for project py-data:
 - py-data
 > nx run py-data:test-int
@@ -21,27 +18,29 @@ configfile: pyproject.toml
 plugins: cov-7.1.0
 collected 4 items
 libs/py-data/tests_int/test_compose_mongo_transaction.py ....            [100%]
-============================== 4 passed in 0.70s ===============================
+============================== 4 passed in 0.78s ===============================
  NX   Successfully ran target test-int for project py-data
-  Run duration:      1.3s
+  Run duration:      1.4s
   Cache:             0/1 hit (0%)
-  Critical path:     1.3s (1 task)
+  Critical path:     1.4s (1 task)
   Recoverable time:  <1ms
-exit=0 (make test-int, re-run)
+exit=0
 
 $ set -a; . ./.env; set +a; uv run pytest tools/tests_int libs/py-data/tests_int -v   # names of the same tests
-tools/tests_int/test_compose_stack.py::test_every_service_is_running_and_healthy PASSED [  7%]
-tools/tests_int/test_compose_stack.py::test_only_caddy_publishes_ports PASSED [ 14%]
-tools/tests_int/test_compose_stack.py::test_every_service_has_a_healthcheck_and_restarts PASSED [ 21%]
-tools/tests_int/test_compose_stack.py::test_internal_services_are_only_on_the_private_network PASSED [ 28%]
-tools/tests_int/test_compose_stack.py::test_mongo_data_is_on_a_named_volume PASSED [ 35%]
-tools/tests_int/test_compose_stack.py::test_unauthenticated_mongosh_is_refused PASSED [ 42%]
-tools/tests_int/test_compose_stack.py::test_authenticated_mongosh_sees_a_primary_replica_set PASSED [ 50%]
-tools/tests_int/test_compose_stack.py::test_collector_forwards_traces_to_jaeger PASSED [ 57%]
-tools/tests_int/test_compose_stack.py::test_caddy_serves_health_on_the_published_port PASSED [ 64%]
-tools/tests_int/test_compose_stack.py::test_jaeger_through_caddy_requires_basic_auth PASSED [ 71%]
-libs/py-data/tests_int/test_compose_mongo_transaction.py::test_server_is_a_replica_set_primary PASSED [ 78%]
-libs/py-data/tests_int/test_compose_mongo_transaction.py::test_multi_document_transaction_commits PASSED [ 85%]
-libs/py-data/tests_int/test_compose_mongo_transaction.py::test_aborted_transaction_writes_nothing PASSED [ 92%]
+tools/tests_int/test_compose_stack.py::test_every_service_is_running_and_healthy PASSED [  6%]
+tools/tests_int/test_compose_stack.py::test_only_caddy_publishes_ports PASSED [ 12%]
+tools/tests_int/test_compose_stack.py::test_every_service_has_a_healthcheck_and_restarts PASSED [ 18%]
+tools/tests_int/test_compose_stack.py::test_internal_services_are_only_on_the_private_network PASSED [ 25%]
+tools/tests_int/test_compose_stack.py::test_mongo_data_is_on_a_named_volume PASSED [ 31%]
+tools/tests_int/test_compose_stack.py::test_unauthenticated_mongosh_is_refused PASSED [ 37%]
+tools/tests_int/test_compose_stack.py::test_authenticated_mongosh_sees_a_primary_replica_set PASSED [ 43%]
+tools/tests_int/test_compose_stack.py::test_collector_forwards_traces_to_jaeger PASSED [ 50%]
+tools/tests_int/test_compose_stack.py::test_caddy_serves_health_on_the_published_port PASSED [ 56%]
+tools/tests_int/test_compose_stack.py::test_jaeger_through_caddy_requires_basic_auth PASSED [ 62%]
+tools/tests_int/test_compose_stack.py::test_jaeger_is_not_served_over_plain_http PASSED [ 68%]
+tools/tests_int/test_compose_stack.py::test_unknown_hosts_get_a_404 PASSED [ 75%]
+libs/py-data/tests_int/test_compose_mongo_transaction.py::test_server_is_a_replica_set_primary PASSED [ 81%]
+libs/py-data/tests_int/test_compose_mongo_transaction.py::test_multi_document_transaction_commits PASSED [ 87%]
+libs/py-data/tests_int/test_compose_mongo_transaction.py::test_aborted_transaction_writes_nothing PASSED [ 93%]
 libs/py-data/tests_int/test_compose_mongo_transaction.py::test_unauthenticated_client_is_refused PASSED [100%]
-============================== 14 passed in 2.49s ==============================
+============================== 16 passed in 2.65s ==============================

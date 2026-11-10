@@ -1,3 +1,4 @@
+# F-2 box 4 at c4abe53
 # Mutation: the CADDY_HTTP_PORT line (used by infra/docker-compose.yml) deleted from .env.example
 $ grep -c CADDY_HTTP_PORT .env.example infra/docker-compose.yml
 .env.example:0

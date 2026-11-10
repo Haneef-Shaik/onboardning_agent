@@ -1,10 +1,11 @@
+# F-2 mutation checks at c4abe53. Each guard broken, named tests run, file restored.
 == M1: mongo publishes 127.0.0.1:27017
 FAILED tools/tests_int/test_compose_stack.py::test_only_caddy_publishes_ports
-1 failed in 0.13s
+1 failed in 0.20s
    restored: 0 files differ
 == M2: jaeger healthcheck disabled
 FAILED tools/tests_int/test_compose_stack.py::test_every_service_has_a_healthcheck_and_restarts
-1 failed in 0.05s
+1 failed in 0.07s
    restored: 0 files differ
 == M3: caddy restart: no
 FAILED tools/tests_int/test_compose_stack.py::test_every_service_has_a_healthcheck_and_restarts
@@ -12,10 +13,10 @@ FAILED tools/tests_int/test_compose_stack.py::test_every_service_has_a_healthche
    restored: 0 files differ
 == M4: backend network internal: false
 FAILED tools/tests_int/test_compose_stack.py::test_internal_services_are_only_on_the_private_network
-1 failed in 0.07s
+1 failed in 0.05s
    restored: 0 files differ
-== M5: mongo image tag 8 (unpinned)
-FAILED tools/tests/test_compose_static.py::test_images_are_pinned_to_exact_versions
+== M5: mongo image tag 8, no digest
+FAILED tools/tests/test_compose_static.py::test_pulled_images_are_pinned_by_version_and_digest
 1 failed in 0.01s
    restored: 0 files differ
 == M6: env-check removed from check prerequisites
@@ -31,26 +32,44 @@ FAILED tools/tests/test_check_env_example.py::test_finds_interpolated_variables[
 FAILED tools/tests/test_check_env_example.py::test_repo_env_example_covers_repo_compose
 2 failed, 13 passed in 0.04s
    restored: 0 files differ
-== M9: basic_auth removed from Caddyfile.dev
+== M9: check_env_example skips # lines (block-scalar false negative)
+FAILED tools/tests/test_check_env_example.py::test_finds_interpolated_variables[cmd: |\n  # ${IN_BLOCK_SCALAR}\n  echo hi-expected7]
+1 failed, 14 passed in 0.04s
+   restored: 0 files differ
+== M10: basic_auth removed from Caddyfile.dev
 FAILED tools/tests_int/test_compose_stack.py::test_jaeger_through_caddy_requires_basic_auth
 FAILED tools/tests/test_compose_static.py::test_dev_caddyfile_protects_jaeger_with_basic_auth
+2 failed in 0.06s
+   restored: 0 files differ
+== M11: Jaeger also served on plain http
+FAILED tools/tests_int/test_compose_stack.py::test_jaeger_is_not_served_over_plain_http
+FAILED tools/tests/test_compose_static.py::test_jaeger_credentials_never_travel_over_plain_http
 2 failed in 0.03s
    restored: 0 files differ
-== M10: mongod started without --replSet
+== M12: gen-keyfile keeps an existing key without chmod 400
+FAILED tools/tests/test_compose_static.py::test_gen_keyfile_keeps_an_existing_key_but_repairs_its_mode
+1 failed in 0.02s
+   restored: 0 files differ
+== M13: socat tunnel image without digest
+FAILED tools/tests/test_compose_static.py::test_test_tunnel_image_is_pinned_by_digest
+1 failed in 0.01s
+   restored: 0 files differ
+== M14: mongod started without --replSet
 FAILED libs/py-data/tests_int/test_compose_mongo_transaction.py::test_server_is_a_replica_set_primary
 FAILED libs/py-data/tests_int/test_compose_mongo_transaction.py::test_multi_document_transaction_commits
 FAILED libs/py-data/tests_int/test_compose_mongo_transaction.py::test_aborted_transaction_writes_nothing
 FAILED tools/tests/test_compose_static.py::test_mongo_runs_a_replica_set_with_auth_and_keyfile
-4 failed, 1 passed in 0.57s
+4 failed, 1 passed in 0.64s
    restored: 0 files differ
-== M11: mongod with --noauth and no keyfile
+== M15: mongod with --noauth and no keyfile
+ERROR libs/py-data/tests_int/test_compose_mongo_transaction.py::test_unauthenticated_client_is_refused
 FAILED tools/tests_int/test_compose_stack.py::test_unauthenticated_mongosh_is_refused
-FAILED libs/py-data/tests_int/test_compose_mongo_transaction.py::test_unauthenticated_client_is_refused
 FAILED tools/tests/test_compose_static.py::test_mongo_runs_a_replica_set_with_auth_and_keyfile
-3 failed in 10.81s
+2 failed, 1 error in 0.16s
    restored: 0 files differ
-== after restore: docker compose ps
+== after restore: docker compose ps; leftover tunnels
 caddy running healthy
 jaeger running healthy
 mongo running healthy
 otel-collector running healthy
+tunnel containers: 0

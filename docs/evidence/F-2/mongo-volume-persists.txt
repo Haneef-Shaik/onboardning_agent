@@ -1,0 +1,6 @@
+# F-2 at c4abe53: Mongo data survives `make down` + `make up` (named volume)
+true
+$ make down && make up
+exit=0
+$ count of f2_persist.marker after restart
+1

@@ -1,11 +1,12 @@
-$ docker compose config | grep -nE "^  [a-z-]+:$|ports:"   # top-level service names and every ports: key
+# F-2 box 3 at c4abe53
+$ docker compose config | grep -nE "^  [a-z-]+:$|ports:"   # service names (inside services:) and every ports: key
 1:  caddy:
 30:    ports:
 56:  jaeger:
 76:  mongo:
 127:  otel-collector:
 
-$ docker compose config --format json | python3 -c "services with ports"
+$ docker compose config --format json   # ports per service
 caddy: ports=[('127.0.0.1', '18082', 80), ('127.0.0.1', '18445', 443)]
 jaeger: ports=[]
 mongo: ports=[]
