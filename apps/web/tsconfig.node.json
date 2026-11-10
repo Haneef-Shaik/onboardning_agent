@@ -9,6 +9,8 @@
     ]
   },
   "include": [
-    "vitest.config.ts"
+    "vitest.config.ts",
+    "vite.config.ts",
+    "aliases.ts"
   ]
 }
