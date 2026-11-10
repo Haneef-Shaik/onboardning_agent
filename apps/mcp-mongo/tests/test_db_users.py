@@ -98,7 +98,7 @@ class FakeAdmin:
         self.users = users or set()
         self.sent: list[dict[str, Any]] = []
 
-    def command(self, name: str, value: Any = 1, **kwargs: Any) -> dict[str, Any]:
+    def command(self, name: str, value: Any = 1, /, **kwargs: Any) -> dict[str, Any]:
         self.sent.append({name: value, **kwargs})
         if name == "rolesInfo":
             return {"roles": [{"role": value}] if value in self.roles else []}
@@ -143,3 +143,49 @@ def test_provision_refuses_a_weak_password(bad: str) -> None:
 def test_provision_refuses_the_same_password_for_both_users() -> None:
     with pytest.raises(ValueError, match="differ"):
         provision(FakeAdmin(), DB, read_password="x" * 32, write_password="x" * 32)
+
+
+class FakeClient:
+    def __init__(self, uri: str) -> None:
+        self.uri = uri
+        self.admin = FakeAdmin()
+        self.closed = False
+        CLIENTS.append(self)
+
+    def __getitem__(self, name: str) -> FakeAdmin:
+        assert name == "admin"
+        return self.admin
+
+    def close(self) -> None:
+        self.closed = True
+
+
+CLIENTS: list[FakeClient] = []
+CLI_ENV = {
+    "MCP_MONGO_ADMIN_URI": "mongodb://admin:apw@mongo:27017/?authSource=admin",
+    "MCP_MONGO_READ_PASSWORD": "r" * 32,
+    "MCP_MONGO_WRITE_PASSWORD": "w" * 32,
+}
+
+
+def test_the_provisioning_command_uses_the_admin_uri_and_closes_it(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    CLIENTS.clear()
+    monkeypatch.setattr(db_users, "MongoClient", FakeClient)
+    db_users.main({**CLI_ENV, "MCP_MONGO_DATABASE": "onb_x"})
+    (client,) = CLIENTS
+    assert client.uri == CLI_ENV["MCP_MONGO_ADMIN_URI"]
+    assert client.closed
+    roles = [cmd for cmd in client.admin.sent if "createRole" in cmd]
+    assert roles[0]["privileges"][0]["resource"]["db"] == "onb_x"
+    out = capsys.readouterr().out
+    assert "provisioned mcp_mongo_ro and mcp_mongo_rw" in out
+    assert "r" * 32 not in out
+
+
+@pytest.mark.parametrize("missing", sorted(CLI_ENV))
+def test_the_provisioning_command_needs_each_setting(monkeypatch: pytest.MonkeyPatch, missing: str) -> None:
+    monkeypatch.setattr(db_users, "MongoClient", FakeClient)
+    with pytest.raises(SystemExit, match=missing):
+        db_users.main({k: v for k, v in CLI_ENV.items() if k != missing})

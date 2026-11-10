@@ -1,0 +1,20 @@
+Traceback:
+apps/mcp-mongo/tests/test_store_routing.py:15: in <module>
+    from onb_mcp_mongo.server import WRITE_TOOLS, build_server
+E   ImportError: cannot import name 'WRITE_TOOLS' from 'onb_mcp_mongo.server' (/Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-mcp-3/apps/mcp-mongo/src/onb_mcp_mongo/server.py)
+=========================== short test summary info ============================
+ERROR apps/mcp-mongo/tests/test_store_routing.py
+!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+1 error in 0.45s
+>       monkeypatch.setattr(main_module, "assert_least_privilege", refuse)
+E       AttributeError: <module 'onb_mcp_mongo.main' from '/Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-mcp-3/apps/mcp-mongo/src/onb_mcp_mongo/main.py'> has no attribute 'assert_least_privilege'
+
+apps/mcp-mongo/tests/test_main.py:121: AttributeError
+=========================== short test summary info ============================
+FAILED apps/mcp-mongo/tests/test_main.py::test_settings_load_from_the_environment_with_safe_defaults
+FAILED apps/mcp-mongo/tests/test_main.py::test_a_missing_required_setting_fails_fast[MCP_MONGO_WRITE_URI]
+FAILED apps/mcp-mongo/tests/test_main.py::test_the_read_and_write_uris_must_differ
+FAILED apps/mcp-mongo/tests/test_main.py::test_main_serves_the_app_with_telemetry
+FAILED apps/mcp-mongo/tests/test_main.py::test_main_checks_both_users_before_serving_and_routes_writes
+FAILED apps/mcp-mongo/tests/test_main.py::test_main_refuses_to_serve_over_a_wider_user
+6 failed, 9 passed in 0.37s

@@ -24,6 +24,8 @@ from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from typing import Any, Protocol
 
+from pymongo import MongoClient
+
 __all__ = [
     "DENIED_COLLECTIONS",
     "READ_ONLY",
@@ -81,14 +83,13 @@ class PrivilegeError(RuntimeError):
 
 
 class AdminDatabase(Protocol):
-    def command(self, command: str, value: Any = ..., **kwargs: Any) -> Mapping[str, Any]: ...
+    def command(self, *args: Any, **kwargs: Any) -> Mapping[str, Any]: ...
 
 
 def role_privileges(spec: AccessSpec, database: str) -> list[dict[str, Any]]:
     """The role's privileges: the spec's actions on each named collection of `database`."""
     return [
-        {"resource": {"db": database, "collection": name}, "actions": list(spec.actions)}
-        for name in spec.collections
+        {"resource": {"db": database, "collection": name}, "actions": list(spec.actions)} for name in spec.collections
     ]
 
 
@@ -145,8 +146,6 @@ def provision(admin: AdminDatabase, database: str, *, read_password: str, write_
 
 
 def _authenticated_privileges(uri: str) -> tuple[list[str], list[Mapping[str, Any]]]:
-    from pymongo import MongoClient  # noqa: PLC0415 - only the start-up check needs a sync client
-
     client: MongoClient[dict[str, Any]] = MongoClient(uri, serverSelectionTimeoutMS=10_000)
     try:
         status = client[ROLE_DATABASE].command("connectionStatus", showPrivileges=True)["authInfo"]
@@ -174,8 +173,6 @@ def _env(env: Mapping[str, str], name: str) -> str:
 def main(env: Mapping[str, str] | None = None) -> None:
     """Provision the users. Env: MCP_MONGO_ADMIN_URI (a user that manages roles and users),
     MCP_MONGO_DATABASE (default `onboarding`), MCP_MONGO_READ_PASSWORD, MCP_MONGO_WRITE_PASSWORD."""
-    from pymongo import MongoClient  # noqa: PLC0415 - as above
-
     source = os.environ if env is None else env
     client: MongoClient[dict[str, Any]] = MongoClient(_env(source, "MCP_MONGO_ADMIN_URI"))
     try:

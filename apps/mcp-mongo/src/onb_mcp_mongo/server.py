@@ -30,13 +30,16 @@ from .call_context import COLLECTION_PATTERN, HEADER, CallContext, CallContextEr
 from .contracts import CONTRACTS
 from .policy import ToolRejectedError
 
-__all__ = ["SERVER_NAME", "SPAN_PREFIX", "build_server"]
+__all__ = ["SERVER_NAME", "SPAN_PREFIX", "WRITE_TOOLS", "build_server"]
 
 SERVER_NAME = "mcp-mongo"
 SPAN_PREFIX = "mcp.mongo."
 _COLLECTION = re.compile(COLLECTION_PATTERN)
 TRACER_NAME = "onb_mcp_mongo"
 _log = logging.getLogger("onb_mcp_mongo")
+
+# These reach MongoDB as the read-write user; every other tool as the read-only one (MCP-3).
+WRITE_TOOLS = frozenset({"insert_one", "update_one"})
 
 Handler = Callable[..., Awaitable[BaseModel]]
 HANDLERS: dict[str, Handler] = {
@@ -161,15 +164,26 @@ def _tool(name: str, store: DataStore, context_key: str) -> TracedTool:
     )
 
 
-def build_server(store: DataStore, context_key: str, *, host: str = "127.0.0.1", port: int = 8000) -> FastMCP:
+def build_server(
+    store: DataStore,
+    context_key: str,
+    *,
+    write_store: DataStore | None = None,
+    host: str = "127.0.0.1",
+    port: int = 8000,
+) -> FastMCP:
     """The server over `store`. `context_key` verifies the hub's call contexts.
+
+    `store` connects as the read-only MongoDB user and `write_store` as the read-write one; the
+    write tools use `write_store` (`main` always passes both). Without it, every tool uses `store`.
 
     Stateless JSON responses: every call stands alone and carries its own context. DNS-rebinding
     protection is for browsers; this server answers only the hub on the private network, and no
     call succeeds without a context signed by the hub.
     """
     check_key(context_key)
-    tool_list: list[Tool] = [_tool(name, store, context_key) for name in CONTRACTS]
+    writes = store if write_store is None else write_store
+    tool_list: list[Tool] = [_tool(name, writes if name in WRITE_TOOLS else store, context_key) for name in CONTRACTS]
     return FastMCP(
         SERVER_NAME,
         tools=tool_list,

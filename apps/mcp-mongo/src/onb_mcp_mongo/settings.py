@@ -20,7 +20,8 @@ class SettingsError(ValueError):
 
 @dataclass(frozen=True)
 class Settings:
-    mongo_uri: str = field(repr=False)
+    mongo_uri: str = field(repr=False)  # the read-only user (db_users.READ_ONLY)
+    write_uri: str = field(repr=False)  # the read-write user (db_users.READ_WRITE)
     database: str
     context_key: str = field(repr=False)
     host: str
@@ -45,8 +46,13 @@ def load_settings(env: Mapping[str, str]) -> Settings:
     key = _required(env, "MCP_CALL_CONTEXT_KEY")
     if len(key) < MIN_KEY_LENGTH:
         raise SettingsError(f"MCP_CALL_CONTEXT_KEY must be at least {MIN_KEY_LENGTH} characters")
+    mongo_uri = _required(env, "MCP_MONGO_URI")
+    write_uri = _required(env, "MCP_MONGO_WRITE_URI")
+    if write_uri == mongo_uri:
+        raise SettingsError("MCP_MONGO_WRITE_URI must name the read-write user, not the read-only one")
     return Settings(
-        mongo_uri=_required(env, "MCP_MONGO_URI"),
+        mongo_uri=mongo_uri,
+        write_uri=write_uri,
         database=env.get("MCP_MONGO_DATABASE") or DEFAULT_DATABASE,
         context_key=key,
         host=env.get("MCP_MONGO_HOST") or DEFAULT_HOST,
