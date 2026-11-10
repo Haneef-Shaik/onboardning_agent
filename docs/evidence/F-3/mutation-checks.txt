@@ -1,16 +1,17 @@
 === M1 push limited to main  (pytest exit=1)
 FAILED tools/tests/test_ci_workflow.py::test_workflow_runs_on_every_push_and_on_pull_requests_to_main
-1 failed, 19 passed in 0.06s
+1 failed, 21 passed in 0.06s
 restored: True
 === M2 integration no longer needs check  (pytest exit=1)
 FAILED tools/tests/test_ci_workflow.py::test_integration_job_runs_after_check_and_runs_make_test_int
-1 failed, 19 passed in 0.05s
+1 failed, 21 passed in 0.05s
 restored: True
 === M3 checkout unpinned to a tag  (pytest exit=1)
 FAILED tools/tests/test_ci_workflow.py::test_every_action_is_pinned_to_a_commit_sha[check]
-1 failed, 19 passed in 0.05s
+1 failed, 21 passed in 0.06s
 restored: True
 === M4 integration job renamed  (pytest exit=1)
+FAILED tools/tests/test_ci_workflow.py::test_no_job_or_step_can_be_skipped_or_allowed_to_fail[integration]
 FAILED tools/tests/test_ci_workflow.py::test_workflow_has_exactly_the_check_and_integration_jobs
 FAILED tools/tests/test_ci_workflow.py::test_integration_job_runs_after_check_and_runs_make_test_int
 FAILED tools/tests/test_ci_workflow.py::test_job_runs_on_a_pinned_linux_runner_with_a_timeout[integration]
@@ -20,29 +21,45 @@ FAILED tools/tests/test_ci_workflow.py::test_uv_is_cached_and_matches_the_pinned
 FAILED tools/tests/test_ci_workflow.py::test_node_comes_from_nvmrc_with_the_npm_cache[integration]
 FAILED tools/tests/test_ci_workflow.py::test_nx_cache_is_restored_and_keyed_on_lockfiles[integration]
 FAILED tools/tests/test_ci_workflow.py::test_adr_names_the_required_status_checks_as_the_job_names
-9 failed, 11 passed in 0.06s
+10 failed, 12 passed in 0.06s
 restored: True
 === M5 make check dropped from the check job  (pytest exit=1)
 FAILED tools/tests/test_ci_workflow.py::test_check_job_bootstraps_then_runs_make_check
-1 failed, 19 passed in 0.05s
+1 failed, 21 passed in 0.05s
 restored: True
 === M6 token widened to write  (pytest exit=1)
 FAILED tools/tests/test_ci_workflow.py::test_workflow_token_is_read_only - As...
-1 failed, 19 passed in 0.05s
+1 failed, 21 passed in 0.06s
 restored: True
 === M7 make test-int dropped from integration  (pytest exit=1)
 FAILED tools/tests/test_ci_workflow.py::test_integration_job_runs_after_check_and_runs_make_test_int
-1 failed, 19 passed in 0.05s
+1 failed, 21 passed in 0.06s
 restored: True
 === M8 ADR protection payload drops the integration check  (pytest exit=1)
 FAILED tools/tests/test_ci_workflow.py::test_adr_names_the_required_status_checks_as_the_job_names
-1 failed, 19 passed in 0.05s
+1 failed, 21 passed in 0.06s
 restored: True
 === M9 integration display name changed  (pytest exit=1)
 FAILED tools/tests/test_ci_workflow.py::test_workflow_has_exactly_the_check_and_integration_jobs
-1 failed, 19 passed in 0.05s
+1 failed, 21 passed in 0.06s
 restored: True
 === M10 ADR protection no longer enforced for admins  (pytest exit=1)
 FAILED tools/tests/test_ci_workflow.py::test_adr_names_the_required_status_checks_as_the_job_names
-1 failed, 19 passed in 0.05s
+1 failed, 21 passed in 0.06s
+restored: True
+=== M11 make check allowed to fail  (pytest exit=1)
+FAILED tools/tests/test_ci_workflow.py::test_no_job_or_step_can_be_skipped_or_allowed_to_fail[check]
+1 failed, 21 passed in 0.06s
+restored: True
+=== M12 integration job skipped by a condition  (pytest exit=1)
+FAILED tools/tests/test_ci_workflow.py::test_no_job_or_step_can_be_skipped_or_allowed_to_fail[integration]
+1 failed, 21 passed in 0.06s
+restored: True
+=== M13 runs on main cancelled too  (pytest exit=1)
+FAILED tools/tests/test_ci_workflow.py::test_superseded_runs_on_the_same_ref_are_cancelled
+1 failed, 21 passed in 0.06s
+restored: True
+=== M14 restore key no longer a prefix of the key  (pytest exit=1)
+FAILED tools/tests/test_ci_workflow.py::test_nx_cache_is_restored_and_keyed_on_lockfiles[check]
+1 failed, 21 passed in 0.06s
 restored: True

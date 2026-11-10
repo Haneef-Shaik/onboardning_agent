@@ -18,8 +18,9 @@
    developer does, so there is one definition of "green". Later gates (`make test-xt`,
    `make contracts-check`, `make evals-selftest`) are added to these jobs by the goals that create
    them (T-3, C-1, EVAL-1).
-3. **Triggers.** Every push to any branch, and every pull request into `main`. Superseded runs on
-   the same ref are cancelled.
+3. **Triggers.** Every push to any branch (the card says every push), and every pull request into
+   `main`. A newer push cancels the older run on the same branch, except on `main`: every commit
+   that lands there gets its own verdict. No job or step has an `if:` or `continue-on-error`.
 4. **Caches.** uv's download cache (keyed on `uv.lock`), npm's cache (keyed on
    `package-lock.json`), and the Nx task cache in `.nx/cache` (keyed per job on both lock files
    plus the commit, restoring the newest earlier entry).
@@ -41,9 +42,8 @@
   for this MVP.
 - **Merge gate built in.** Required status checks on a protected branch give "red blocks merge"
   with no extra tooling, and pull requests show the results.
-- **The tools already fit.** The `gh` CLI is already part of the workflow (see the git rules).
-  `setup-uv` and `setup-node` have native caching that matches the toolchain F-1 pinned
-  (uv 0.11.x, Node from `.nvmrc`).
+- **The toolchain fits.** `setup-uv` and `setup-node` have native caching that matches the
+  toolchain F-1 pinned (uv 0.11.x, Node from `.nvmrc`).
 
 ### Alternatives considered
 
@@ -74,4 +74,10 @@
 
   Then prove the gate: push a branch with a deliberately failing test (expect `check` to go red,
   and `integration` to be skipped), fix it, and push again (expect both green). Record both run links.
+- **`integration` is vacuous until F-2 merges.** No project has a `test-int` target on `main`
+  yet, so `make test-int` prints "No tasks were run" and exits 0. F-2 adds the testcontainers
+  targets. MS-0 must not count `integration` green as proof until `nx show projects --with-target
+  test-int` lists at least one project.
+- **Same-repo pull requests run twice,** once for the push and once for the pull request. This is
+  accepted: one developer, few PRs, and fork PRs still get a run.
 - Moving off GitHub means rewriting `ci.yml`. The jobs only call `make`, so the rewrite is small.

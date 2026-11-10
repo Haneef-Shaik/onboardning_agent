@@ -61,7 +61,15 @@ def test_workflow_token_is_read_only() -> None:
 def test_superseded_runs_on_the_same_ref_are_cancelled() -> None:
     concurrency = _workflow()["concurrency"]
     assert "github.ref" in concurrency["group"]
-    assert concurrency["cancel-in-progress"] is True
+    # Never cancel on main: every commit that lands there must get its own verdict.
+    assert concurrency["cancel-in-progress"] == "${{ github.ref != 'refs/heads/main' }}"
+
+
+@pytest.mark.parametrize("job", [CHECK_JOB, INT_JOB])
+def test_no_job_or_step_can_be_skipped_or_allowed_to_fail(job: str) -> None:
+    for node in (_jobs()[job], *_jobs()[job]["steps"]):
+        assert "if" not in node, f"{job}: a condition can silently skip the gate"
+        assert "continue-on-error" not in node, f"{job}: continue-on-error turns red into green"
 
 
 def test_workflow_has_exactly_the_check_and_integration_jobs() -> None:
@@ -139,7 +147,9 @@ def test_nx_cache_is_restored_and_keyed_on_lockfiles(job: str) -> None:
     for lockfile in ("uv.lock", "package-lock.json"):
         assert lockfile in with_["key"]
     assert "github.sha" in with_["key"], "a fresh key per commit, so the cache is saved each run"
-    assert with_["restore-keys"].strip(), "restore-keys let a new commit reuse the last cache"
+    restore_keys = with_["restore-keys"].strip().splitlines()
+    assert len(restore_keys) == 1, "one restore key: the newest cache for the same lockfiles"
+    assert with_["key"] == restore_keys[0] + "${{ github.sha }}", "restore key must be the key minus the commit"
 
 
 def test_adr_records_github_actions_as_the_ci_host_and_closes_dec_5() -> None:

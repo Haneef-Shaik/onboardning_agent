@@ -19,6 +19,10 @@ MUTATIONS = [
     ("M8 ADR protection payload drops the integration check", ADR, '["check", "integration"]', '["check"]'),
     ("M9 integration display name changed", WF, "    name: integration\n", "    name: Integration tests\n"),
     ("M10 ADR protection no longer enforced for admins", ADR, '"enforce_admins": true', '"enforce_admins": false'),
+    ("M11 make check allowed to fail", WF, "      - run: make check\n", "      - run: make check\n        continue-on-error: true\n"),
+    ("M12 integration job skipped by a condition", WF, "    needs: check\n", "    needs: check\n    if: false\n"),
+    ("M13 runs on main cancelled too", WF, "cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}", "cancel-in-progress: true"),
+    ("M14 restore key no longer a prefix of the key", WF, "          restore-keys: |\n            nx-", "          restore-keys: |\n            other-"),
 ]
 for name, path, old, new in MUTATIONS:
     original = path.read_text()
