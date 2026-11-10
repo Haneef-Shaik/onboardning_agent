@@ -24,7 +24,7 @@
       "executor": "@nxlv/python:run-commands",
       "cache": true,
       "options": {
-        "command": "uv run --frozen mypy libs/py-crypto/src libs/py-crypto/tests",
+        "command": "uv run --frozen mypy --cache-dir .mypy_cache/py-crypto libs/py-crypto/src libs/py-crypto/tests",
         "cwd": "."
       }
     },
@@ -32,8 +32,11 @@
       "executor": "@nxlv/python:run-commands",
       "cache": true,
       "options": {
-        "command": "uv run --frozen pytest libs/py-crypto/tests --cov=onb_crypto --cov-report=term-missing --cov-fail-under=80",
-        "cwd": "."
+        "command": "uv run --frozen pytest libs/py-crypto/tests -o cache_dir=.pytest_cache/py-crypto --cov=onb_crypto --cov-report=term-missing --cov-fail-under=80",
+        "cwd": ".",
+        "env": {
+          "COVERAGE_FILE": ".coverage.py-crypto"
+        }
       }
     }
   }

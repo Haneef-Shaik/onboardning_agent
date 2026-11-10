@@ -151,3 +151,13 @@ def test_nx_cache_lives_in_the_workspace() -> None:
     """A fresh clone must run every task cold, not read a machine-global cache (~/.nx)."""
     nx = json.loads((ROOT / "nx.json").read_text(encoding="utf-8"))
     assert nx.get("cacheDirectory") == ".nx/cache"
+
+
+@pytest.mark.parametrize("rel", PY_PROJECT_DIRS)
+def test_python_targets_do_not_share_caches(rel: str) -> None:
+    """Nx runs targets in parallel; a shared .mypy_cache crashed mypy on a cold run."""
+    name = Path(rel).name
+    targets = _project(rel)["targets"]
+    assert f"--cache-dir .mypy_cache/{name} " in _command(targets["typecheck"])
+    assert f"-o cache_dir=.pytest_cache/{name}" in _command(targets["test"])
+    assert targets["test"]["options"]["env"]["COVERAGE_FILE"] == f".coverage.{name}"

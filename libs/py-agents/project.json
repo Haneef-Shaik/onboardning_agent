@@ -24,7 +24,7 @@
       "executor": "@nxlv/python:run-commands",
       "cache": true,
       "options": {
-        "command": "uv run --frozen mypy libs/py-agents/src libs/py-agents/tests",
+        "command": "uv run --frozen mypy --cache-dir .mypy_cache/py-agents libs/py-agents/src libs/py-agents/tests",
         "cwd": "."
       }
     },
@@ -32,8 +32,11 @@
       "executor": "@nxlv/python:run-commands",
       "cache": true,
       "options": {
-        "command": "uv run --frozen pytest libs/py-agents/tests --cov=onb_agents --cov-report=term-missing --cov-fail-under=80",
-        "cwd": "."
+        "command": "uv run --frozen pytest libs/py-agents/tests -o cache_dir=.pytest_cache/py-agents --cov=onb_agents --cov-report=term-missing --cov-fail-under=80",
+        "cwd": ".",
+        "env": {
+          "COVERAGE_FILE": ".coverage.py-agents"
+        }
       }
     }
   }

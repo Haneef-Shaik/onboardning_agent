@@ -24,7 +24,7 @@
       "executor": "@nxlv/python:run-commands",
       "cache": true,
       "options": {
-        "command": "uv run --frozen mypy apps/orchestrator/src apps/orchestrator/tests",
+        "command": "uv run --frozen mypy --cache-dir .mypy_cache/orchestrator apps/orchestrator/src apps/orchestrator/tests",
         "cwd": "."
       }
     },
@@ -32,8 +32,11 @@
       "executor": "@nxlv/python:run-commands",
       "cache": true,
       "options": {
-        "command": "uv run --frozen pytest apps/orchestrator/tests",
-        "cwd": "."
+        "command": "uv run --frozen pytest apps/orchestrator/tests -o cache_dir=.pytest_cache/orchestrator",
+        "cwd": ".",
+        "env": {
+          "COVERAGE_FILE": ".coverage.orchestrator"
+        }
       }
     }
   }

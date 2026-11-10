@@ -24,7 +24,7 @@
       "executor": "@nxlv/python:run-commands",
       "cache": true,
       "options": {
-        "command": "uv run --frozen mypy libs/py-llm/src libs/py-llm/tests",
+        "command": "uv run --frozen mypy --cache-dir .mypy_cache/py-llm libs/py-llm/src libs/py-llm/tests",
         "cwd": "."
       }
     },
@@ -32,8 +32,11 @@
       "executor": "@nxlv/python:run-commands",
       "cache": true,
       "options": {
-        "command": "uv run --frozen pytest libs/py-llm/tests --cov=onb_llm --cov-report=term-missing --cov-fail-under=80",
-        "cwd": "."
+        "command": "uv run --frozen pytest libs/py-llm/tests -o cache_dir=.pytest_cache/py-llm --cov=onb_llm --cov-report=term-missing --cov-fail-under=80",
+        "cwd": ".",
+        "env": {
+          "COVERAGE_FILE": ".coverage.py-llm"
+        }
       }
     }
   }

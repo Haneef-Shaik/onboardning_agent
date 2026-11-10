@@ -24,7 +24,7 @@
       "executor": "@nxlv/python:run-commands",
       "cache": true,
       "options": {
-        "command": "uv run --frozen mypy libs/py-contracts/src libs/py-contracts/tests",
+        "command": "uv run --frozen mypy --cache-dir .mypy_cache/py-contracts libs/py-contracts/src libs/py-contracts/tests",
         "cwd": "."
       }
     },
@@ -32,8 +32,11 @@
       "executor": "@nxlv/python:run-commands",
       "cache": true,
       "options": {
-        "command": "uv run --frozen pytest libs/py-contracts/tests --cov=onb_contracts --cov-report=term-missing --cov-fail-under=80",
-        "cwd": "."
+        "command": "uv run --frozen pytest libs/py-contracts/tests -o cache_dir=.pytest_cache/py-contracts --cov=onb_contracts --cov-report=term-missing --cov-fail-under=80",
+        "cwd": ".",
+        "env": {
+          "COVERAGE_FILE": ".coverage.py-contracts"
+        }
       }
     }
   }

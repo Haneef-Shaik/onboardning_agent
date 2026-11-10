@@ -24,7 +24,7 @@
       "executor": "@nxlv/python:run-commands",
       "cache": true,
       "options": {
-        "command": "uv run --frozen mypy libs/py-guardrails/src libs/py-guardrails/tests",
+        "command": "uv run --frozen mypy --cache-dir .mypy_cache/py-guardrails libs/py-guardrails/src libs/py-guardrails/tests",
         "cwd": "."
       }
     },
@@ -32,8 +32,11 @@
       "executor": "@nxlv/python:run-commands",
       "cache": true,
       "options": {
-        "command": "uv run --frozen pytest libs/py-guardrails/tests --cov=onb_guardrails --cov-report=term-missing --cov-fail-under=80",
-        "cwd": "."
+        "command": "uv run --frozen pytest libs/py-guardrails/tests -o cache_dir=.pytest_cache/py-guardrails --cov=onb_guardrails --cov-report=term-missing --cov-fail-under=80",
+        "cwd": ".",
+        "env": {
+          "COVERAGE_FILE": ".coverage.py-guardrails"
+        }
       }
     }
   }

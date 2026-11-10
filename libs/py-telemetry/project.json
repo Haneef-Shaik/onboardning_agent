@@ -24,7 +24,7 @@
       "executor": "@nxlv/python:run-commands",
       "cache": true,
       "options": {
-        "command": "uv run --frozen mypy libs/py-telemetry/src libs/py-telemetry/tests",
+        "command": "uv run --frozen mypy --cache-dir .mypy_cache/py-telemetry libs/py-telemetry/src libs/py-telemetry/tests",
         "cwd": "."
       }
     },
@@ -32,8 +32,11 @@
       "executor": "@nxlv/python:run-commands",
       "cache": true,
       "options": {
-        "command": "uv run --frozen pytest libs/py-telemetry/tests --cov=onb_telemetry --cov-report=term-missing --cov-fail-under=80",
-        "cwd": "."
+        "command": "uv run --frozen pytest libs/py-telemetry/tests -o cache_dir=.pytest_cache/py-telemetry --cov=onb_telemetry --cov-report=term-missing --cov-fail-under=80",
+        "cwd": ".",
+        "env": {
+          "COVERAGE_FILE": ".coverage.py-telemetry"
+        }
       }
     }
   }
