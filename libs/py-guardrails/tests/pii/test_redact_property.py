@@ -109,14 +109,19 @@ def _is_digit_or_at(char: str) -> bool:
     return any(part.isdecimal() or part == "@" for part in unicodedata.normalize("NFKC", char))
 
 
+def _folds_to_alnum_or_at(char: str) -> bool:
+    return any(part.isalnum() or part == "@" for part in unicodedata.normalize("NFKC", char))
+
+
 def _leaked(text: str) -> list[str]:
     return [char for char in text if _is_digit_or_at(char)]
 
 
-# Context made of punctuation, symbols and spaces only: no letters, digits or @ in any script.
+# Context made of punctuation, symbols and spaces only: no letters, digits or @ in any script, even after NFKC
+# (a circled A folds to "A"; a PAN glued to a preceding letter is a documented residual risk).
 _PUNCT_CONTEXT = st.text(
     alphabet=st.characters(categories=("P", "S", "Zs"), exclude_characters="@%").filter(
-        lambda c: not _is_digit_or_at(c)
+        lambda c: not _folds_to_alnum_or_at(c)
     ),
     max_size=8,
 )

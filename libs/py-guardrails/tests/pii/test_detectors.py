@@ -213,7 +213,7 @@ def test_email_walk_back_and_bank_gaps(text: str, expected: str) -> None:
 @pytest.mark.parametrize("at", ["@", "%40"], ids=["at-sign", "url-encoded"])
 def test_email_walk_back_is_linear(at: str) -> None:
     # "%40" emails contain no @ to stop the walk, so only the previous match's end bounds it.
-    hostile = "x" * 50_000 + f"{at}a.co" * 10_000
+    hostile = "x" * 50_000 + f"{at}a.co" * 30_000
     started = time.perf_counter()
     redact(hostile)
     assert time.perf_counter() - started < 5.0
