@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import hashlib
 import hmac
+from dataclasses import replace
 from datetime import UTC, datetime
 from typing import Any
 
@@ -435,6 +436,20 @@ def test_a_purged_record_with_ciphertext_left_fails_closed() -> None:
     ciphertext = raw(store, token)["ciphertext"]
     in_org(ORG_A, vault.purge(token, org_id=ORG_A, subject_id=HIRE_1, field=VaultField.MOBILE))
     raw(store, token)["ciphertext"] = ciphertext
+    with pytest.raises(VaultIntegrityError):
+        resolve(vault, token, HIRE_1, VaultField.MOBILE)
+
+
+def test_a_purged_record_that_kept_its_ciphertext_fails_closed_even_when_signed() -> None:
+    """A purge that re-signed but left the ciphertext (a buggy job) is refused by shape, not only by `sig`."""
+    vault, store = make_vault()
+    token = put(vault, HIRE_1, VaultField.MOBILE, MOBILE_1)
+    doc = raw(store, token)
+    leftover = replace(record_from_document(doc), status=VaultStatus.PURGED)  # ciphertext kept
+    doc["status"] = "purged"
+    keys = in_org(ORG_A, vault.keyring.key_version(ORG_A, 1))
+    payload = signing_payload(leftover)
+    doc["sig"] = hmac.new(keys.key(KeyPurpose.SIGNING).reveal(), payload, hashlib.sha256).digest()
     with pytest.raises(VaultIntegrityError):
         resolve(vault, token, HIRE_1, VaultField.MOBILE)
 
