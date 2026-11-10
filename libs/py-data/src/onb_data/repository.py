@@ -60,6 +60,13 @@ class _Repository(ABC):
     def _pipeline(self, pipeline: Sequence[Mapping[str, Any]]) -> list[Document]:
         """The pipeline sent to the driver."""
 
+    @staticmethod
+    def _by_id(doc_id: Any) -> Document:
+        """`{_id: doc_id}` for one concrete id. An operator or a collection would match other documents."""
+        if isinstance(doc_id, Mapping | list | tuple | set | frozenset):
+            raise TypeError("an id must be a single value, not an operator or a collection")
+        return {"_id": doc_id}
+
     def _not_found(self) -> NotFoundError:
         return NotFoundError(f"no {self.collection_name} document with that id")
 
@@ -82,7 +89,7 @@ class _Repository(ABC):
 
     async def get(self, doc_id: Any, *, projection: Mapping[str, Any] | None = None) -> Document:
         """The document with this id, looked up as `{_id, org_id}`; `NotFoundError` otherwise."""
-        found = await self.find_one({"_id": doc_id}, projection=projection)
+        found = await self.find_one(self._by_id(doc_id), projection=projection)
         if found is None:
             raise self._not_found()
         return found
@@ -113,7 +120,7 @@ class _Repository(ABC):
         return UpdateOutcome(result.matched_count, result.modified_count)
 
     async def update_by_id(self, doc_id: Any, update: Mapping[str, Any]) -> UpdateOutcome:
-        outcome = await self.update_one({"_id": doc_id}, update)
+        outcome = await self.update_one(self._by_id(doc_id), update)
         if outcome.matched == 0:
             raise self._not_found()
         return outcome
@@ -123,7 +130,7 @@ class _Repository(ABC):
         return result.deleted_count
 
     async def delete_by_id(self, doc_id: Any) -> None:
-        if await self.delete_one({"_id": doc_id}) == 0:
+        if await self.delete_one(self._by_id(doc_id)) == 0:
             raise self._not_found()
 
     async def aggregate(self, pipeline: Sequence[Mapping[str, Any]]) -> list[Document]:
@@ -161,9 +168,7 @@ class GlobalRepository(_Repository):
         return scoping.plain_filter(query)
 
     def _document(self, document: Mapping[str, Any]) -> Document:
-        if not isinstance(document, Mapping):
-            raise TypeError("a document must be a mapping")
-        return dict(document)
+        return scoping.plain_document(document)
 
     def _update(self, update: Mapping[str, Any], *, upsert: bool) -> Document:
         return scoping.check_update(update, tenant=False)

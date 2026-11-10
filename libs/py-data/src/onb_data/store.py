@@ -84,14 +84,26 @@ class DataStore:
             await self._client.close()
 
 
-def connect(uri: str, database: str, *, app_name: str = "onboarding-platform") -> DataStore:
+def connect(
+    uri: str,
+    database: str,
+    *,
+    app_name: str = "onboarding-platform",
+    event_listeners: Sequence[Any] = (),
+) -> DataStore:
     """A store over `database`. The URI (with credentials) comes from configuration, never code.
 
-    The client connects lazily, on the first operation.
+    `event_listeners` go to the PyMongo client (T-2 attaches its command listener here). The client
+    connects lazily, on the first operation.
     """
     if not isinstance(uri, str) or not uri:
         raise ValueError("a MongoDB uri is required")
+    name = _database_name(database)
     client: _AsyncMongoClient[Document] = _AsyncMongoClient(
-        uri, appname=app_name, tz_aware=True, uuidRepresentation="standard"
+        uri,
+        appname=app_name,
+        tz_aware=True,
+        uuidRepresentation="standard",
+        event_listeners=list(event_listeners),
     )
-    return DataStore(client[_database_name(database)], client)
+    return DataStore(client[name], client)

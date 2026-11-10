@@ -320,8 +320,11 @@ def test_aggregate_of_an_empty_pipeline_is_still_scoped() -> None:
         {"$out": "elsewhere"},
         {"$merge": {"into": "elsewhere"}},
         {"$facet": {"x": [{"$unionWith": "hires"}]}},
+        # Review finding: a tuple is encoded as a BSON array, so a tuple sub-pipeline must be walked too.
+        {"$facet": {"x": ({"$unionWith": "hires"},)}},
+        {"$facet": {"x": ({"$lookup": {"from": "hires", "pipeline": [], "as": "all"}},)}},
     ],
-    ids=lambda s: next(iter(s)),
+    ids=str,
 )
 def test_aggregate_refuses_stages_that_read_or_write_other_collections(stage: dict[str, Any]) -> None:
     collection = FakeCollection()
@@ -334,6 +337,78 @@ def test_aggregate_refuses_stages_that_read_or_write_other_collections(stage: di
 def test_aggregate_needs_a_list_of_single_stage_mappings(pipeline: Any) -> None:
     with pytest.raises(TypeError, match="pipeline"):
         scoped(ORG, lambda: repo_over(FakeCollection()).aggregate(pipeline))
+
+
+def test_aggregate_sends_plain_lists_and_dicts_to_the_driver() -> None:
+    collection = FakeCollection()
+    pipeline = ({"$facet": {"x": ({"$match": {"a": 1}},)}},)
+    scoped(ORG, lambda: repo_over(collection).aggregate(pipeline))
+    assert collection.last("aggregate").args[0] == [
+        {"$match": {"org_id": ORG}},
+        {"$facet": {"x": [{"$match": {"a": 1}}]}},
+    ]
+
+
+@pytest.mark.parametrize(
+    "stage",
+    [{"$geoNear": {"near": [0, 0]}}, {"$search": {"text": {}}}, {"$documents": [{"a": 1}]}, {"$changeStream": {}}],
+    ids=lambda s: next(iter(s)),
+)
+def test_aggregate_refuses_first_stage_only_operators_it_cannot_scope(stage: dict[str, Any]) -> None:
+    collection = FakeCollection()
+    with pytest.raises(TenantViolationError, match="first stage"):
+        scoped(ORG, lambda: repo_over(collection).aggregate([stage]))
+    assert collection.calls == []
+
+
+class _SneakyKey(str):
+    """A str subclass that hides from == and startswith but still encodes to BSON as "org_id"."""
+
+    __slots__ = ()
+
+    def __eq__(self, other: object) -> bool:
+        return False
+
+    def __hash__(self) -> int:
+        return hash("sneaky")
+
+    def startswith(self, *args: Any, **kwargs: Any) -> bool:
+        return False
+
+
+SNEAKY = _SneakyKey("org_id")
+
+
+@pytest.mark.parametrize(
+    "op",
+    [
+        lambda r: r.find({SNEAKY: OTHER}),
+        lambda r: r.insert_one({SNEAKY: OTHER}),
+        lambda r: r.update_one({}, {"$set": {SNEAKY: OTHER}}),
+        lambda r: r.aggregate([{"$match": {SNEAKY: OTHER}}]),
+    ],
+    ids=["filter", "document", "update", "pipeline"],
+)
+def test_keys_must_be_plain_strings(op: Op) -> None:
+    collection = FakeCollection()
+    with pytest.raises(TypeError, match="plain strings"):
+        scoped(ORG, lambda: _awaited(op(repo_over(collection))))
+    assert collection.calls == []
+
+
+@pytest.mark.parametrize("bad_id", [{"$ne": None}, ["a", "b"], ("a",), {"a"}], ids=str)
+@pytest.mark.parametrize("name", ["get", "update_by_id", "delete_by_id"])
+def test_by_id_operations_refuse_an_operator_or_collection_as_the_id(name: str, bad_id: Any) -> None:
+    collection = FakeCollection()
+    repo = repo_over(collection)
+    calls: dict[str, Callable[[], Coroutine[Any, Any, object]]] = {
+        "get": lambda: repo.get(bad_id),
+        "update_by_id": lambda: repo.update_by_id(bad_id, {"$set": {"a": 1}}),
+        "delete_by_id": lambda: repo.delete_by_id(bad_id),
+    }
+    with pytest.raises(TypeError, match="single value"):
+        scoped(ORG, calls[name])
+    assert collection.calls == []
 
 
 def test_the_repository_names_its_collection() -> None:

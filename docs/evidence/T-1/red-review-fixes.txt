@@ -1,0 +1,26 @@
+FAILED libs/py-data/tests/test_repository.py::test_aggregate_refuses_stages_that_read_or_write_other_collections[{'$facet': {'x': ({'$unionWith': 'hires'},)}}]
+FAILED libs/py-data/tests/test_repository.py::test_aggregate_refuses_stages_that_read_or_write_other_collections[{'$facet': {'x': ({'$lookup': {'from': 'hires', 'pipeline': [], 'as': 'all'}},)}}]
+FAILED libs/py-data/tests/test_repository.py::test_aggregate_sends_plain_lists_and_dicts_to_the_driver
+FAILED libs/py-data/tests/test_repository.py::test_aggregate_refuses_first_stage_only_operators_it_cannot_scope[$geoNear]
+FAILED libs/py-data/tests/test_repository.py::test_aggregate_refuses_first_stage_only_operators_it_cannot_scope[$search]
+FAILED libs/py-data/tests/test_repository.py::test_aggregate_refuses_first_stage_only_operators_it_cannot_scope[$documents]
+FAILED libs/py-data/tests/test_repository.py::test_aggregate_refuses_first_stage_only_operators_it_cannot_scope[$changeStream]
+FAILED libs/py-data/tests/test_repository.py::test_keys_must_be_plain_strings[filter]
+FAILED libs/py-data/tests/test_repository.py::test_keys_must_be_plain_strings[document]
+FAILED libs/py-data/tests/test_repository.py::test_keys_must_be_plain_strings[update]
+FAILED libs/py-data/tests/test_repository.py::test_keys_must_be_plain_strings[pipeline]
+FAILED libs/py-data/tests/test_repository.py::test_by_id_operations_refuse_an_operator_or_collection_as_the_id[get-{'$ne': None}]
+FAILED libs/py-data/tests/test_repository.py::test_by_id_operations_refuse_an_operator_or_collection_as_the_id[get-['a', 'b']]
+FAILED libs/py-data/tests/test_repository.py::test_by_id_operations_refuse_an_operator_or_collection_as_the_id[get-('a',)]
+FAILED libs/py-data/tests/test_repository.py::test_by_id_operations_refuse_an_operator_or_collection_as_the_id[get-{'a'}]
+FAILED libs/py-data/tests/test_repository.py::test_by_id_operations_refuse_an_operator_or_collection_as_the_id[update_by_id-{'$ne': None}]
+FAILED libs/py-data/tests/test_repository.py::test_by_id_operations_refuse_an_operator_or_collection_as_the_id[update_by_id-['a', 'b']]
+FAILED libs/py-data/tests/test_repository.py::test_by_id_operations_refuse_an_operator_or_collection_as_the_id[update_by_id-('a',)]
+FAILED libs/py-data/tests/test_repository.py::test_by_id_operations_refuse_an_operator_or_collection_as_the_id[update_by_id-{'a'}]
+FAILED libs/py-data/tests/test_repository.py::test_by_id_operations_refuse_an_operator_or_collection_as_the_id[delete_by_id-{'$ne': None}]
+FAILED libs/py-data/tests/test_repository.py::test_by_id_operations_refuse_an_operator_or_collection_as_the_id[delete_by_id-['a', 'b']]
+FAILED libs/py-data/tests/test_repository.py::test_by_id_operations_refuse_an_operator_or_collection_as_the_id[delete_by_id-('a',)]
+FAILED libs/py-data/tests/test_repository.py::test_by_id_operations_refuse_an_operator_or_collection_as_the_id[delete_by_id-{'a'}]
+FAILED libs/py-data/tests/test_store.py::test_connect_checks_the_database_name_before_making_a_client
+FAILED libs/py-data/tests/test_store.py::test_connect_passes_event_listeners_to_the_client
+25 failed, 119 passed in 0.27s

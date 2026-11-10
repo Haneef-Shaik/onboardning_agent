@@ -17,6 +17,7 @@ from onb_data import (
     connect,
     tenant_scope,
 )
+from onb_data import store as store_module
 
 from .fakes import FakeClient, FakeCollection, FakeDatabase, make_store
 
@@ -138,6 +139,29 @@ def test_connect_builds_a_lazy_store_without_touching_the_network() -> None:
 def test_connect_refuses_a_missing_uri_or_bad_database_name(uri: str, database: str) -> None:
     with pytest.raises(ValueError, match=r"uri|database"):
         connect(uri, database)
+
+
+def test_connect_checks_the_database_name_before_making_a_client(monkeypatch: pytest.MonkeyPatch) -> None:
+    made: list[object] = []
+    monkeypatch.setattr(store_module, "_AsyncMongoClient", lambda *a, **kw: made.append(kw))
+    with pytest.raises(ValueError, match="database"):
+        connect("mongodb://x", "a.b")
+    assert made == []
+
+
+def test_connect_passes_event_listeners_to_the_client(monkeypatch: pytest.MonkeyPatch) -> None:
+    """T-2 attaches its command listener here."""
+    made: list[dict[str, Any]] = []
+
+    def fake_client(uri: str, **kwargs: Any) -> dict[str, FakeDatabase]:
+        made.append({"uri": uri, **kwargs})
+        return {"onb": FakeDatabase()}
+
+    listener = object()
+    monkeypatch.setattr(store_module, "_AsyncMongoClient", fake_client)
+    connect("mongodb://x", "onb", event_listeners=[listener])
+    assert made[0]["event_listeners"] == [listener]
+    assert made[0]["uri"] == "mongodb://x"
 
 
 # --- GlobalRepository ----------------------------------------------------------------------
