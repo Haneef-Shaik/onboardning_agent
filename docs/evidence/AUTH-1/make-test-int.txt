@@ -11,21 +11,21 @@ docker compose up -d --wait --build
 #2 DONE 0.0s
 
 #3 [internal] load metadata for docker.io/otel/opentelemetry-collector-contrib:0.165.0@sha256:e40d61f10c9a617cca1ffd1be4d7e2b3a4b0f0001798ff07e58cabe82e618cea
-#3 DONE 0.1s
+#3 DONE 0.0s
 
 #4 [internal] load metadata for docker.io/library/alpine:3.24.4@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf
-#4 DONE 0.1s
+#4 DONE 0.0s
 
 #5 [internal] load .dockerignore
 #5 transferring context: 2B done
 #5 DONE 0.0s
 
 #6 [stage-1 1/3] FROM docker.io/library/alpine:3.24.4@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf
-#6 resolve docker.io/library/alpine:3.24.4@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf done
+#6 resolve docker.io/library/alpine:3.24.4@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf 0.0s done
 #6 DONE 0.0s
 
 #7 [upstream 1/1] FROM docker.io/otel/opentelemetry-collector-contrib:0.165.0@sha256:e40d61f10c9a617cca1ffd1be4d7e2b3a4b0f0001798ff07e58cabe82e618cea
-#7 resolve docker.io/otel/opentelemetry-collector-contrib:0.165.0@sha256:e40d61f10c9a617cca1ffd1be4d7e2b3a4b0f0001798ff07e58cabe82e618cea done
+#7 resolve docker.io/otel/opentelemetry-collector-contrib:0.165.0@sha256:e40d61f10c9a617cca1ffd1be4d7e2b3a4b0f0001798ff07e58cabe82e618cea 0.0s done
 #7 DONE 0.0s
 
 #8 [stage-1 2/3] RUN adduser -D -H -u 10001 otel
@@ -38,9 +38,8 @@ docker compose up -d --wait --build
 #10 exporting layers done
 #10 exporting manifest sha256:94c1e6e7f8b5d5b9d09ea3d22fbfdab118e79694f184b44e953d8ba915c21880 done
 #10 exporting config sha256:621f9f4d94970a637db8219308d8156dcae4ca65285c9281b1c493ac0a2bdeab done
-#10 exporting attestation manifest sha256:7934760b2ff5d7616cda895bf6a9ae97743ee41c4272692d6c8ba7da39e0038c done
-#10 exporting manifest list sha256:cb0ff2f55b2123ac817eac7cc0273fe4b3bde9478b996ed3dc3a2569d2f7e7c1 done
-#10 naming to docker.io/onb/otel-collector:0.165.0
+#10 exporting attestation manifest sha256:68968292d678336e72339c698219ae58b52612c1c246d6d2e5ca5ff2abbdfc95 done
+#10 exporting manifest list sha256:f82eae0e0a2e850b97aaba46d9ba261c93213291b0b3bad54ed359c8d718cc62 done
 #10 naming to docker.io/onb/otel-collector:0.165.0 done
 #10 unpacking to docker.io/onb/otel-collector:0.165.0 done
 #10 DONE 0.0s
@@ -48,58 +47,58 @@ docker compose up -d --wait --build
 #11 resolving provenance for metadata file
 #11 DONE 0.0s
  Image onb/otel-collector:0.165.0 Built 
- Container ob-auth-1-jaeger-1 Running 
- Container ob-auth-1-caddy-1 Running 
- Container ob-auth-1-mongo-1 Running 
- Container ob-auth-1-otel-collector-1 Running 
+ Network ob-auth-1_edge Creating 
+ Network ob-auth-1_backend Creating 
+ Network ob-auth-1_edge Creating 
+ Network ob-auth-1_backend Creating 
+ Network ob-auth-1_edge Created 
+ Network ob-auth-1_edge Created 
+ Network ob-auth-1_backend Created 
+ Network ob-auth-1_backend Created 
+ Container ob-auth-1-mongo-1 Creating 
+ Container ob-auth-1-jaeger-1 Creating 
+ Container ob-auth-1-mongo-1 Created 
+ Container ob-auth-1-jaeger-1 Created 
+ Container ob-auth-1-otel-collector-1 Creating 
+ Container ob-auth-1-caddy-1 Creating 
+ Container ob-auth-1-otel-collector-1 Created 
+ Container ob-auth-1-caddy-1 Created 
+ Container ob-auth-1-mongo-1 Starting 
+ Container ob-auth-1-jaeger-1 Starting 
+ Container ob-auth-1-mongo-1 Started 
+ Container ob-auth-1-jaeger-1 Started 
  Container ob-auth-1-jaeger-1 Waiting 
  Container ob-auth-1-jaeger-1 Waiting 
  Container ob-auth-1-jaeger-1 Healthy 
+ Container ob-auth-1-otel-collector-1 Starting 
  Container ob-auth-1-jaeger-1 Healthy 
+ Container ob-auth-1-caddy-1 Starting 
+ Container ob-auth-1-otel-collector-1 Started 
+ Container ob-auth-1-caddy-1 Started 
+ Container ob-auth-1-caddy-1 Waiting 
  Container ob-auth-1-mongo-1 Waiting 
  Container ob-auth-1-otel-collector-1 Waiting 
  Container ob-auth-1-jaeger-1 Waiting 
- Container ob-auth-1-caddy-1 Waiting 
- Container ob-auth-1-otel-collector-1 Healthy 
  Container ob-auth-1-jaeger-1 Healthy 
  Container ob-auth-1-mongo-1 Healthy 
+ Container ob-auth-1-otel-collector-1 Healthy 
  Container ob-auth-1-caddy-1 Healthy 
 set -a && . ./.env && set +a && \
 	uv run --frozen pytest tools/tests_int -q -o cache_dir=.pytest_cache/tools-int && \
 	node_modules/.bin/nx run-many -t test-int --output-style=static
 ............                                                             [100%]
-12 passed in 2.16s
+12 passed in 5.02s
 
- NX   Running target test-int for 4 projects:
+ NX   Running target test-int for 6 projects:
 
 - py-telemetry
+- py-eventbus
+- mcp-mongo
 - py-crypto
 - py-data
 - api
 
 
-
-> nx run api:test-int
-
-> uv run --frozen pytest apps/api/tests_int -o cache_dir=.pytest_cache/api-int
-
-============================= test session starts ==============================
-platform darwin -- Python 3.12.13, pytest-9.2.0, pluggy-1.7.0
-cachedir: .pytest_cache/api-int
-rootdir: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-auth-1
-configfile: pyproject.toml
-plugins: hypothesis-6.170.15, cov-7.1.0, anyio-4.16.0
-collected 8 items
-
-apps/api/tests_int/test_mongo_login.py ........                          [100%]
-
-=============================== warnings summary ===============================
-.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
-  /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-auth-1/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
-    from starlette.testclient import TestClient as TestClient  # noqa
-
--- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-========================= 8 passed, 1 warning in 2.39s =========================
 
 > nx run py-data:test-int
 
@@ -110,13 +109,14 @@ platform darwin -- Python 3.12.13, pytest-9.2.0, pluggy-1.7.0
 cachedir: .pytest_cache/py-data-int
 rootdir: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-auth-1
 configfile: pyproject.toml
-plugins: hypothesis-6.170.15, cov-7.1.0, anyio-4.16.0
-collected 24 items
+plugins: hypothesis-6.170.15, langsmith-0.14.17, cov-7.1.0, anyio-4.16.0
+collected 28 items
 
-libs/py-data/tests_int/test_compose_mongo_transaction.py ....            [ 16%]
-libs/py-data/tests_int/test_tenant_repository.py ....................    [100%]
+libs/py-data/tests_int/test_compose_mongo_transaction.py ....            [ 14%]
+libs/py-data/tests_int/test_tenant_repository.py ....................    [ 85%]
+libs/py-data/tests_int/test_transactions_and_queue.py ....               [100%]
 
-============================== 24 passed in 2.45s ==============================
+============================== 28 passed in 5.13s ==============================
 
 > nx run py-telemetry:test-int
 
@@ -127,25 +127,35 @@ platform darwin -- Python 3.12.13, pytest-9.2.0, pluggy-1.7.0
 cachedir: .pytest_cache/py-telemetry-int
 rootdir: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-auth-1
 configfile: pyproject.toml
-plugins: hypothesis-6.170.15, cov-7.1.0, anyio-4.16.0
+plugins: hypothesis-6.170.15, langsmith-0.14.17, cov-7.1.0, anyio-4.16.0
 collected 3 items
 
 libs/py-telemetry/tests_int/test_jaeger_roundtrip.py 
-Jaeger returned trace b43a772a1bf6eb3a99972f9ac6667ce9 for service f4-probe-28f02a2a: [('f4-probe-28f02a2a', 'onb_telemetry', 'f4.resumed-after-wait'), ('f4-probe-28f02a2a', 'opentelemetry.instrumentation.fastapi', 'GET /ping'), ('f4-probe-28f02a2a', 'opentelemetry.instrumentation.fastapi', 'GET /ping http send')]
+Jaeger returned trace 9ab1274bf09e9e1352ca77d6fcee7297 for service f4-probe-2794cd46: [('f4-probe-2794cd46', 'onb_telemetry', 'f4.resumed-after-wait'), ('f4-probe-2794cd46', 'opentelemetry.instrumentation.fastapi', 'GET /ping'), ('f4-probe-2794cd46', 'opentelemetry.instrumentation.fastapi', 'GET /ping http send')]
 ...
 
-=============================== warnings summary ===============================
-.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
-  /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-auth-1/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
-    from starlette.testclient import TestClient as TestClient  # noqa
-
--- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
 ==================================== PASSES ====================================
 =========================== short test summary info ============================
 PASSED libs/py-telemetry/tests_int/test_jaeger_roundtrip.py::test_fastapi_span_is_returned_by_jaeger_through_the_collector
 PASSED libs/py-telemetry/tests_int/test_jaeger_roundtrip.py::test_jaeger_lists_the_probe_service
 PASSED libs/py-telemetry/tests_int/test_jaeger_roundtrip.py::test_pymongo_commands_get_spans
-========================= 3 passed, 1 warning in 3.33s =========================
+============================== 3 passed in 7.29s ===============================
+
+> nx run api:test-int
+
+> uv run --frozen pytest apps/api/tests_int -o cache_dir=.pytest_cache/api-int
+
+============================= test session starts ==============================
+platform darwin -- Python 3.12.13, pytest-9.2.0, pluggy-1.7.0
+cachedir: .pytest_cache/api-int
+rootdir: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-auth-1
+configfile: pyproject.toml
+plugins: hypothesis-6.170.15, langsmith-0.14.17, cov-7.1.0, anyio-4.16.0
+collected 8 items
+
+apps/api/tests_int/test_mongo_login.py ........                          [100%]
+
+============================== 8 passed in 2.29s ===============================
 
 > nx run py-crypto:test-int
 
@@ -156,20 +166,53 @@ platform darwin -- Python 3.12.13, pytest-9.2.0, pluggy-1.7.0
 cachedir: .pytest_cache/py-crypto-int
 rootdir: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-auth-1
 configfile: pyproject.toml
-plugins: hypothesis-6.170.15, cov-7.1.0, anyio-4.16.0
-collected 2 items
+plugins: hypothesis-6.170.15, langsmith-0.14.17, cov-7.1.0, anyio-4.16.0
+collected 6 items
 
-libs/py-crypto/tests_int/test_org_keys_mongo.py ..                       [100%]
+libs/py-crypto/tests_int/test_org_keys_mongo.py ..                       [ 33%]
+libs/py-crypto/tests_int/test_vault_mongo.py ....                        [100%]
 
-============================== 2 passed in 0.84s ===============================
+============================== 6 passed in 2.38s ===============================
+
+> nx run mcp-mongo:test-int
+
+> uv run --frozen pytest apps/mcp-mongo/tests_int -o cache_dir=.pytest_cache/mcp-mongo-int
+
+============================= test session starts ==============================
+platform darwin -- Python 3.12.13, pytest-9.2.0, pluggy-1.7.0
+cachedir: .pytest_cache/mcp-mongo-int
+rootdir: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-auth-1
+configfile: pyproject.toml
+plugins: hypothesis-6.170.15, langsmith-0.14.17, cov-7.1.0, anyio-4.16.0
+collected 18 items
+
+apps/mcp-mongo/tests_int/test_mcp_mongo_int.py ..................        [100%]
+
+============================== 18 passed in 6.84s ==============================
+
+> nx run py-eventbus:test-int
+
+> uv run --frozen pytest libs/py-eventbus/tests_int -o cache_dir=.pytest_cache/py-eventbus-int
+
+============================= test session starts ==============================
+platform darwin -- Python 3.12.13, pytest-9.2.0, pluggy-1.7.0
+cachedir: .pytest_cache/py-eventbus-int
+rootdir: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-auth-1
+configfile: pyproject.toml
+plugins: hypothesis-6.170.15, langsmith-0.14.17, cov-7.1.0, anyio-4.16.0
+collected 17 items
+
+libs/py-eventbus/tests_int/test_bus_against_mongo.py .................   [100%]
+
+============================= 17 passed in 15.96s ==============================
 
 
 
- NX   Successfully ran target test-int for 4 projects
+ NX   Successfully ran target test-int for 6 projects
 
 
-  Run duration:      4.2s
-  Cache:             0/4 hit (0%)
-  Critical path:     3.9s (1 task)
-  Recoverable time:  362ms (9% of the run)
+  Run duration:      17.8s
+  Cache:             0/6 hit (0%)
+  Critical path:     17.8s (1 task)
+  Recoverable time:  5ms (0% of the run)
 exit=0

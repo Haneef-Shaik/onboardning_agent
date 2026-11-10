@@ -3,7 +3,7 @@ platform darwin -- Python 3.12.13, pytest-9.2.0, pluggy-1.7.0 -- /Users/Adya/per
 hypothesis profile 'default'
 rootdir: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-auth-1
 configfile: pyproject.toml
-plugins: hypothesis-6.170.15, cov-7.1.0, anyio-4.16.0
+plugins: hypothesis-6.170.15, langsmith-0.14.17, cov-7.1.0, anyio-4.16.0
 collecting ... collected 149 items
 
 apps/api/tests/test_login.py::test_login_with_the_right_password_returns_a_token_for_the_users_org_and_role PASSED [  0%]
@@ -156,11 +156,5 @@ libs/py-contracts/tests/test_auth_contracts.py::test_a_login_request_bounds_its_
 libs/py-contracts/tests/test_auth_contracts.py::test_a_token_is_a_bearer_token_with_an_expiry PASSED [ 99%]
 libs/py-contracts/tests/test_auth_contracts.py::test_me_carries_the_role_and_org_from_the_token PASSED [100%]
 
-=============================== warnings summary ===============================
-.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
-  /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-auth-1/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
-    from starlette.testclient import TestClient as TestClient  # noqa
-
--- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-======================== 149 passed, 1 warning in 2.94s ========================
+============================= 149 passed in 2.27s ==============================
 exit=0

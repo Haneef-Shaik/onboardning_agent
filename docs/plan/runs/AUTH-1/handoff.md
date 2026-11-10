@@ -1,4 +1,10 @@
-# Handoff — AUTH-1 · Log in with a JWT that carries org and role        attempt 2 · goal/auth-1-jwt-roles · see `git log -1` (attempt 1 failed only on two unexplained `type: ignore` in test_login.py; fixed by typing the helper as `httpx.Response`, gates re-run)
+# Handoff — AUTH-1 · Log in with a JWT that carries org and role        attempt 3 · goal/auth-1-jwt-roles (rebased onto main by the orchestrator) · see `git log -1`
+
+**Attempt history.**
+- Attempt 1 failed only on two unexplained `type: ignore` comments in `test_login.py`.
+- Attempt 2 passed. It typed the helper as `httpx.Response`.
+- After the orchestrator's rebase, main's lock resolves `httpx2` (pulled in by MCP-1). Starlette's TestClient then returns `httpx2.Response`, so that annotation failed typecheck.
+- Attempt 3 types the helper against a small Protocol (`status_code`, `headers`, `json()`) that both `httpx.Response` and `httpx2.Response` satisfy (checked with `mypy --strict` on both). No `type: ignore` and no `Any`. All gates were re-run on the rebased branch.
 
 **Outcome claimed.** HR_ADMIN, HR and MANAGER users log in at `POST /auth/login` with email and
 password (bcrypt). They get an HS256 JWT `{sub, org_id, role, iat, exp, iss, aud}`. `GET /me` returns
@@ -34,9 +40,11 @@ The API refuses to start without `JWT_SECRET`.
 ## Gates
 | Gate | Command | Result |
 |------|---------|--------|
-| Check | `make check` | `make check: all passed`, exit=0. Lint, typecheck and test for 17 projects (`docs/evidence/AUTH-1/make-check.txt`). The known py-guardrails flake did not occur. |
-| Integration | `make test-int` | exit=0, `Successfully ran target test-int for 4 projects`. Stack 12, py-data 24, py-telemetry 3, and the new api target 8 passed (`docs/evidence/AUTH-1/make-test-int.txt`). Compose project `ob-auth-1` on Caddy ports 19100/19101. |
-| Contracts | `make contracts-check` | `contracts-check: openapi.json and the TS client are up to date`. The client was regenerated for `login`, `getMe` and the HTTPBearer scheme; `web` and `ts-api-client` typecheck and tests pass. |
+| Check | `make check` | `make check: all passed`, exit=0, on the branch rebased onto main (MCP-1, EVT-1, PII-2, LLM-1). Lint, typecheck and test for 17 projects (`docs/evidence/AUTH-1/make-check.txt`). The known py-guardrails flake did not occur. |
+| Integration | `make test-int` | exit=0, `Successfully ran target test-int for 6 projects`, including `apps/api/tests_int/test_mongo_login.py` 8 passed (`docs/evidence/AUTH-1/make-test-int.txt`). Compose project `ob-auth-1` on Caddy ports 19100/19101. |
+| Contracts | `make contracts-check` | `contracts-check: openapi.json and the TS client are up to date`, exit=0 (`docs/evidence/AUTH-1/make-contracts-check.txt`). The client was regenerated for `login`, `getMe` and the HTTPBearer scheme. |
+
+After the rebase: box tests `149 passed` (`box-tests.txt`) and mutation checks `16/16 mutations caught` (`mutation-checks.txt`), both re-run.
 
 `make test-xt` (T-3), evals and the PII scan do not exist yet.
 
@@ -98,3 +106,4 @@ Code review and security review found no critical or high issues. Fixed: telemet
 - A test package named `tests` in two projects breaks a combined pytest run under `--import-mode=importlib`. Fakes live in `onb_api.testing` instead. The api typecheck now runs mypy twice (tests and tests_int) to avoid two `conftest` modules.
 - A FastAPI yield dependency does set the contextvar for the handler, but TestClient runs each request in a copied context. Only a test that drives the dependency in one task can see whether the scope resets.
 - PyJWT warns about a 32-byte HMAC key for HS384/512; the tests sign with 64-byte keys.
+- Starlette's TestClient returns `httpx2.Response` when httpx2 is installed and `httpx.Response` otherwise. Type test helpers against the shape they read (a Protocol), not against either package.
