@@ -241,3 +241,11 @@ def test_an_unexpected_failure_hides_its_message(db: FakeDatabase, monkeypatch: 
     text = _error_text(call(db, _tool("count", {"collection": "new_hires"})))
     assert "ptk_secret_detail" not in text
     assert "internal error" in text
+
+
+def test_an_invalid_argument_error_names_the_field_but_not_the_value(db: FakeDatabase) -> None:
+    args = {"collection": "new_hires", "limit": "ptk_secret_limit", "org_id": "ptk_secret_org"}
+    text = _error_text(call(db, _tool("find", args)))
+    assert "limit" in text
+    assert "org_id" in text
+    assert "ptk_secret" not in text

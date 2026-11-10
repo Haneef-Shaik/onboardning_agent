@@ -1,0 +1,146 @@
+M1: find limit maximum raised to 1000 (box 2)  [apps/mcp-mongo/tests]
+    FAILED apps/mcp-mongo/tests/test_contracts.py::test_find_requires_a_limit_of_at_most_100
+    FAILED apps/mcp-mongo/tests/test_contracts.py::test_find_without_a_valid_limit_is_rejected[args1]
+    FAILED apps/mcp-mongo/tests/test_server.py::test_the_server_lists_exactly_the_prd_tools_with_closed_schemas
+    FAILED apps/mcp-mongo/tests/test_server.py::test_find_without_limit_or_with_limit_over_100_is_rejected[args1]
+    FAILED apps/mcp-mongo/tests/test_server.py::test_find_without_limit_or_with_limit_over_100_is_rejected[args3]
+    FAILED apps/mcp-mongo/tests/test_server.py::test_aggregate_matches_the_org_first_and_caps_the_result
+    FAILED apps/mcp-mongo/tests/test_spans.py::test_an_invalid_argument_call_has_a_denied_span
+    result: ['7 failed, 162 passed in 1.92s']
+    caught: True; restored byte-for-byte: True
+M2: find limit made optional, default 100 (box 2)  [apps/mcp-mongo/tests]
+    FAILED apps/mcp-mongo/tests/test_contracts.py::test_find_requires_a_limit_of_at_most_100
+    FAILED apps/mcp-mongo/tests/test_contracts.py::test_find_without_a_valid_limit_is_rejected[args0]
+    FAILED apps/mcp-mongo/tests/test_server.py::test_the_server_lists_exactly_the_prd_tools_with_closed_schemas
+    FAILED apps/mcp-mongo/tests/test_server.py::test_find_without_limit_or_with_limit_over_100_is_rejected[args0]
+    result: ['4 failed, 165 passed in 1.00s']
+    caught: True; restored byte-for-byte: True
+M3: org_id rejection disabled (box 3)  [apps/mcp-mongo/tests]
+    FAILED apps/mcp-mongo/tests/test_policy.py::test_org_id_anywhere_is_rejected[value0]
+    FAILED apps/mcp-mongo/tests/test_policy.py::test_org_id_anywhere_is_rejected[value1]
+    FAILED apps/mcp-mongo/tests/test_policy.py::test_org_id_anywhere_is_rejected[value2]
+    FAILED apps/mcp-mongo/tests/test_policy.py::test_org_id_anywhere_is_rejected[value3]
+    FAILED apps/mcp-mongo/tests/test_policy.py::test_org_id_anywhere_is_rejected[value4]
+    FAILED apps/mcp-mongo/tests/test_policy.py::test_org_id_anywhere_is_rejected[value5]
+    FAILED apps/mcp-mongo/tests/test_policy.py::test_org_id_anywhere_is_rejected[value6]
+    FAILED apps/mcp-mongo/tests/test_policy.py::test_org_id_anywhere_is_rejected[value7]
+    FAILED apps/mcp-mongo/tests/test_policy.py::test_org_id_anywhere_is_rejected[value8]
+    FAILED apps/mcp-mongo/tests/test_policy.py::test_org_id_anywhere_is_rejected[value9]
+    FAILED apps/mcp-mongo/tests/test_policy.py::test_org_id_anywhere_is_rejected[value10]
+    FAILED apps/mcp-mongo/tests/test_policy.py::test_the_rejection_names_the_argument_but_not_the_value
+    FAILED apps/mcp-mongo/tests/test_server.py::test_an_agent_supplied_org_id_is_rejected[find-args0]
+    FAILED apps/mcp-mongo/tests/test_server.py::test_an_agent_supplied_org_id_is_rejected[find-args1]
+    FAILED apps/mcp-mongo/tests/test_server.py::test_an_agent_supplied_org_id_is_rejected[find-args2]
+    FAILED apps/mcp-mongo/tests/test_server.py::test_an_agent_supplied_org_id_is_rejected[count-args3]
+    FAILED apps/mcp-mongo/tests/test_server.py::test_an_agent_supplied_org_id_is_rejected[aggregate-args4]
+    FAILED apps/mcp-mongo/tests/test_server.py::test_an_agent_supplied_org_id_is_rejected[update_one-args5]
+    FAILED apps/mcp-mongo/tests/test_server.py::test_an_agent_supplied_org_id_is_rejected[update_one-args6]
+    FAILED apps/mcp-mongo/tests/test_server.py::test_an_agent_supplied_org_id_is_rejected[insert_one-args7]
+    FAILED apps/mcp-mongo/tests/test_spans.py::test_a_rejected_call_has_a_denied_span_with_a_reason
+    result: ['21 failed, 148 passed in 1.14s']
+    caught: True; restored byte-for-byte: True
+M4: org_id rejection checks the top level only (box 3)  [apps/mcp-mongo/tests]
+    FAILED apps/mcp-mongo/tests/test_policy.py::test_org_id_anywhere_is_rejected[value3]
+    FAILED apps/mcp-mongo/tests/test_policy.py::test_org_id_anywhere_is_rejected[value4]
+    FAILED apps/mcp-mongo/tests/test_policy.py::test_org_id_anywhere_is_rejected[value5]
+    FAILED apps/mcp-mongo/tests/test_policy.py::test_org_id_anywhere_is_rejected[value6]
+    FAILED apps/mcp-mongo/tests/test_policy.py::test_org_id_anywhere_is_rejected[value7]
+    FAILED apps/mcp-mongo/tests/test_policy.py::test_org_id_anywhere_is_rejected[value8]
+    FAILED apps/mcp-mongo/tests/test_policy.py::test_org_id_anywhere_is_rejected[value9]
+    FAILED apps/mcp-mongo/tests/test_policy.py::test_org_id_anywhere_is_rejected[value10]
+    FAILED apps/mcp-mongo/tests/test_server.py::test_an_agent_supplied_org_id_is_rejected[find-args2]
+    FAILED apps/mcp-mongo/tests/test_server.py::test_an_agent_supplied_org_id_is_rejected[aggregate-args4]
+    FAILED apps/mcp-mongo/tests/test_server.py::test_an_agent_supplied_org_id_is_rejected[update_one-args6]
+    result: ['11 failed, 158 passed in 0.82s']
+    caught: True; restored byte-for-byte: True
+M5: insert takes org_id from the document instead of the context (box 3)  [apps/mcp-mongo/tests]
+    FAILED apps/mcp-mongo/tests/test_server.py::test_an_agent_supplied_org_id_is_rejected[insert_one-args7]
+    result: ['1 failed, 168 passed in 0.92s']
+    caught: True; restored byte-for-byte: True
+M6: tool arguments no longer closed: extra='ignore' (boxes 2-3, contracts)  [apps/mcp-mongo/tests]
+    FAILED apps/mcp-mongo/tests/test_contracts.py::test_every_contract_is_a_closed_object_schema[aggregate]
+    FAILED apps/mcp-mongo/tests/test_contracts.py::test_every_contract_is_a_closed_object_schema[count]
+    FAILED apps/mcp-mongo/tests/test_contracts.py::test_every_contract_is_a_closed_object_schema[find]
+    FAILED apps/mcp-mongo/tests/test_contracts.py::test_every_contract_is_a_closed_object_schema[insert_one]
+    FAILED apps/mcp-mongo/tests/test_contracts.py::test_every_contract_is_a_closed_object_schema[list_collections]
+    FAILED apps/mcp-mongo/tests/test_contracts.py::test_every_contract_is_a_closed_object_schema[update_one]
+    FAILED apps/mcp-mongo/tests/test_contracts.py::test_unknown_arguments_are_rejected[find-args0]
+    FAILED apps/mcp-mongo/tests/test_contracts.py::test_unknown_arguments_are_rejected[count-args1]
+    FAILED apps/mcp-mongo/tests/test_contracts.py::test_unknown_arguments_are_rejected[insert_one-args2]
+    FAILED apps/mcp-mongo/tests/test_contracts.py::test_unknown_arguments_are_rejected[list_collections-args3]
+    FAILED apps/mcp-mongo/tests/test_server.py::test_the_server_lists_exactly_the_prd_tools_with_closed_schemas
+    FAILED apps/mcp-mongo/tests/test_server.py::test_org_id_as_a_tool_argument_is_rejected[find]
+    FAILED apps/mcp-mongo/tests/test_server.py::test_org_id_as_a_tool_argument_is_rejected[count]
+    FAILED apps/mcp-mongo/tests/test_server.py::test_org_id_as_a_tool_argument_is_rejected[insert_one]
+    FAILED apps/mcp-mongo/tests/test_server.py::test_org_id_as_a_tool_argument_is_rejected[list_collections]
+    FAILED apps/mcp-mongo/tests/test_server.py::test_an_invalid_argument_error_names_the_field_but_not_the_value
+    result: ['16 failed, 153 passed in 0.94s']
+    caught: True; restored byte-for-byte: True
+M7: call-context signature not verified  [apps/mcp-mongo/tests]
+    FAILED apps/mcp-mongo/tests/test_call_context.py::test_a_context_signed_with_another_key_is_refused
+    FAILED apps/mcp-mongo/tests/test_call_context.py::test_an_expired_context_is_refused
+    FAILED apps/mcp-mongo/tests/test_call_context.py::test_a_context_for_another_audience_or_issuer_is_refused
+    FAILED apps/mcp-mongo/tests/test_call_context.py::test_an_unsigned_context_is_refused
+    FAILED apps/mcp-mongo/tests/test_call_context.py::test_the_refusal_never_echoes_the_token
+    FAILED apps/mcp-mongo/tests/test_server.py::test_a_call_without_a_valid_hub_context_is_refused[header2]
+    result: ['6 failed, 163 passed in 0.73s']
+    caught: True; restored byte-for-byte: True
+M8: write allowed on readable collections  [apps/mcp-mongo/tests]
+    FAILED apps/mcp-mongo/tests/test_policy.py::test_writable_collections_come_from_the_context
+    FAILED apps/mcp-mongo/tests/test_server.py::test_insert_into_a_read_only_collection_is_rejected
+    result: ['2 failed, 167 passed in 1.10s']
+    caught: True; restored byte-for-byte: True
+M9: $lookup added to the stage allowlist  [apps/mcp-mongo/tests]
+    FAILED apps/mcp-mongo/tests/test_policy.py::test_the_allowed_stages_are_exactly_the_prd_list
+    FAILED apps/mcp-mongo/tests/test_policy.py::test_a_stage_off_the_allowlist_is_rejected[$lookup]
+    FAILED apps/mcp-mongo/tests/test_server.py::test_aggregate_rejects_a_stage_off_the_allowlist
+    result: ['3 failed, 166 passed in 0.81s']
+    caught: True; restored byte-for-byte: True
+M10: span loses org_id (box 4)  [apps/mcp-mongo/tests]
+    FAILED apps/mcp-mongo/tests/test_spans.py::test_each_call_has_one_span_with_the_required_attributes[list_collections]
+    FAILED apps/mcp-mongo/tests/test_spans.py::test_each_call_has_one_span_with_the_required_attributes[find]
+    FAILED apps/mcp-mongo/tests/test_spans.py::test_each_call_has_one_span_with_the_required_attributes[count]
+    FAILED apps/mcp-mongo/tests/test_spans.py::test_each_call_has_one_span_with_the_required_attributes[aggregate]
+    FAILED apps/mcp-mongo/tests/test_spans.py::test_each_call_has_one_span_with_the_required_attributes[insert_one]
+    FAILED apps/mcp-mongo/tests/test_spans.py::test_each_call_has_one_span_with_the_required_attributes[update_one]
+    FAILED apps/mcp-mongo/tests/test_spans.py::test_a_rejected_call_has_a_denied_span_with_a_reason
+    result: ['7 failed, 162 passed in 0.74s']
+    caught: True; restored byte-for-byte: True
+M11: span loses the result count (box 4)  [apps/mcp-mongo/tests]
+    FAILED apps/mcp-mongo/tests/test_spans.py::test_each_call_has_one_span_with_the_required_attributes[list_collections]
+    FAILED apps/mcp-mongo/tests/test_spans.py::test_each_call_has_one_span_with_the_required_attributes[find]
+    FAILED apps/mcp-mongo/tests/test_spans.py::test_each_call_has_one_span_with_the_required_attributes[count]
+    FAILED apps/mcp-mongo/tests/test_spans.py::test_each_call_has_one_span_with_the_required_attributes[aggregate]
+    FAILED apps/mcp-mongo/tests/test_spans.py::test_each_call_has_one_span_with_the_required_attributes[insert_one]
+    FAILED apps/mcp-mongo/tests/test_spans.py::test_each_call_has_one_span_with_the_required_attributes[update_one]
+    result: ['6 failed, 163 passed in 0.88s']
+    caught: True; restored byte-for-byte: True
+M12: span carries the arguments, i.e. document content (box 4)  [apps/mcp-mongo/tests]
+    FAILED apps/mcp-mongo/tests/test_spans.py::test_no_span_carries_document_content[find]
+    FAILED apps/mcp-mongo/tests/test_spans.py::test_no_span_carries_document_content[count]
+    FAILED apps/mcp-mongo/tests/test_spans.py::test_no_span_carries_document_content[aggregate]
+    FAILED apps/mcp-mongo/tests/test_spans.py::test_no_span_carries_document_content[insert_one]
+    FAILED apps/mcp-mongo/tests/test_spans.py::test_no_span_carries_document_content[update_one]
+    result: ['5 failed, 164 passed in 0.65s']
+    caught: True; restored byte-for-byte: True
+M13: error span records the exception message (box 4)  [apps/mcp-mongo/tests]
+    FAILED apps/mcp-mongo/tests/test_spans.py::test_an_unexpected_failure_has_an_error_span_without_its_message
+    result: ['1 failed, 168 passed in 0.60s']
+    caught: True; restored byte-for-byte: True
+M14: validation errors echo the submitted values  [apps/mcp-mongo/tests]
+    FAILED apps/mcp-mongo/tests/test_server.py::test_an_invalid_argument_error_names_the_field_but_not_the_value
+    result: ['1 failed, 168 passed in 0.76s']
+    caught: True; restored byte-for-byte: True
+M15: org_id rejection disabled, against testcontainers Mongo (box 3, int)  [apps/mcp-mongo/tests_int]
+    FAILED apps/mcp-mongo/tests_int/test_mcp_mongo_int.py::test_an_agent_supplied_org_id_is_rejected[find-args0]
+    FAILED apps/mcp-mongo/tests_int/test_mcp_mongo_int.py::test_an_agent_supplied_org_id_is_rejected[count-args1]
+    FAILED apps/mcp-mongo/tests_int/test_mcp_mongo_int.py::test_an_agent_supplied_org_id_is_rejected[aggregate-args2]
+    FAILED apps/mcp-mongo/tests_int/test_mcp_mongo_int.py::test_an_agent_supplied_org_id_is_rejected[insert_one-args3]
+    FAILED apps/mcp-mongo/tests_int/test_mcp_mongo_int.py::test_an_agent_supplied_org_id_is_rejected[update_one-args4]
+    result: ['5 failed, 11 passed in 6.35s']
+    caught: True; restored byte-for-byte: True
+M16: find limit maximum raised to 1000, against testcontainers Mongo (box 2, int)  [apps/mcp-mongo/tests_int]
+    FAILED apps/mcp-mongo/tests_int/test_mcp_mongo_int.py::test_find_without_limit_or_over_100_is_rejected[limit-101]
+    result: ['1 failed, 15 passed in 8.35s']
+    caught: True; restored byte-for-byte: True
+SUMMARY: 16 of 16 mutations caught, every file restored
