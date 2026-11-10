@@ -2,14 +2,18 @@ method: python-stdnum stdnum.verhoeff as an independent oracle; seed 310; n=1000
           2363  stdnum.verhoeff=True   ours=True   stdnum.aadhaar=False  ours_aadhaar=False
              0  stdnum.verhoeff=True   ours=True   stdnum.aadhaar=False  ours_aadhaar=False
   999900001231  stdnum.verhoeff=True   ours=True   stdnum.aadhaar=True   ours_aadhaar=True 
-  334249855769  stdnum.verhoeff=True   ours=True   stdnum.aadhaar=True   ours_aadhaar=True 
-  529425329254  stdnum.verhoeff=True   ours=True   stdnum.aadhaar=True   ours_aadhaar=True 
-  917072196529  stdnum.verhoeff=True   ours=True   stdnum.aadhaar=True   ours_aadhaar=True 
-  200684941428  stdnum.verhoeff=True   ours=True   stdnum.aadhaar=True   ours_aadhaar=True 
+  999900000125  stdnum.verhoeff=True   ours=True   stdnum.aadhaar=True   ours_aadhaar=True 
+  999912345678  stdnum.verhoeff=True   ours=True   stdnum.aadhaar=True   ours_aadhaar=True 
+  919000000001  stdnum.verhoeff=True   ours=True   stdnum.aadhaar=True   ours_aadhaar=True 
+  999955550005  stdnum.verhoeff=True   ours=True   stdnum.aadhaar=True   ours_aadhaar=True 
+  917000000000  stdnum.verhoeff=True   ours=True   stdnum.aadhaar=True   ours_aadhaar=True 
+  918000000007  stdnum.verhoeff=True   ours=True   stdnum.aadhaar=True   ours_aadhaar=True 
+  999900000346  stdnum.verhoeff=True   ours=True   stdnum.aadhaar=True   ours_aadhaar=True 
+  999900000564  stdnum.verhoeff=True   ours=True   stdnum.aadhaar=True   ours_aadhaar=True 
           2364  stdnum.verhoeff=False  ours=False  stdnum.aadhaar=False  ours_aadhaar=False
           2336  stdnum.verhoeff=False  ours=False  stdnum.aadhaar=False  ours_aadhaar=False
              1  stdnum.verhoeff=False  ours=False  stdnum.aadhaar=False  ours_aadhaar=False
-  334249855760  stdnum.verhoeff=False  ours=False  stdnum.aadhaar=False  ours_aadhaar=False
+  999900000126  stdnum.verhoeff=False  ours=False  stdnum.aadhaar=False  ours_aadhaar=False
   848589512865  stdnum.verhoeff=False  ours=False  stdnum.aadhaar=False  ours_aadhaar=False
   509921984961  stdnum.verhoeff=False  ours=False  stdnum.aadhaar=False  ours_aadhaar=False
   334249855766  stdnum.verhoeff=False  ours=False  stdnum.aadhaar=False  ours_aadhaar=False

@@ -1,6 +1,7 @@
 """HMAC-SHA256 blind indexes (PRD §7.10 Lookup / dedupe): search and dedupe without decrypting.
 
-The caller passes the org's index key (per-org key material is PII-2's vault key management). The
+The caller passes the org's index key (per-org key material is PII-2's vault key management; PRD §7.10
+gives Aadhaar its own per-org key, so ``aadhaar_hash`` must be computed with that key). The
 message is ``<field>\\x1f<canonical value>``, so one value indexes differently per field and the many
 layouts of one value (``+91 90000 00001`` and ``9000000001``) share an index.
 """

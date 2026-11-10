@@ -1,7 +1,9 @@
 """Canonical forms of sensitive values, shared by display masks and blind indexes.
 
 Each function accepts the layouts people type and returns one canonical string, or raises
-``ValueError`` that names the field but never the value.
+``ValueError`` that names the field but never the value. These check shape only and are a little more
+lenient than the input validators in ``onb_guardrails.pii`` (e.g. a bare ``91`` mobile prefix, and no
+Verhoeff check on Aadhaar): callers validate on input first, then mask or index.
 """
 
 import re
@@ -9,7 +11,12 @@ from typing import Final
 
 _SEPARATORS: Final = re.compile(r"[ -]")
 _MOBILE: Final = re.compile(r"(?:\+?91|0)?([6-9][0-9]{9})", re.ASCII)
-_EMAIL: Final = re.compile(r"([^@\s]+)@([^@\s]+\.[^@\s]+)")
+# ASCII only, the same shape the API validator accepts (onb_guardrails.pii.is_valid_email): a Unicode
+# lookalike (e.g. the Kelvin sign, which lower-cases to "k") must not share another person's index.
+_EMAIL: Final = re.compile(
+    r"([A-Za-z0-9._%+-]+)@((?:[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?\.)+[A-Za-z]{2,})",
+    re.ASCII,
+)
 _PAN: Final = re.compile(r"[A-Z]{5}[0-9]{4}[A-Z]", re.ASCII)
 _AADHAAR: Final = re.compile(r"[0-9]{12}|[0-9]{4}( |-)[0-9]{4}\1[0-9]{4}", re.ASCII)
 _BANK_ACCOUNT: Final = re.compile(r"[0-9]{9,18}", re.ASCII)

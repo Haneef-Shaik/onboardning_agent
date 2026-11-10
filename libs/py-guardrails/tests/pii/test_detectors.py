@@ -1,4 +1,4 @@
-"""Free-text PII detectors and redact() (PRD §7.10 Free-text input). All values are synthetic."""
+"""Free-text PII detectors and redact() (PRD \u00a77.10 Free-text input). All values are synthetic."""
 
 import time
 
@@ -13,9 +13,9 @@ def _found(text: str) -> list[tuple[PiiType, str]]:
 @pytest.mark.parametrize(
     ("text", "kind", "value"),
     [
-        ("Aadhaar 3342 4985 5769 ok", PiiType.AADHAAR, "3342 4985 5769"),
-        ("uid:529425329254.", PiiType.AADHAAR, "529425329254"),
-        ("UID 2006-8494-1428", PiiType.AADHAAR, "2006-8494-1428"),
+        ("Aadhaar 9999 0000 0125 ok", PiiType.AADHAAR, "9999 0000 0125"),
+        ("uid:999912345678.", PiiType.AADHAAR, "999912345678"),
+        ("UID 9999-5555-0005", PiiType.AADHAAR, "9999-5555-0005"),
         ("PAN ABCDE1234F.", PiiType.PAN, "ABCDE1234F"),
         ("pan abcde1234f", PiiType.PAN, "abcde1234f"),
         ("IFSC TEST0000001,", PiiType.IFSC, "TEST0000001"),
@@ -45,7 +45,7 @@ def test_spans_are_frozen_ordered_and_carry_no_value() -> None:
 def test_a_12_digit_number_failing_verhoeff_is_not_aadhaar() -> None:
     """Card trap: order ids are 12 digits but fail the checksum."""
     assert detect("Order 848589512865 shipped") == ()
-    assert detect("Order 3342 4985 5760 shipped") == ()
+    assert detect("Order 9999 0000 0126 shipped") == ()
 
 
 def test_aadhaar_starting_with_0_or_1_is_not_detected() -> None:
@@ -53,10 +53,10 @@ def test_aadhaar_starting_with_0_or_1_is_not_detected() -> None:
 
 
 def test_mobile_inside_a_12_digit_aadhaar_is_reported_as_aadhaar_only() -> None:
-    """Card trap: 917219206868 is Aadhaar-valid and also reads as 91 + a mobile number."""
-    assert _found("Aadhaar 917219206868") == [(PiiType.AADHAAR, "917219206868")]
-    assert _found("Aadhaar 9172 1920 6868") == [(PiiType.AADHAAR, "9172 1920 6868")]
-    assert redact("Aadhaar 917219206868") == "Aadhaar [AADHAAR]"
+    """Card trap: 917000000000 is Aadhaar-valid and also reads as 91 + a mobile number."""
+    assert _found("Aadhaar 917000000000") == [(PiiType.AADHAAR, "917000000000")]
+    assert _found("Aadhaar 9170 0000 0000") == [(PiiType.AADHAAR, "9170 0000 0000")]
+    assert redact("Aadhaar 917000000000") == "Aadhaar [AADHAAR]"
 
 
 def test_mobile_is_not_found_inside_a_longer_digit_run() -> None:
@@ -64,7 +64,7 @@ def test_mobile_is_not_found_inside_a_longer_digit_run() -> None:
 
 
 def test_aadhaar_after_a_failing_group_is_still_found() -> None:
-    assert _found("1111 3342 4985 5769") == [(PiiType.AADHAAR, "3342 4985 5769")]
+    assert _found("1111 9999 0000 0125") == [(PiiType.AADHAAR, "9999 0000 0125")]
 
 
 def test_upi_handle_reveals_the_mobile() -> None:
@@ -105,7 +105,7 @@ def test_redact_repeats_until_a_value_exposed_by_redaction_is_gone() -> None:
 
 
 def test_redact_leaves_clean_text_unchanged() -> None:
-    text = "Order 848589512865, pincode 560001, ₹1,23,456 on 2026-11-10."
+    text = "Order 848589512865, pincode 560001, \u20b91,23,456 on 2026-11-10."
     assert redact(text) == text
 
 
@@ -122,6 +122,76 @@ def test_marker_is_the_bracketed_type_name() -> None:
 
 def test_redact_is_linear_on_adversarial_input() -> None:
     hostile = ("a" * 5000 + "@") * 20 + "9" * 50000 + "a." * 20000
+    started = time.perf_counter()
+    redact(hostile)
+    assert time.perf_counter() - started < 5.0
+
+
+def _full_width(text: str) -> str:
+    return "".join(chr(ord(c) + 0xFEE0) if "!" <= c <= "~" else c for c in text)
+
+
+ZWSP, SOFT_HYPHEN, NBSP = "\u200b", "\u00ad", "\u00a0"
+CYRILLIC_PAN = "\u0410\u0412\u0421D\u04151234F"  # Cyrillic A, V(B), S(C), then Latin D, Cyrillic E, 1234F
+SUPERSCRIPT_MOBILE = "9000000001".translate({ord("0"): "\u2070", ord("1"): "\u00b9", ord("9"): "\u2079"})
+CIRCLED_MOBILE = "\u2468" + "\u24ea" * 8 + "\u2460"  # circled 9, circled 0 x8, circled 1
+
+
+# Review findings (security and code review of attempt 1): formatting tricks that slipped past redact().
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        (f"PAN ABCDE{ZWSP}1234F", "PAN [PAN]"),
+        (f"PAN ABCDE{SOFT_HYPHEN}1234F", "PAN [PAN]"),
+        ("id " + ZWSP.join("999900000125"), "id [AADHAAR]"),
+        (f"id 9999{NBSP}0000{NBSP}0125", "id [AADHAAR]"),
+        ("id 9999.0000.0125", "id [AADHAAR]"),
+        ("id 9999 0000-0125", "id [AADHAAR]"),
+        ("id 9999  0000  0125", "id [AADHAAR]"),
+        ("id 9999\n0000\n0125", "id [AADHAAR]"),
+        (f"call 90000{NBSP}00001", "call [MOBILE]"),
+        (f"call 90000{ZWSP}00001", "call [MOBILE]"),
+        ("call 90000.00001", "call [MOBILE]"),
+        ("call 900 000 0001", "call [MOBILE]"),
+        ("call 90 00 00 00 01", "call [MOBILE]"),
+        ("call +91 (900) 000-0001", "call [MOBILE]"),
+        (f"call {SUPERSCRIPT_MOBILE}", "call [MOBILE]"),
+        (f"call {CIRCLED_MOBILE}", "call [MOBILE]"),
+        (f"PAN {_full_width('ABCDE1234F')}", "PAN [PAN]"),
+        (f"PAN {CYRILLIC_PAN}", "PAN [PAN]"),
+        ("PAN ABCDE 1234 F", "PAN [PAN]"),
+        ("PAN:ABCDE1234Fthanks", "PAN:[PAN]thanks"),
+        ("mail jane\uff20example.com", "mail [EMAIL]"),
+        ("mail jane@ex\u00e4mple.com", "mail [EMAIL]"),
+        ("mail jane%40example.com", "mail [EMAIL]"),
+        ("mail j\u00f6hn.doe@example.com", "mail [EMAIL]"),
+        ("jane@example.com-call", "[EMAIL]-call"),
+        ("x" * 80 + "@example.com", "[EMAIL]"),
+        ("account no 9999 0000 0126", "account no [BANK_ACCOUNT]"),
+    ],
+)
+def test_formatting_tricks_do_not_hide_a_value(text: str, expected: str) -> None:
+    assert redact(text) == expected
+
+
+def test_overlapping_values_are_redacted_as_their_union() -> None:
+    """Review finding: dropping the shorter overlapping span left half a mobile in the output."""
+    assert redact("90000 00001jane@example.com") == "[EMAIL]"
+    assert redact("tel 90000 00001jane@example.com ok") == "tel [EMAIL] ok"
+
+
+@pytest.mark.parametrize(
+    "hostile",
+    [
+        "account" + " " * 100_000 + "x",
+        "acct\t" * 20_000,
+        "ABCDE1234F " * 20_000,
+        "9" * 200_000,
+        "1 " * 100_000,
+    ],
+    ids=["account-spaces", "acct-tabs", "many-pans", "digit-run", "spaced-digits"],
+)
+def test_redact_stays_linear_on_review_inputs(hostile: str) -> None:
     started = time.perf_counter()
     redact(hostile)
     assert time.perf_counter() - started < 5.0

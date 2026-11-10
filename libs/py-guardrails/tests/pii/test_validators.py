@@ -1,4 +1,4 @@
-"""Field validators (PRD §7.10 Aadhaar validation; card PII-3 scope).
+"""Field validators (PRD \u00a77.10 Aadhaar validation; card PII-3 scope).
 
 Every value here is synthetic: Aadhaar numbers are random digits with a computed Verhoeff check
 digit, mobiles use the 90000 test range, emails use example.com.
@@ -17,11 +17,13 @@ from onb_guardrails.pii import (
 )
 
 # Verhoeff vectors. "2363" is the textbook worked example (the check digit of "236" is 3).
-# "999900001231" is the synthetic Aadhaar in evals/fixtures/seed_v1.json. The rest are random synthetic
-# digits. Every vector was cross-checked against python-stdnum (stdnum.verhoeff, stdnum.in_.aadhaar), an
+# "999900001231" is the synthetic Aadhaar in evals/fixtures/seed_v1.json. Valid Aadhaar-shaped vectors use
+# obviously synthetic 9999.../91X000... patterns so they read as test data, not random people; invalid ones fail
+# Verhoeff ("334249855766" was valid only under a mistyped permutation table). Every vector was cross-checked
+# against python-stdnum (stdnum.verhoeff, stdnum.in_.aadhaar), an
 # independent implementation; see docs/evidence/PII-3/verhoeff-oracle.txt.
-VERHOEFF_VALID = ["2363", "0", "999900001231", "334249855769", "529425329254", "917072196529", "200684941428"]
-VERHOEFF_INVALID = ["2364", "2336", "1", "334249855760", "848589512865", "509921984961", "334249855766"]
+VERHOEFF_VALID = ["2363", "0", "999900001231", "999900000125", "999912345678", "919000000001", "999955550005"]
+VERHOEFF_INVALID = ["2364", "2336", "1", "999900000126", "848589512865", "509921984961", "334249855766"]
 
 
 @pytest.mark.parametrize("number", VERHOEFF_VALID)
@@ -34,13 +36,13 @@ def test_verhoeff_rejects_invalid_vectors(number: str) -> None:
     assert not verhoeff_is_valid(number)
 
 
-@pytest.mark.parametrize(("payload", "check"), [("236", "3"), ("33424985576", "9"), ("99990000123", "1")])
+@pytest.mark.parametrize(("payload", "check"), [("236", "3"), ("99990000012", "5"), ("99990000123", "1")])
 def test_verhoeff_check_digit_matches_vectors(payload: str, check: str) -> None:
     assert verhoeff_check_digit(payload) == check
 
 
 def test_verhoeff_catches_every_single_digit_error() -> None:
-    number = "334249855769"
+    number = "999900000125"
     for i, original in enumerate(number):
         for digit in "0123456789":
             if digit != original:
@@ -48,21 +50,21 @@ def test_verhoeff_catches_every_single_digit_error() -> None:
 
 
 def test_verhoeff_catches_every_adjacent_transposition() -> None:
-    number = "529425329254"
+    number = "999912345678"
     for i in range(len(number) - 1):
         if number[i] != number[i + 1]:
             swapped = number[:i] + number[i + 1] + number[i] + number[i + 2 :]
             assert not verhoeff_is_valid(swapped)
 
 
-@pytest.mark.parametrize("bad", ["", "12a4", "12 34", "١٢٣"])
+@pytest.mark.parametrize("bad", ["", "12a4", "12 34", "\u0661\u0662\u0663"])
 def test_verhoeff_rejects_non_ascii_digit_input(bad: str) -> None:
     assert not verhoeff_is_valid(bad)
     with pytest.raises(ValueError, match="ASCII digits"):
         verhoeff_check_digit(bad)
 
 
-@pytest.mark.parametrize("aadhaar", ["334249855769", "3342 4985 5769", "3342-4985-5769", "9999 0000 1231"])
+@pytest.mark.parametrize("aadhaar", ["999900000125", "9999 0000 0125", "9999-0000-0125", "9999 0000 1231"])
 def test_aadhaar_accepts_valid_numbers_in_common_layouts(aadhaar: str) -> None:
     assert is_valid_aadhaar(aadhaar)
 
@@ -74,21 +76,21 @@ def test_aadhaar_starting_with_0_or_1_is_rejected(aadhaar: str) -> None:
     assert not is_valid_aadhaar(aadhaar)
 
 
-FULL_WIDTH_AADHAAR = "334249855769".translate({ord(d): ord(d) + 0xFEE0 for d in "0123456789"})
+FULL_WIDTH_AADHAAR = "999900000125".translate({ord(d): ord(d) + 0xFEE0 for d in "0123456789"})
 
 
 @pytest.mark.parametrize(
     "aadhaar",
     [
-        "334249855760",  # Verhoeff fails: a 12-digit order id is not Aadhaar
+        "999900000126",  # Verhoeff fails: a 12-digit order id is not Aadhaar
         "848589512865",
-        "33424985576",  # 11 digits
-        "3342498557660",  # 13 digits
-        "3342 49855769",  # mixed grouping
-        "3342  4985 5769",  # double space
-        "3342 4985-5769",  # mixed separators
+        "99990000012",  # 11 digits
+        "9999000001260",  # 13 digits
+        "9999 00000125",  # mixed grouping
+        "9999  0000 0125",  # double space
+        "9999 0000-0125",  # mixed separators
         "",
-        "33424985576x",
+        "99990000012x",
         FULL_WIDTH_AADHAAR,  # full-width digits look the same but are not ASCII
     ],
 )

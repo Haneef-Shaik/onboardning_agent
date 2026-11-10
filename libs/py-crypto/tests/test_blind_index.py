@@ -1,4 +1,4 @@
-"""HMAC-SHA256 blind indexes for lookup and dedupe (PRD §7.10 Lookup / dedupe)."""
+"""HMAC-SHA256 blind indexes for lookup and dedupe (PRD \u00a77.10 Lookup / dedupe)."""
 
 import pytest
 from onb_crypto import MIN_INDEX_KEY_BYTES, BlindIndexField, blind_index
@@ -88,3 +88,18 @@ def test_malformed_values_are_rejected_without_echoing_them(field: BlindIndexFie
     with pytest.raises(ValueError, match="malformed") as excinfo:
         blind_index(TEST_KEY, field, bad)
     assert bad not in str(excinfo.value)
+
+
+@pytest.mark.parametrize(
+    "lookalike",
+    [
+        "\u212ate@example.com",  # Kelvin sign: lower-cases to "kate@example.com"
+        "<kate@example.com>",
+        "kate@exa mple.com",
+        "k\u00e4te@example.com",
+    ],
+)
+def test_email_index_accepts_only_plain_ascii_addresses(lookalike: str) -> None:
+    """Review finding: a Unicode lookalike must not share another person's dedupe index."""
+    with pytest.raises(ValueError, match="malformed"):
+        blind_index(TEST_KEY, BlindIndexField.EMAIL, lookalike)
