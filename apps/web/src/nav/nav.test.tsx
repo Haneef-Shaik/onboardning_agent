@@ -2,7 +2,7 @@ import type { Role } from "@onb/ts-api-client";
 import { cleanup, render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import { afterEach, describe, expect, it } from "vitest";
-import { NAV_ITEMS, ROLES, canAccess, navFor } from "./nav";
+import { NAV_ITEMS, ROLES, canAccess, navFor, safeReturnPath } from "./nav";
 import { RoleNav } from "./RoleNav";
 
 afterEach(cleanup);
@@ -66,6 +66,19 @@ describe("canAccess", () => {
       }
     }
   });
+});
+
+describe("safeReturnPath", () => {
+  it("keeps an in-app path", () => {
+    expect(safeReturnPath("/templates/t_1")).toBe("/templates/t_1");
+  });
+
+  it.each([undefined, "", "templates", "//evil.example", "/\\evil.example", "/\\/evil.example", "https://evil.example"])(
+    "refuses %j, which could leave the app",
+    (from) => {
+      expect(safeReturnPath(from)).toBeNull();
+    },
+  );
 });
 
 describe("RoleNav", () => {

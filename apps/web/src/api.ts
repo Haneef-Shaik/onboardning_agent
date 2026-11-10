@@ -16,6 +16,16 @@ export interface AppClientOptions {
 
 const AUTHORIZATION = "Authorization";
 
+const bearer = (session: Session) => `Bearer ${session.accessToken}`;
+
+/** The API's token is already expired by this browser's clock, so it cannot be used. */
+export class ClockSkewError extends Error {
+  constructor() {
+    super("The token is already expired by this device's clock");
+    this.name = "ClockSkewError";
+  }
+}
+
 export function createAppClient({ session, onUnauthenticated, baseUrl, fetch }: AppClientOptions): ApiClient {
   const client = createApiClient({
     ...(baseUrl === undefined ? {} : { baseUrl }),
@@ -25,12 +35,15 @@ export function createAppClient({ session, onUnauthenticated, baseUrl, fetch }: 
     onRequest({ request }) {
       const current = session.get();
       if (current !== null) {
-        request.headers.set(AUTHORIZATION, `Bearer ${current.accessToken}`);
+        request.headers.set(AUTHORIZATION, bearer(current));
       }
       return request;
     },
     onResponse({ request, response }) {
-      if (response.status === 401 && request.headers.has(AUTHORIZATION)) {
+      // Only a 401 for the token in use now: a late answer for an older token must not end a new session.
+      const sent = request.headers.get(AUTHORIZATION);
+      const current = session.get();
+      if (response.status === 401 && sent !== null && current !== null && sent === bearer(current)) {
         session.clear();
         onUnauthenticated();
       }
@@ -46,6 +59,7 @@ export async function fetchHealth(client: ApiClient): Promise<Health> {
 
 export async function login(client: ApiClient, email: string, password: string): Promise<Session> {
   const token = unwrap(await client.POST("/auth/login", { body: { email, password } }));
+  if (token.expires_at * 1000 <= Date.now()) throw new ClockSkewError();
   return { accessToken: token.access_token, expiresAt: token.expires_at };
 }
 

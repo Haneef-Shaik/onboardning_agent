@@ -3,21 +3,26 @@
  *
  * The API sends a masked form (e.g. `XXXXXX123X`) and, elsewhere, a vault token (`ptk_…`); the raw
  * value reaches the browser only after an audited reveal (FR-P2, UI-4), passed in as `revealed`.
- * A token is never shown, even if a caller passes one as the masked form by mistake.
+ * A token (`ptk_`, any case, anywhere in the text) is never shown, whichever prop it comes in.
  */
 import { cn } from "./cn";
 import { Button } from "./components/button";
 
 export const MASK = "••••••••";
 const EMPTY = "—";
-const TOKEN_PREFIX = "ptk_";
+const TOKEN = /ptk_/i;
 
 /** What to show for a field that is not revealed. */
 export function maskedText(masked: string | null | undefined): string {
   const value = masked?.trim() ?? "";
   if (value.length === 0) return EMPTY;
-  if (value.startsWith(TOKEN_PREFIX)) return MASK;
+  if (TOKEN.test(value)) return MASK;
   return value;
+}
+
+/** A revealed value is shown as is, except that a vault token never is. */
+function revealedText(revealed: string): string {
+  return TOKEN.test(revealed) ? MASK : revealed;
 }
 
 export interface MaskedFieldProps {
@@ -42,7 +47,7 @@ export function MaskedField({ label, masked, revealed, onReveal, onHide, classNa
     >
       <span className="text-xs font-medium text-slate-500">{label}</span>
       <span className="flex items-center gap-2">
-        <span className="font-mono text-sm">{isRevealed ? revealed : maskedText(masked)}</span>
+        <span className="font-mono text-sm">{isRevealed ? revealedText(revealed) : maskedText(masked)}</span>
         {isRevealed && onHide && (
           <Button variant="ghost" size="xs" aria-label={`Hide ${label}`} onClick={onHide}>
             Hide

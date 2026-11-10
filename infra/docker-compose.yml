@@ -85,7 +85,9 @@ services:
       # Dev servers on the host (UI-1): `uvicorn onb_api.main:app` and the web Vite server.
       API_DEV_UPSTREAM: ${API_DEV_UPSTREAM:-host.docker.internal:8000}
       WEB_DEV_UPSTREAM: ${WEB_DEV_UPSTREAM:-host.docker.internal:5173}
-    # Linux needs the mapping; Docker Desktop has the name already.
+    # Docker Desktop has the name already and reaches host services bound to 127.0.0.1. On Linux the
+    # mapping points at the docker bridge: bind the dev servers to that address (WEB_HOST, uvicorn
+    # --host), never 0.0.0.0, which would put them on the LAN past Caddy.
     extra_hosts:
       - host.docker.internal:host-gateway
     volumes:

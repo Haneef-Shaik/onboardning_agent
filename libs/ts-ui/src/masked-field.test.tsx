@@ -18,6 +18,8 @@ describe("maskedText", () => {
   it("never shows a vault token: a ptk_ value becomes the mask", () => {
     expect(maskedText(TOKEN)).toBe(MASK);
     expect(maskedText("  ptk_x  ")).toBe(MASK);
+    expect(maskedText("PTK_PAN_0F3C")).toBe(MASK);
+    expect(maskedText(`id ${TOKEN}`)).toBe(MASK);
   });
 
   it("shows a dash when there is no value", () => {
@@ -69,6 +71,12 @@ describe("MaskedField", () => {
 
     await userEvent.click(screen.getByRole("button", { name: "Hide PAN" }));
     expect(onHide).toHaveBeenCalledOnce();
+  });
+
+  it("never renders a token passed as the revealed value", () => {
+    const { container } = render(<MaskedField label="PAN" masked={MASKED_PAN} revealed={TOKEN} />);
+
+    expect(container.textContent).not.toContain("ptk_");
   });
 
   it("treats an empty revealed value as not revealed", () => {

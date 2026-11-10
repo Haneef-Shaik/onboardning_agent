@@ -4,9 +4,10 @@
 	auto_https disable_redirects
 }
 
-# The app (UI-1): `/api/*` goes to the API with the prefix stripped, everything else to the web dev
-# server (Vite, hot reload). Both run on the host in dev; compose sets the upstreams (`.env.example`).
-http://localhost, https://localhost {
+# The app (UI-1), HTTPS only, so passwords and tokens never cross the network in clear text:
+# `/api/*` goes to the API with the prefix stripped, everything else to the web dev server (Vite, hot
+# reload). Both run on the host in dev; compose sets the upstreams (`.env.example`).
+https://localhost {
 	handle /healthz {
 		respond "ok" 200
 	}
@@ -15,6 +16,16 @@ http://localhost, https://localhost {
 	}
 	handle {
 		reverse_proxy {$WEB_DEV_UPSTREAM}
+	}
+}
+
+# Plain HTTP on localhost: the health endpoint only.
+http://localhost {
+	handle /healthz {
+		respond "ok" 200
+	}
+	handle {
+		respond "use https" 404
 	}
 }
 

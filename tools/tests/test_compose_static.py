@@ -157,10 +157,25 @@ def test_make_up_waits_for_health_and_generates_the_keyfile() -> None:
 def test_dev_caddyfile_serves_the_web_app_and_the_api_on_localhost() -> None:
     """UI-1: the browser reaches the web dev server at `/` and the API under `/api` (prefix stripped)."""
     caddyfile = _text(ROOT / "infra" / "caddy" / "Caddyfile.dev")
-    site = caddyfile.split("http://localhost, https://localhost {", 1)[1].split("\n}\n", 1)[0]
+    site = _site_block(caddyfile, "https://localhost")
     assert re.search(r"handle_path /api/\* \{\n\t\treverse_proxy \{\$API_DEV_UPSTREAM\}", site)
     assert re.search(r"\thandle \{\n\t\treverse_proxy \{\$WEB_DEV_UPSTREAM\}", site)
     assert site.index("handle /healthz") < site.index("handle {"), "/healthz must stay ahead of the web fallback"
+
+
+def test_the_app_and_api_are_not_served_over_plain_http() -> None:
+    """Passwords and bearer tokens never cross the network in clear text; HTTP keeps /healthz only."""
+    caddyfile = _text(ROOT / "infra" / "caddy" / "Caddyfile.dev")
+    plain = _site_block(caddyfile, "http://localhost")
+    assert "reverse_proxy" not in plain
+    assert 'respond "ok" 200' in plain
+    assert not re.search(r"^http://localhost,", caddyfile, re.M), "the app site must not include plain HTTP"
+
+
+def _site_block(caddyfile: str, address: str) -> str:
+    match = re.search(rf"^{re.escape(address)} \{{\n(.*?)^\}}$", caddyfile, re.M | re.S)
+    assert match, f"no site block for {address}"
+    return match.group(1)
 
 
 def test_caddy_can_reach_dev_servers_on_the_host() -> None:

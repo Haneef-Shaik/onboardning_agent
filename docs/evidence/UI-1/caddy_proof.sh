@@ -19,3 +19,7 @@ echo '$ curl -sk https://localhost:19801/ | grep -o "<title>.*</title>\|/src/mai
 curl -sk https://localhost:19801/ | grep -o '<title>.*</title>\|/src/main.tsx'
 echo '$ curl -sk -o /dev/null -w "%{http_code}" https://localhost:19801/healthz'
 curl -sk -o /dev/null -w '%{http_code}\n' https://localhost:19801/healthz
+echo '$ curl -s -o /dev/null -w "%{http_code}" http://localhost:19800/api/health   # plain HTTP: not served'
+curl -s -o /dev/null -w '%{http_code}\n' http://localhost:19800/api/health
+echo '$ curl -s -o /dev/null -w "%{http_code}" http://localhost:19800/healthz'
+curl -s -o /dev/null -w '%{http_code}\n' http://localhost:19800/healthz

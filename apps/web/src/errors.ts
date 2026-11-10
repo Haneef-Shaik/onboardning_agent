@@ -3,6 +3,7 @@
  * message (C-1); anything else is a bug or a network failure, and its text is never shown.
  */
 import { ApiError, type ErrorDetail } from "@onb/ts-api-client";
+import { ClockSkewError } from "./api";
 
 export interface DescribedError {
   message: string;
@@ -32,6 +33,9 @@ function messageFor(error: ApiError, context: ErrorContext): string {
 export function describeError(error: unknown, context: ErrorContext = "default"): DescribedError {
   if (error instanceof ApiError) {
     return { message: messageFor(error, context), fields: error.details, traceId: error.traceId };
+  }
+  if (error instanceof ClockSkewError) {
+    return { message: "This device's clock looks wrong. Check its date and time, then sign in again.", fields: [], traceId: null };
   }
   return { message: GENERIC, fields: [], traceId: null };
 }

@@ -33,7 +33,11 @@ export function useAuth(): AuthState {
 function useExpiry(session: SessionStore, expiresAt: number | undefined) {
   useEffect(() => {
     if (expiresAt === undefined) return undefined;
-    const timer = setTimeout(() => session.get() ?? session.clear(), Math.max(0, expiresAt * 1000 - Date.now()));
+    const expire = () => {
+      // The timer is for this token; a newer session has its own timer.
+      if (session.get()?.expiresAt === expiresAt || session.get() === null) session.clear();
+    };
+    const timer = setTimeout(expire, Math.max(0, expiresAt * 1000 - Date.now()));
     return () => clearTimeout(timer);
   }, [session, expiresAt]);
 }
@@ -50,14 +54,21 @@ export function AuthProvider({ client, session, children }: { client: ApiClient;
       hadSession.current = true;
       return;
     }
-    queryClient.removeQueries({ queryKey: ME_QUERY_KEY });
+    // Nothing cached for one user may reach the next one signing in on this tab.
+    queryClient.clear();
     if (hadSession.current && !signingOut.current) setNotice(SESSION_ENDED);
     hadSession.current = false;
     signingOut.current = false;
   }, [current, queryClient]);
   useExpiry(session, current?.expiresAt);
 
-  const me = useQuery({ queryKey: ME_QUERY_KEY, queryFn: () => fetchMe(client), enabled: current !== null, staleTime: Infinity });
+  // Keyed by the token too, so a profile can never be served to a different session.
+  const me = useQuery({
+    queryKey: [...ME_QUERY_KEY, current?.accessToken ?? null],
+    queryFn: () => fetchMe(client),
+    enabled: current !== null,
+    staleTime: Infinity,
+  });
 
   const login = useCallback(
     async (email: string, password: string) => {
@@ -72,7 +83,8 @@ export function AuthProvider({ client, session, children }: { client: ApiClient;
     setNotice(null);
     session.clear();
   }, [session]);
-  const retry = useCallback(() => void me.refetch(), [me]);
+  const { refetch } = me;
+  const retry = useCallback(() => void refetch(), [refetch]);
 
   const value = useMemo<AuthState>(() => {
     const status = current === null ? "signed-out" : me.isError ? "error" : me.data ? "signed-in" : "loading";

@@ -41,6 +41,16 @@ export function sectionOf(pathname: string): NavItem | undefined {
   return NAV_ITEMS.find((item) => inSection(pathname, item.path));
 }
 
+/**
+ * A post-login return path, only if it stays in the app: one leading `/`, and no `//` or `\`
+ * (browsers read `/\evil` as `//evil`, another origin).
+ */
+export function safeReturnPath(from: unknown): string | null {
+  if (typeof from !== "string" || !from.startsWith("/")) return null;
+  if (from.startsWith("//") || from.includes("\\")) return null;
+  return from;
+}
+
 /** Whether `role` may open `pathname`; an unknown path is refused. */
 export function canAccess(role: Role, pathname: string): boolean {
   const section = sectionOf(pathname);

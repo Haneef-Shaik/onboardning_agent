@@ -1,5 +1,6 @@
 import { ApiError, type ErrorCode } from "@onb/ts-api-client";
 import { describe, expect, it } from "vitest";
+import { ClockSkewError } from "./api";
 import { describeError } from "./errors";
 
 function apiError(code: ErrorCode, message = "Server text", details: { field: string; issue: string }[] = []): ApiError {
@@ -33,6 +34,12 @@ describe("describeError", () => {
     const described = describeError(apiError("CONFLICT", "Already exists"));
     expect(described.message).toBe("Already exists");
     expect(described.traceId).toBe("trace-1");
+  });
+
+  it("explains a token the device's clock already sees as expired", () => {
+    expect(describeError(new ClockSkewError()).message).toBe(
+      "This device's clock looks wrong. Check its date and time, then sign in again.",
+    );
   });
 
   it("never shows the text of an error that is not from the API", () => {

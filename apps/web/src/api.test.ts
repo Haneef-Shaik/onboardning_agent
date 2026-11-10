@@ -1,6 +1,6 @@
 import { ApiError, createApiClient } from "@onb/ts-api-client";
 import { describe, expect, it, vi } from "vitest";
-import { createAppClient, fetchHealth, fetchMe, login } from "./api";
+import { ClockSkewError, createAppClient, fetchHealth, fetchMe, login } from "./api";
 import { createSessionStore } from "./auth/session";
 
 type Handler = (request: Request) => Promise<Response>;
@@ -99,6 +99,23 @@ describe("createAppClient", () => {
     expect(onUnauthenticated).toHaveBeenCalledOnce();
   });
 
+  it("ignores a late 401 for an older token: the new session stays", async () => {
+    let release: (response: Response) => void = () => undefined;
+    const { client, session, onUnauthenticated } = setup(
+      () => new Promise<Response>((resolve) => { release = resolve; }),
+    );
+    session.set({ accessToken: "old", expiresAt: NOW_MS / 1000 + 60 });
+    const pending = fetchMe(client);
+    await Promise.resolve();
+    session.set({ accessToken: "new", expiresAt: NOW_MS / 1000 + 60 });
+
+    release(fail(401, "UNAUTHENTICATED", "Authentication required"));
+    await expect(pending).rejects.toMatchObject({ code: "UNAUTHENTICATED" });
+
+    expect(session.get()?.accessToken).toBe("new");
+    expect(onUnauthenticated).not.toHaveBeenCalled();
+  });
+
   it("does not treat a 403 as a lost session", async () => {
     const { client, session, onUnauthenticated } = setup(() => Promise.resolve(fail(403, "FORBIDDEN", "Forbidden")));
     session.set({ accessToken: "tkn-1", expiresAt: NOW_MS / 1000 + 60 });
@@ -122,6 +139,14 @@ describe("login", () => {
     expect(requests[0]?.method).toBe("POST");
     expect(new URL(requests[0]?.url ?? "").pathname).toBe("/api/auth/login");
     expect(await requests[0]?.json()).toEqual({ email: "u_acme_hr1@example.com", password: "pw" });
+  });
+
+  it("fails, rather than silently storing nothing, when the token is already expired by this clock", async () => {
+    const { client } = setup(() =>
+      Promise.resolve(ok({ access_token: "tkn-3", token_type: "bearer", expires_at: Math.floor(Date.now() / 1000) - 1 })),
+    );
+
+    await expect(login(client, "u_acme_hr1@example.com", "pw")).rejects.toThrow(ClockSkewError);
   });
 
   it("does not report a wrong password as a lost session", async () => {

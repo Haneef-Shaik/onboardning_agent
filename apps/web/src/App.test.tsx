@@ -28,13 +28,13 @@ const unauthenticated = () =>
 
 /** A stand-in for the API's /auth/login and /me, keyed by an opaque token per user. */
 function fakeApi() {
-  const state = { expireTokens: false };
+  const state = { expireTokens: false, ttlSeconds: 3600 };
   const handler = async (request: Request): Promise<Response> => {
     const path = new URL(request.url).pathname;
     if (path === "/api/auth/login" && request.method === "POST") {
       const { email, password } = (await request.json()) as { email: string; password: string };
       if (!(email in USERS) || password !== PASSWORD) return unauthenticated();
-      return envelope(200, { access_token: `tok:${email}`, token_type: "bearer", expires_at: Date.now() / 1000 + 3600 });
+      return envelope(200, { access_token: `tok:${email}`, token_type: "bearer", expires_at: Date.now() / 1000 + state.ttlSeconds });
     }
     if (path === "/api/me") {
       const email = request.headers.get("authorization")?.replace("Bearer tok:", "") ?? "";
@@ -127,6 +127,31 @@ describe("App", () => {
     await userEvent.click(screen.getByRole("button", { name: "Sign out" }));
 
     expect(await screen.findByRole("heading", { name: "Sign in" })).toBeInTheDocument();
+    expect(session.get()).toBeNull();
+    expect(screen.queryByRole("status")).toBeNull();
+  });
+
+  it("shows the next user only their own profile and nav after a sign-out in the same tab", async () => {
+    renderApp();
+    await signIn("u_acme_hr1@example.com");
+    await screen.findByText("Sameer Khan");
+    await userEvent.click(screen.getByRole("button", { name: "Sign out" }));
+
+    await signIn("u_acme_mgr_ravi@example.com");
+
+    expect(await screen.findByText("Ravi Kumar")).toBeInTheDocument();
+    expect(screen.queryByText("Sameer Khan")).toBeNull();
+    expect(navLabels()).toEqual(["Runs", "Approvals", "Templates", "Change requests"]);
+  });
+
+  it("ends the session when the token expires, with a notice", async () => {
+    const { api, session } = renderApp();
+    api.state.ttlSeconds = 1;
+    await signIn("u_acme_hr1@example.com");
+    await screen.findByText("Sameer Khan");
+
+    expect(await screen.findByRole("heading", { name: "Sign in" }, { timeout: 3000 })).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("Your session has ended. Sign in again.");
     expect(session.get()).toBeNull();
   });
 

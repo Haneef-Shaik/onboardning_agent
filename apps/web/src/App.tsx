@@ -4,7 +4,7 @@ import { QueryClientProvider, type QueryClient } from "@tanstack/react-query";
 import { Navigate, Route, Routes, useLocation } from "react-router";
 import { AuthProvider, useAuth } from "./auth/AuthProvider";
 import type { SessionStore } from "./auth/session";
-import { canAccess, navFor, sectionOf } from "./nav/nav";
+import { canAccess, navFor, safeReturnPath, sectionOf } from "./nav/nav";
 import { LoginPage } from "./pages/LoginPage";
 import { NotAvailablePage, SectionPage } from "./pages/SectionPage";
 import { Shell } from "./pages/Shell";
@@ -44,8 +44,7 @@ function SignedOutRoutes() {
 function AfterLogin({ me }: { me: Me }) {
   const from = (useLocation().state as FromState | null)?.from;
   // Only an in-app path; the guard below decides what it shows ("Not available" outside the role).
-  const target = typeof from === "string" && from.startsWith("/") && !from.startsWith("//") ? from : homeOf(me);
-  return <Navigate to={target} replace />;
+  return <Navigate to={safeReturnPath(from) ?? homeOf(me)} replace />;
 }
 
 function Guarded({ me }: { me: Me }) {

@@ -16,6 +16,7 @@ M3 CAUGHT (exit=1, restored byte-for-byte: True) — a reveal control is shown w
 
 M4 CAUGHT (exit=1, restored byte-for-byte: True) — Hires shown to every role, managers included
   $ node_modules/.bin/vitest run --config apps/web/vitest.config.ts
+    FAIL  src/App.test.tsx > App > shows the next user only their own profile and nav after a sign-out in the same tab
     FAIL  src/App.test.tsx > App > signs in u_acme_mgr_ravi@example.com and shows that role's nav
     FAIL  src/nav/nav.test.tsx > RoleNav > renders the links for MANAGER and nothing else
     FAIL  src/nav/nav.test.tsx > canAccess > refuses a section the role does not have, however the path is written
@@ -55,16 +56,17 @@ M10 CAUGHT (exit=1, restored byte-for-byte: True) — a 401 to a signed-in call 
 
 M11 CAUGHT (exit=1, restored byte-for-byte: True) — a wrong password at login counts as a lost session
   $ node_modules/.bin/vitest run --config apps/web/vitest.config.ts
+    FAIL  src/api.test.ts > createAppClient > ignores a late 401 for an older token: the new session stays
     FAIL  src/api.test.ts > login > does not report a wrong password as a lost session
 
 M12 CAUGHT (exit=1, restored byte-for-byte: True) — the client never sends the bearer token
   $ node_modules/.bin/vitest run --config apps/web/vitest.config.ts
+    FAIL  src/App.test.tsx > App > ends the session when the token expires, with a notice
     FAIL  src/App.test.tsx > App > refuses a section the role does not have, even by direct URL
     FAIL  src/App.test.tsx > App > returns to the page asked for after signing in
+    FAIL  src/App.test.tsx > App > shows the next user only their own profile and nav after a sign-out in the same tab
     FAIL  src/App.test.tsx > App > signs in u_acme_hr1@example.com and shows that role's nav
     FAIL  src/App.test.tsx > App > signs in u_acme_hradmin@example.com and shows that role's nav
-    FAIL  src/App.test.tsx > App > signs in u_acme_mgr_ravi@example.com and shows that role's nav
-    FAIL  src/App.test.tsx > App > signs out on request and forgets the token
 
 M13 CAUGHT (exit=1, restored byte-for-byte: True) — a non-API error's text is shown to the user
   $ node_modules/.bin/vitest run --config apps/web/vitest.config.ts
@@ -83,4 +85,26 @@ M16 CAUGHT (exit=1, restored byte-for-byte: True) — Playwright: managers see H
   $ node_modules/.bin/playwright test --config apps/web/playwright.config.ts
     1) [chromium] › apps/web/e2e/smoke.spec.ts:49:3 › MANAGER signs in and sees the MANAGER nav ──────
 
-SUMMARY: 16 of 16 mutations caught
+M17 CAUGHT (exit=1, restored byte-for-byte: True) — a token passed as the revealed value is shown
+  $ node_modules/.bin/vitest run --config libs/ts-ui/vitest.config.ts
+    FAIL  src/masked-field.test.tsx > MaskedField > never renders a token passed as the revealed value
+
+M18 CAUGHT (exit=1, restored byte-for-byte: True) — a late 401 for an older token ends the new session
+  $ node_modules/.bin/vitest run --config apps/web/vitest.config.ts
+    FAIL  src/api.test.ts > createAppClient > ignores a late 401 for an older token: the new session stays
+
+M19 CAUGHT (exit=1, restored byte-for-byte: True) — a backslash return path is accepted after login
+  $ node_modules/.bin/vitest run --config apps/web/vitest.config.ts
+    FAIL  src/nav/nav.test.tsx > safeReturnPath > refuses "/\\/evil.example", which could leave the app
+    FAIL  src/nav/nav.test.tsx > safeReturnPath > refuses "/\\evil.example", which could leave the app
+
+M20 CAUGHT (exit=1, restored byte-for-byte: True) — the app is served over plain HTTP too
+  $ uv run --frozen pytest tools/tests/test_compose_static.py -q
+    FAILED tools/tests/test_compose_static.py::test_dev_caddyfile_serves_the_web_app_and_the_api_on_localhost
+    FAILED tools/tests/test_compose_static.py::test_the_app_and_api_are_not_served_over_plain_http
+
+M21 CAUGHT (exit=1, restored byte-for-byte: True) — a login token already expired by this clock is accepted silently
+  $ node_modules/.bin/vitest run --config apps/web/vitest.config.ts
+    FAIL  src/api.test.ts > login > fails, rather than silently storing nothing, when the token is already expired by this clock
+
+SUMMARY: 21 of 21 mutations caught
