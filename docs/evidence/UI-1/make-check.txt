@@ -9,10 +9,10 @@ uv run --frozen ruff format --check tools scripts/check_env_example.py scripts/c
 uv run --frozen mypy tools scripts/check_env_example.py scripts/contracts.py
 Success: no issues found in 7 source files
 uv run --frozen pytest tools/tests scripts/plan/test_plan.py -q
-........................................................................ [ 43%]
-........................................................................ [ 86%]
-.......................                                                       [100%]
-167 passed, 67 subtests passed in 9.59s
+........................................................................ [ 42%]
+........................................................................ [ 85%]
+........................                                                      [100%]
+168 passed, 67 subtests passed in 5.37s
 node_modules/.bin/nx run-many -t lint --output-style=static
 
  NX   Running target lint for 17 projects:
@@ -37,25 +37,7 @@ node_modules/.bin/nx run-many -t lint --output-style=static
 
 
 
-> nx run py-data:lint
-
-[2m> [22muv run --frozen ruff check libs/py-data
-
-[1;32mAll checks passed![0m
-[2m> [22muv run --frozen ruff format --check libs/py-data
-
-20 files already formatted
-
-> nx run py-telemetry:lint
-
-[2m> [22muv run --frozen ruff check libs/py-telemetry
-
-[1;32mAll checks passed![0m
-[2m> [22muv run --frozen ruff format --check libs/py-telemetry
-
-22 files already formatted
-
-> nx run py-guardrails:lint
+> nx run py-guardrails:lint  [existing outputs match the cache, left as is]
 
 [2m> [22muv run --frozen ruff check libs/py-guardrails
 
@@ -64,7 +46,30 @@ node_modules/.bin/nx run-many -t lint --output-style=static
 
 11 files already formatted
 
-> nx run py-contracts:lint
+> nx run py-telemetry:lint  [existing outputs match the cache, left as is]
+
+[2m> [22muv run --frozen ruff check libs/py-telemetry
+
+[1;32mAll checks passed![0m
+[2m> [22muv run --frozen ruff format --check libs/py-telemetry
+
+22 files already formatted
+
+> nx run py-data:lint  [existing outputs match the cache, left as is]
+
+[2m> [22muv run --frozen ruff check libs/py-data
+
+[1;32mAll checks passed![0m
+[2m> [22muv run --frozen ruff format --check libs/py-data
+
+20 files already formatted
+
+> nx run ts-api-client:lint  [existing outputs match the cache, left as is]
+
+> eslint --max-warnings=0 libs/ts-api-client
+
+
+> nx run py-contracts:lint  [existing outputs match the cache, left as is]
 
 [2m> [22muv run --frozen ruff check libs/py-contracts
 
@@ -73,17 +78,7 @@ node_modules/.bin/nx run-many -t lint --output-style=static
 
 10 files already formatted
 
-> nx run ts-ui:lint
-
-> eslint --max-warnings=0 libs/ts-ui
-
-
-> nx run ts-api-client:lint
-
-> eslint --max-warnings=0 libs/ts-api-client
-
-
-> nx run orchestrator:lint
+> nx run orchestrator:lint  [existing outputs match the cache, left as is]
 
 [2m> [22muv run --frozen ruff check apps/orchestrator
 
@@ -92,25 +87,7 @@ node_modules/.bin/nx run-many -t lint --output-style=static
 
 2 files already formatted
 
-> nx run mcp-mongo:lint
-
-[2m> [22muv run --frozen ruff check apps/mcp-mongo
-
-[1;32mAll checks passed![0m
-[2m> [22muv run --frozen ruff format --check apps/mcp-mongo
-
-22 files already formatted
-
-> nx run mcp-mocks:lint
-
-[2m> [22muv run --frozen ruff check apps/mcp-mocks
-
-[1;32mAll checks passed![0m
-[2m> [22muv run --frozen ruff format --check apps/mcp-mocks
-
-2 files already formatted
-
-> nx run py-eventbus:lint
+> nx run py-eventbus:lint  [existing outputs match the cache, left as is]
 
 [2m> [22muv run --frozen ruff check libs/py-eventbus
 
@@ -119,34 +96,25 @@ node_modules/.bin/nx run-many -t lint --output-style=static
 
 18 files already formatted
 
-> nx run py-agents:lint
+> nx run mcp-mocks:lint  [existing outputs match the cache, left as is]
 
-[2m> [22muv run --frozen ruff check libs/py-agents
+[2m> [22muv run --frozen ruff check apps/mcp-mocks
 
 [1;32mAll checks passed![0m
-[2m> [22muv run --frozen ruff format --check libs/py-agents
+[2m> [22muv run --frozen ruff format --check apps/mcp-mocks
 
 2 files already formatted
 
-> nx run py-crypto:lint
+> nx run mcp-mongo:lint  [existing outputs match the cache, left as is]
 
-[2m> [22muv run --frozen ruff check libs/py-crypto
-
-[1;32mAll checks passed![0m
-[2m> [22muv run --frozen ruff format --check libs/py-crypto
-
-35 files already formatted
-
-> nx run py-evals:lint
-
-[2m> [22muv run --frozen ruff check libs/py-evals
+[2m> [22muv run --frozen ruff check apps/mcp-mongo
 
 [1;32mAll checks passed![0m
-[2m> [22muv run --frozen ruff format --check libs/py-evals
+[2m> [22muv run --frozen ruff format --check apps/mcp-mongo
 
-2 files already formatted
+22 files already formatted
 
-> nx run mcp-hub:lint
+> nx run mcp-hub:lint  [existing outputs match the cache, left as is]
 
 [2m> [22muv run --frozen ruff check apps/mcp-hub
 
@@ -155,7 +123,7 @@ node_modules/.bin/nx run-many -t lint --output-style=static
 
 2 files already formatted
 
-> nx run py-llm:lint
+> nx run py-llm:lint  [existing outputs match the cache, left as is]
 
 [2m> [22muv run --frozen ruff check libs/py-llm
 
@@ -164,7 +132,7 @@ node_modules/.bin/nx run-many -t lint --output-style=static
 
 27 files already formatted
 
-> nx run api:lint
+> nx run api:lint  [existing outputs match the cache, left as is]
 
 [2m> [22muv run --frozen ruff check apps/api
 
@@ -172,6 +140,38 @@ node_modules/.bin/nx run-many -t lint --output-style=static
 [2m> [22muv run --frozen ruff format --check apps/api
 
 35 files already formatted
+
+> nx run py-crypto:lint  [existing outputs match the cache, left as is]
+
+[2m> [22muv run --frozen ruff check libs/py-crypto
+
+[1;32mAll checks passed![0m
+[2m> [22muv run --frozen ruff format --check libs/py-crypto
+
+35 files already formatted
+
+> nx run py-agents:lint  [existing outputs match the cache, left as is]
+
+[2m> [22muv run --frozen ruff check libs/py-agents
+
+[1;32mAll checks passed![0m
+[2m> [22muv run --frozen ruff format --check libs/py-agents
+
+2 files already formatted
+
+> nx run py-evals:lint  [existing outputs match the cache, left as is]
+
+[2m> [22muv run --frozen ruff check libs/py-evals
+
+[1;32mAll checks passed![0m
+[2m> [22muv run --frozen ruff format --check libs/py-evals
+
+2 files already formatted
+
+> nx run ts-ui:lint
+
+> eslint --max-warnings=0 libs/ts-ui
+
 
 > nx run web:lint
 
@@ -182,11 +182,12 @@ node_modules/.bin/nx run-many -t lint --output-style=static
 
  NX   Successfully ran target lint for 17 projects
 
+Nx read the output from the cache instead of running the command for 15 out of 17 tasks.
 
-  Run duration:      7.0s
-  Cache:             0/17 hit (0%)
-  Critical path:     2.7s (1 task)
-  Recoverable time:  4.3s (61% of the run)
+  Run duration:      856ms
+  Cache:             15/17 hit (88%)
+  Critical path:     827ms (1 task)
+  Recoverable time:  1ms (0% of the run)
 node_modules/.bin/nx run-many -t typecheck --output-style=static
 
  NX   Running target typecheck for 17 projects:
@@ -211,100 +212,36 @@ node_modules/.bin/nx run-many -t typecheck --output-style=static
 
 
 
-> nx run py-guardrails:typecheck
+> nx run py-guardrails:typecheck  [existing outputs match the cache, left as is]
 
 [2m> [22muv run --frozen mypy --cache-dir .mypy_cache/py-guardrails libs/py-guardrails/src libs/py-guardrails/tests
 
 [1m[32mSuccess: no issues found in 11 source files(B[m
 
-> nx run ts-api-client:typecheck
-
-> tsc -p libs/ts-api-client/tsconfig.json
-
-
-> nx run py-data:typecheck
-
-[2m> [22muv run --frozen mypy --cache-dir .mypy_cache/py-data libs/py-data/src libs/py-data/tests libs/py-data/tests_int
-
-[1m[32mSuccess: no issues found in 20 source files(B[m
-
-> nx run ts-ui:typecheck
-
-> tsc -p libs/ts-ui/tsconfig.json
-
-
-> nx run py-telemetry:typecheck
+> nx run py-telemetry:typecheck  [existing outputs match the cache, left as is]
 
 [2m> [22muv run --frozen mypy --cache-dir .mypy_cache/py-telemetry libs/py-telemetry/src libs/py-telemetry/tests libs/py-telemetry/tests_int
 
 [1m[32mSuccess: no issues found in 22 source files(B[m
 
-> nx run orchestrator:typecheck
+> nx run py-data:typecheck  [existing outputs match the cache, left as is]
 
-[2m> [22muv run --frozen mypy --cache-dir .mypy_cache/orchestrator apps/orchestrator/src apps/orchestrator/tests
+[2m> [22muv run --frozen mypy --cache-dir .mypy_cache/py-data libs/py-data/src libs/py-data/tests libs/py-data/tests_int
 
-[1m[32mSuccess: no issues found in 2 source files(B[m
+[1m[32mSuccess: no issues found in 20 source files(B[m
 
-> nx run mcp-mocks:typecheck
-
-[2m> [22muv run --frozen mypy --cache-dir .mypy_cache/mcp-mocks apps/mcp-mocks/src apps/mcp-mocks/tests
-
-[1m[32mSuccess: no issues found in 2 source files(B[m
-
-> nx run py-contracts:typecheck
+> nx run py-contracts:typecheck  [existing outputs match the cache, left as is]
 
 [2m> [22muv run --frozen mypy --cache-dir .mypy_cache/py-contracts libs/py-contracts/src libs/py-contracts/tests
 
 [1m[32mSuccess: no issues found in 10 source files(B[m
 
-> nx run py-agents:typecheck
+> nx run ts-api-client:typecheck  [existing outputs match the cache, left as is]
 
-[2m> [22muv run --frozen mypy --cache-dir .mypy_cache/py-agents libs/py-agents/src libs/py-agents/tests
-
-[1m[32mSuccess: no issues found in 2 source files(B[m
-
-> nx run py-eventbus:typecheck
-
-[2m> [22muv run --frozen mypy --cache-dir .mypy_cache/py-eventbus libs/py-eventbus/src libs/py-eventbus/tests libs/py-eventbus/tests_int
-
-[1m[32mSuccess: no issues found in 18 source files(B[m
-
-> nx run py-evals:typecheck
-
-[2m> [22muv run --frozen mypy --cache-dir .mypy_cache/py-evals libs/py-evals/src libs/py-evals/tests
-
-[1m[32mSuccess: no issues found in 2 source files(B[m
-
-> nx run mcp-hub:typecheck
-
-[2m> [22muv run --frozen mypy --cache-dir .mypy_cache/mcp-hub apps/mcp-hub/src apps/mcp-hub/tests
-
-[1m[32mSuccess: no issues found in 2 source files(B[m
-
-> nx run py-crypto:typecheck
-
-[2m> [22muv run --frozen mypy --cache-dir .mypy_cache/py-crypto libs/py-crypto/src libs/py-crypto/tests libs/py-crypto/tests_int
-
-[1m[32mSuccess: no issues found in 35 source files(B[m
-
-> nx run mcp-mongo:typecheck
-
-[2m> [22muv run --frozen mypy --cache-dir .mypy_cache/mcp-mongo apps/mcp-mongo/src apps/mcp-mongo/tests apps/mcp-mongo/tests_int
-
-[1m[32mSuccess: no issues found in 22 source files(B[m
-
-> nx run web:typecheck
-
-> tsc -p apps/web/tsconfig.json && tsc -p apps/web/tsconfig.node.json
+> tsc -p libs/ts-api-client/tsconfig.json
 
 
-> nx run py-llm:typecheck
-
-[2m> [22muv run --frozen mypy --cache-dir .mypy_cache/py-llm libs/py-llm/src libs/py-llm/tests
-
-[1m[32mSuccess: no issues found in 27 source files(B[m
-
-> nx run api:typecheck
+> nx run api:typecheck  [existing outputs match the cache, left as is]
 
 [2m> [22muv run --frozen mypy --cache-dir .mypy_cache/api apps/api/src apps/api/tests
 
@@ -313,17 +250,80 @@ node_modules/.bin/nx run-many -t typecheck --output-style=static
 
 [1m[32mSuccess: no issues found in 20 source files(B[m
 
+> nx run mcp-mongo:typecheck  [existing outputs match the cache, left as is]
+
+[2m> [22muv run --frozen mypy --cache-dir .mypy_cache/mcp-mongo apps/mcp-mongo/src apps/mcp-mongo/tests apps/mcp-mongo/tests_int
+
+[1m[32mSuccess: no issues found in 22 source files(B[m
+
+> nx run py-llm:typecheck  [existing outputs match the cache, left as is]
+
+[2m> [22muv run --frozen mypy --cache-dir .mypy_cache/py-llm libs/py-llm/src libs/py-llm/tests
+
+[1m[32mSuccess: no issues found in 27 source files(B[m
+
+> nx run py-eventbus:typecheck  [existing outputs match the cache, left as is]
+
+[2m> [22muv run --frozen mypy --cache-dir .mypy_cache/py-eventbus libs/py-eventbus/src libs/py-eventbus/tests libs/py-eventbus/tests_int
+
+[1m[32mSuccess: no issues found in 18 source files(B[m
+
+> nx run py-crypto:typecheck  [existing outputs match the cache, left as is]
+
+[2m> [22muv run --frozen mypy --cache-dir .mypy_cache/py-crypto libs/py-crypto/src libs/py-crypto/tests libs/py-crypto/tests_int
+
+[1m[32mSuccess: no issues found in 35 source files(B[m
+
+> nx run mcp-mocks:typecheck  [existing outputs match the cache, left as is]
+
+[2m> [22muv run --frozen mypy --cache-dir .mypy_cache/mcp-mocks apps/mcp-mocks/src apps/mcp-mocks/tests
+
+[1m[32mSuccess: no issues found in 2 source files(B[m
+
+> nx run py-agents:typecheck  [existing outputs match the cache, left as is]
+
+[2m> [22muv run --frozen mypy --cache-dir .mypy_cache/py-agents libs/py-agents/src libs/py-agents/tests
+
+[1m[32mSuccess: no issues found in 2 source files(B[m
+
+> nx run orchestrator:typecheck  [existing outputs match the cache, left as is]
+
+[2m> [22muv run --frozen mypy --cache-dir .mypy_cache/orchestrator apps/orchestrator/src apps/orchestrator/tests
+
+[1m[32mSuccess: no issues found in 2 source files(B[m
+
+> nx run mcp-hub:typecheck  [existing outputs match the cache, left as is]
+
+[2m> [22muv run --frozen mypy --cache-dir .mypy_cache/mcp-hub apps/mcp-hub/src apps/mcp-hub/tests
+
+[1m[32mSuccess: no issues found in 2 source files(B[m
+
+> nx run py-evals:typecheck  [existing outputs match the cache, left as is]
+
+[2m> [22muv run --frozen mypy --cache-dir .mypy_cache/py-evals libs/py-evals/src libs/py-evals/tests
+
+[1m[32mSuccess: no issues found in 2 source files(B[m
+
+> nx run ts-ui:typecheck
+
+> tsc -p libs/ts-ui/tsconfig.json
+
+
+> nx run web:typecheck
+
+> tsc -p apps/web/tsconfig.json && tsc -p apps/web/tsconfig.node.json
+
+
 
 
  NX   Successfully ran target typecheck for 17 projects
 
+Nx read the output from the cache instead of running the command for 15 out of 17 tasks.
 
-  Run duration:      1m 1s
-  Cache:             0/17 hit (0%)
-  Critical path:     19.6s (1 task)
-  Recoverable time:  40.9s (68% of the run)
-
-  Recommendation: Increase parallelism to recover up to 40.9s → https://nx.dev/docs/concepts/ci-concepts/parallelization-distribution?utm_source=nx-cli&utm_medium=cli&utm_campaign=performance-report&utm_content=parallelization.
+  Run duration:      2.6s
+  Cache:             15/17 hit (88%)
+  Critical path:     2.6s (1 task)
+  Recoverable time:  1ms (0% of the run)
 node_modules/.bin/nx run-many -t test --output-style=static
 
  NX   Running target test for 17 projects:
@@ -348,61 +348,44 @@ node_modules/.bin/nx run-many -t test --output-style=static
 
 
 
-> nx run py-data:test
+> nx run py-guardrails:test  [existing outputs match the cache, left as is]
 
-[2m> [22muv run --frozen pytest libs/py-data/tests -o cache_dir=.pytest_cache/py-data --cov=onb_data --cov-report=term-missing --cov-fail-under=80
+[2m> [22muv run --frozen pytest libs/py-guardrails/tests -o cache_dir=.pytest_cache/py-guardrails --cov=onb_guardrails --cov-report=term-missing --cov-fail-under=80
 
 [1m============================= test session starts ==============================[0m
 platform darwin -- Python 3.12.13, pytest-9.2.0, pluggy-1.7.0
-cachedir: .pytest_cache/py-data
+cachedir: .pytest_cache/py-guardrails
 rootdir: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-ui-1
 configfile: pyproject.toml
 plugins: hypothesis-6.170.15, langsmith-0.14.17, cov-7.1.0, anyio-4.16.0
-collected 195 items
+collected 210 items
 
-libs/py-data/tests/test_context.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                        [  7%][0m
-libs/py-data/tests/test_exports.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                         [ 13%][0m
-libs/py-data/tests/test_onb_data.py [32m.[0m[32m                                    [ 14%][0m
-libs/py-data/tests/test_repository.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m [ 31%]
-[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                           [ 55%][0m
-libs/py-data/tests/test_store.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m [ 75%]
-[0m[32m.[0m[32m.[0m[32m                                                                       [ 76%][0m
-libs/py-data/tests/test_transactions_and_queue.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m [ 87%]
-[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                                                 [100%][0m
+libs/py-guardrails/tests/pii/test_corpus.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                         [  1%][0m
+libs/py-guardrails/tests/pii/test_detectors.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m [ 13%]
+[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m [ 48%]
+[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                                                          [ 55%][0m
+libs/py-guardrails/tests/pii/test_redact_property.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m               [ 57%][0m
+libs/py-guardrails/tests/pii/test_validators.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m [ 69%]
+[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m         [ 99%][0m
+libs/py-guardrails/tests/test_onb_guardrails.py [32m.[0m[32m                        [100%][0m
 
 ================================ tests coverage ================================
 ______________ coverage: platform darwin, python 3.12.13-final-0 _______________
 
-Name                                      Stmts   Miss  Cover   Missing
------------------------------------------------------------------------
-libs/py-data/src/onb_data/__init__.py         8      0   100%
-libs/py-data/src/onb_data/context.py         28      0   100%
-libs/py-data/src/onb_data/errors.py          10      0   100%
-libs/py-data/src/onb_data/queue.py           72      1    99%   70
-libs/py-data/src/onb_data/repository.py     104      0   100%
-libs/py-data/src/onb_data/scoping.py        115      0   100%
-libs/py-data/src/onb_data/session.py         29      0   100%
-libs/py-data/src/onb_data/store.py           75      1    99%   110
------------------------------------------------------------------------
-TOTAL                                       441      2    99%
-[32mRequired test coverage of 80% reached. Total coverage: 99.55%
-[0m[32m============================= [32m[1m195 passed[0m[32m in 1.51s[0m[32m ==============================[0m
+Name                                                      Stmts   Miss  Cover   Missing
+---------------------------------------------------------------------------------------
+libs/py-guardrails/src/onb_guardrails/__init__.py             2      0   100%
+libs/py-guardrails/src/onb_guardrails/pii/__init__.py         4      0   100%
+libs/py-guardrails/src/onb_guardrails/pii/detectors.py       94      0   100%
+libs/py-guardrails/src/onb_guardrails/pii/skeleton.py        35      0   100%
+libs/py-guardrails/src/onb_guardrails/pii/validators.py      27      0   100%
+libs/py-guardrails/src/onb_guardrails/pii/verhoeff.py        24      0   100%
+---------------------------------------------------------------------------------------
+TOTAL                                                       186      0   100%
+[32mRequired test coverage of 80% reached. Total coverage: 100.00%
+[0m[32m============================= [32m[1m210 passed[0m[32m in 52.10s[0m[32m =============================[0m
 
-> nx run ts-api-client:test
-
-> vitest run --config libs/ts-api-client/vitest.config.ts
-
-
-[1m[30m[46m RUN [49m[39m[22m [36mv5.1.0 [39m[90m/Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-ui-1/libs/ts-api-client[39m
-
-
-[2m Test Files [22m [1m[32m2 passed[39m[22m[90m (2)[39m
-[2m      Tests [22m [1m[32m6 passed[39m[22m[90m (6)[39m
-[2m   Start at [22m 23:26:35
-[2m   Duration [22m 311ms[2m (transform 47%, import 24%, tests 22%, worker 6%)[22m
-
-
-> nx run py-telemetry:test
+> nx run py-telemetry:test  [existing outputs match the cache, left as is]
 
 [2m> [22muv run --frozen pytest libs/py-telemetry/tests -o cache_dir=.pytest_cache/py-telemetry --cov=onb_telemetry --cov-report=term-missing --cov-fail-under=80
 
@@ -444,7 +427,47 @@ TOTAL                                                   575     14    98%
 [32mRequired test coverage of 80% reached. Total coverage: 97.57%
 [0m[32m============================= [32m[1m115 passed[0m[32m in 3.85s[0m[32m ==============================[0m
 
-> nx run py-contracts:test
+> nx run py-data:test  [existing outputs match the cache, left as is]
+
+[2m> [22muv run --frozen pytest libs/py-data/tests -o cache_dir=.pytest_cache/py-data --cov=onb_data --cov-report=term-missing --cov-fail-under=80
+
+[1m============================= test session starts ==============================[0m
+platform darwin -- Python 3.12.13, pytest-9.2.0, pluggy-1.7.0
+cachedir: .pytest_cache/py-data
+rootdir: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-ui-1
+configfile: pyproject.toml
+plugins: hypothesis-6.170.15, langsmith-0.14.17, cov-7.1.0, anyio-4.16.0
+collected 195 items
+
+libs/py-data/tests/test_context.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                        [  7%][0m
+libs/py-data/tests/test_exports.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                         [ 13%][0m
+libs/py-data/tests/test_onb_data.py [32m.[0m[32m                                    [ 14%][0m
+libs/py-data/tests/test_repository.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m [ 31%]
+[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                           [ 55%][0m
+libs/py-data/tests/test_store.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m [ 75%]
+[0m[32m.[0m[32m.[0m[32m                                                                       [ 76%][0m
+libs/py-data/tests/test_transactions_and_queue.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m [ 87%]
+[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                                                 [100%][0m
+
+================================ tests coverage ================================
+______________ coverage: platform darwin, python 3.12.13-final-0 _______________
+
+Name                                      Stmts   Miss  Cover   Missing
+-----------------------------------------------------------------------
+libs/py-data/src/onb_data/__init__.py         8      0   100%
+libs/py-data/src/onb_data/context.py         28      0   100%
+libs/py-data/src/onb_data/errors.py          10      0   100%
+libs/py-data/src/onb_data/queue.py           72      1    99%   70
+libs/py-data/src/onb_data/repository.py     104      0   100%
+libs/py-data/src/onb_data/scoping.py        115      0   100%
+libs/py-data/src/onb_data/session.py         29      0   100%
+libs/py-data/src/onb_data/store.py           75      1    99%   110
+-----------------------------------------------------------------------
+TOTAL                                       441      2    99%
+[32mRequired test coverage of 80% reached. Total coverage: 99.55%
+[0m[32m============================= [32m[1m195 passed[0m[32m in 1.51s[0m[32m ==============================[0m
+
+> nx run py-contracts:test  [existing outputs match the cache, left as is]
 
 [2m> [22muv run --frozen pytest libs/py-contracts/tests -o cache_dir=.pytest_cache/py-contracts --cov=onb_contracts --cov-report=term-missing --cov-fail-under=80
 
@@ -479,163 +502,98 @@ TOTAL                                               202      0   100%
 [32mRequired test coverage of 80% reached. Total coverage: 100.00%
 [0m[32m============================== [32m[1m95 passed[0m[32m in 0.66s[0m[32m ==============================[0m
 
-> nx run ts-ui:test
+> nx run ts-api-client:test  [existing outputs match the cache, left as is]
 
-> vitest run --config libs/ts-ui/vitest.config.ts
+> vitest run --config libs/ts-api-client/vitest.config.ts
 
 
-[1m[30m[46m RUN [49m[39m[22m [36mv5.1.0 [39m[90m/Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-ui-1/libs/ts-ui[39m
+[1m[30m[46m RUN [49m[39m[22m [36mv5.1.0 [39m[90m/Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-ui-1/libs/ts-api-client[39m
 
 
 [2m Test Files [22m [1m[32m2 passed[39m[22m[90m (2)[39m
-[2m      Tests [22m [1m[32m10 passed[39m[22m[90m (10)[39m
-[2m   Start at [22m 23:26:37
-[2m   Duration [22m 1.83s[2m (environment 75%, setup 10%, tests 6%, import 5%, transform 3%)[22m
+[2m      Tests [22m [1m[32m6 passed[39m[22m[90m (6)[39m
+[2m   Start at [22m 23:26:35
+[2m   Duration [22m 311ms[2m (transform 47%, import 24%, tests 22%, worker 6%)[22m
 
 
-> nx run orchestrator:test
+> nx run py-llm:test  [existing outputs match the cache, left as is]
 
-[2m> [22muv run --frozen pytest apps/orchestrator/tests -o cache_dir=.pytest_cache/orchestrator
-
-[1m============================= test session starts ==============================[0m
-platform darwin -- Python 3.12.13, pytest-9.2.0, pluggy-1.7.0
-cachedir: .pytest_cache/orchestrator
-rootdir: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-ui-1
-configfile: pyproject.toml
-plugins: hypothesis-6.170.15, langsmith-0.14.17, cov-7.1.0, anyio-4.16.0
-collected 1 item
-
-apps/orchestrator/tests/test_onb_orchestrator.py [32m.[0m[32m                       [100%][0m
-
-[32m============================== [32m[1m1 passed[0m[32m in 0.15s[0m[32m ===============================[0m
-
-> nx run mcp-mocks:test
-
-[2m> [22muv run --frozen pytest apps/mcp-mocks/tests -o cache_dir=.pytest_cache/mcp-mocks
+[2m> [22muv run --frozen pytest libs/py-llm/tests -o cache_dir=.pytest_cache/py-llm --cov=onb_llm --cov-report=term-missing --cov-fail-under=80
 
 [1m============================= test session starts ==============================[0m
 platform darwin -- Python 3.12.13, pytest-9.2.0, pluggy-1.7.0
-cachedir: .pytest_cache/mcp-mocks
+cachedir: .pytest_cache/py-llm
 rootdir: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-ui-1
 configfile: pyproject.toml
 plugins: hypothesis-6.170.15, langsmith-0.14.17, cov-7.1.0, anyio-4.16.0
-collected 1 item
+collected 123 items
 
-apps/mcp-mocks/tests/test_onb_mcp_mocks.py [32m.[0m[32m                             [100%][0m
-
-[32m============================== [32m[1m1 passed[0m[32m in 0.15s[0m[32m ===============================[0m
-
-> nx run py-eventbus:test
-
-[2m> [22muv run --frozen pytest libs/py-eventbus/tests -o cache_dir=.pytest_cache/py-eventbus --cov=onb_eventbus --cov-report=term-missing --cov-fail-under=80
-
-[1m============================= test session starts ==============================[0m
-platform darwin -- Python 3.12.13, pytest-9.2.0, pluggy-1.7.0
-cachedir: .pytest_cache/py-eventbus
-rootdir: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-ui-1
-configfile: pyproject.toml
-plugins: hypothesis-6.170.15, langsmith-0.14.17, cov-7.1.0, anyio-4.16.0
-collected 77 items
-
-libs/py-eventbus/tests/test_publish.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m               [ 24%][0m
-libs/py-eventbus/tests/test_settings_and_interface.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m [ 48%]
-[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                                                               [ 61%][0m
-libs/py-eventbus/tests/test_tracing.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                             [ 67%][0m
-libs/py-eventbus/tests/test_worker.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m          [100%][0m
+libs/py-llm/tests/test_config.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m            [ 22%][0m
+libs/py-llm/tests/test_fake_connector.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m             [ 38%][0m
+libs/py-llm/tests/test_health.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                                   [ 42%][0m
+libs/py-llm/tests/test_no_model_ids_in_code.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m              [ 52%][0m
+libs/py-llm/tests/test_onb_llm.py [32m.[0m[32m                                      [ 52%][0m
+libs/py-llm/tests/test_provider_connectors.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m         [ 67%][0m
+libs/py-llm/tests/test_registry.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                              [ 73%][0m
+libs/py-llm/tests/test_resolution.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                  [ 88%][0m
+libs/py-llm/tests/test_runtime.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                         [100%][0m
 
 ================================ tests coverage ================================
 ______________ coverage: platform darwin, python 3.12.13-final-0 _______________
 
-Name                                             Stmts   Miss  Cover   Missing
-------------------------------------------------------------------------------
-libs/py-eventbus/src/onb_eventbus/__init__.py        7      0   100%
-libs/py-eventbus/src/onb_eventbus/bus.py           105      8    92%   40, 45, 140-146, 193
-libs/py-eventbus/src/onb_eventbus/documents.py      36      0   100%
-libs/py-eventbus/src/onb_eventbus/interface.py      20      0   100%
-libs/py-eventbus/src/onb_eventbus/models.py         47      0   100%
-libs/py-eventbus/src/onb_eventbus/settings.py       34      0   100%
-libs/py-eventbus/src/onb_eventbus/worker.py        160      7    96%   62, 67, 200, 206, 258, 262-263
-------------------------------------------------------------------------------
-TOTAL                                              409     15    96%
-[32mRequired test coverage of 80% reached. Total coverage: 96.33%
-[0m[32m============================== [32m[1m77 passed[0m[32m in 2.01s[0m[32m ==============================[0m
+Name                                              Stmts   Miss  Cover   Missing
+-------------------------------------------------------------------------------
+libs/py-llm/src/onb_llm/__init__.py                   9      0   100%
+libs/py-llm/src/onb_llm/config.py                    64      0   100%
+libs/py-llm/src/onb_llm/connector.py                 17      0   100%
+libs/py-llm/src/onb_llm/connectors/__init__.py        0      0   100%
+libs/py-llm/src/onb_llm/connectors/base.py           20      0   100%
+libs/py-llm/src/onb_llm/connectors/bedrock.py        35      0   100%
+libs/py-llm/src/onb_llm/connectors/fake.py           70      0   100%
+libs/py-llm/src/onb_llm/connectors/langchain.py      23      1    96%   38
+libs/py-llm/src/onb_llm/connectors/script.py         59      0   100%
+libs/py-llm/src/onb_llm/errors.py                    13      0   100%
+libs/py-llm/src/onb_llm/health.py                    37      1    97%   50
+libs/py-llm/src/onb_llm/interpolation.py             25      1    96%   44
+libs/py-llm/src/onb_llm/registry.py                  45      0   100%
+libs/py-llm/src/onb_llm/resolution.py                43      1    98%   81
+libs/py-llm/src/onb_llm/runtime.py                   68      0   100%
+libs/py-llm/src/onb_llm/telemetry.py                 56      3    95%   48, 55, 72
+-------------------------------------------------------------------------------
+TOTAL                                               584      7    99%
+[32mRequired test coverage of 80% reached. Total coverage: 98.80%
+[0m[32m============================= [32m[1m123 passed[0m[32m in 15.77s[0m[32m =============================[0m
 
-> nx run py-agents:test
+> nx run api:test  [existing outputs match the cache, left as is]
 
-[2m> [22muv run --frozen pytest libs/py-agents/tests -o cache_dir=.pytest_cache/py-agents --cov=onb_agents --cov-report=term-missing --cov-fail-under=80
-
-[1m============================= test session starts ==============================[0m
-platform darwin -- Python 3.12.13, pytest-9.2.0, pluggy-1.7.0
-cachedir: .pytest_cache/py-agents
-rootdir: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-ui-1
-configfile: pyproject.toml
-plugins: hypothesis-6.170.15, langsmith-0.14.17, cov-7.1.0, anyio-4.16.0
-collected 1 item
-
-libs/py-agents/tests/test_onb_agents.py [32m.[0m[32m                                [100%][0m
-
-================================ tests coverage ================================
-______________ coverage: platform darwin, python 3.12.13-final-0 _______________
-
-Name                                        Stmts   Miss  Cover   Missing
--------------------------------------------------------------------------
-libs/py-agents/src/onb_agents/__init__.py       2      0   100%
--------------------------------------------------------------------------
-TOTAL                                           2      0   100%
-[32mRequired test coverage of 80% reached. Total coverage: 100.00%
-[0m[32m============================== [32m[1m1 passed[0m[32m in 0.26s[0m[32m ===============================[0m
-
-> nx run mcp-mongo:test
-
-[2m> [22muv run --frozen pytest apps/mcp-mongo/tests -o cache_dir=.pytest_cache/mcp-mongo
+[2m> [22muv run --frozen pytest apps/api/tests -o cache_dir=.pytest_cache/api
 
 [1m============================= test session starts ==============================[0m
 platform darwin -- Python 3.12.13, pytest-9.2.0, pluggy-1.7.0
-cachedir: .pytest_cache/mcp-mongo
+cachedir: .pytest_cache/api
 rootdir: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-ui-1
 configfile: pyproject.toml
 plugins: hypothesis-6.170.15, langsmith-0.14.17, cov-7.1.0, anyio-4.16.0
-collected 191 items
+collected 183 items
 
-apps/mcp-mongo/tests/test_call_context.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m [ 15%]
-[0m[32m.[0m[32m                                                                        [ 16%][0m
-apps/mcp-mongo/tests/test_contracts.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m [ 33%]
-[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                                                              [ 39%][0m
-apps/mcp-mongo/tests/test_main.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                            [ 45%][0m
-apps/mcp-mongo/tests/test_onb_mcp_mongo.py [32m.[0m[32m                             [ 45%][0m
-apps/mcp-mongo/tests/test_policy.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m   [ 63%][0m
-apps/mcp-mongo/tests/test_server.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m [ 82%]
-[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                                                        [ 91%][0m
-apps/mcp-mongo/tests/test_spans.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                     [100%][0m
+apps/api/tests/test_auth_settings.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                [ 10%][0m
+apps/api/tests/test_data_errors.py [32m.[0m[32m.[0m[32m.[0m[32m                                   [ 12%][0m
+apps/api/tests/test_errors.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                             [ 20%][0m
+apps/api/tests/test_login.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                    [ 33%][0m
+apps/api/tests/test_manager_scope.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                           [ 38%][0m
+apps/api/tests/test_onb_api.py [32m.[0m[32m                                         [ 38%][0m
+apps/api/tests/test_openapi_export.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                             [ 42%][0m
+apps/api/tests/test_org_from_token.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                    [ 50%][0m
+apps/api/tests/test_passwords.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                                [ 54%][0m
+apps/api/tests/test_role_matrix.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                 [ 66%][0m
+apps/api/tests/test_routes.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                                     [ 69%][0m
+apps/api/tests/test_telemetry.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                                    [ 71%][0m
+apps/api/tests/test_tokens.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m          [ 89%][0m
+apps/api/tests/test_validation_details.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m            [100%][0m
 
-[32m============================= [32m[1m191 passed[0m[32m in 4.50s[0m[32m ==============================[0m
+[32m============================= [32m[1m183 passed[0m[32m in 12.61s[0m[32m =============================[0m
 
-> nx run py-evals:test
-
-[2m> [22muv run --frozen pytest libs/py-evals/tests -o cache_dir=.pytest_cache/py-evals --cov=onb_evals --cov-report=term-missing --cov-fail-under=80
-
-[1m============================= test session starts ==============================[0m
-platform darwin -- Python 3.12.13, pytest-9.2.0, pluggy-1.7.0
-cachedir: .pytest_cache/py-evals
-rootdir: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-ui-1
-configfile: pyproject.toml
-plugins: hypothesis-6.170.15, langsmith-0.14.17, cov-7.1.0, anyio-4.16.0
-collected 1 item
-
-libs/py-evals/tests/test_onb_evals.py [32m.[0m[32m                                  [100%][0m
-
-================================ tests coverage ================================
-______________ coverage: platform darwin, python 3.12.13-final-0 _______________
-
-Name                                      Stmts   Miss  Cover   Missing
------------------------------------------------------------------------
-libs/py-evals/src/onb_evals/__init__.py       2      0   100%
------------------------------------------------------------------------
-TOTAL                                         2      0   100%
-[32mRequired test coverage of 80% reached. Total coverage: 100.00%
-[0m[32m============================== [32m[1m1 passed[0m[32m in 0.27s[0m[32m ===============================[0m
-
-> nx run py-crypto:test
+> nx run py-crypto:test  [existing outputs match the cache, left as is]
 
 [2m> [22muv run --frozen pytest libs/py-crypto/tests -o cache_dir=.pytest_cache/py-crypto --cov=onb_crypto --cov-report=term-missing --cov-fail-under=80
 
@@ -689,7 +647,133 @@ TOTAL                                              898     18    98%
 [32mRequired test coverage of 80% reached. Total coverage: 98.00%
 [0m[32m============================= [32m[1m265 passed[0m[32m in 4.90s[0m[32m ==============================[0m
 
-> nx run mcp-hub:test
+> nx run mcp-mongo:test  [existing outputs match the cache, left as is]
+
+[2m> [22muv run --frozen pytest apps/mcp-mongo/tests -o cache_dir=.pytest_cache/mcp-mongo
+
+[1m============================= test session starts ==============================[0m
+platform darwin -- Python 3.12.13, pytest-9.2.0, pluggy-1.7.0
+cachedir: .pytest_cache/mcp-mongo
+rootdir: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-ui-1
+configfile: pyproject.toml
+plugins: hypothesis-6.170.15, langsmith-0.14.17, cov-7.1.0, anyio-4.16.0
+collected 191 items
+
+apps/mcp-mongo/tests/test_call_context.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m [ 15%]
+[0m[32m.[0m[32m                                                                        [ 16%][0m
+apps/mcp-mongo/tests/test_contracts.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m [ 33%]
+[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                                                              [ 39%][0m
+apps/mcp-mongo/tests/test_main.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                            [ 45%][0m
+apps/mcp-mongo/tests/test_onb_mcp_mongo.py [32m.[0m[32m                             [ 45%][0m
+apps/mcp-mongo/tests/test_policy.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m   [ 63%][0m
+apps/mcp-mongo/tests/test_server.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m [ 82%]
+[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                                                        [ 91%][0m
+apps/mcp-mongo/tests/test_spans.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                     [100%][0m
+
+[32m============================= [32m[1m191 passed[0m[32m in 4.50s[0m[32m ==============================[0m
+
+> nx run py-eventbus:test  [existing outputs match the cache, left as is]
+
+[2m> [22muv run --frozen pytest libs/py-eventbus/tests -o cache_dir=.pytest_cache/py-eventbus --cov=onb_eventbus --cov-report=term-missing --cov-fail-under=80
+
+[1m============================= test session starts ==============================[0m
+platform darwin -- Python 3.12.13, pytest-9.2.0, pluggy-1.7.0
+cachedir: .pytest_cache/py-eventbus
+rootdir: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-ui-1
+configfile: pyproject.toml
+plugins: hypothesis-6.170.15, langsmith-0.14.17, cov-7.1.0, anyio-4.16.0
+collected 77 items
+
+libs/py-eventbus/tests/test_publish.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m               [ 24%][0m
+libs/py-eventbus/tests/test_settings_and_interface.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m [ 48%]
+[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                                                               [ 61%][0m
+libs/py-eventbus/tests/test_tracing.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                             [ 67%][0m
+libs/py-eventbus/tests/test_worker.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m          [100%][0m
+
+================================ tests coverage ================================
+______________ coverage: platform darwin, python 3.12.13-final-0 _______________
+
+Name                                             Stmts   Miss  Cover   Missing
+------------------------------------------------------------------------------
+libs/py-eventbus/src/onb_eventbus/__init__.py        7      0   100%
+libs/py-eventbus/src/onb_eventbus/bus.py           105      8    92%   40, 45, 140-146, 193
+libs/py-eventbus/src/onb_eventbus/documents.py      36      0   100%
+libs/py-eventbus/src/onb_eventbus/interface.py      20      0   100%
+libs/py-eventbus/src/onb_eventbus/models.py         47      0   100%
+libs/py-eventbus/src/onb_eventbus/settings.py       34      0   100%
+libs/py-eventbus/src/onb_eventbus/worker.py        160      7    96%   62, 67, 200, 206, 258, 262-263
+------------------------------------------------------------------------------
+TOTAL                                              409     15    96%
+[32mRequired test coverage of 80% reached. Total coverage: 96.33%
+[0m[32m============================== [32m[1m77 passed[0m[32m in 2.01s[0m[32m ==============================[0m
+
+> nx run py-evals:test  [existing outputs match the cache, left as is]
+
+[2m> [22muv run --frozen pytest libs/py-evals/tests -o cache_dir=.pytest_cache/py-evals --cov=onb_evals --cov-report=term-missing --cov-fail-under=80
+
+[1m============================= test session starts ==============================[0m
+platform darwin -- Python 3.12.13, pytest-9.2.0, pluggy-1.7.0
+cachedir: .pytest_cache/py-evals
+rootdir: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-ui-1
+configfile: pyproject.toml
+plugins: hypothesis-6.170.15, langsmith-0.14.17, cov-7.1.0, anyio-4.16.0
+collected 1 item
+
+libs/py-evals/tests/test_onb_evals.py [32m.[0m[32m                                  [100%][0m
+
+================================ tests coverage ================================
+______________ coverage: platform darwin, python 3.12.13-final-0 _______________
+
+Name                                      Stmts   Miss  Cover   Missing
+-----------------------------------------------------------------------
+libs/py-evals/src/onb_evals/__init__.py       2      0   100%
+-----------------------------------------------------------------------
+TOTAL                                         2      0   100%
+[32mRequired test coverage of 80% reached. Total coverage: 100.00%
+[0m[32m============================== [32m[1m1 passed[0m[32m in 0.27s[0m[32m ===============================[0m
+
+> nx run py-agents:test  [existing outputs match the cache, left as is]
+
+[2m> [22muv run --frozen pytest libs/py-agents/tests -o cache_dir=.pytest_cache/py-agents --cov=onb_agents --cov-report=term-missing --cov-fail-under=80
+
+[1m============================= test session starts ==============================[0m
+platform darwin -- Python 3.12.13, pytest-9.2.0, pluggy-1.7.0
+cachedir: .pytest_cache/py-agents
+rootdir: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-ui-1
+configfile: pyproject.toml
+plugins: hypothesis-6.170.15, langsmith-0.14.17, cov-7.1.0, anyio-4.16.0
+collected 1 item
+
+libs/py-agents/tests/test_onb_agents.py [32m.[0m[32m                                [100%][0m
+
+================================ tests coverage ================================
+______________ coverage: platform darwin, python 3.12.13-final-0 _______________
+
+Name                                        Stmts   Miss  Cover   Missing
+-------------------------------------------------------------------------
+libs/py-agents/src/onb_agents/__init__.py       2      0   100%
+-------------------------------------------------------------------------
+TOTAL                                           2      0   100%
+[32mRequired test coverage of 80% reached. Total coverage: 100.00%
+[0m[32m============================== [32m[1m1 passed[0m[32m in 0.26s[0m[32m ===============================[0m
+
+> nx run orchestrator:test  [existing outputs match the cache, left as is]
+
+[2m> [22muv run --frozen pytest apps/orchestrator/tests -o cache_dir=.pytest_cache/orchestrator
+
+[1m============================= test session starts ==============================[0m
+platform darwin -- Python 3.12.13, pytest-9.2.0, pluggy-1.7.0
+cachedir: .pytest_cache/orchestrator
+rootdir: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-ui-1
+configfile: pyproject.toml
+plugins: hypothesis-6.170.15, langsmith-0.14.17, cov-7.1.0, anyio-4.16.0
+collected 1 item
+
+apps/orchestrator/tests/test_onb_orchestrator.py [32m.[0m[32m                       [100%][0m
+
+[32m============================== [32m[1m1 passed[0m[32m in 0.15s[0m[32m ===============================[0m
+
+> nx run mcp-hub:test  [existing outputs match the cache, left as is]
 
 [2m> [22muv run --frozen pytest apps/mcp-hub/tests -o cache_dir=.pytest_cache/mcp-hub
 
@@ -705,82 +789,35 @@ apps/mcp-hub/tests/test_onb_mcp_hub.py [32m.[0m[32m                          
 
 [32m============================== [32m[1m1 passed[0m[32m in 0.17s[0m[32m ===============================[0m
 
-> nx run api:test
+> nx run mcp-mocks:test  [existing outputs match the cache, left as is]
 
-[2m> [22muv run --frozen pytest apps/api/tests -o cache_dir=.pytest_cache/api
-
-[1m============================= test session starts ==============================[0m
-platform darwin -- Python 3.12.13, pytest-9.2.0, pluggy-1.7.0
-cachedir: .pytest_cache/api
-rootdir: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-ui-1
-configfile: pyproject.toml
-plugins: hypothesis-6.170.15, langsmith-0.14.17, cov-7.1.0, anyio-4.16.0
-collected 183 items
-
-apps/api/tests/test_auth_settings.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                [ 10%][0m
-apps/api/tests/test_data_errors.py [32m.[0m[32m.[0m[32m.[0m[32m                                   [ 12%][0m
-apps/api/tests/test_errors.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                             [ 20%][0m
-apps/api/tests/test_login.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                    [ 33%][0m
-apps/api/tests/test_manager_scope.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                           [ 38%][0m
-apps/api/tests/test_onb_api.py [32m.[0m[32m                                         [ 38%][0m
-apps/api/tests/test_openapi_export.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                             [ 42%][0m
-apps/api/tests/test_org_from_token.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                    [ 50%][0m
-apps/api/tests/test_passwords.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                                [ 54%][0m
-apps/api/tests/test_role_matrix.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                 [ 66%][0m
-apps/api/tests/test_routes.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                                     [ 69%][0m
-apps/api/tests/test_telemetry.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                                    [ 71%][0m
-apps/api/tests/test_tokens.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m          [ 89%][0m
-apps/api/tests/test_validation_details.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m            [100%][0m
-
-[32m============================= [32m[1m183 passed[0m[32m in 12.61s[0m[32m =============================[0m
-
-> nx run py-llm:test
-
-[2m> [22muv run --frozen pytest libs/py-llm/tests -o cache_dir=.pytest_cache/py-llm --cov=onb_llm --cov-report=term-missing --cov-fail-under=80
+[2m> [22muv run --frozen pytest apps/mcp-mocks/tests -o cache_dir=.pytest_cache/mcp-mocks
 
 [1m============================= test session starts ==============================[0m
 platform darwin -- Python 3.12.13, pytest-9.2.0, pluggy-1.7.0
-cachedir: .pytest_cache/py-llm
+cachedir: .pytest_cache/mcp-mocks
 rootdir: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-ui-1
 configfile: pyproject.toml
 plugins: hypothesis-6.170.15, langsmith-0.14.17, cov-7.1.0, anyio-4.16.0
-collected 123 items
+collected 1 item
 
-libs/py-llm/tests/test_config.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m            [ 22%][0m
-libs/py-llm/tests/test_fake_connector.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m             [ 38%][0m
-libs/py-llm/tests/test_health.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                                   [ 42%][0m
-libs/py-llm/tests/test_no_model_ids_in_code.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m              [ 52%][0m
-libs/py-llm/tests/test_onb_llm.py [32m.[0m[32m                                      [ 52%][0m
-libs/py-llm/tests/test_provider_connectors.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m         [ 67%][0m
-libs/py-llm/tests/test_registry.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                              [ 73%][0m
-libs/py-llm/tests/test_resolution.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                  [ 88%][0m
-libs/py-llm/tests/test_runtime.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                         [100%][0m
+apps/mcp-mocks/tests/test_onb_mcp_mocks.py [32m.[0m[32m                             [100%][0m
 
-================================ tests coverage ================================
-______________ coverage: platform darwin, python 3.12.13-final-0 _______________
+[32m============================== [32m[1m1 passed[0m[32m in 0.15s[0m[32m ===============================[0m
 
-Name                                              Stmts   Miss  Cover   Missing
--------------------------------------------------------------------------------
-libs/py-llm/src/onb_llm/__init__.py                   9      0   100%
-libs/py-llm/src/onb_llm/config.py                    64      0   100%
-libs/py-llm/src/onb_llm/connector.py                 17      0   100%
-libs/py-llm/src/onb_llm/connectors/__init__.py        0      0   100%
-libs/py-llm/src/onb_llm/connectors/base.py           20      0   100%
-libs/py-llm/src/onb_llm/connectors/bedrock.py        35      0   100%
-libs/py-llm/src/onb_llm/connectors/fake.py           70      0   100%
-libs/py-llm/src/onb_llm/connectors/langchain.py      23      1    96%   38
-libs/py-llm/src/onb_llm/connectors/script.py         59      0   100%
-libs/py-llm/src/onb_llm/errors.py                    13      0   100%
-libs/py-llm/src/onb_llm/health.py                    37      1    97%   50
-libs/py-llm/src/onb_llm/interpolation.py             25      1    96%   44
-libs/py-llm/src/onb_llm/registry.py                  45      0   100%
-libs/py-llm/src/onb_llm/resolution.py                43      1    98%   81
-libs/py-llm/src/onb_llm/runtime.py                   68      0   100%
-libs/py-llm/src/onb_llm/telemetry.py                 56      3    95%   48, 55, 72
--------------------------------------------------------------------------------
-TOTAL                                               584      7    99%
-[32mRequired test coverage of 80% reached. Total coverage: 98.80%
-[0m[32m============================= [32m[1m123 passed[0m[32m in 15.77s[0m[32m =============================[0m
+> nx run ts-ui:test
+
+> vitest run --config libs/ts-ui/vitest.config.ts
+
+
+[1m[30m[46m RUN [49m[39m[22m [36mv5.1.0 [39m[90m/Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-ui-1/libs/ts-ui[39m
+
+
+[2m Test Files [22m [1m[32m2 passed[39m[22m[90m (2)[39m
+[2m      Tests [22m [1m[32m11 passed[39m[22m[90m (11)[39m
+[2m   Start at [22m 23:33:43
+[2m   Duration [22m 1.32s[2m (environment 75%, setup 14%, tests 5%, import 4%, transform 1%)[22m
+
 
 > nx run web:test
 
@@ -794,59 +831,19 @@ Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.[39m
 
 
 [2m Test Files [22m [1m[32m5 passed[39m[22m[90m (5)[39m
-[2m      Tests [22m [1m[32m48 passed[39m[22m[90m (48)[39m
-[2m   Start at [22m 23:27:11
-[2m   Duration [22m 4.16s[2m (environment 63%, tests 21%, setup 9%, import 5%, transform 2%)[22m
+[2m      Tests [22m [1m[32m61 passed[39m[22m[90m (61)[39m
+[2m   Start at [22m 23:33:43
+[2m   Duration [22m 3.69s[2m (environment 53%, tests 33%, setup 10%, import 3%, transform 1%)[22m
 
-
-> nx run py-guardrails:test
-
-[2m> [22muv run --frozen pytest libs/py-guardrails/tests -o cache_dir=.pytest_cache/py-guardrails --cov=onb_guardrails --cov-report=term-missing --cov-fail-under=80
-
-[1m============================= test session starts ==============================[0m
-platform darwin -- Python 3.12.13, pytest-9.2.0, pluggy-1.7.0
-cachedir: .pytest_cache/py-guardrails
-rootdir: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-ui-1
-configfile: pyproject.toml
-plugins: hypothesis-6.170.15, langsmith-0.14.17, cov-7.1.0, anyio-4.16.0
-collected 210 items
-
-libs/py-guardrails/tests/pii/test_corpus.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                         [  1%][0m
-libs/py-guardrails/tests/pii/test_detectors.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m [ 13%]
-[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m [ 48%]
-[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                                                          [ 55%][0m
-libs/py-guardrails/tests/pii/test_redact_property.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m               [ 57%][0m
-libs/py-guardrails/tests/pii/test_validators.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m [ 69%]
-[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m         [ 99%][0m
-libs/py-guardrails/tests/test_onb_guardrails.py [32m.[0m[32m                        [100%][0m
-
-================================ tests coverage ================================
-______________ coverage: platform darwin, python 3.12.13-final-0 _______________
-
-Name                                                      Stmts   Miss  Cover   Missing
----------------------------------------------------------------------------------------
-libs/py-guardrails/src/onb_guardrails/__init__.py             2      0   100%
-libs/py-guardrails/src/onb_guardrails/pii/__init__.py         4      0   100%
-libs/py-guardrails/src/onb_guardrails/pii/detectors.py       94      0   100%
-libs/py-guardrails/src/onb_guardrails/pii/skeleton.py        35      0   100%
-libs/py-guardrails/src/onb_guardrails/pii/validators.py      27      0   100%
-libs/py-guardrails/src/onb_guardrails/pii/verhoeff.py        24      0   100%
----------------------------------------------------------------------------------------
-TOTAL                                                       186      0   100%
-[32mRequired test coverage of 80% reached. Total coverage: 100.00%
-[0m[32m============================= [32m[1m210 passed[0m[32m in 52.10s[0m[32m =============================[0m
 
 
 
  NX   Successfully ran target test for 17 projects
 
+Nx read the output from the cache instead of running the command for 15 out of 17 tasks.
 
-  Run duration:      54.7s
-  Cache:             0/17 hit (0%)
-  Critical path:     54.6s (1 task)
-  Recoverable time:  65ms (0% of the run)
-
-  Recommendations:
-    - Speed up or split the longest tasks on the critical path:
-        py-guardrails:test    54.6s
+  Run duration:      4.1s
+  Cache:             15/17 hit (88%)
+  Critical path:     4.1s (1 task)
+  Recoverable time:  <1ms
 make check: all passed
