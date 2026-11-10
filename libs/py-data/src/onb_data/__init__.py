@@ -38,6 +38,7 @@ from .errors import (
     TenantViolationError,
     TransactionError,
     UnknownCollectionError,
+    UnscopedCommandError,
 )
 from .queue import QUEUE_COLLECTIONS, QueueRepository
 from .repository import GlobalRepository, TenantRepository, UpdateOutcome
@@ -72,6 +73,7 @@ __all__ = [
     "TenantViolationError",
     "TransactionError",
     "UnknownCollectionError",
+    "UnscopedCommandError",
     "UpdateOutcome",
     "build_record",
     "check_page",

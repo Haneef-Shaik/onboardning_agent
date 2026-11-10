@@ -1,0 +1,5 @@
+E   ImportError: cannot import name 'UnscopedCommandError' from 'onb_data' (/Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-t-2/libs/py-data/src/onb_data/__init__.py)
+=========================== short test summary info ============================
+ERROR libs/py-data/tests/test_safety_net.py
+!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+1 error in 0.68s

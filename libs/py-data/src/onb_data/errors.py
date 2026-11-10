@@ -11,6 +11,7 @@ __all__ = [
     "TenantViolationError",
     "TransactionError",
     "UnknownCollectionError",
+    "UnscopedCommandError",
 ]
 
 
@@ -48,3 +49,7 @@ class UnknownCollectionError(DataAccessError):
 
 class TransactionError(DataAccessError):
     """A transaction was nested, or the store has no client to start one."""
+
+
+class UnscopedCommandError(DataAccessError):
+    """The safety net saw a command on a tenant collection without an `org_id` scope (PRD §7.9)."""
