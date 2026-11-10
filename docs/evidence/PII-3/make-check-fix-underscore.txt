@@ -1,0 +1,8 @@
+# make check on fix/pii-3-account-keyword-underscore (fix + tests), 2026-11-10T05:40:41Z
+$ rtk proxy make check   -> exit 0
+ NX   Successfully ran target lint for 17 projects
+ NX   Successfully ran target typecheck for 17 projects
+libs/py-guardrails/src/onb_guardrails/pii/detectors.py       95      0   100%
+============================= 191 passed in 19.98s =============================
+ NX   Successfully ran target test for 17 projects
+make check: all passed

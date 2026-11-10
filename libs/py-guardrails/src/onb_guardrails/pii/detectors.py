@@ -104,9 +104,15 @@ _EMAIL: Final = re.compile(
 )
 _LOCAL_PART_STOP: Final = frozenset(" <>()[]{}\"'`,;:|\\@/")
 # A bare 9-18 digit run is too common to call an account number; it needs an account keyword before it.
+# The keyword may follow anything ("_account", "myaccount") and "_" spaces it like whitespace
+# ("account_no_123...") and the digits may follow it directly ("account123..."): "\b" treats "_" and
+# digits as word characters, which let the digits leak.
+_KW_END: Final = r"(?![A-Za-z])"
+_KW_GAP: Final = r"[\s_]"
 _BANK_ACCOUNT: Final = re.compile(
-    r"\b(?:a/c|acc(?:oun)?t|acc)\b\.?"
-    r"(?:\s{0,3}(?:no|number|num)\b\.?|\s{0,3}\#)?(?:\s{1,3}is)?\s{0,3}[:#\-]?\s{0,3}"
+    rf"(?:a/c|acc(?:oun)?t|acc){_KW_END}\.?"
+    rf"(?:{_KW_GAP}{{0,3}}(?:no|number|num){_KW_END}\.?|{_KW_GAP}{{0,3}}\#)?(?:{_KW_GAP}{{1,3}}is)?"
+    rf"{_KW_GAP}{{0,3}}[:#\-]?{_KW_GAP}{{0,3}}"
     rf"([0-9](?:[ \-]?[0-9]){{{BANK_ACCOUNT_MIN_DIGITS - 1},{BANK_ACCOUNT_MAX_DIGITS - 1}}})(?![0-9])",
     re.ASCII | re.IGNORECASE,
 )

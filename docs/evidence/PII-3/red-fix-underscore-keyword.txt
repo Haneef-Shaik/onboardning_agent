@@ -1,0 +1,37 @@
+# RED before fix (HEAD 41e0043 + new tests), 2026-11-10T05:37:27Z
+$ uv run --frozen pytest libs/py-guardrails/tests/pii -q -k "underscore or any_glue"
+_ test_account_keyword_next_to_an_underscore_still_redacts_the_number[_account number 000000000-_account number [BANK_ACCOUNT]] _
+text = '_account number 000000000', expected = '_account number [BANK_ACCOUNT]'
+            ("_account number 000000000", "_account number [BANK_ACCOUNT]"),
+E       AssertionError: assert '_account number 000000000' == '_account num...BANK_ACCOUNT]'
+E         - _account number [BANK_ACCOUNT]
+E         + _account number 000000000
+            ("_account number 000000000", "_account number [BANK_ACCOUNT]"),
+            ("_account number 000000000", "_account number [BANK_ACCOUNT]"),
+            ("_account number 000000000", "_account number [BANK_ACCOUNT]"),
+            ("_account number 000000000", "_account number [BANK_ACCOUNT]"),
+            ("_account number 000000000", "_account number [BANK_ACCOUNT]"),
+            ("_account number 000000000", "_account number [BANK_ACCOUNT]"),
+            ("_account number 000000000", "_account number [BANK_ACCOUNT]"),
+            ("_account number 000000000", "_account number [BANK_ACCOUNT]"),
+value = 'account number 000000000', before = '_', glue1 = '', after = ''
+    @example("account number 000000000", "_", "", "", "")  # found by hypothesis: "_" hid the keyword
+E           value='account number 000000000',
+FAILED libs/py-guardrails/tests/pii/test_detectors.py::test_account_keyword_next_to_an_underscore_still_redacts_the_number[_account number 000000000-_account number [BANK_ACCOUNT]]
+FAILED libs/py-guardrails/tests/pii/test_detectors.py::test_account_keyword_next_to_an_underscore_still_redacts_the_number[x_acct # 123456789-x_acct # [BANK_ACCOUNT]]
+FAILED libs/py-guardrails/tests/pii/test_detectors.py::test_account_keyword_next_to_an_underscore_still_redacts_the_number[_A/c no: 123456789-_A/c no: [BANK_ACCOUNT]]
+FAILED libs/py-guardrails/tests/pii/test_detectors.py::test_account_keyword_next_to_an_underscore_still_redacts_the_number[myaccount 123456789-myaccount [BANK_ACCOUNT]]
+FAILED libs/py-guardrails/tests/pii/test_detectors.py::test_account_keyword_next_to_an_underscore_still_redacts_the_number[account_number 123456789-account_number [BANK_ACCOUNT]]
+FAILED libs/py-guardrails/tests/pii/test_detectors.py::test_account_keyword_next_to_an_underscore_still_redacts_the_number[acct_no 123456789-acct_no [BANK_ACCOUNT]]
+FAILED libs/py-guardrails/tests/pii/test_detectors.py::test_account_keyword_next_to_an_underscore_still_redacts_the_number[a/c_no 123456789-a/c_no [BANK_ACCOUNT]]
+FAILED libs/py-guardrails/tests/pii/test_detectors.py::test_account_keyword_next_to_an_underscore_still_redacts_the_number[account no_123456789-account no_[BANK_ACCOUNT]]
+FAILED libs/py-guardrails/tests/pii/test_detectors.py::test_account_keyword_next_to_an_underscore_still_redacts_the_number[account__no__is__123456789-account__no__is__[BANK_ACCOUNT]]
+FAILED libs/py-guardrails/tests/pii/test_redact_property.py::test_no_character_of_a_value_survives_in_any_glue
+10 failed, 177 deselected in 0.53s
+
+# RED for the sibling (keyword glued to the number), with fix 1 applied
+$ uv run --frozen pytest libs/py-guardrails/tests/pii/test_detectors.py -q -k underscore
+FAILED libs/py-guardrails/tests/pii/test_detectors.py::test_account_keyword_next_to_an_underscore_still_redacts_the_number[account000111222-account[BANK_ACCOUNT]]
+FAILED libs/py-guardrails/tests/pii/test_detectors.py::test_account_keyword_next_to_an_underscore_still_redacts_the_number[acct_no000111222-acct_no[BANK_ACCOUNT]]
+FAILED libs/py-guardrails/tests/pii/test_detectors.py::test_account_keyword_next_to_an_underscore_still_redacts_the_number[A/C number000111222 ok-A/C number[BANK_ACCOUNT] ok]
+3 failed, 9 passed, 81 deselected in 0.98s

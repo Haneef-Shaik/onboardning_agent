@@ -242,3 +242,27 @@ MINUS, EM_DASH, MIDDOT, HANGUL_FILLER, BRAILLE_BLANK = "\u2212", "\u2014", "\u00
 )
 def test_more_separator_variants_do_not_hide_a_value(text: str, expected: str) -> None:
     assert redact(text) == expected
+
+
+# Fix after merge: "_" is a regex word character, so "\b" did not see the account keyword after (or before)
+# an underscore and the digits leaked. Found by the redact property ("_account number 000000000").
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        ("_account number 000000000", "_account number [BANK_ACCOUNT]"),
+        ("x_acct # 123456789", "x_acct # [BANK_ACCOUNT]"),
+        ("_A/c no: 123456789", "_A/c no: [BANK_ACCOUNT]"),
+        ("myaccount 123456789", "myaccount [BANK_ACCOUNT]"),
+        ("account_number 123456789", "account_number [BANK_ACCOUNT]"),
+        ("acct_no 123456789", "acct_no [BANK_ACCOUNT]"),
+        ("a/c_no 123456789", "a/c_no [BANK_ACCOUNT]"),
+        ("account no_123456789", "account no_[BANK_ACCOUNT]"),
+        ("account__no__is__123456789", "account__no__is__[BANK_ACCOUNT]"),
+        # Sibling found by the keyword x glue sweep: the keyword glued straight to the digits.
+        ("account000111222", "account[BANK_ACCOUNT]"),
+        ("acct_no000111222", "acct_no[BANK_ACCOUNT]"),
+        ("A/C number000111222 ok", "A/C number[BANK_ACCOUNT] ok"),
+    ],
+)
+def test_account_keyword_beside_underscores_or_digits_still_redacts_the_number(text: str, expected: str) -> None:
+    assert redact(text) == expected

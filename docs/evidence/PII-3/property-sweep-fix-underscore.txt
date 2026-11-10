@@ -1,0 +1,14 @@
+# High-count sweep of the redact() properties (fix after merge), 2026-11-10
+# The test module was copied with max_examples=1500 -> 20000 and run with three seeds.
+$ sed 's/max_examples=1500/max_examples=20000/' libs/py-guardrails/tests/pii/test_redact_property.py > $TMP/test_sweep_property.py
+$ for seed in 1 2 3; do uv run --frozen pytest $TMP/test_sweep_property.py -q --hypothesis-seed=$seed; done
+== seed 1
+5 passed in 167.88s (0:02:47)
+== seed 2
+5 passed in 112.07s (0:01:52)
+== seed 3
+5 passed in 149.47s (0:02:29)
+# 5 properties x 20000 examples x 3 seeds = 300k examples, no counterexample.
+# Note: seed 1 started before the second (keyword-glued-to-digits) change landed; the property generators
+# always put a space or ":"/"#" before the bank digits, so they cannot reach that sibling. It was found by
+# the exhaustive keyword probe instead (probe-bank-keyword.py: 3234 leaks after the first change, 0 after both).

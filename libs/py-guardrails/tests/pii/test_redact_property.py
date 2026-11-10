@@ -153,6 +153,7 @@ def test_redact_is_idempotent(text: str) -> None:
 @example("90000 00001", "", "", "", "")
 @example("jane@example.com", "", "", "-call", "")
 @example("x" * 80 + "@example.com", "", "", "", "")
+@example("account number 000000000", "_", "", "", "")  # found by hypothesis: "_" hid the keyword
 def test_no_character_of_a_value_survives_in_any_glue(
     value: str, before: str, glue1: str, after: str, glue2: str
 ) -> None:
