@@ -14,6 +14,8 @@ from dataclasses import dataclass
 from typing import Final
 
 _DROPPED_CATEGORIES: Final = frozenset({"Cf", "Mn", "Me"})
+# Blank-looking characters that are not Unicode spaces: Hangul fillers and the Braille blank.
+_BLANKS: Final = frozenset("\u115f\u1160\u3164\uffa0\u2800")
 
 # Cyrillic and Greek homoglyphs of Latin letters (upper and lower case).
 _CONFUSABLES: Final = {
@@ -51,7 +53,7 @@ class Skeleton:
 def _fold(char: str) -> str:
     if unicodedata.category(char) == "Nd":
         return str(unicodedata.decimal(char))
-    if char.isspace():
+    if char.isspace() or char in _BLANKS:
         return " "
     return _CONFUSABLES.get(char, char)
 

@@ -195,3 +195,50 @@ def test_redact_stays_linear_on_review_inputs(hostile: str) -> None:
     started = time.perf_counter()
     redact(hostile)
     assert time.perf_counter() - started < 5.0
+
+
+# Re-review findings (attempt 1, second pass).
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        ("account\n\n000111222333", "account\n\n[BANK_ACCOUNT]"),
+        ("see http://site/path/jane@example.com", "see http://site/path/[EMAIL]"),
+        ("a@b.co@c.co", "[EMAIL]@c.co"),
+    ],
+)
+def test_email_walk_back_and_bank_gaps(text: str, expected: str) -> None:
+    assert redact(text) == expected
+
+
+@pytest.mark.parametrize("at", ["@", "%40"], ids=["at-sign", "url-encoded"])
+def test_email_walk_back_is_linear(at: str) -> None:
+    # "%40" emails contain no @ to stop the walk, so only the previous match's end bounds it.
+    hostile = "x" * 50_000 + f"{at}a.co" * 10_000
+    started = time.perf_counter()
+    redact(hostile)
+    assert time.perf_counter() - started < 5.0
+
+
+MINUS, EM_DASH, MIDDOT, HANGUL_FILLER, BRAILLE_BLANK = "\u2212", "\u2014", "\u00b7", "\u3164", "\u2800"
+
+
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        (f"id 9999{MINUS}0000{MINUS}0125", "id [AADHAAR]"),
+        (f"id 9999{EM_DASH}0000{EM_DASH}0125", "id [AADHAAR]"),
+        (f"id 9999{MIDDOT}0000{MIDDOT}0125", "id [AADHAAR]"),
+        ("id 9999_0000_0125", "id [AADHAAR]"),
+        ("id 9999, 0000, 0125", "id [AADHAAR]"),
+        ("id 9999 - 0000 - 0125", "id [AADHAAR]"),
+        (f"id 9999{HANGUL_FILLER}0000{BRAILLE_BLANK}0125", "id [AADHAAR]"),
+        ("call 9000 0000 01", "call [MOBILE]"),
+        ("call 90 000 00 001", "call [MOBILE]"),
+        ("call 90000_00001", "call [MOBILE]"),
+        ("call 90000 - 00001", "call [MOBILE]"),
+        (f"call 90000{MINUS}00001", "call [MOBILE]"),
+        ("PAN ABCDE.1234.F", "PAN [PAN]"),
+    ],
+)
+def test_more_separator_variants_do_not_hide_a_value(text: str, expected: str) -> None:
+    assert redact(text) == expected

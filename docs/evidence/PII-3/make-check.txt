@@ -1,0 +1,17 @@
+113 passed, 67 subtests passed in 0.21s
+NX   Successfully ran target lint for 17 projects
+Cache:             15/17 hit (88%)
+NX   Successfully ran target typecheck for 17 projects
+Cache:             15/17 hit (88%)
+Required test coverage of 80% reached. Total coverage: 100.00%
+Required test coverage of 80% reached. Total coverage: 100.00%
+Required test coverage of 80% reached. Total coverage: 100.00%
+Required test coverage of 80% reached. Total coverage: 100.00%
+Required test coverage of 80% reached. Total coverage: 100.00%
+Required test coverage of 80% reached. Total coverage: 100.00%
+Required test coverage of 80% reached. Total coverage: 100.00%
+Required test coverage of 80% reached. Total coverage: 100.00%
+Required test coverage of 80% reached. Total coverage: 100.00%
+NX   Successfully ran target test for 17 projects
+Cache:             15/17 hit (88%)
+make check: all passed

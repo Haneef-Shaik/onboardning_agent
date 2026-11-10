@@ -1,0 +1,17 @@
+FAILED libs/py-guardrails/tests/pii/test_detectors.py::test_email_walk_back_and_bank_gaps[account\n\n000111222333-account\n\n[BANK_ACCOUNT]]
+FAILED libs/py-guardrails/tests/pii/test_detectors.py::test_email_walk_back_and_bank_gaps[see http://site/path/jane@example.com-see http://site/path/[EMAIL]]
+FAILED libs/py-guardrails/tests/pii/test_detectors.py::test_email_walk_back_is_linear
+FAILED libs/py-guardrails/tests/pii/test_detectors.py::test_more_separator_variants_do_not_hide_a_value[id 9999\u22120000\u22120125-id [AADHAAR]]
+FAILED libs/py-guardrails/tests/pii/test_detectors.py::test_more_separator_variants_do_not_hide_a_value[id 9999\u20140000\u20140125-id [AADHAAR]]
+FAILED libs/py-guardrails/tests/pii/test_detectors.py::test_more_separator_variants_do_not_hide_a_value[id 9999\xb70000\xb70125-id [AADHAAR]]
+FAILED libs/py-guardrails/tests/pii/test_detectors.py::test_more_separator_variants_do_not_hide_a_value[id 9999_0000_0125-id [AADHAAR]]
+FAILED libs/py-guardrails/tests/pii/test_detectors.py::test_more_separator_variants_do_not_hide_a_value[id 9999, 0000, 0125-id [AADHAAR]]
+FAILED libs/py-guardrails/tests/pii/test_detectors.py::test_more_separator_variants_do_not_hide_a_value[id 9999 - 0000 - 0125-id [AADHAAR]]
+FAILED libs/py-guardrails/tests/pii/test_detectors.py::test_more_separator_variants_do_not_hide_a_value[id 9999\u31640000\u28000125-id [AADHAAR]]
+FAILED libs/py-guardrails/tests/pii/test_detectors.py::test_more_separator_variants_do_not_hide_a_value[call 9000 0000 01-call [MOBILE]]
+FAILED libs/py-guardrails/tests/pii/test_detectors.py::test_more_separator_variants_do_not_hide_a_value[call 90 000 00 001-call [MOBILE]]
+FAILED libs/py-guardrails/tests/pii/test_detectors.py::test_more_separator_variants_do_not_hide_a_value[call 90000_00001-call [MOBILE]]
+FAILED libs/py-guardrails/tests/pii/test_detectors.py::test_more_separator_variants_do_not_hide_a_value[call 90000 - 00001-call [MOBILE]]
+FAILED libs/py-guardrails/tests/pii/test_detectors.py::test_more_separator_variants_do_not_hide_a_value[call 90000\u221200001-call [MOBILE]]
+FAILED libs/py-guardrails/tests/pii/test_detectors.py::test_more_separator_variants_do_not_hide_a_value[PAN ABCDE.1234.F-PAN [PAN]]
+16 failed, 1 passed, 63 deselected in 14.63s

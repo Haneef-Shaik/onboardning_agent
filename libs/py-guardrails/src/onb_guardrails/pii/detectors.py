@@ -68,8 +68,11 @@ _PRIORITY: Final = (
 )
 _RANK: Final = {kind: rank for rank, kind in enumerate(_PRIORITY)}
 
-_GAP: Final = r"[\s.\-/]{0,2}"  # between Aadhaar groups: none, or up to two separator characters
-_SEP: Final = r"[\s.\-/()]{1,2}"  # between mobile groups
+# Any short run of characters that are neither ASCII letters nor digits separates digit groups: spaces,
+# dots, hyphens, Unicode minus and dashes, underscores, commas, brackets, " - ". Verhoeff gates Aadhaar.
+_NON_ALNUM: Final = r"[^0-9A-Za-z]"
+_GAP: Final = rf"{_NON_ALNUM}{{0,3}}"  # between Aadhaar groups
+_SEP: Final = rf"{_NON_ALNUM}{{1,3}}"  # between mobile groups
 _AADHAAR: Final = re.compile(
     rf"(?<![0-9])(?=([0-9]{{4}}{_GAP}[0-9]{{4}}{_GAP}[0-9]{{4}})(?![0-9]))",
     re.ASCII,
@@ -80,41 +83,51 @@ _MOBILE_BODY: Final = (
     rf"|[0-9]{{4}}{_SEP}[0-9]{{5}}"  # 98765 43210
     rf"|[0-9]{{2}}{_SEP}[0-9]{{3}}{_SEP}[0-9]{{4}}"  # 987 654 3210
     rf"|[0-9]{{3}}{_SEP}[0-9]{{3}}{_SEP}[0-9]{{3}}"  # 9876 543 210
-    r"|[0-9]([ .\-])[0-9]{2}\2[0-9]{2}\2[0-9]{2}\2[0-9]{2}"  # 98 76 54 32 10 (one separator)
+    rf"|[0-9]{{3}}{_SEP}[0-9]{{4}}{_SEP}[0-9]{{2}}"  # 9876 5432 10
+    rf"|[0-9]{_SEP}[0-9]{{3}}{_SEP}[0-9]{{2}}{_SEP}[0-9]{{3}}"  # 98 765 43 210
+    rf"|[0-9]({_NON_ALNUM})[0-9]{{2}}\2[0-9]{{2}}\2[0-9]{{2}}\2[0-9]{{2}}"  # 98 76 54 32 10 (one separator)
     r")"
 )
 _MOBILE: Final = re.compile(
-    rf"(?<![0-9])(?=((?:(?:\+?91|0)[\s.\-()]{{0,2}})?{_MOBILE_BODY})(?![0-9]))",
+    rf"(?<![0-9])(?=((?:(?:(?:00|\+)?91|0){_NON_ALNUM}{{0,3}})?{_MOBILE_BODY})(?![0-9]))",
     re.ASCII,
 )
-# Compact PAN in any case; an upper-case PAN may also be spaced, or glued to the word after it.
+# Compact PAN in any case; an upper-case PAN may also be separated, or glued to the word after it.
 _PAN_ANY_CASE: Final = re.compile(r"(?<![A-Za-z0-9])[A-Z]{5}[0-9]{4}[A-Z](?![A-Za-z0-9])", re.ASCII | re.IGNORECASE)
-_PAN_UPPER: Final = re.compile(r"(?<![A-Za-z0-9])[A-Z]{5}[ \-]?[0-9]{4}[ \-]?[A-Z](?![0-9])", re.ASCII)
+_PAN_UPPER: Final = re.compile(
+    rf"(?<![A-Za-z0-9])[A-Z]{{5}}{_NON_ALNUM}{{0,2}}[0-9]{{4}}{_NON_ALNUM}{{0,2}}[A-Z](?![0-9])", re.ASCII
+)
 _IFSC: Final = re.compile(r"(?<![A-Za-z0-9])[A-Z]{4}0[A-Z0-9]{6}(?![A-Za-z0-9])", re.ASCII | re.IGNORECASE)
 # Unicode local parts and domains (IDN); "%40" is a URL-encoded @. Bounded quantifiers keep it linear.
 _EMAIL: Final = re.compile(
     r"[\w.%+\-]{1,64}(?:@|%40)(?:[^\W_](?:[\w\-]{0,61}[^\W_])?\.){1,8}[^\W\d_]{2,24}(?![^\W_])",
 )
-_LOCAL_PART_STOP: Final = frozenset(" <>()[]{}\"'`,;:|\\")
+_LOCAL_PART_STOP: Final = frozenset(" <>()[]{}\"'`,;:|\\@/")
 # A bare 9-18 digit run is too common to call an account number; it needs an account keyword before it.
 _BANK_ACCOUNT: Final = re.compile(
     r"\b(?:a/c|acc(?:oun)?t|acc)\b\.?"
-    r"(?:[ \t]{0,3}(?:no|number|num)\b\.?|[ \t]{0,3}\#)?(?:[ \t]{1,3}is)?[ \t]{0,3}[:#\-]?[ \t]{0,3}"
+    r"(?:\s{0,3}(?:no|number|num)\b\.?|\s{0,3}\#)?(?:\s{1,3}is)?\s{0,3}[:#\-]?\s{0,3}"
     rf"([0-9](?:[ \-]?[0-9]){{{BANK_ACCOUNT_MIN_DIGITS - 1},{BANK_ACCOUNT_MAX_DIGITS - 1}}})(?![0-9])",
     re.ASCII | re.IGNORECASE,
 )
 
 
-def _email_start(text: str, start: int) -> int:
-    """Extend an email match left over the rest of its local part (past the 64 characters matched)."""
-    while start > 0 and not text[start - 1].isspace() and text[start - 1] not in _LOCAL_PART_STOP:
+def _email_start(text: str, start: int, floor: int) -> int:
+    """Extend an email match left over the rest of its local part (past the 64 characters matched).
+
+    The walk stops at a delimiter, an ``@`` or ``/``, or ``floor`` (the end of the previous email), so the
+    walks cover disjoint text and the whole scan stays linear.
+    """
+    while start > floor and not text[start - 1].isspace() and text[start - 1] not in _LOCAL_PART_STOP:
         start -= 1
     return start
 
 
 def _candidates(text: str) -> Iterator[PiiSpan]:
+    floor = 0
     for m in _EMAIL.finditer(text):
-        yield PiiSpan(PiiType.EMAIL, _email_start(text, m.start()), m.end())
+        yield PiiSpan(PiiType.EMAIL, _email_start(text, m.start(), floor), m.end())
+        floor = m.end()
     for m in _AADHAAR.finditer(text):
         if aadhaar_digits_are_valid(re.sub(r"[^0-9]", "", m.group(1))):
             yield PiiSpan(PiiType.AADHAAR, m.start(1), m.end(1))
