@@ -3,7 +3,18 @@ name = "onb-evals"
 version = "0.1.0"
 description = "Deterministic eval harness"
 requires-python = ">=3.12,<3.13"
-dependencies = []
+dependencies = [
+  "langchain-core>=1.0,<2",
+  "onb-crypto",
+  "onb-data",
+  "onb-guardrails",
+  "onb-llm",
+  "onb-telemetry",
+  "opentelemetry-api>=1.45,<2",
+  "opentelemetry-sdk>=1.45,<2",
+  "pydantic>=2.9,<3",
+  "pymongo>=4.10,<5",
+]
 
 [build-system]
 requires = ["hatchling>=1.25"]
@@ -11,3 +22,10 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/onb_evals"]
+
+[tool.uv.sources]
+onb-crypto = { workspace = true }
+onb-data = { workspace = true }
+onb-guardrails = { workspace = true }
+onb-llm = { workspace = true }
+onb-telemetry = { workspace = true }

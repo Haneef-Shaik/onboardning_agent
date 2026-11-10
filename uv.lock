@@ -934,6 +934,32 @@ requires-dist = [{ name = "pymongo", specifier = ">=4.10,<5" }]
 name = "onb-evals"
 version = "0.1.0"
 source = { editable = "libs/py-evals" }
+dependencies = [
+    { name = "langchain-core" },
+    { name = "onb-crypto" },
+    { name = "onb-data" },
+    { name = "onb-guardrails" },
+    { name = "onb-llm" },
+    { name = "onb-telemetry" },
+    { name = "opentelemetry-api" },
+    { name = "opentelemetry-sdk" },
+    { name = "pydantic" },
+    { name = "pymongo" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "langchain-core", specifier = ">=1.0,<2" },
+    { name = "onb-crypto", editable = "libs/py-crypto" },
+    { name = "onb-data", editable = "libs/py-data" },
+    { name = "onb-guardrails", editable = "libs/py-guardrails" },
+    { name = "onb-llm", editable = "libs/py-llm" },
+    { name = "onb-telemetry", editable = "libs/py-telemetry" },
+    { name = "opentelemetry-api", specifier = ">=1.45,<2" },
+    { name = "opentelemetry-sdk", specifier = ">=1.45,<2" },
+    { name = "pydantic", specifier = ">=2.9,<3" },
+    { name = "pymongo", specifier = ">=4.10,<5" },
+]
 
 [[package]]
 name = "onb-eventbus"
