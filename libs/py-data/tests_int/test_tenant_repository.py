@@ -12,6 +12,7 @@ import asyncio
 import os
 import uuid
 from collections.abc import Awaitable, Callable, Coroutine, Iterator
+from contextlib import AbstractContextManager
 from typing import Any
 from urllib.parse import quote_plus
 
@@ -21,6 +22,8 @@ from pymongo import MongoClient
 from pymongo.errors import DuplicateKeyError
 
 Client = MongoClient[dict[str, object]]
+# The `unscoped` fixture from conftest (T-2): `with unscoped("why"):` for a root read-back across orgs.
+Unscoped = Callable[[str], AbstractContextManager[None]]
 ORG_A = "org_alpha"
 ORG_B = "org_beta"
 COLLECTION = "hires"
@@ -84,14 +87,15 @@ def test_the_operation_list_matches_the_repository() -> None:
 
 @pytest.mark.parametrize("name", sorted(OPERATIONS))
 def test_every_operation_raises_without_a_context_and_changes_nothing(
-    name: str, scratch: tuple[str, str], root_client: Client
+    name: str, scratch: tuple[str, str], root_client: Client, unscoped: Unscoped
 ) -> None:
     async def body(store: DataStore) -> None:
         with pytest.raises(NoTenantContextError):
             await OPERATIONS[name](store.tenant(COLLECTION))
 
     with_store(scratch, body)
-    docs = list(root_client[scratch[1]][COLLECTION].find({}, sort=[("_id", 1)]))
+    with unscoped("root read-back of both orgs proves nothing changed"):
+        docs = list(root_client[scratch[1]][COLLECTION].find({}, sort=[("_id", 1)]))
     assert [d["_id"] for d in docs] == ["a1", "a2", "b1", "b2"]
     assert all(d["name"] != "x" for d in docs)
 
@@ -130,7 +134,9 @@ def test_an_aggregate_starting_with_sort_and_group_sees_only_the_own_org(scratch
     assert with_store(scratch, body) == [{"_id": ORG_A, "n": 2}]
 
 
-def test_a_foreign_id_is_not_found_for_get_update_and_delete(scratch: tuple[str, str], root_client: Client) -> None:
+def test_a_foreign_id_is_not_found_for_get_update_and_delete(
+    scratch: tuple[str, str], root_client: Client, unscoped: Unscoped
+) -> None:
     async def body(store: DataStore) -> list[BaseException]:
         repo = store.tenant(COLLECTION)
         raised: list[BaseException] = []
@@ -149,7 +155,9 @@ def test_a_foreign_id_is_not_found_for_get_update_and_delete(scratch: tuple[str,
     raised = with_store(scratch, body)
     assert len(raised) == 3
     assert not any(isinstance(err, PermissionError) for err in raised)
-    assert root_client[scratch[1]][COLLECTION].find_one({"_id": "b1"}) == {
+    with unscoped("root read-back by id proves the foreign document is unchanged"):
+        b1 = root_client[scratch[1]][COLLECTION].find_one({"_id": "b1"})
+    assert b1 == {
         "_id": "b1",
         "org_id": ORG_B,
         "name": "Bina",
@@ -157,7 +165,7 @@ def test_a_foreign_id_is_not_found_for_get_update_and_delete(scratch: tuple[str,
     }
 
 
-def test_writes_land_in_the_own_org_only(scratch: tuple[str, str], root_client: Client) -> None:
+def test_writes_land_in_the_own_org_only(scratch: tuple[str, str], root_client: Client, unscoped: Unscoped) -> None:
     async def body(store: DataStore) -> None:
         repo = store.tenant(COLLECTION)
         with tenant_scope(ORG_A):
@@ -170,14 +178,18 @@ def test_writes_land_in_the_own_org_only(scratch: tuple[str, str], root_client: 
 
     with_store(scratch, body)
     coll = root_client[scratch[1]][COLLECTION]
-    assert coll.find_one({"_id": "a3"}) == {"_id": "a3", "name": "Anil", "org_id": ORG_A, "flag": True}
-    assert coll.find_one({"_id": "a4"}) is None
+    with unscoped("root read-back by id, across orgs, proves where each write landed"):
+        a3, a4, b2 = (coll.find_one({"_id": doc_id}) for doc_id in ("a3", "a4", "b2"))
+    assert a3 == {"_id": "a3", "name": "Anil", "org_id": ORG_A, "flag": True}
+    assert a4 is None
     assert coll.count_documents({"org_id": ORG_A, "flag": True}) == 3
     assert coll.count_documents({"org_id": ORG_B, "flag": {"$exists": True}}) == 0
-    assert coll.find_one({"_id": "b2"}) == {"_id": "b2", "org_id": ORG_B, "name": "Bala", "rank": 0}
+    assert b2 == {"_id": "b2", "org_id": ORG_B, "name": "Bala", "rank": 0}
 
 
-def test_an_upsert_creates_the_document_in_the_own_org(scratch: tuple[str, str], root_client: Client) -> None:
+def test_an_upsert_creates_the_document_in_the_own_org(
+    scratch: tuple[str, str], root_client: Client, unscoped: Unscoped
+) -> None:
     async def body(store: DataStore) -> object:
         with tenant_scope(ORG_B):
             outcome = await store.tenant(COLLECTION).update_one(
@@ -186,7 +198,8 @@ def test_an_upsert_creates_the_document_in_the_own_org(scratch: tuple[str, str],
         return outcome.upserted_id
 
     upserted_id = with_store(scratch, body)
-    created = root_client[scratch[1]][COLLECTION].find_one({"_id": upserted_id})
+    with unscoped("root read-back by id, without assuming the org, proves where the upsert landed"):
+        created = root_client[scratch[1]][COLLECTION].find_one({"_id": upserted_id})
     assert created is not None
     assert (created["org_id"], created["email_hash"], created["name"], created["rank"]) == (ORG_B, "h_new", "Bhanu", 9)
 

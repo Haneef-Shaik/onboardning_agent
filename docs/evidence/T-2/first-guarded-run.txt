@@ -1,0 +1,60 @@
+E             - unscoped aggregate on it_f2_df86b5b12247.onboarding_runs: aggregate does not start with a $match on org_id
+E             - unscoped aggregate on it_f2_df86b5b12247.events: aggregate does not start with a $match on org_id
+ERROR    onb_data.safety_net:safety_net.py:244 tenant safety net: unscoped aggregate on it_f2_df86b5b12247.onboarding_runs: aggregate does not start with a $match on org_id
+ERROR    onb_data.safety_net:safety_net.py:244 tenant safety net: unscoped aggregate on it_f2_df86b5b12247.events: aggregate does not start with a $match on org_id
+E             - unscoped aggregate on it_f2_5bb59e3be20d.onboarding_runs: aggregate does not start with a $match on org_id
+E             - unscoped aggregate on it_f2_5bb59e3be20d.events: aggregate does not start with a $match on org_id
+ERROR    onb_data.safety_net:safety_net.py:244 tenant safety net: unscoped aggregate on it_f2_5bb59e3be20d.onboarding_runs: aggregate does not start with a $match on org_id
+ERROR    onb_data.safety_net:safety_net.py:244 tenant safety net: unscoped aggregate on it_f2_5bb59e3be20d.events: aggregate does not start with a $match on org_id
+E             - unscoped find on it_t1_31e25f46aa32.hires: find filter has no org_id equality
+ERROR    onb_data.safety_net:safety_net.py:244 tenant safety net: unscoped find on it_t1_31e25f46aa32.hires: find filter has no org_id equality
+E             - unscoped find on it_t1_e628a43f3b44.hires: find filter has no org_id equality
+ERROR    onb_data.safety_net:safety_net.py:244 tenant safety net: unscoped find on it_t1_e628a43f3b44.hires: find filter has no org_id equality
+E             - unscoped find on it_t1_96df10ec6107.hires: find filter has no org_id equality
+ERROR    onb_data.safety_net:safety_net.py:244 tenant safety net: unscoped find on it_t1_96df10ec6107.hires: find filter has no org_id equality
+E             - unscoped find on it_t1_4aba15b95021.hires: find filter has no org_id equality
+ERROR    onb_data.safety_net:safety_net.py:244 tenant safety net: unscoped find on it_t1_4aba15b95021.hires: find filter has no org_id equality
+E             - unscoped find on it_t1_1ed056ddec33.hires: find filter has no org_id equality
+ERROR    onb_data.safety_net:safety_net.py:244 tenant safety net: unscoped find on it_t1_1ed056ddec33.hires: find filter has no org_id equality
+E             - unscoped find on it_t1_21cfa9b0fc57.hires: find filter has no org_id equality
+ERROR    onb_data.safety_net:safety_net.py:244 tenant safety net: unscoped find on it_t1_21cfa9b0fc57.hires: find filter has no org_id equality
+E             - unscoped find on it_t1_b7defe94fa31.hires: find filter has no org_id equality
+ERROR    onb_data.safety_net:safety_net.py:244 tenant safety net: unscoped find on it_t1_b7defe94fa31.hires: find filter has no org_id equality
+E             - unscoped find on it_t1_7b989a1ad3ae.hires: find filter has no org_id equality
+ERROR    onb_data.safety_net:safety_net.py:244 tenant safety net: unscoped find on it_t1_7b989a1ad3ae.hires: find filter has no org_id equality
+E             - unscoped find on it_t1_6e4459a0e875.hires: find filter has no org_id equality
+ERROR    onb_data.safety_net:safety_net.py:244 tenant safety net: unscoped find on it_t1_6e4459a0e875.hires: find filter has no org_id equality
+E             - unscoped find on it_t1_bf06fd3d581c.hires: find filter has no org_id equality
+ERROR    onb_data.safety_net:safety_net.py:244 tenant safety net: unscoped find on it_t1_bf06fd3d581c.hires: find filter has no org_id equality
+E             - unscoped find on it_t1_68b18a9f7143.hires: find filter has no org_id equality
+ERROR    onb_data.safety_net:safety_net.py:244 tenant safety net: unscoped find on it_t1_68b18a9f7143.hires: find filter has no org_id equality
+E             - unscoped find on it_t1_2906656916f3.hires: find filter has no org_id equality
+ERROR    onb_data.safety_net:safety_net.py:244 tenant safety net: unscoped find on it_t1_2906656916f3.hires: find filter has no org_id equality
+E             - unscoped find on it_t1_27937bbe9ba2.hires: find filter has no org_id equality
+ERROR    onb_data.safety_net:safety_net.py:244 tenant safety net: unscoped find on it_t1_27937bbe9ba2.hires: find filter has no org_id equality
+E             - unscoped find on it_t1_8b803eec9a5f.hires: find filter has no org_id equality
+E             - unscoped find on it_t1_8b803eec9a5f.hires: find filter has no org_id equality
+E             - unscoped find on it_t1_8b803eec9a5f.hires: find filter has no org_id equality
+ERROR    onb_data.safety_net:safety_net.py:244 tenant safety net: unscoped find on it_t1_8b803eec9a5f.hires: find filter has no org_id equality
+ERROR    onb_data.safety_net:safety_net.py:244 tenant safety net: unscoped find on it_t1_8b803eec9a5f.hires: find filter has no org_id equality
+ERROR    onb_data.safety_net:safety_net.py:244 tenant safety net: unscoped find on it_t1_8b803eec9a5f.hires: find filter has no org_id equality
+E             - unscoped find on it_t1_f5ee8b78fc3e.hires: find filter has no org_id equality
+ERROR    onb_data.safety_net:safety_net.py:244 tenant safety net: unscoped find on it_t1_f5ee8b78fc3e.hires: find filter has no org_id equality
+ERROR libs/py-data/tests_int/test_compose_mongo_transaction.py::test_multi_document_transaction_commits
+ERROR libs/py-data/tests_int/test_compose_mongo_transaction.py::test_aborted_transaction_writes_nothing
+ERROR libs/py-data/tests_int/test_tenant_repository.py::test_every_operation_raises_without_a_context_and_changes_nothing[aggregate]
+ERROR libs/py-data/tests_int/test_tenant_repository.py::test_every_operation_raises_without_a_context_and_changes_nothing[count]
+ERROR libs/py-data/tests_int/test_tenant_repository.py::test_every_operation_raises_without_a_context_and_changes_nothing[delete_by_id]
+ERROR libs/py-data/tests_int/test_tenant_repository.py::test_every_operation_raises_without_a_context_and_changes_nothing[delete_one]
+ERROR libs/py-data/tests_int/test_tenant_repository.py::test_every_operation_raises_without_a_context_and_changes_nothing[find]
+ERROR libs/py-data/tests_int/test_tenant_repository.py::test_every_operation_raises_without_a_context_and_changes_nothing[find_one]
+ERROR libs/py-data/tests_int/test_tenant_repository.py::test_every_operation_raises_without_a_context_and_changes_nothing[get]
+ERROR libs/py-data/tests_int/test_tenant_repository.py::test_every_operation_raises_without_a_context_and_changes_nothing[insert_many]
+ERROR libs/py-data/tests_int/test_tenant_repository.py::test_every_operation_raises_without_a_context_and_changes_nothing[insert_one]
+ERROR libs/py-data/tests_int/test_tenant_repository.py::test_every_operation_raises_without_a_context_and_changes_nothing[update_by_id]
+ERROR libs/py-data/tests_int/test_tenant_repository.py::test_every_operation_raises_without_a_context_and_changes_nothing[update_many]
+ERROR libs/py-data/tests_int/test_tenant_repository.py::test_every_operation_raises_without_a_context_and_changes_nothing[update_one]
+ERROR libs/py-data/tests_int/test_tenant_repository.py::test_a_foreign_id_is_not_found_for_get_update_and_delete
+ERROR libs/py-data/tests_int/test_tenant_repository.py::test_writes_land_in_the_own_org_only
+ERROR libs/py-data/tests_int/test_tenant_repository.py::test_an_upsert_creates_the_document_in_the_own_org
+33 passed, 1 warning, 17 errors in 4.89s

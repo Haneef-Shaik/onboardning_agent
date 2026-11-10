@@ -1,0 +1,14 @@
+E       fixture 'tenant_safety_net' not found
+E       fixture 'tenant_safety_net' not found
+E       fixture 'tenant_safety_net' not found
+E       fixture 'tenant_safety_net' not found
+E       fixture 'tenant_safety_net' not found
+E       fixture 'tenant_safety_net' not found
+ERROR libs/py-data/tests_int/test_safety_net.py::test_the_listener_is_registered_globally_before_any_client
+ERROR libs/py-data/tests_int/test_safety_net.py::test_a_client_made_inside_a_test_reports_to_the_listener
+ERROR libs/py-data/tests_int/test_safety_net.py::test_scoped_repository_traffic_is_not_flagged
+ERROR libs/py-data/tests_int/test_safety_net.py::test_an_unscoped_find_through_a_leaked_client_trips_the_listener
+ERROR libs/py-data/tests_int/test_safety_net.py::test_an_unscoped_find_through_a_raw_client_trips_the_listener
+ERROR libs/py-data/tests_int/test_tenant_indexes.py::test_the_index_check_catches_a_tenant_index_not_led_by_org_id
+FAILED libs/py-data/tests_int/test_safety_net.py::test_every_integration_test_runs_under_the_safety_net_guard
+1 failed, 26 passed, 1 warning, 6 errors in 3.77s

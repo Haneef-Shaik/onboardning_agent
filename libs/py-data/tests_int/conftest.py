@@ -9,11 +9,13 @@ from __future__ import annotations
 
 import os
 import subprocess
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
+from contextlib import AbstractContextManager
 from pathlib import Path
 from urllib.parse import quote_plus
 
 import pytest
+from onb_data.safety_net import TenantCommandListener, install_safety_net
 from pymongo import MongoClient
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -21,6 +23,35 @@ ROOT = Path(__file__).resolve().parents[3]
 SOCAT_IMAGE = "alpine/socat:1.8.1.3@sha256:e8a6e8868a8e6e01d9c2c321a8f8d4474d2d741d962462e5c5a124a8e66a0055"
 # Label value = the stack's network, so cleanup never touches another compose project's tunnel.
 TUNNEL_LABEL_KEY = "onb.test.mongo-tunnel"
+
+
+def pytest_configure(config: pytest.Config) -> None:
+    """T-2 safety net (PRD §7.9): one global command listener, registered before any client exists,
+    so every client any test builds (repository store, root, raw, leaked) reports to it."""
+    install_safety_net()
+
+
+@pytest.fixture(scope="session")
+def tenant_safety_net() -> TenantCommandListener:
+    return install_safety_net()
+
+
+@pytest.fixture(autouse=True)
+def tenant_safety_net_guard(tenant_safety_net: TenantCommandListener) -> Iterator[None]:
+    """Fails the test (at setup or teardown) if any unscoped command on a tenant collection was sent.
+
+    A test that sends one on purpose drains it (`tenant_safety_net.drain()` or `.check()`); a test's
+    deliberate root read-back wraps itself in `unscoped(reason)`.
+    """
+    tenant_safety_net.check()
+    yield
+    tenant_safety_net.check()
+
+
+@pytest.fixture
+def unscoped(tenant_safety_net: TenantCommandListener) -> Callable[[str], AbstractContextManager[None]]:
+    """`with unscoped("why"):` lets a test read back as root across orgs to check isolation."""
+    return tenant_safety_net.allowing_unscoped
 
 
 def _run(*args: str) -> str:
