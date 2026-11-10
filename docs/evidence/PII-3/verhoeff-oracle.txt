@@ -1,0 +1,18 @@
+method: python-stdnum stdnum.verhoeff as an independent oracle; seed 310; n=10000 random
+          2363  stdnum.verhoeff=True   ours=True   stdnum.aadhaar=False  ours_aadhaar=False
+             0  stdnum.verhoeff=True   ours=True   stdnum.aadhaar=False  ours_aadhaar=False
+  999900001231  stdnum.verhoeff=True   ours=True   stdnum.aadhaar=True   ours_aadhaar=True 
+  334249855769  stdnum.verhoeff=True   ours=True   stdnum.aadhaar=True   ours_aadhaar=True 
+  529425329254  stdnum.verhoeff=True   ours=True   stdnum.aadhaar=True   ours_aadhaar=True 
+  917072196529  stdnum.verhoeff=True   ours=True   stdnum.aadhaar=True   ours_aadhaar=True 
+  200684941428  stdnum.verhoeff=True   ours=True   stdnum.aadhaar=True   ours_aadhaar=True 
+          2364  stdnum.verhoeff=False  ours=False  stdnum.aadhaar=False  ours_aadhaar=False
+          2336  stdnum.verhoeff=False  ours=False  stdnum.aadhaar=False  ours_aadhaar=False
+             1  stdnum.verhoeff=False  ours=False  stdnum.aadhaar=False  ours_aadhaar=False
+  334249855760  stdnum.verhoeff=False  ours=False  stdnum.aadhaar=False  ours_aadhaar=False
+  848589512865  stdnum.verhoeff=False  ours=False  stdnum.aadhaar=False  ours_aadhaar=False
+  509921984961  stdnum.verhoeff=False  ours=False  stdnum.aadhaar=False  ours_aadhaar=False
+  334249855766  stdnum.verhoeff=False  ours=False  stdnum.aadhaar=False  ours_aadhaar=False
+  023456789014  stdnum.verhoeff=True   ours=True   stdnum.aadhaar=False  ours_aadhaar=False
+  123456789010  stdnum.verhoeff=True   ours=True   stdnum.aadhaar=False  ours_aadhaar=False
+random mismatches: 0

@@ -1,0 +1,13 @@
+
+==================================== ERRORS ====================================
+_______ ERROR collecting libs/py-guardrails/tests/pii/test_validators.py _______
+ImportError while importing test module '/Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-pii-3/libs/py-guardrails/tests/pii/test_validators.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+libs/py-guardrails/tests/pii/test_validators.py:9: in <module>
+    from onb_guardrails.pii import (
+E   ImportError: cannot import name 'is_valid_aadhaar' from 'onb_guardrails.pii' (unknown location)
+=========================== short test summary info ============================
+ERROR libs/py-guardrails/tests/pii/test_validators.py
+!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+1 error in 0.03s
