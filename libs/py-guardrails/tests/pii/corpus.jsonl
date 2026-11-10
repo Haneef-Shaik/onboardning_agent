@@ -1,0 +1,82 @@
+{"id": "pos-aadhaar-spaced", "text": "My Aadhaar is 3342 4985 5769", "pii": [["AADHAAR", "3342 4985 5769"]]}
+{"id": "pos-aadhaar-plain", "text": "aadhaar: 529425329254", "pii": [["AADHAAR", "529425329254"]]}
+{"id": "pos-aadhaar-hyphen", "text": "UID 2006-8494-1428 attached", "pii": [["AADHAAR", "2006-8494-1428"]]}
+{"id": "pos-aadhaar-91-trap", "text": "Aadhaar 917219206868 please verify", "pii": [["AADHAAR", "917219206868"]]}
+{"id": "pos-aadhaar-91-trap-spaced", "text": "aadhaar 9172 4034 2939", "pii": [["AADHAAR", "9172 4034 2939"]]}
+{"id": "pos-aadhaar-seed", "text": "Aadhaar on file: 9999 0000 1231.", "pii": [["AADHAAR", "9999 0000 1231"]]}
+{"id": "pos-aadhaar-whole-text", "text": "334249855769", "pii": [["AADHAAR", "334249855769"]]}
+{"id": "pos-aadhaar-letters-after", "text": "ref529425329254abc", "pii": [["AADHAAR", "529425329254"]]}
+{"id": "pos-aadhaar-comma", "text": "aadhaar 6257 4019 3607, thanks", "pii": [["AADHAAR", "6257 4019 3607"]]}
+{"id": "pos-aadhaar-devanagari-context", "text": "आधार 8245 4367 3370 है", "pii": [["AADHAAR", "8245 4367 3370"]]}
+{"id": "pos-aadhaar-after-group", "text": "card 1111 3342 4985 5769", "pii": [["AADHAAR", "3342 4985 5769"]]}
+{"id": "pos-pan", "text": "PAN ABCDE1234F", "pii": [["PAN", "ABCDE1234F"]]}
+{"id": "pos-pan-lower", "text": "pan no is abcde1234f", "pii": [["PAN", "abcde1234f"]]}
+{"id": "pos-pan-period", "text": "PAN:AAAPZ9999Z.", "pii": [["PAN", "AAAPZ9999Z"]]}
+{"id": "pos-pan-parens", "text": "(PAN BNZPM2501F)", "pii": [["PAN", "BNZPM2501F"]]}
+{"id": "pos-pan-tab", "text": "PAN\tABCDE1234F", "pii": [["PAN", "ABCDE1234F"]]}
+{"id": "pos-ifsc", "text": "IFSC TEST0000001", "pii": [["IFSC", "TEST0000001"]]}
+{"id": "pos-ifsc-lower", "text": "ifsc code hdfc0001234", "pii": [["IFSC", "hdfc0001234"]]}
+{"id": "pos-ifsc-alnum", "text": "Branch IFSC: SBIN0ABC123, Pune", "pii": [["IFSC", "SBIN0ABC123"]]}
+{"id": "pos-mobile-plus91-split", "text": "Mobile +91 90000 00001", "pii": [["MOBILE", "90000 00001"]]}
+{"id": "pos-mobile-plain", "text": "call me on 9000000002", "pii": [["MOBILE", "9000000002"]]}
+{"id": "pos-mobile-plus91", "text": "+919000000003", "pii": [["MOBILE", "9000000003"]]}
+{"id": "pos-mobile-hyphen", "text": "+91-90000-00004 (home)", "pii": [["MOBILE", "90000-00004"]]}
+{"id": "pos-mobile-zero", "text": "tel 09000000005", "pii": [["MOBILE", "9000000005"]]}
+{"id": "pos-mobile-colon", "text": "ph:7000000006", "pii": [["MOBILE", "7000000006"]]}
+{"id": "pos-mobile-period", "text": "WhatsApp 8000000007.", "pii": [["MOBILE", "8000000007"]]}
+{"id": "pos-mobile-two", "text": "6000000008/6000000009", "pii": [["MOBILE", "6000000008"], ["MOBILE", "6000000009"]]}
+{"id": "pos-mobile-split", "text": "Mobile 90000 00010", "pii": [["MOBILE", "90000 00010"]]}
+{"id": "pos-mobile-parens", "text": "(9000000013)", "pii": [["MOBILE", "9000000013"]]}
+{"id": "pos-mobile-plus91-space", "text": "+91 9000000015", "pii": [["MOBILE", "9000000015"]]}
+{"id": "pos-mobile-hindi", "text": "मेरा मोबाइल 9000000016 है", "pii": [["MOBILE", "9000000016"]]}
+{"id": "pos-mobile-colon-plus", "text": "Mobile:+91-9000000017", "pii": [["MOBILE", "9000000017"]]}
+{"id": "pos-mobile-upi", "text": "pay to 9000000011@ybl", "pii": [["MOBILE", "9000000011"]]}
+{"id": "pos-mobile-91-no-plus", "text": "whatsapp 919000000018", "pii": [["MOBILE", "9000000018"]]}
+{"id": "pos-email", "text": "priya.sharma@example.com", "pii": [["EMAIL", "priya.sharma@example.com"]]}
+{"id": "pos-email-plus-subdomain", "text": "Reach arjun.mehta+hr@mail.example.co.in today", "pii": [["EMAIL", "arjun.mehta+hr@mail.example.co.in"]]}
+{"id": "pos-email-angle", "text": "<meera.iyer@example.org>", "pii": [["EMAIL", "meera.iyer@example.org"]]}
+{"id": "pos-email-upper", "text": "EMAIL: ROHAN_K@EXAMPLE.COM", "pii": [["EMAIL", "ROHAN_K@EXAMPLE.COM"]]}
+{"id": "pos-email-digits", "text": "user123@example.in wrote", "pii": [["EMAIL", "user123@example.in"]]}
+{"id": "pos-bank", "text": "account number 000111222333", "pii": [["BANK_ACCOUNT", "000111222333"]]}
+{"id": "pos-bank-ac", "text": "A/c no: 123456789012345", "pii": [["BANK_ACCOUNT", "123456789012345"]]}
+{"id": "pos-bank-acct-hash", "text": "acct # 50100234567890", "pii": [["BANK_ACCOUNT", "50100234567890"]]}
+{"id": "pos-bank-9-digits", "text": "Account No. 987654321", "pii": [["BANK_ACCOUNT", "987654321"]]}
+{"id": "pos-bank-is", "text": "my account number is 4455667788990", "pii": [["BANK_ACCOUNT", "4455667788990"]]}
+{"id": "pos-mixed-four", "text": "Hi, I'm Priya (priya.sharma@example.com, +91 90000 00001), PAN ABCDE1234F, Aadhaar 9999 0000 1231.", "pii": [["EMAIL", "priya.sharma@example.com"], ["MOBILE", "90000 00001"], ["PAN", "ABCDE1234F"], ["AADHAAR", "9999 0000 1231"]]}
+{"id": "pos-mixed-bank", "text": "Bank: TEST0000001 / acc 000111222333", "pii": [["IFSC", "TEST0000001"], ["BANK_ACCOUNT", "000111222333"]]}
+{"id": "pos-multiline", "text": "Name: Kavya\nMobile: 9000000012\nEmail: kavya@example.net", "pii": [["MOBILE", "9000000012"], ["EMAIL", "kavya@example.net"]]}
+{"id": "pos-json", "text": "{\"mobile\": \"9000000014\", \"pan\": \"AAAPZ9999Z\"}", "pii": [["MOBILE", "9000000014"], ["PAN", "AAAPZ9999Z"]]}
+{"id": "pos-full-width-mobile", "text": "call ９０００００００１９", "pii": [["MOBILE", "９０００００００１９"]]}
+{"id": "pos-mixed-ifsc-mobile", "text": "IFSC hdfc0009999 mobile 7000000020", "pii": [["IFSC", "hdfc0009999"], ["MOBILE", "7000000020"]]}
+{"id": "neg-order-12-digits", "text": "Order ORD-848589512865 shipped", "pii": []}
+{"id": "neg-invoice-12-digits", "text": "Invoice 509921984961 is due", "pii": []}
+{"id": "neg-order-12-digits-grouped", "text": "Ref 3342 4985 5760", "pii": []}
+{"id": "neg-old-table-vector", "text": "Order 334249855766", "pii": []}
+{"id": "neg-aadhaar-leading-1", "text": "id 1234 5678 9010", "pii": []}
+{"id": "neg-aadhaar-leading-0", "text": "id 0234 5678 9014", "pii": []}
+{"id": "neg-pincode", "text": "Pincode 560001", "pii": []}
+{"id": "neg-toll-free", "text": "Call 1800 425 1234", "pii": []}
+{"id": "neg-landline", "text": "Landline 080-23456789", "pii": []}
+{"id": "neg-timestamp", "text": "Timestamp 1699999999", "pii": []}
+{"id": "neg-amount", "text": "Amount ₹1,23,456.00", "pii": []}
+{"id": "neg-date-time", "text": "Joining on 2026-11-10 at 10:30", "pii": []}
+{"id": "neg-pan-short", "text": "code ABCD1234F", "pii": []}
+{"id": "neg-pan-digit-end", "text": "code ABCDE12345", "pii": []}
+{"id": "neg-ifsc-no-zero", "text": "branch TEST1000001", "pii": []}
+{"id": "neg-email-localhost", "text": "user@localhost", "pii": []}
+{"id": "neg-token-ulid", "text": "recipient = ptk_01JD8X3Q7M9V2K4N6P8R0T2W4Y", "pii": []}
+{"id": "neg-token-seed", "text": "recipient = ptk_seed_acme001_mobile", "pii": []}
+{"id": "neg-mobile-starts-5", "text": "Phone 5000000001", "pii": []}
+{"id": "neg-employee-id", "text": "Employee id EMP-2026-0042", "pii": []}
+{"id": "neg-isbn", "text": "ISBN 978-3-16-148410-0", "pii": []}
+{"id": "neg-uuid", "text": "run 3f2b8c1e-9a7d-4e21-b0c4-5d6e7f8a9b0c", "pii": []}
+{"id": "neg-awb-13-digits", "text": "Tracking AWB 7712345678901", "pii": []}
+{"id": "neg-account-balance", "text": "Account balance 1234567890", "pii": []}
+{"id": "neg-account-year", "text": "account opened in 2019", "pii": []}
+{"id": "neg-zoom-id", "text": "The meeting id is 812 3456 7890", "pii": []}
+{"id": "neg-extension", "text": "Call extension 6123", "pii": []}
+{"id": "neg-room", "text": "Room 101, Floor 2", "pii": []}
+{"id": "neg-version", "text": "release v2.14.3 build 20261110", "pii": []}
+{"id": "neg-hard-order-10-digits", "text": "Order 9123456780 confirmed", "pii": []}
+{"id": "neg-hard-ifsc-shaped-word", "text": "SKU ABCD0EFGHIJ in stock", "pii": []}
+{"id": "neg-plain-prose", "text": "Please complete your laptop setup before Monday.", "pii": []}

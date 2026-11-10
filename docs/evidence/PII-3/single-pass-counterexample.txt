@@ -1,0 +1,15 @@
+Traceback (most recent call last):
+  File "/Users/Adya/.claude/jobs/9fe57049/tmp/single_pass_probe.py", line 22, in <module>
+    single_pass()
+  File "/Users/Adya/.claude/jobs/9fe57049/tmp/single_pass_probe.py", line 16, in single_pass
+    @given(prop._documents())
+                   ^^^
+  File "/Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-pii-3/.venv/lib/python3.12/site-packages/hypothesis/core.py", line 2334, in wrapped_test
+    raise the_error_hypothesis_found
+  File "/Users/Adya/.claude/jobs/9fe57049/tmp/single_pass_probe.py", line 19, in single_pass
+    assert detect(once) == (), (text, once, detect(once))
+           ^^^^^^^^^^^^^^^^^^
+AssertionError: ('account number 000000000AAAAA0000A', 'account number [BANK_ACCOUNT]AAAAA0000A', (PiiSpan(type=<PiiType.PAN: 'PAN'>, start=29, end=39),))
+Failing test case: single_pass(
+    text='account number 000000000AAAAA0000A',
+)

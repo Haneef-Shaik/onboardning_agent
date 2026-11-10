@@ -1,0 +1,29 @@
+
+==================================== ERRORS ====================================
+_________ ERROR collecting libs/py-guardrails/tests/pii/test_corpus.py _________
+ImportError while importing test module '/Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-pii-3/libs/py-guardrails/tests/pii/test_corpus.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+libs/py-guardrails/tests/pii/test_corpus.py:13: in <module>
+    from onb_guardrails.pii import PiiType, detect, redact
+E   ImportError: cannot import name 'PiiType' from 'onb_guardrails.pii' (/Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-pii-3/libs/py-guardrails/src/onb_guardrails/pii/__init__.py)
+_______ ERROR collecting libs/py-guardrails/tests/pii/test_detectors.py ________
+ImportError while importing test module '/Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-pii-3/libs/py-guardrails/tests/pii/test_detectors.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+libs/py-guardrails/tests/pii/test_detectors.py:7: in <module>
+    from onb_guardrails.pii import PiiSpan, PiiType, detect, redact
+E   ImportError: cannot import name 'PiiSpan' from 'onb_guardrails.pii' (/Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-pii-3/libs/py-guardrails/src/onb_guardrails/pii/__init__.py)
+____ ERROR collecting libs/py-guardrails/tests/pii/test_redact_property.py _____
+ImportError while importing test module '/Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-pii-3/libs/py-guardrails/tests/pii/test_redact_property.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+libs/py-guardrails/tests/pii/test_redact_property.py:10: in <module>
+    from onb_guardrails.pii import PiiType, detect, redact, verhoeff_check_digit
+E   ImportError: cannot import name 'PiiType' from 'onb_guardrails.pii' (/Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-pii-3/libs/py-guardrails/src/onb_guardrails/pii/__init__.py)
+=========================== short test summary info ============================
+ERROR libs/py-guardrails/tests/pii/test_corpus.py
+ERROR libs/py-guardrails/tests/pii/test_detectors.py
+ERROR libs/py-guardrails/tests/pii/test_redact_property.py
+!!!!!!!!!!!!!!!!!!! Interrupted: 3 errors during collection !!!!!!!!!!!!!!!!!!!!
+3 errors in 0.39s
