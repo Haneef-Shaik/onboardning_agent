@@ -1,0 +1,220 @@
+V1: forbidden operators no longer named: treated as merely unknown (box 1)
+    FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[where-top]
+    FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[where-in-or]
+    FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[where-in-count]
+    FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[where-in-match]
+    FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[where-in-update-filter]
+    FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[where-under-elemMatch]
+    FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[where-under-not]
+    FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[where-in-pull]
+    FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[expr-function]
+    FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[expr-function-nested]
+    FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[expr-function-in-match]
+    FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[function-in-addFields]
+    ... and 29 more
+    result: ['41 failed, 367 passed in 20.49s']
+    caught: True; restored byte-for-byte: True
+V2: $where put on the query allowlist and the denylist check removed (boxes 1-2)
+    FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[where-top]
+    FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[where-in-or]
+    FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[where-in-count]
+    FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[where-in-match]
+    FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[where-in-update-filter]
+    FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[where-under-elemMatch]
+    FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[where-under-not]
+    FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[where-in-pull]
+    FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[expr-function]
+    FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[expr-function-nested]
+    FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[expr-function-in-match]
+    FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[function-in-addFields]
+    ... and 32 more
+    result: ['44 failed, 364 passed in 17.25s']
+    caught: True; restored byte-for-byte: True
+V3: $expr contents not walked (boxes 1-2: $expr with JS)
+    FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[expr-function]
+    FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[expr-function-nested]
+    FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[expr-function-in-match]
+    FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[accumulator-in-expr]
+    FAILED apps/mcp-mongo/tests/test_validator.py::test_every_corpus_payload_is_rejected_with_its_named_reason[expr-function]
+    FAILED apps/mcp-mongo/tests/test_validator.py::test_every_corpus_payload_is_rejected_with_its_named_reason[expr-function-nested]
+    FAILED apps/mcp-mongo/tests/test_validator.py::test_every_corpus_payload_is_rejected_with_its_named_reason[expr-function-in-match]
+    FAILED apps/mcp-mongo/tests/test_validator.py::test_every_corpus_payload_is_rejected_with_its_named_reason[accumulator-in-expr]
+    FAILED apps/mcp-mongo/tests/test_validator_properties.py::test_a_mutated_filter_is_accepted_only_without_a_forbidden_operator
+    FAILED apps/mcp-mongo/tests/test_validator_properties.py::test_a_mutated_update_is_accepted_only_without_a_forbidden_operator_pii_or_org
+    result: ['10 failed, 398 passed in 15.59s']
+    caught: True; restored byte-for-byte: True
+V4: expression operators not checked against the allowlist (boxes 1-2)
+    FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[expr-function]
+    FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[expr-function-nested]
+    FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[expr-function-in-match]
+    FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[function-in-addFields]
+    FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[function-in-project]
+    FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[function-in-group-id]
+    FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[accumulator-in-expr]
+    FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[function-in-sum]
+    FAILED apps/mcp-mongo/tests/test_validator.py::test_every_corpus_payload_is_rejected_with_its_named_reason[expr-function]
+    FAILED apps/mcp-mongo/tests/test_validator.py::test_every_corpus_payload_is_rejected_with_its_named_reason[expr-function-nested]
+    FAILED apps/mcp-mongo/tests/test_validator.py::test_every_corpus_payload_is_rejected_with_its_named_reason[expr-function-in-match]
+    FAILED apps/mcp-mongo/tests/test_validator.py::test_every_corpus_payload_is_rejected_with_its_named_reason[function-in-addFields]
+    ... and 7 more
+    result: ['19 failed, 389 passed in 15.79s']
+    caught: True; restored byte-for-byte: True
+V5: literal values (inserts, $set values) may carry operators (box 1)
+    FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[operator-in-insert]
+    FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[unknown-in-insert]
+    FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[operator-in-set-value]
+    FAILED apps/mcp-mongo/tests/test_validator.py::test_every_corpus_payload_is_rejected_with_its_named_reason[operator-in-insert]
+    FAILED apps/mcp-mongo/tests/test_validator.py::test_every_corpus_payload_is_rejected_with_its_named_reason[unknown-in-insert]
+    FAILED apps/mcp-mongo/tests/test_validator.py::test_every_corpus_payload_is_rejected_with_its_named_reason[operator-in-set-value]
+    FAILED apps/mcp-mongo/tests/test_validator_properties.py::test_an_accepted_insert_never_holds_a_forbidden_operator_pii_or_org
+    FAILED apps/mcp-mongo/tests/test_validator_properties.py::test_a_mutated_update_is_accepted_only_without_a_forbidden_operator_pii_or_org
+    FAILED apps/mcp-mongo/tests/test_validator_properties.py::test_a_mutated_insert_is_accepted_only_without_a_forbidden_operator_pii_or_org
+    result: ['9 failed, 399 passed in 19.25s']
+    caught: True; restored byte-for-byte: True
+V6: $match body not walked (box 1)
+    FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[where-in-match]
+    FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[expr-function-in-match]
+    FAILED apps/mcp-mongo/tests/test_validator.py::test_every_corpus_payload_is_rejected_with_its_named_reason[where-in-match]
+    FAILED apps/mcp-mongo/tests/test_validator.py::test_every_corpus_payload_is_rejected_with_its_named_reason[expr-function-in-match]
+    FAILED apps/mcp-mongo/tests/test_validator_properties.py::test_a_valid_filter_is_accepted_and_rejected_once_a_forbidden_operator_is_injected
+    FAILED apps/mcp-mongo/tests/test_validator_properties.py::test_a_mutated_pipeline_is_accepted_only_without_a_forbidden_operator
+    result: ['6 failed, 402 passed in 12.03s']
+    caught: True; restored byte-for-byte: True
+V7: $group accumulators not checked (box 1: $accumulator)
+    FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[accumulator-in-group]
+    FAILED apps/mcp-mongo/tests/test_validator.py::test_every_corpus_payload_is_rejected_with_its_named_reason[accumulator-in-group]
+    FAILED apps/mcp-mongo/tests/test_validator_properties.py::test_a_mutated_pipeline_is_accepted_only_without_a_forbidden_operator
+    result: ['3 failed, 405 passed in 23.92s']
+    caught: True; restored byte-for-byte: True
+V8: forbidden stage name allowed through to the stage table check only (box 1)
+    FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[lookup]
+    FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[lookup-after-match]
+    FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[graphLookup]
+    FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[out]
+    FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[out-db]
+    FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[merge]
+    FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[unionWith]
+    FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[unionWith-string]
+    FAILED apps/mcp-mongo/tests/test_validator.py::test_every_corpus_payload_is_rejected_with_its_named_reason[lookup]
+    FAILED apps/mcp-mongo/tests/test_validator.py::test_every_corpus_payload_is_rejected_with_its_named_reason[lookup-after-match]
+    FAILED apps/mcp-mongo/tests/test_validator.py::test_every_corpus_payload_is_rejected_with_its_named_reason[graphLookup]
+    FAILED apps/mcp-mongo/tests/test_validator.py::test_every_corpus_payload_is_rejected_with_its_named_reason[out]
+    ... and 4 more
+    result: ['16 failed, 392 passed in 18.99s']
+    caught: True; restored byte-for-byte: True
+V9: update operators not checked against the allowlist (box 1)
+    FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[setOnInsert]
+    FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[bit-update]
+    FAILED apps/mcp-mongo/tests/test_validator.py::test_every_corpus_payload_is_rejected_with_its_named_reason[setOnInsert]
+    FAILED apps/mcp-mongo/tests/test_validator.py::test_every_corpus_payload_is_rejected_with_its_named_reason[bit-update]
+    FAILED apps/mcp-mongo/tests/test_validator_properties.py::test_a_mutated_update_is_accepted_only_without_a_forbidden_operator_pii_or_org
+    result: ['5 failed, 403 passed in 9.67s']
+    caught: True; restored byte-for-byte: True
+V10: $pull condition not walked (box 1)
+    FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[where-in-pull]
+    FAILED apps/mcp-mongo/tests/test_validator.py::test_every_corpus_payload_is_rejected_with_its_named_reason[where-in-pull]
+    FAILED apps/mcp-mongo/tests/test_validator_properties.py::test_an_accepted_update_never_holds_a_forbidden_operator
+    result: ['3 failed, 405 passed in 17.56s']
+    caught: True; restored byte-for-byte: True
+V11: pii.* writable (box 3)
+    FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[pii-set-mobile]
+    FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[pii-set-whole]
+    FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[pii-unset]
+    FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[pii-rename-from]
+    FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[pii-rename-to]
+    FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[pii-push]
+    FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[pii-insert]
+    FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[pii-insert-dotted]
+    FAILED apps/mcp-mongo/tests/test_server_validator.py::test_an_update_touching_pii_mobile_is_denied_over_mcp
+    FAILED apps/mcp-mongo/tests/test_validator.py::test_every_corpus_payload_is_rejected_with_its_named_reason[pii-set-mobile]
+    FAILED apps/mcp-mongo/tests/test_validator.py::test_every_corpus_payload_is_rejected_with_its_named_reason[pii-set-whole]
+    FAILED apps/mcp-mongo/tests/test_validator.py::test_every_corpus_payload_is_rejected_with_its_named_reason[pii-unset]
+    ... and 19 more
+    result: ['31 failed, 377 passed in 25.33s']
+    caught: True; restored byte-for-byte: True
+V12: org_id allowed as a field in the validator (box 3, validator layer)
+    FAILED apps/mcp-mongo/tests/test_validator.py::test_every_corpus_payload_is_rejected_with_its_named_reason[org-in-filter]
+    FAILED apps/mcp-mongo/tests/test_validator.py::test_every_corpus_payload_is_rejected_with_its_named_reason[org-dotted]
+    FAILED apps/mcp-mongo/tests/test_validator.py::test_every_corpus_payload_is_rejected_with_its_named_reason[org-nested-or]
+    FAILED apps/mcp-mongo/tests/test_validator.py::test_every_corpus_payload_is_rejected_with_its_named_reason[org-set]
+    FAILED apps/mcp-mongo/tests/test_validator.py::test_every_corpus_payload_is_rejected_with_its_named_reason[org-unset]
+    FAILED apps/mcp-mongo/tests/test_validator.py::test_every_corpus_payload_is_rejected_with_its_named_reason[org-rename-target]
+    FAILED apps/mcp-mongo/tests/test_validator.py::test_every_corpus_payload_is_rejected_with_its_named_reason[org-insert]
+    FAILED apps/mcp-mongo/tests/test_validator.py::test_every_corpus_payload_is_rejected_with_its_named_reason[org-addFields]
+    FAILED apps/mcp-mongo/tests/test_validator.py::test_every_corpus_payload_is_rejected_with_its_named_reason[org-group-output]
+    FAILED apps/mcp-mongo/tests/test_validator.py::test_every_corpus_payload_is_rejected_with_its_named_reason[org-count-name]
+    FAILED apps/mcp-mongo/tests/test_validator.py::test_a_set_of_org_id_is_rejected
+    FAILED apps/mcp-mongo/tests/test_validator.py::test_a_set_of_an_org_id_subfield_is_rejected
+    ... and 3 more
+    result: ['15 failed, 393 passed in 17.05s']
+    caught: True; restored byte-for-byte: True
+V13: $-led path segments allowed (box 1: dotted)
+    FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[sort-operator-key]
+    FAILED apps/mcp-mongo/tests/test_validator.py::test_every_corpus_payload_is_rejected_with_its_named_reason[sort-operator-key]
+    FAILED apps/mcp-mongo/tests/test_validator_properties.py::test_a_mutated_pipeline_is_accepted_only_without_a_forbidden_operator
+    FAILED apps/mcp-mongo/tests/test_validator_properties.py::test_a_mutated_update_is_accepted_only_without_a_forbidden_operator_pii_or_org
+    result: ['4 failed, 404 passed in 14.98s']
+    caught: True; restored byte-for-byte: True
+V14: NFKC canonical-name check removed (boxes 1-2: unicode)
+    FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[fullwidth-dollar]
+    FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[small-dollar]
+    FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[fullwidth-org-id]
+    FAILED apps/mcp-mongo/tests/test_validator.py::test_every_corpus_payload_is_rejected_with_its_named_reason[fullwidth-dollar]
+    FAILED apps/mcp-mongo/tests/test_validator.py::test_every_corpus_payload_is_rejected_with_its_named_reason[small-dollar]
+    FAILED apps/mcp-mongo/tests/test_validator.py::test_every_corpus_payload_is_rejected_with_its_named_reason[fullwidth-org-id]
+    FAILED apps/mcp-mongo/tests/test_validator_properties.py::test_a_mutated_update_is_accepted_only_without_a_forbidden_operator_pii_or_org
+    result: ['7 failed, 401 passed in 13.88s']
+    caught: True; restored byte-for-byte: True
+V15: invisible/control characters allowed in names (box 1: unicode)
+    FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[nul-in-name]
+    FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[zero-width-in-op]
+    FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[rtl-override]
+    FAILED apps/mcp-mongo/tests/test_validator.py::test_every_corpus_payload_is_rejected_with_its_named_reason[nul-in-name]
+    FAILED apps/mcp-mongo/tests/test_validator.py::test_every_corpus_payload_is_rejected_with_its_named_reason[zero-width-in-op]
+    FAILED apps/mcp-mongo/tests/test_validator.py::test_every_corpus_payload_is_rejected_with_its_named_reason[rtl-override]
+    result: ['6 failed, 402 passed in 14.06s']
+    caught: True; restored byte-for-byte: True
+V16: depth cap removed (box 1: nested)
+    FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[deep-nesting]
+    FAILED apps/mcp-mongo/tests/test_server_validator.py::test_a_very_deep_filter_sent_as_raw_json_is_a_denial_not_an_internal_error[40]
+    FAILED apps/mcp-mongo/tests/test_validator.py::test_every_corpus_payload_is_rejected_with_its_named_reason[deep-nesting]
+    FAILED apps/mcp-mongo/tests/test_validator.py::test_nesting_up_to_the_cap_is_accepted_and_one_more_level_is_not
+    result: ['4 failed, 404 passed in 9.86s']
+    caught: True; restored byte-for-byte: True
+V17: size cap removed (box 1)
+    FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[wide]
+    FAILED apps/mcp-mongo/tests/test_validator.py::test_every_corpus_payload_is_rejected_with_its_named_reason[wide]
+    result: ['2 failed, 406 passed in 12.52s']
+    caught: True; restored byte-for-byte: True
+V18: validator not wired into the server (boxes 1, 3)
+    FAILED apps/mcp-mongo/tests/test_server.py::test_a_malformed_update_operator_is_denied_not_an_internal_error
+    FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[where-top]
+    FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[where-in-or]
+    FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[where-in-count]
+    FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[where-in-match]
+    FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[where-in-update-filter]
+    FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[where-under-elemMatch]
+    FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[where-under-not]
+    FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[where-in-pull]
+    FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[expr-function]
+    FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[expr-function-nested]
+    FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[expr-function-in-match]
+    ... and 49 more
+    result: ['61 failed, 347 passed in 18.16s']
+    caught: True; restored byte-for-byte: True
+V19: a delete_one tool added to the served tools (box 4)
+    FAILED apps/mcp-mongo/tests/test_contracts.py::test_there_is_a_contract_for_exactly_the_prd_tools
+    FAILED apps/mcp-mongo/tests/test_server.py::test_the_server_lists_exactly_the_prd_tools_with_closed_schemas
+    FAILED apps/mcp-mongo/tests/test_server.py::test_no_destructive_or_admin_tool_is_served
+    FAILED apps/mcp-mongo/tests/test_tool_surface.py::test_no_delete_drop_index_admin_or_run_command_tool_is_served
+    FAILED apps/mcp-mongo/tests/test_tool_surface.py::test_the_server_is_built_only_from_the_prd_tools
+    result: ['5 failed, 403 passed in 13.80s']
+    caught: True; restored byte-for-byte: True
+V20: a driver drop call added to the tools module (box 4)
+    FAILED apps/mcp-mongo/tests/test_server.py::test_list_collections_returns_only_the_agents_collections
+    FAILED apps/mcp-mongo/tests/test_server.py::test_the_same_args_without_org_id_succeed[list_collections]
+    FAILED apps/mcp-mongo/tests/test_spans.py::test_each_call_has_one_span_with_the_required_attributes[list_collections]
+    FAILED apps/mcp-mongo/tests/test_tool_surface.py::test_no_source_file_calls_a_delete_drop_index_or_command_method
+    result: ['4 failed, 404 passed in 21.53s']
+    caught: True; restored byte-for-byte: True
+SUMMARY: 20 of 20 mutations caught, every file restored
