@@ -1,0 +1,1001 @@
+{
+ "title": "Onboarding Platform MVP",
+ "people": [
+  {
+   "name": "Haneef",
+   "colour": "#1f6feb"
+  }
+ ],
+ "tracks": {
+  "M0": "Foundations",
+  "M1": "Core platform: auth, tenancy, PII vault",
+  "M2": "Mongo MCP and the hub",
+  "M3": "LLM connectors, templates, evals",
+  "M4": "Runtime: event bus, orchestrator, approvals",
+  "M5": "Frontend",
+  "M6": "Hardening, deployment, demo"
+ },
+ "syncPoints": [],
+ "config": {
+  "subtitle": "From docs/plan/GOALS.md (PRD v0.3, 10 Nov 2026). One developer, one lane. Columns are the earliest step a goal can start; work top-down within a column.",
+  "milestone": "MS-6",
+  "milestoneLabel": "MVP complete",
+  "sizes": {
+   "S": "one short /goal session (half a day or less)",
+   "M": "one full /goal session (about a day)",
+   "L": "two or three sessions; the checkpoint carries you between them"
+  },
+  "firstStepLabel": "Step 1",
+  "stepLabel": "Step",
+  "docPrefix": "docs/plan/",
+  "workflowHint": "Pick the top Ready goal and run /run-goal <ID>. A goal is Done only after goal-verifier passes every Done-when box and the branch is merged to main; a milestone only after its Exit checks pass.",
+  "refPlaceholder": "branch or commit, e.g. goal/t-1-tenant-repo or 1a2b3c4",
+  "hubs": [
+   {
+    "key": "F",
+    "ids": [
+     "F-1",
+     "F-4"
+    ],
+    "text": "F = F-1 + F-4, the monorepo and telemetry foundation"
+   },
+   {
+    "key": "P",
+    "ids": [
+     "T-1",
+     "AUTH-1",
+     "AUD-1"
+    ],
+    "text": "P = T-1 + AUTH-1 + AUD-1, tenancy, auth and audit"
+   },
+   {
+    "key": "E",
+    "ids": [
+     "EVAL-1"
+    ],
+    "text": "E = EVAL-1, the eval harness"
+   }
+  ],
+  "slug": "onboarding-mvp-goals"
+ },
+ "goals": [
+  {
+   "id": "F-1",
+   "title": "Create the Nx monorepo with every Python and web project",
+   "owner": "Haneef",
+   "needs": [],
+   "label": "Nx monorepo",
+   "size": "M",
+   "track": "M0",
+   "doc": "GOALS.md#f-1--create-the-nx-monorepo-with-every-python-and-web-project"
+  },
+  {
+   "id": "F-2",
+   "title": "Run the base stack in Docker Compose",
+   "owner": "Haneef",
+   "needs": [
+    "F-1"
+   ],
+   "label": "compose stack",
+   "size": "M",
+   "track": "M0",
+   "doc": "GOALS.md#f-2--run-the-base-stack-in-docker-compose"
+  },
+  {
+   "id": "F-3",
+   "title": "Gate every change in CI",
+   "owner": "Haneef",
+   "needs": [
+    "F-1"
+   ],
+   "label": "CI gate",
+   "size": "S",
+   "track": "M0",
+   "doc": "GOALS.md#f-3--gate-every-change-in-ci"
+  },
+  {
+   "id": "F-4",
+   "title": "Trace every Python service with OpenTelemetry",
+   "owner": "Haneef",
+   "needs": [
+    "F-2"
+   ],
+   "label": "telemetry lib",
+   "size": "M",
+   "track": "M0",
+   "doc": "GOALS.md#f-4--trace-every-python-service-with-opentelemetry"
+  },
+  {
+   "id": "MS-0",
+   "title": "Foundations ready",
+   "owner": "Haneef",
+   "needs": [
+    "F-1",
+    "F-2",
+    "F-3",
+    "F-4"
+   ],
+   "label": "M0 gate",
+   "size": "S",
+   "track": "M0",
+   "doc": "GOALS.md#ms-0--foundations-ready"
+  },
+  {
+   "id": "C-1",
+   "title": "Stand up the API with one envelope and a generated TS client",
+   "owner": "Haneef",
+   "needs": [
+    "F-1",
+    "F-4"
+   ],
+   "label": "API + contracts",
+   "size": "M",
+   "track": "M1",
+   "doc": "GOALS.md#c-1--stand-up-the-api-with-one-envelope-and-a-generated-ts-client"
+  },
+  {
+   "id": "T-1",
+   "title": "Make tenant scoping impossible to forget",
+   "owner": "Haneef",
+   "needs": [
+    "F-2"
+   ],
+   "label": "tenant repository",
+   "size": "M",
+   "track": "M1",
+   "doc": "GOALS.md#t-1--make-tenant-scoping-impossible-to-forget"
+  },
+  {
+   "id": "T-2",
+   "title": "Catch any unscoped query at runtime",
+   "owner": "Haneef",
+   "needs": [
+    "T-1"
+   ],
+   "label": "query safety net",
+   "size": "S",
+   "track": "M1",
+   "doc": "GOALS.md#t-2--catch-any-unscoped-query-at-runtime"
+  },
+  {
+   "id": "AUTH-1",
+   "title": "Log in with a JWT that carries org and role",
+   "owner": "Haneef",
+   "needs": [
+    "C-1",
+    "T-1"
+   ],
+   "label": "JWT + roles",
+   "size": "M",
+   "track": "M1",
+   "doc": "GOALS.md#auth-1--log-in-with-a-jwt-that-carries-org-and-role"
+  },
+  {
+   "id": "AUD-1",
+   "title": "Record every privileged action in an append-only audit log",
+   "owner": "Haneef",
+   "needs": [
+    "T-1",
+    "AUTH-1"
+   ],
+   "label": "audit log",
+   "size": "S",
+   "track": "M1",
+   "doc": "GOALS.md#aud-1--record-every-privileged-action-in-an-append-only-audit-log"
+  },
+  {
+   "id": "T-3",
+   "title": "Prove no actor can reach another org",
+   "owner": "Haneef",
+   "needs": [
+    "AUTH-1",
+    "T-2",
+    "AUD-1"
+   ],
+   "label": "cross-tenant suite",
+   "size": "M",
+   "track": "M1",
+   "doc": "GOALS.md#t-3--prove-no-actor-can-reach-another-org"
+  },
+  {
+   "id": "PII-1",
+   "title": "Give each org its own keys, wrapped by the master key",
+   "owner": "Haneef",
+   "needs": [
+    "T-1"
+   ],
+   "label": "per-org keys",
+   "size": "M",
+   "track": "M1",
+   "doc": "GOALS.md#pii-1--give-each-org-its-own-keys-wrapped-by-the-master-key"
+  },
+  {
+   "id": "PII-3",
+   "title": "Validate, detect, mask and blind-index sensitive values",
+   "owner": "Haneef",
+   "needs": [
+    "F-1"
+   ],
+   "label": "PII detectors + masks",
+   "size": "M",
+   "track": "M1",
+   "doc": "GOALS.md#pii-3--validate-detect-mask-and-blind-index-sensitive-values"
+  },
+  {
+   "id": "PII-2",
+   "title": "Store sensitive values only in a signed, encrypted vault",
+   "owner": "Haneef",
+   "needs": [
+    "PII-1",
+    "PII-3"
+   ],
+   "label": "PII vault",
+   "size": "L",
+   "track": "M1",
+   "doc": "GOALS.md#pii-2--store-sensitive-values-only-in-a-signed-encrypted-vault"
+  },
+  {
+   "id": "PII-4",
+   "title": "Let only orchestrator-signed grants resolve a token at a sink",
+   "owner": "Haneef",
+   "needs": [
+    "PII-2"
+   ],
+   "label": "signed grants",
+   "size": "M",
+   "track": "M1",
+   "doc": "GOALS.md#pii-4--let-only-orchestrator-signed-grants-resolve-a-token-at-a-sink"
+  },
+  {
+   "id": "HIRE-1",
+   "title": "Create hires with PII held as tokens, and reveal with a reason",
+   "owner": "Haneef",
+   "needs": [
+    "AUTH-1",
+    "AUD-1",
+    "PII-2",
+    "PII-3",
+    "T-3"
+   ],
+   "label": "hires + reveal",
+   "size": "L",
+   "track": "M1",
+   "doc": "GOALS.md#hire-1--create-hires-with-pii-held-as-tokens-and-reveal-with-a-reason"
+  },
+  {
+   "id": "HIRE-2",
+   "title": "Store document scans encrypted; agents see only metadata",
+   "owner": "Haneef",
+   "needs": [
+    "HIRE-1"
+   ],
+   "label": "encrypted documents",
+   "size": "M",
+   "track": "M1",
+   "doc": "GOALS.md#hire-2--store-document-scans-encrypted-agents-see-only-metadata"
+  },
+  {
+   "id": "OBS-1",
+   "title": "Scrub PII from every span and log before export",
+   "owner": "Haneef",
+   "needs": [
+    "F-4",
+    "PII-3"
+   ],
+   "label": "redaction processor",
+   "size": "S",
+   "track": "M1",
+   "doc": "GOALS.md#obs-1--scrub-pii-from-every-span-and-log-before-export"
+  },
+  {
+   "id": "MS-1",
+   "title": "Core platform ready",
+   "owner": "Haneef",
+   "needs": [
+    "MS-0",
+    "C-1",
+    "T-1",
+    "T-2",
+    "AUTH-1",
+    "AUD-1",
+    "T-3",
+    "PII-1",
+    "PII-3",
+    "PII-2",
+    "PII-4",
+    "HIRE-1",
+    "HIRE-2",
+    "OBS-1"
+   ],
+   "label": "M1 gate",
+   "size": "S",
+   "track": "M1",
+   "doc": "GOALS.md#ms-1--core-platform-ready"
+  },
+  {
+   "id": "REG-1",
+   "title": "Declare every agent's allowed tools in a versioned registry",
+   "owner": "Haneef",
+   "needs": [
+    "C-1",
+    "T-1",
+    "AUD-1"
+   ],
+   "label": "agent registry",
+   "size": "M",
+   "track": "M2",
+   "doc": "GOALS.md#reg-1--declare-every-agents-allowed-tools-in-a-versioned-registry"
+  },
+  {
+   "id": "MCP-1",
+   "title": "Serve MongoDB tools over MCP with strict contracts",
+   "owner": "Haneef",
+   "needs": [
+    "F-2",
+    "C-1"
+   ],
+   "label": "Mongo MCP server",
+   "size": "M",
+   "track": "M2",
+   "doc": "GOALS.md#mcp-1--serve-mongodb-tools-over-mcp-with-strict-contracts"
+  },
+  {
+   "id": "MCP-2",
+   "title": "Reject dangerous and cross-tenant queries",
+   "owner": "Haneef",
+   "needs": [
+    "MCP-1"
+   ],
+   "label": "query validator",
+   "size": "M",
+   "track": "M2",
+   "doc": "GOALS.md#mcp-2--reject-dangerous-and-cross-tenant-queries"
+  },
+  {
+   "id": "MCP-3",
+   "title": "Back the policy with least-privilege database users",
+   "owner": "Haneef",
+   "needs": [
+    "MCP-1"
+   ],
+   "label": "least-privilege DB users",
+   "size": "M",
+   "track": "M2",
+   "doc": "GOALS.md#mcp-3--back-the-policy-with-least-privilege-database-users"
+  },
+  {
+   "id": "HUB-1",
+   "title": "Route every agent tool call through one policy gateway",
+   "owner": "Haneef",
+   "needs": [
+    "REG-1",
+    "MCP-2",
+    "MCP-3",
+    "OBS-1"
+   ],
+   "label": "MCP hub",
+   "size": "L",
+   "track": "M2",
+   "doc": "GOALS.md#hub-1--route-every-agent-tool-call-through-one-policy-gateway"
+  },
+  {
+   "id": "MOCK-1",
+   "title": "Provide thin Bitbucket and provisioning mocks behind the hub",
+   "owner": "Haneef",
+   "needs": [
+    "HUB-1"
+   ],
+   "label": "integration mocks",
+   "size": "S",
+   "track": "M2",
+   "doc": "GOALS.md#mock-1--provide-thin-bitbucket-and-provisioning-mocks-behind-the-hub"
+  },
+  {
+   "id": "MS-2",
+   "title": "Real Mongo MCP behind the hub",
+   "owner": "Haneef",
+   "needs": [
+    "MS-1",
+    "REG-1",
+    "MCP-1",
+    "MCP-2",
+    "MCP-3",
+    "HUB-1",
+    "MOCK-1"
+   ],
+   "label": "M2 gate",
+   "size": "S",
+   "track": "M2",
+   "doc": "GOALS.md#ms-2--real-mongo-mcp-behind-the-hub"
+  },
+  {
+   "id": "LLM-1",
+   "title": "Plug LLM providers in through a connector registry",
+   "owner": "Haneef",
+   "needs": [
+    "F-1",
+    "F-4"
+   ],
+   "label": "LLM connectors",
+   "size": "M",
+   "track": "M3",
+   "doc": "GOALS.md#llm-1--plug-llm-providers-in-through-a-connector-registry"
+  },
+  {
+   "id": "OW-1",
+   "title": "Get Bedrock access and choose the three model aliases",
+   "owner": "Haneef",
+   "needs": [
+    "LLM-1"
+   ],
+   "label": "Bedrock access",
+   "size": "S",
+   "track": "M3",
+   "doc": "GOALS.md#ow-1--get-bedrock-access-and-choose-the-three-model-aliases"
+  },
+  {
+   "id": "GR-1",
+   "title": "Guard every LLM input, output and budget",
+   "owner": "Haneef",
+   "needs": [
+    "PII-3",
+    "AUD-1",
+    "F-4"
+   ],
+   "label": "guardrails lib",
+   "size": "M",
+   "track": "M3",
+   "doc": "GOALS.md#gr-1--guard-every-llm-input-output-and-budget"
+  },
+  {
+   "id": "TPL-1",
+   "title": "Validate templates into safe task graphs",
+   "owner": "Haneef",
+   "needs": [
+    "REG-1",
+    "PII-4"
+   ],
+   "label": "template validator",
+   "size": "M",
+   "track": "M3",
+   "doc": "GOALS.md#tpl-1--validate-templates-into-safe-task-graphs"
+  },
+  {
+   "id": "DAG-1",
+   "title": "Compile a template version and hire variables into a pruned DAG",
+   "owner": "Haneef",
+   "needs": [
+    "TPL-1"
+   ],
+   "label": "DAG compiler",
+   "size": "M",
+   "track": "M3",
+   "doc": "GOALS.md#dag-1--compile-a-template-version-and-hire-variables-into-a-pruned-dag"
+  },
+  {
+   "id": "TPL-2",
+   "title": "Run the template lifecycle: draft, validate, publish, archive",
+   "owner": "Haneef",
+   "needs": [
+    "TPL-1",
+    "AUTH-1",
+    "T-3",
+    "AUD-1"
+   ],
+   "label": "template lifecycle",
+   "size": "M",
+   "track": "M3",
+   "doc": "GOALS.md#tpl-2--run-the-template-lifecycle-draft-validate-publish-archive"
+  },
+  {
+   "id": "SEED-1",
+   "title": "Seed an org, users and templates with one command",
+   "owner": "Haneef",
+   "needs": [
+    "TPL-2",
+    "REG-1",
+    "AUTH-1"
+   ],
+   "label": "make seed",
+   "size": "S",
+   "track": "M3",
+   "doc": "GOALS.md#seed-1--seed-an-org-users-and-templates-with-one-command"
+  },
+  {
+   "id": "EVAL-1",
+   "title": "Build the deterministic eval harness",
+   "owner": "Haneef",
+   "needs": [
+    "LLM-1",
+    "PII-2"
+   ],
+   "label": "eval harness",
+   "size": "L",
+   "track": "M3",
+   "doc": "GOALS.md#eval-1--build-the-deterministic-eval-harness"
+  },
+  {
+   "id": "AG-1",
+   "title": "Run any registered agent with only its allowed tools",
+   "owner": "Haneef",
+   "needs": [
+    "LLM-1",
+    "HUB-1",
+    "GR-1"
+   ],
+   "label": "agent runtime",
+   "size": "L",
+   "track": "M3",
+   "doc": "GOALS.md#ag-1--run-any-registered-agent-with-only-its-allowed-tools"
+  },
+  {
+   "id": "TB-1",
+   "title": "Draft templates by chatting with the Template Builder",
+   "owner": "Haneef",
+   "needs": [
+    "AG-1",
+    "TPL-2",
+    "EVAL-1",
+    "OW-1"
+   ],
+   "label": "Template Builder",
+   "size": "M",
+   "track": "M3",
+   "doc": "GOALS.md#tb-1--draft-templates-by-chatting-with-the-template-builder"
+  },
+  {
+   "id": "TB-2",
+   "title": "Let managers suggest changes and HR review them in a queue",
+   "owner": "Haneef",
+   "needs": [
+    "TB-1"
+   ],
+   "label": "change requests",
+   "size": "M",
+   "track": "M3",
+   "doc": "GOALS.md#tb-2--let-managers-suggest-changes-and-hr-review-them-in-a-queue"
+  },
+  {
+   "id": "MS-3",
+   "title": "Templates drafted, validated and published by the agent",
+   "owner": "Haneef",
+   "needs": [
+    "MS-2",
+    "LLM-1",
+    "OW-1",
+    "GR-1",
+    "TPL-1",
+    "DAG-1",
+    "TPL-2",
+    "SEED-1",
+    "EVAL-1",
+    "AG-1",
+    "TB-1",
+    "TB-2"
+   ],
+   "label": "M3 gate",
+   "size": "S",
+   "track": "M3",
+   "doc": "GOALS.md#ms-3--templates-drafted-validated-and-published-by-the-agent"
+  },
+  {
+   "id": "EVT-1",
+   "title": "Move work through a durable Mongo event bus",
+   "owner": "Haneef",
+   "needs": [
+    "T-1",
+    "F-4"
+   ],
+   "label": "event bus",
+   "size": "L",
+   "track": "M4",
+   "doc": "GOALS.md#evt-1--move-work-through-a-durable-mongo-event-bus"
+  },
+  {
+   "id": "RUN-1",
+   "title": "Start a run that compiles the DAG and executes it in LangGraph",
+   "owner": "Haneef",
+   "needs": [
+    "EVT-1",
+    "DAG-1",
+    "HIRE-1",
+    "TPL-2"
+   ],
+   "label": "orchestrator core",
+   "size": "L",
+   "track": "M4",
+   "doc": "GOALS.md#run-1--start-a-run-that-compiles-the-dag-and-executes-it-in-langgraph"
+  },
+  {
+   "id": "RUN-2",
+   "title": "Survive restarts and let HR control a run",
+   "owner": "Haneef",
+   "needs": [
+    "RUN-1",
+    "AUD-1"
+   ],
+   "label": "run control",
+   "size": "M",
+   "track": "M4",
+   "doc": "GOALS.md#run-2--survive-restarts-and-let-hr-control-a-run"
+  },
+  {
+   "id": "RUN-3",
+   "title": "Run task nodes through registered agents with scoped tokens and grants",
+   "owner": "Haneef",
+   "needs": [
+    "RUN-1",
+    "AG-1",
+    "PII-4",
+    "MOCK-1"
+   ],
+   "label": "agents in runs",
+   "size": "L",
+   "track": "M4",
+   "doc": "GOALS.md#run-3--run-task-nodes-through-registered-agents-with-scoped-tokens-and-grants"
+  },
+  {
+   "id": "NOTIF-1",
+   "title": "Notify in-app and through the Telegram mock, resolving PII only at the sink",
+   "owner": "Haneef",
+   "needs": [
+    "MOCK-1",
+    "PII-4",
+    "EVT-1"
+   ],
+   "label": "notifications + sink",
+   "size": "M",
+   "track": "M4",
+   "doc": "GOALS.md#notif-1--notify-in-app-and-through-the-telegram-mock-resolving-pii-only-at-the-sink"
+  },
+  {
+   "id": "AGT-1",
+   "title": "Ship the DB, Templates and Provisioning agents",
+   "owner": "Haneef",
+   "needs": [
+    "RUN-3",
+    "NOTIF-1",
+    "EVAL-1"
+   ],
+   "label": "task agents",
+   "size": "M",
+   "track": "M4",
+   "doc": "GOALS.md#agt-1--ship-the-db-templates-and-provisioning-agents"
+  },
+  {
+   "id": "HIL-1",
+   "title": "Pause for approvals and resume on the first decision",
+   "owner": "Haneef",
+   "needs": [
+    "RUN-3",
+    "NOTIF-1",
+    "EVAL-1"
+   ],
+   "label": "approvals (HIL)",
+   "size": "L",
+   "track": "M4",
+   "doc": "GOALS.md#hil-1--pause-for-approvals-and-resume-on-the-first-decision"
+  },
+  {
+   "id": "HIL-2",
+   "title": "Remind and escalate overdue approvals",
+   "owner": "Haneef",
+   "needs": [
+    "HIL-1"
+   ],
+   "label": "approval SLA",
+   "size": "S",
+   "track": "M4",
+   "doc": "GOALS.md#hil-2--remind-and-escalate-overdue-approvals"
+  },
+  {
+   "id": "CHAT-1",
+   "title": "Answer \"why is this run stuck?\" from run state",
+   "owner": "Haneef",
+   "needs": [
+    "RUN-2",
+    "AG-1",
+    "EVAL-1"
+   ],
+   "label": "Run Assistant chat",
+   "size": "M",
+   "track": "M4",
+   "doc": "GOALS.md#chat-1--answer-why-is-this-run-stuck-from-run-state"
+  },
+  {
+   "id": "MS-4",
+   "title": "Runs execute end to end with approvals",
+   "owner": "Haneef",
+   "needs": [
+    "MS-3",
+    "EVT-1",
+    "RUN-1",
+    "RUN-2",
+    "RUN-3",
+    "NOTIF-1",
+    "AGT-1",
+    "HIL-1",
+    "HIL-2",
+    "CHAT-1"
+   ],
+   "label": "M4 gate",
+   "size": "S",
+   "track": "M4",
+   "doc": "GOALS.md#ms-4--runs-execute-end-to-end-with-approvals"
+  },
+  {
+   "id": "UI-1",
+   "title": "Web shell with login, roles and masked fields",
+   "owner": "Haneef",
+   "needs": [
+    "C-1",
+    "AUTH-1"
+   ],
+   "label": "web shell",
+   "size": "M",
+   "track": "M5",
+   "doc": "GOALS.md#ui-1--web-shell-with-login-roles-and-masked-fields"
+  },
+  {
+   "id": "UI-2",
+   "title": "Template Studio: chat, DAG editor and form view",
+   "owner": "Haneef",
+   "needs": [
+    "UI-1",
+    "TB-1"
+   ],
+   "label": "Template Studio",
+   "size": "L",
+   "track": "M5",
+   "doc": "GOALS.md#ui-2--template-studio-chat-dag-editor-and-form-view"
+  },
+  {
+   "id": "UI-3",
+   "title": "Change requests: manager suggest mode and HR queue",
+   "owner": "Haneef",
+   "needs": [
+    "UI-2",
+    "TB-2"
+   ],
+   "label": "change-request UI",
+   "size": "M",
+   "track": "M5",
+   "doc": "GOALS.md#ui-3--change-requests-manager-suggest-mode-and-hr-queue"
+  },
+  {
+   "id": "UI-4",
+   "title": "New hires with PII entry, masking and audited reveal",
+   "owner": "Haneef",
+   "needs": [
+    "UI-1",
+    "HIRE-2"
+   ],
+   "label": "hires UI",
+   "size": "M",
+   "track": "M5",
+   "doc": "GOALS.md#ui-4--new-hires-with-pii-entry-masking-and-audited-reveal"
+  },
+  {
+   "id": "UI-5",
+   "title": "Run board with live status, blocked reasons and trace links",
+   "owner": "Haneef",
+   "needs": [
+    "UI-1",
+    "RUN-2"
+   ],
+   "label": "run board",
+   "size": "M",
+   "track": "M5",
+   "doc": "GOALS.md#ui-5--run-board-with-live-status-blocked-reasons-and-trace-links"
+  },
+  {
+   "id": "UI-6",
+   "title": "Approvals inbox and mock Telegram outbox",
+   "owner": "Haneef",
+   "needs": [
+    "UI-1",
+    "HIL-1",
+    "NOTIF-1"
+   ],
+   "label": "approvals UI",
+   "size": "M",
+   "track": "M5",
+   "doc": "GOALS.md#ui-6--approvals-inbox-and-mock-telegram-outbox"
+  },
+  {
+   "id": "UI-7",
+   "title": "Chat with the orchestrator on the run page",
+   "owner": "Haneef",
+   "needs": [
+    "UI-5",
+    "CHAT-1"
+   ],
+   "label": "run chat UI",
+   "size": "S",
+   "track": "M5",
+   "doc": "GOALS.md#ui-7--chat-with-the-orchestrator-on-the-run-page"
+  },
+  {
+   "id": "UI-8",
+   "title": "Admin views: agents, denials, audit, PII access, evals",
+   "owner": "Haneef",
+   "needs": [
+    "UI-1",
+    "REG-1",
+    "HUB-1",
+    "AUD-1",
+    "HIRE-1",
+    "EVAL-1"
+   ],
+   "label": "admin UI",
+   "size": "M",
+   "track": "M5",
+   "doc": "GOALS.md#ui-8--admin-views-agents-denials-audit-pii-access-evals"
+  },
+  {
+   "id": "MS-5",
+   "title": "Every MVP screen works against the real backend",
+   "owner": "Haneef",
+   "needs": [
+    "MS-4",
+    "UI-1",
+    "UI-2",
+    "UI-3",
+    "UI-4",
+    "UI-5",
+    "UI-6",
+    "UI-7",
+    "UI-8"
+   ],
+   "label": "M5 gate",
+   "size": "S",
+   "track": "M5",
+   "doc": "GOALS.md#ms-5--every-mvp-screen-works-against-the-real-backend"
+  },
+  {
+   "id": "PII-5",
+   "title": "Purge sensitive values 90 days after onboarding completes",
+   "owner": "Haneef",
+   "needs": [
+    "EVT-1",
+    "RUN-2",
+    "PII-2"
+   ],
+   "label": "PII retention purge",
+   "size": "S",
+   "track": "M6",
+   "doc": "GOALS.md#pii-5--purge-sensitive-values-90-days-after-onboarding-completes"
+  },
+  {
+   "id": "SEC-1",
+   "title": "Prove zero PII leaks and 100% tamper rejection",
+   "owner": "Haneef",
+   "needs": [
+    "HIL-1",
+    "CHAT-1",
+    "AGT-1",
+    "OBS-1",
+    "PII-5"
+   ],
+   "label": "PII leak + tamper suite",
+   "size": "M",
+   "track": "M6",
+   "doc": "GOALS.md#sec-1--prove-zero-pii-leaks-and-100-tamper-rejection"
+  },
+  {
+   "id": "SEC-2",
+   "title": "Security review and hardening pass",
+   "owner": "Haneef",
+   "needs": [
+    "MS-5"
+   ],
+   "label": "security review",
+   "size": "M",
+   "track": "M6",
+   "doc": "GOALS.md#sec-2--security-review-and-hardening-pass"
+  },
+  {
+   "id": "EVAL-2",
+   "title": "Meet every eval gate on the real model and record a baseline",
+   "owner": "Haneef",
+   "needs": [
+    "AGT-1",
+    "HIL-1",
+    "CHAT-1",
+    "TB-2"
+   ],
+   "label": "eval baseline",
+   "size": "M",
+   "track": "M6",
+   "doc": "GOALS.md#eval-2--meet-every-eval-gate-on-the-real-model-and-record-a-baseline"
+  },
+  {
+   "id": "PERF-1",
+   "title": "Measure API latency and approval-to-resume time",
+   "owner": "Haneef",
+   "needs": [
+    "HIL-1",
+    "RUN-2"
+   ],
+   "label": "latency budgets",
+   "size": "S",
+   "track": "M6",
+   "doc": "GOALS.md#perf-1--measure-api-latency-and-approval-to-resume-time"
+  },
+  {
+   "id": "E2E-1",
+   "title": "Automate the golden path end to end",
+   "owner": "Haneef",
+   "needs": [
+    "MS-5",
+    "SEED-1"
+   ],
+   "label": "golden-path E2E",
+   "size": "L",
+   "track": "M6",
+   "doc": "GOALS.md#e2e-1--automate-the-golden-path-end-to-end"
+  },
+  {
+   "id": "DEP-1",
+   "title": "Deploy to the VM with TLS, backups and a runbook",
+   "owner": "Haneef",
+   "needs": [
+    "OW-2",
+    "MS-5",
+    "SEED-1"
+   ],
+   "label": "VM deployment",
+   "size": "M",
+   "track": "M6",
+   "doc": "GOALS.md#dep-1--deploy-to-the-vm-with-tls-backups-and-a-runbook"
+  },
+  {
+   "id": "OW-2",
+   "title": "Provision the VM and domain",
+   "owner": "Haneef",
+   "needs": [],
+   "label": "VM + domain",
+   "size": "S",
+   "track": "M6",
+   "doc": "GOALS.md#ow-2--provision-the-vm-and-domain"
+  },
+  {
+   "id": "DEMO-1",
+   "title": "Run the success-metric demos on the VM",
+   "owner": "Haneef",
+   "needs": [
+    "DEP-1",
+    "E2E-1",
+    "EVAL-2",
+    "SEC-1",
+    "SEC-2",
+    "PERF-1"
+   ],
+   "label": "success demos",
+   "size": "S",
+   "track": "M6",
+   "doc": "GOALS.md#demo-1--run-the-success-metric-demos-on-the-vm"
+  },
+  {
+   "id": "MS-6",
+   "title": "MVP complete",
+   "owner": "Haneef",
+   "needs": [
+    "MS-5",
+    "PII-5",
+    "SEC-1",
+    "SEC-2",
+    "EVAL-2",
+    "PERF-1",
+    "E2E-1",
+    "DEP-1",
+    "OW-2",
+    "DEMO-1"
+   ],
+   "label": "MVP complete",
+   "size": "S",
+   "track": "M6",
+   "doc": "GOALS.md#ms-6--mvp-complete"
+  }
+ ]
+}
