@@ -1,7 +1,7 @@
-# make check, 2026-11-10T06:20:09Z, goal/t-2-query-safety-net @ db2b119
+# make check, 2026-11-10T17:43:34Z, goal/t-2-query-safety-net @ d2a5917
 plan ok: 67 goals, 34 ledger rows
 All checks passed!
-165 passed, 67 subtests passed in 5.10s
+170 passed, 67 subtests passed in 4.40s
 - py-guardrails
 - ts-api-client
 - orchestrator
@@ -69,35 +69,35 @@ All checks passed!
 - ts-ui
 - api
 - web
-============================= 350 passed in 0.57s ==============================
+============================= 210 passed in 11.85s =============================
+============================= 115 passed in 2.08s ==============================
 ============================== 85 passed in 0.15s ==============================
-============================= 115 passed in 1.44s ==============================
- Test Files  1 passed (1)
-      Tests  1 passed (1)
  Test Files  2 passed (2)
       Tests  6 passed (6)
+ Test Files  1 passed (1)
+      Tests  1 passed (1)
+============================= 123 passed in 4.93s ==============================
 ============================== 1 passed in 0.05s ===============================
 ============================== 1 passed in 0.06s ===============================
-============================= 158 passed in 0.68s ==============================
 ============================== 1 passed in 0.06s ===============================
+============================== 50 passed in 0.55s ==============================
 ============================== 1 passed in 0.05s ===============================
-============================== 77 passed in 0.72s ==============================
 ============================== 1 passed in 0.07s ===============================
-============================= 123 passed in 2.65s ==============================
 ============================== 1 passed in 0.08s ===============================
  Test Files  2 passed (2)
       Tests  4 passed (4)
-============================== 50 passed in 0.30s ==============================
-============================= 210 passed in 11.85s =============================
+============================== 77 passed in 1.01s ==============================
+============================= 158 passed in 1.14s ==============================
+============================= 358 passed in 5.22s ==============================
  NX   Successfully ran target test for 17 projects
 make check: all passed
 make check exit=0
 
 # py-data targets alone (the only project this diff touches)
 All checks passed!
-Success: no issues found in 27 source files(B
-TOTAL                                            776      2    99%
-Required test coverage of 80% reached. Total coverage: 99.74%
-============================= 350 passed in 0.62s ==============================
+Success: no issues found in 29 source files(B
+TOTAL                                              801      6    99%
+Required test coverage of 80% reached. Total coverage: 99.25%
+============================= 358 passed in 5.27s ==============================
  NX   Successfully ran targets lint, typecheck, test for project py-data
 nx run-many -t lint typecheck test -p py-data exit=0
