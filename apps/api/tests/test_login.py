@@ -1,8 +1,9 @@
 """`POST /auth/login` and `GET /me`; every authentication failure is 401 (AUTH-1 box 1, PRD §7.8)."""
 
+from collections.abc import Mapping
 from datetime import UTC, datetime, timedelta
+from typing import Protocol
 
-import httpx
 import jwt
 import pytest
 from fastapi.testclient import TestClient
@@ -14,9 +15,26 @@ from onb_contracts.auth import BEARER, Role
 ACME_HR = ("u_acme_hr1", "org_acme", Role.HR)
 
 
-def _assert_401(response: httpx.Response) -> None:
+class _Response(Protocol):
+    """What `_assert_401` reads from a TestClient response.
+
+    Starlette's TestClient returns `httpx2.Response` when httpx2 is installed and `httpx.Response`
+    otherwise; both match this shape, so the helper does not depend on which one is present.
+    """
+
+    @property
+    def status_code(self) -> int: ...
+
+    @property
+    def headers(self) -> Mapping[str, str]: ...
+
+    def json(self) -> object: ...
+
+
+def _assert_401(response: _Response) -> None:
     assert response.status_code == 401
     body = response.json()
+    assert isinstance(body, dict)
     assert body["success"] is False
     assert body["data"] is None
     assert body["error"]["code"] == "UNAUTHENTICATED"
