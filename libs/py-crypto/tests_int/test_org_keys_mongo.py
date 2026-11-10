@@ -12,6 +12,7 @@ import os
 import secrets
 import uuid
 from collections.abc import Callable, Coroutine, Iterator
+from contextlib import AbstractContextManager
 from typing import Any
 from urllib.parse import quote_plus
 
@@ -34,6 +35,8 @@ from onb_data import DataStore, NoTenantContextError, TenantViolationError, conn
 from pymongo import MongoClient
 
 Client = MongoClient[dict[str, object]]
+# The `unscoped` fixture (T-2 safety net): `with unscoped("why"):` for a root read-back across orgs.
+Unscoped = Callable[[str], AbstractContextManager[None]]
 ORG_A, ORG_B = "org_alpha", "org_beta"
 ORGS = [ORG_A, ORG_B]
 AD = b"hire_1|mobile|ptk_1|1"
@@ -76,7 +79,7 @@ async def provision(keyring: Keyring) -> None:
 
 
 def test_two_orgs_keys_are_isolated_and_a_wrong_master_fails_closed(
-    scratch: tuple[str, str], root_client: Client
+    scratch: tuple[str, str], root_client: Client, unscoped: Unscoped
 ) -> None:
     master = new_master()
 
@@ -106,7 +109,8 @@ def test_two_orgs_keys_are_isolated_and_a_wrong_master_fails_closed(
 
     with_store(scratch, body)
 
-    docs = list(root_client[scratch[1]][ORG_KEYS_COLLECTION].find({}))
+    with unscoped("root read-back of both orgs' key records proves each org got its own"):
+        docs = list(root_client[scratch[1]][ORG_KEYS_COLLECTION].find({}))
     assert sorted((d["org_id"], d["key_version"]) for d in docs) == [(ORG_A, 1), (ORG_B, 1)]
     for doc in docs:
         keys = doc["keys"]
@@ -116,7 +120,9 @@ def test_two_orgs_keys_are_isolated_and_a_wrong_master_fails_closed(
         assert doc["master_key_id"] == master.key_id
 
 
-def test_the_runbook_procedures_against_mongo(scratch: tuple[str, str], root_client: Client) -> None:
+def test_the_runbook_procedures_against_mongo(
+    scratch: tuple[str, str], root_client: Client, unscoped: Unscoped
+) -> None:
     old_master, next_master = new_master(), new_master()
 
     async def body(store: DataStore) -> None:
@@ -150,7 +156,8 @@ def test_the_runbook_procedures_against_mongo(scratch: tuple[str, str], root_cli
 
     with_store(scratch, body)
 
-    docs = list(root_client[scratch[1]][ORG_KEYS_COLLECTION].find({}))
+    with unscoped("root read-back of every org's key versions after rotation and rewrap"):
+        docs = list(root_client[scratch[1]][ORG_KEYS_COLLECTION].find({}))
     assert len(docs) == 4, "A5: old versions are kept"
     assert {d["master_key_id"] for d in docs} == {next_master.key_id}
     indexes = root_client[scratch[1]][ORG_KEYS_COLLECTION].index_information()

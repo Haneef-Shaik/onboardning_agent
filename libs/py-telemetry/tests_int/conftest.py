@@ -13,6 +13,16 @@ from collections.abc import Iterator
 from pathlib import Path
 
 import pytest
+from onb_data.safety_net_pytest import (  # T-2 tenant safety net (PRD §7.9): this suite opens a pymongo client
+    pytest_configure,
+    pytest_sessionfinish,
+    tenant_safety_net,
+    tenant_safety_net_guard,
+    unscoped,
+)
+
+# Re-exported so pytest registers the safety net hooks and fixtures for this suite.
+__all__ = ["pytest_configure", "pytest_sessionfinish", "tenant_safety_net", "tenant_safety_net_guard", "unscoped"]
 
 ROOT = Path(__file__).resolve().parents[3]
 # Same digest-pinned image F-2 uses for its Mongo tunnel.

@@ -10,7 +10,7 @@ from __future__ import annotations
 import os
 import subprocess
 import uuid
-from collections.abc import Callable, Iterator
+from collections.abc import Iterator
 from contextlib import AbstractContextManager
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -18,7 +18,14 @@ from typing import Any
 from urllib.parse import quote_plus
 
 import pytest
-from onb_data.safety_net import TenantCommandListener, install_safety_net
+from onb_data.safety_net import TenantCommandListener
+from onb_data.safety_net_pytest import (  # T-2 tenant safety net (PRD §7.9): registers these with pytest
+    pytest_configure,
+    pytest_sessionfinish,
+    tenant_safety_net,
+    tenant_safety_net_guard,
+    unscoped,
+)
 from pymongo import MongoClient
 from pymongo.database import Database
 
@@ -30,40 +37,8 @@ TUNNEL_LABEL_KEY = "onb.test.eventbus-mongo-tunnel"
 Client = MongoClient[dict[str, object]]
 
 
-# --- T-2 tenant safety net (PRD §7.9), the same hooks as libs/py-data/tests_int/conftest.py -------
-
-
-def pytest_configure(config: pytest.Config) -> None:
-    """One global command listener, registered before any client exists."""
-    install_safety_net()
-
-
-def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
-    """Unscoped commands sent after the last test's guard fail the run too."""
-    leftover = install_safety_net().drain()
-    if leftover:
-        lines = "\n".join(v.describe() for v in leftover)
-        session.config.get_terminal_writer().line(f"tenant safety net, after the last test:\n{lines}", red=True)
-        session.exitstatus = pytest.ExitCode.TESTS_FAILED
-
-
-@pytest.fixture(scope="session")
-def tenant_safety_net() -> TenantCommandListener:
-    return install_safety_net()
-
-
-@pytest.fixture(autouse=True)
-def tenant_safety_net_guard(tenant_safety_net: TenantCommandListener) -> Iterator[None]:
-    """Fails the test if any unscoped command on a tenant collection was sent. The worker queue's
-    claim and leased writes are allowed by shape (ADR 0002); root read-backs use `unscoped(reason)`."""
-    with tenant_safety_net.guard():
-        yield
-
-
-@pytest.fixture
-def unscoped(tenant_safety_net: TenantCommandListener) -> Callable[[str], AbstractContextManager[None]]:
-    """`with unscoped("why"):` for a root read-back across orgs or a deliberately broken job."""
-    return tenant_safety_net.allowing_unscoped
+# Re-exported so pytest registers the safety net hooks and fixtures for this suite.
+__all__ = ["pytest_configure", "pytest_sessionfinish", "tenant_safety_net", "tenant_safety_net_guard", "unscoped"]
 
 
 def _run(*args: str) -> str:
