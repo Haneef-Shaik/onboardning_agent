@@ -1,0 +1,7 @@
+# T-2 attempt 5: stale-tunnel cleanup spares live sessions, removes dead ones. 2026-11-10T20:13:07Z, ob-t-2
+## before the fix: make test-int failed 2 of 3 runs with AutoReconnect (shared tunnel label; a later
+## session's cleanup killed another live session's tunnel). After: 4 of 4 runs exit 0 (see make-test-int.txt).
+planted stale tunnel 1e17eb80c79d with owner pid 999999 (not running)
+20 passed in 3.79s
+RESULT: stale tunnel removed by the session's cleanup
+tunnels with this stack's label left after the session: 0

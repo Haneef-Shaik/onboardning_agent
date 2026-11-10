@@ -1,10 +1,19 @@
-# make test-int, 2026-11-10T18:23:15Z, goal/t-2-query-safety-net @ 7d6d922, compose project ob-t-2
-12 passed in 3.93s
-============================== 5 passed in 4.49s ===============================
-============================== 10 passed in 2.94s ==============================
-============================== 49 passed in 8.89s ==============================
-============================== 79 passed in 8.55s ==============================
-============================== 12 passed in 2.56s ==============================
-============================= 19 passed in 10.88s ==============================
- NX   Successfully ran target test-int for 6 projects
-make test-int exit=0
+# make test-int, 2026-11-10T20:03:33Z, goal/t-2-query-safety-net @ 3740320, compose project ob-t-2
+12 passed in 4.00s
+============================== 12 passed in 3.24s ==============================
+============================== 5 passed in 3.59s ===============================
+============================= 19 passed in 10.59s ==============================
+============================== 79 passed in 8.73s ==============================
+============================== 20 passed in 3.03s ==============================
+============================== 4 passed in 37.88s ==============================
+==================================== ERRORS ====================================
+___ ERROR at teardown of test_concurrent_claims_on_one_document_succeed_once ___
+                    ss.failed(self._error_message(selector), self.description)
+___ ERROR at setup of test_a_leased_write_with_a_stale_token_changes_nothing ___
+                    ss.failed(self._error_message(selector), self.description)
+ERROR libs/py-data/tests_int/test_transactions_and_queue.py::test_concurrent_claims_on_one_document_succeed_once - pymongo.errors.ServerSelectionTimeoutError: 127.0.0.1:55243: [Errno 61] Con...
+ERROR libs/py-data/tests_int/test_transactions_and_queue.py::test_a_leased_write_with_a_stale_token_changes_nothing - pymongo.errors.ServerSelectionTimeoutError: 127.0.0.1:55243: [Errno 61] Con...
+FAILED libs/py-data/tests_int/test_transactions_and_queue.py::test_concurrent_claims_on_one_document_succeed_once - pymongo.errors.AutoReconnect: 127.0.0.1:55243: connection closed (configure...
+============== 1 failed, 47 passed, 2 errors in 76.40s (0:01:16) ===============
+ NX   Running target test-int for 7 projects failed
+make test-int exit=2

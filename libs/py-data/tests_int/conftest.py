@@ -28,6 +28,8 @@ ROOT = Path(__file__).resolve().parents[3]
 SOCAT_IMAGE = "alpine/socat:1.8.1.3@sha256:e8a6e8868a8e6e01d9c2c321a8f8d4474d2d741d962462e5c5a124a8e66a0055"
 # Label value = the stack's network, so cleanup never touches another compose project's tunnel.
 TUNNEL_LABEL_KEY = "onb.test.mongo-tunnel"
+# The pid of the test session that owns a tunnel: stale-tunnel cleanup spares live sessions' tunnels.
+OWNER_LABEL_KEY = "onb.test.tunnel-owner-pid"
 
 
 # Re-exported so pytest registers the safety net hooks and fixtures for this suite.
@@ -56,9 +58,29 @@ def _mongo_endpoint() -> tuple[str, str]:
     return network, ip
 
 
+def _pid_alive(pid: int) -> bool:
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+    return True
+
+
 def _remove_stale_tunnels(label: str) -> None:
-    """This stack's tunnels left by a killed test session (their `finally` never ran)."""
-    stale = _run("docker", "ps", "-aq", "--filter", f"label={label}").split()
+    """This stack's tunnels left by a killed test session (their `finally` never ran).
+
+    py-crypto and py-evals reuse this fixture, so nx runs several sessions with this label at once.
+    Only a tunnel whose owning test process is gone is stale; a live session's tunnel is kept.
+    """
+    fmt = f'{{{{.ID}}}} {{{{.Label "{OWNER_LABEL_KEY}"}}}}'
+    rows = _run("docker", "ps", "-a", "--filter", f"label={label}", "--format", fmt).splitlines()
+    stale = []
+    for row in rows:
+        container, _, owner = row.partition(" ")
+        if not (owner.isdigit() and _pid_alive(int(owner))):
+            stale.append(container)
     if stale:
         subprocess.run(["docker", "rm", "-f", *stale], capture_output=True, check=False)
 
@@ -75,6 +97,8 @@ def mongo_tunnel() -> Iterator[str]:
         "--rm",
         "--label",
         label,
+        "--label",
+        f"{OWNER_LABEL_KEY}={os.getpid()}",
         "-p",
         "127.0.0.1::27017",
         SOCAT_IMAGE,

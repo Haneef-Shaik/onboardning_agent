@@ -1,0 +1,8 @@
+# make evals-selftest, 2026-11-10T20:02:32Z, goal/t-2-query-safety-net @ 3740320, compose project ob-t-2
+	uv run --frozen pytest libs/py-evals/tests_int/test_selftest.py -q -s -o cache_dir=.pytest_cache/py-evals-selftest
+selftest evr_20261110T200200Z_6e7a9b60: 27 cases x 3, all cases passed: True, gates: PASS, controls caught 8/8
+report: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-t-2/evals/reports/20261110T200200Z-all-fake_eval-scripted.json
+report: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-t-2/evals/reports/20261110T200200Z-all-fake_eval-scripted.md
+eval_runs: evr_20261110T200200Z_6e7a9b60
+1 passed in 32.29s
+make evals-selftest exit=0
