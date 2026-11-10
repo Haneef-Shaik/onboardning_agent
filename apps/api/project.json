@@ -24,7 +24,7 @@
       "executor": "@nxlv/python:run-commands",
       "cache": true,
       "options": {
-        "command": "uv run --frozen mypy --cache-dir .mypy_cache/api apps/api/src apps/api/tests",
+        "command": "uv run --frozen mypy --cache-dir .mypy_cache/api apps/api/src apps/api/tests apps/api/tests_int",
         "cwd": "."
       }
     },
@@ -37,6 +37,14 @@
         "env": {
           "COVERAGE_FILE": ".coverage.api"
         }
+      }
+    },
+    "test-int": {
+      "executor": "@nxlv/python:run-commands",
+      "cache": false,
+      "options": {
+        "command": "uv run --frozen pytest apps/api/tests_int -o cache_dir=.pytest_cache/api-int",
+        "cwd": "."
       }
     }
   }
