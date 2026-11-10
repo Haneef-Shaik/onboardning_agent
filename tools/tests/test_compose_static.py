@@ -38,14 +38,33 @@ def test_stack_file_exists(path: str) -> None:
     assert (ROOT / path).is_file(), path
 
 
-def test_images_are_pinned_to_exact_versions() -> None:
+PINNED = re.compile(r":\d+\.\d+\.\d+(\.\d+)?(-[a-z]+)?@sha256:[0-9a-f]{64}$")
+LOCAL_BUILD = "onb/"  # images built from infra/ Dockerfiles, whose FROM lines are pinned instead
+
+
+def test_pulled_images_are_pinned_by_version_and_digest() -> None:
     images = re.findall(r"^\s*image:\s*(\S+)", _text(COMPOSE), re.M)
     assert images
     for image in images:
-        assert re.search(r":\d+\.\d+\.\d+(-[a-z]+)?$", image), f"{image} is not pinned to an exact version"
-    for line in _text(ROOT / "infra" / "otel" / "Dockerfile").splitlines():
-        if line.startswith("FROM"):
-            assert re.search(r":\d+\.\d+\.\d+\b", line), line
+        if image.startswith(LOCAL_BUILD):
+            assert re.search(r":\d+\.\d+\.\d+$", image), image
+            continue
+        assert PINNED.search(image), f"{image} is not pinned to an exact version and digest"
+    froms = [
+        line.split()[1]
+        for line in _text(ROOT / "infra" / "otel" / "Dockerfile").splitlines()
+        if line.startswith("FROM")
+    ]
+    assert froms
+    for image in froms:
+        assert PINNED.search(image), image
+
+
+def test_test_tunnel_image_is_pinned_by_digest() -> None:
+    conftest = _text(ROOT / "libs" / "py-data" / "tests_int" / "conftest.py")
+    image = re.search(r'SOCAT_IMAGE = "([^"]+)"', conftest)
+    assert image
+    assert PINNED.search(image.group(1)), image.group(1)
 
 
 def test_mongo_runs_a_replica_set_with_auth_and_keyfile() -> None:
@@ -74,6 +93,46 @@ def test_dev_caddyfile_protects_jaeger_with_basic_auth() -> None:
     caddyfile = _text(ROOT / "infra" / "caddy" / "Caddyfile.dev")
     assert "basic_auth" in caddyfile
     assert "reverse_proxy jaeger:16686" in caddyfile
+
+
+def test_jaeger_credentials_never_travel_over_plain_http() -> None:
+    caddyfile = _text(ROOT / "infra" / "caddy" / "Caddyfile.dev")
+    assert "http://jaeger.localhost" not in caddyfile
+    assert "https://jaeger.localhost" in caddyfile
+
+
+def test_unknown_hosts_get_a_404() -> None:
+    caddyfile = _text(ROOT / "infra" / "caddy" / "Caddyfile.dev")
+    assert re.search(r"^:80 \{\n\trespond .* 404\n\}", caddyfile, re.M)
+
+
+def _run_gen_keyfile(keyfile: Path) -> None:
+    script = ROOT / "infra" / "mongo" / "gen-keyfile.sh"
+    subprocess.run(["sh", str(script), str(keyfile)], check=True, capture_output=True)
+
+
+def test_gen_keyfile_writes_a_private_keyfile(tmp_path: Path) -> None:
+    keyfile = tmp_path / "keyfile"
+    _run_gen_keyfile(keyfile)
+    assert keyfile.stat().st_mode & 0o777 == 0o400
+    assert len(keyfile.read_text().replace("\n", "")) >= 1000
+
+
+def test_gen_keyfile_keeps_an_existing_key_but_repairs_its_mode(tmp_path: Path) -> None:
+    keyfile = tmp_path / "keyfile"
+    keyfile.write_text("existing-key")
+    keyfile.chmod(0o644)
+    _run_gen_keyfile(keyfile)
+    assert keyfile.read_text() == "existing-key"
+    assert keyfile.stat().st_mode & 0o777 == 0o400
+
+
+def test_gen_keyfile_replaces_an_empty_read_only_keyfile(tmp_path: Path) -> None:
+    keyfile = tmp_path / "keyfile"
+    keyfile.touch()
+    keyfile.chmod(0o400)
+    _run_gen_keyfile(keyfile)
+    assert keyfile.stat().st_size > 0
 
 
 def test_collector_exports_traces_to_jaeger() -> None:

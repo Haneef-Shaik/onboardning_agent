@@ -9,8 +9,6 @@ import json
 import os
 import subprocess
 import time
-import urllib.error
-import urllib.request
 from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
@@ -33,7 +31,11 @@ def config() -> Mapping[str, Any]:
 
 
 def _ps() -> list[dict[str, Any]]:
-    out = _compose("ps", "--all", "--format", "json").stdout
+    """`compose ps --format json` rows; older compose prints one array, newer one object per line."""
+    out = _compose("ps", "--all", "--format", "json").stdout.strip()
+    if out.startswith("["):
+        rows: list[dict[str, Any]] = json.loads(out)
+        return rows
     return [json.loads(line) for line in out.splitlines() if line.strip()]
 
 
@@ -135,19 +137,53 @@ def test_collector_forwards_traces_to_jaeger() -> None:
     pytest.fail(f"{service} never reached Jaeger: {services.stdout} {services.stderr}")
 
 
-def _caddy_get(path: str, host: str) -> int:
-    port = os.environ.get("CADDY_HTTP_PORT", "80")
-    request = urllib.request.Request(f"http://127.0.0.1:{port}{path}", headers={"Host": host})
-    try:
-        with urllib.request.urlopen(request, timeout=5) as response:  # noqa: S310 - fixed loopback URL
-            return int(response.status)
-    except urllib.error.HTTPError as err:
-        return err.code
+def _caddy_status(scheme: str, host: str, path: str, *auth: str) -> int:
+    """HTTP status from Caddy's published port, as a browser on this machine would see it.
+
+    curl `--resolve` sends the right SNI for HTTPS; `-k` accepts Caddy's internal dev CA;
+    `--noproxy` keeps a CI proxy out of a loopback call.
+    """
+    bind = os.environ.get("CADDY_BIND_ADDRESS") or "127.0.0.1"
+    address = "127.0.0.1" if bind == "0.0.0.0" else bind  # noqa: S104 - compares, never binds
+    var = "CADDY_HTTPS_PORT" if scheme == "https" else "CADDY_HTTP_PORT"
+    port = os.environ.get(var) or ("443" if scheme == "https" else "80")
+    result = subprocess.run(
+        [
+            "curl",
+            "-sk",
+            "--noproxy",
+            "*",
+            "--max-time",
+            "5",
+            "--resolve",
+            f"{host}:{port}:{address}",
+            "-o",
+            "/dev/null",
+            "-w",
+            "%{http_code}",
+            *auth,
+            f"{scheme}://{host}:{port}{path}",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    return int(result.stdout or 0)
 
 
 def test_caddy_serves_health_on_the_published_port() -> None:
-    assert _caddy_get("/healthz", "localhost") == 200
+    assert _caddy_status("http", "localhost", "/healthz") == 200
+    assert _caddy_status("https", "localhost", "/healthz") == 200
 
 
 def test_jaeger_through_caddy_requires_basic_auth() -> None:
-    assert _caddy_get("/", "jaeger.localhost") == 401
+    assert _caddy_status("https", "jaeger.localhost", "/") == 401
+    assert _caddy_status("https", "jaeger.localhost", "/", "-u", "admin:wrong-password") == 401
+
+
+def test_jaeger_is_not_served_over_plain_http() -> None:
+    assert _caddy_status("http", "jaeger.localhost", "/") == 404
+
+
+def test_unknown_hosts_get_a_404() -> None:
+    assert _caddy_status("http", "unknown.example", "/") == 404

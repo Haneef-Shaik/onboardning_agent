@@ -38,7 +38,9 @@ def checker() -> ModuleType:
         ("bind: ${ADDR:+x}", {"ADDR"}),
         ("cmd: echo $PLAIN_VAR", {"PLAIN_VAR"}),
         ("cmd: echo $$NOT_A_VAR and $${ALSO_NOT}", set()),
-        ("# a comment mentioning ${COMMENTED}\nkey: v", set()),
+        # `#` lines are scanned too: inside a block scalar compose interpolates them, and a false
+        # positive (document one variable too many) is safer than a missed one.
+        ("cmd: |\n  # ${IN_BLOCK_SCALAR}\n  echo hi", {"IN_BLOCK_SCALAR"}),
         ("a: ${ONE}\nb: ${TWO:-${THREE}}", {"ONE", "TWO", "THREE"}),
     ],
 )

@@ -17,7 +17,10 @@ import pytest
 from pymongo import MongoClient
 
 ROOT = Path(__file__).resolve().parents[3]
-SOCAT_IMAGE = "alpine/socat:1.8.1.3"
+# Pinned by digest: this container carries the root login across the tunnel.
+SOCAT_IMAGE = "alpine/socat:1.8.1.3@sha256:e8a6e8868a8e6e01d9c2c321a8f8d4474d2d741d962462e5c5a124a8e66a0055"
+# Label value = the stack's network, so cleanup never touches another compose project's tunnel.
+TUNNEL_LABEL_KEY = "onb.test.mongo-tunnel"
 
 
 def _run(*args: str) -> str:
@@ -31,27 +34,41 @@ def _required_env(name: str) -> str:
     return value
 
 
-def _mongo_network() -> str:
+def _mongo_endpoint() -> tuple[str, str]:
+    """(network, ip) of the compose mongo container. The tunnel targets the IP, so it needs no
+    container DNS (which a default-bridge container may not get on Linux after `network connect`)."""
     container = _run("docker", "compose", "ps", "-q", "mongo")
     if not container:
         pytest.fail("the compose mongo service is not running: run `make up`")
-    networks = _run("docker", "inspect", "-f", "{{range $k, $v := .NetworkSettings.Networks}}{{$k}} {{end}}", container)
-    return networks.split()[0]
+    fmt = "{{range $k, $v := .NetworkSettings.Networks}}{{$k}} {{$v.IPAddress}}{{end}}"
+    network, ip = _run("docker", "inspect", "-f", fmt, container).split()
+    return network, ip
+
+
+def _remove_stale_tunnels(label: str) -> None:
+    """This stack's tunnels left by a killed test session (their `finally` never ran)."""
+    stale = _run("docker", "ps", "-aq", "--filter", f"label={label}").split()
+    if stale:
+        subprocess.run(["docker", "rm", "-f", *stale], capture_output=True, check=False)
 
 
 @pytest.fixture(scope="session")
 def mongo_tunnel() -> Iterator[str]:
-    network = _mongo_network()
+    network, mongo_ip = _mongo_endpoint()
+    label = f"{TUNNEL_LABEL_KEY}={network}"
+    _remove_stale_tunnels(label)
     tunnel = _run(
         "docker",
         "run",
         "-d",
         "--rm",
+        "--label",
+        label,
         "-p",
         "127.0.0.1::27017",
         SOCAT_IMAGE,
         "TCP-LISTEN:27017,fork,reuseaddr",
-        "TCP:mongo:27017",
+        f"TCP:{mongo_ip}:27017",
     )
     try:
         _run("docker", "network", "connect", network, tunnel)

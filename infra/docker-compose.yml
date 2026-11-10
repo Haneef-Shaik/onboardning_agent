@@ -13,7 +13,7 @@ x-service: &service
 services:
   mongo:
     <<: *service
-    image: mongo:8.0.34
+    image: mongo:8.0.34@sha256:b9924c330a8bbc5800fe9c69f04a84e221eca7b28fd049a0354147d9908fa142
     # The keyfile arrives as a bind-mounted secret owned by the host user; mongod needs it owned by
     # `mongodb` and mode 0400, so copy it into place before the stock entrypoint runs.
     entrypoint:
@@ -64,7 +64,7 @@ services:
 
   jaeger:
     <<: *service
-    image: jaegertracing/jaeger:2.23.0
+    image: jaegertracing/jaeger:2.23.0@sha256:3823829974ccfc2485d2e48b165579091f32295022ae80ca49704e2f4834116e
     healthcheck:
       test: [CMD, wget, -q, --spider, http://127.0.0.1:13133/status]
       interval: 10s
@@ -75,7 +75,7 @@ services:
 
   caddy:
     <<: *service
-    image: caddy:2.11.9-alpine
+    image: caddy:2.11.9-alpine@sha256:0bbb055bda6793c999bde78b1b5ce3e89f829fb031af2cf50056ea1246559fee
     ports:
       - ${CADDY_BIND_ADDRESS:-127.0.0.1}:${CADDY_HTTP_PORT:-80}:80
       - ${CADDY_BIND_ADDRESS:-127.0.0.1}:${CADDY_HTTPS_PORT:-443}:443

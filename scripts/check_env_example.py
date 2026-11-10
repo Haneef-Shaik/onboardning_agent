@@ -24,9 +24,12 @@ _ENV_LINE = re.compile(rf"^\s*(?:export\s+)?({_NAME})\s*=")
 
 
 def compose_variables(text: str) -> set[str]:
-    """Names interpolated as `${VAR…}` or `$VAR`; `$$` escapes and full-line comments are ignored."""
-    lines = (line for line in text.splitlines() if not line.lstrip().startswith("#"))
-    body = _ESCAPED.sub("", "\n".join(lines))
+    """Names interpolated as `${VAR…}` or `$VAR`; `$$` escapes are ignored.
+
+    `#` lines are scanned too: compose interpolates them inside block scalars, and documenting a
+    variable that only a comment mentions is a safer mistake than missing one.
+    """
+    body = _ESCAPED.sub("", text)
     return set(_BRACED.findall(body)) | set(_BARE.findall(body))
 
 

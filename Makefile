@@ -55,7 +55,8 @@ test-int: up
 	$(NX) run-many -t test-int --output-style=static
 
 ## Base stack (PRD §7.11): mongo (replica set, auth, keyfile), otel-collector, jaeger, caddy.
-## `.env` names the compose file, project and profile, so plain `docker compose …` works too.
+## `.env` names the compose file, project and profile, so plain `docker compose …` works too once
+## this target has generated the Mongo keyfile. Needs Docker Engine 25+ (healthcheck start_interval).
 up: $(ENV_FILE)
 	infra/mongo/gen-keyfile.sh
 	$(COMPOSE) up -d --wait --build

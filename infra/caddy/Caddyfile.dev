@@ -14,9 +14,15 @@ http://localhost, https://localhost {
 }
 
 # Jaeger UI, behind basic auth (PRD §7.11: "Jaeger is reached via the proxy with basic auth").
-http://jaeger.localhost, https://jaeger.localhost {
+# HTTPS only, so the credentials never cross the network in clear text.
+https://jaeger.localhost {
 	basic_auth {
 		{$JAEGER_BASIC_AUTH_USER} {$JAEGER_BASIC_AUTH_HASH}
 	}
 	reverse_proxy jaeger:16686
+}
+
+# Any other host name on plain HTTP.
+:80 {
+	respond "not found" 404
 }
