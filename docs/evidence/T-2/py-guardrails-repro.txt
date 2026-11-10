@@ -1,0 +1,2 @@
+input   : '_account number 000000000'
+redacted: '_account number 000000000'

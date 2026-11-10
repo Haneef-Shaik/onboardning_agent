@@ -1,0 +1,105 @@
+# make check, 2026-11-10T05:22:59Z, goal/t-2-query-safety-net @ d175d2d
+plan ok: 67 goals, 34 ledger rows
+All checks passed!
+152 passed, 67 subtests passed in 0.74s
+- py-guardrails
+- ts-api-client
+- orchestrator
+- py-contracts
+- py-telemetry
+- py-eventbus
+- mcp-mocks
+- mcp-mongo
+- py-agents
+- py-crypto
+- py-evals
+- mcp-hub
+- py-data
+- py-llm
+- ts-ui
+- api
+- web
+All checks passed!
+All checks passed!
+All checks passed!
+All checks passed!
+All checks passed!
+All checks passed!
+All checks passed!
+All checks passed!
+All checks passed!
+All checks passed!
+All checks passed!
+All checks passed!
+All checks passed!
+All checks passed!
+ NX   Successfully ran target lint for 17 projects
+- py-guardrails
+- ts-api-client
+- orchestrator
+- py-contracts
+- py-telemetry
+- py-eventbus
+- mcp-mocks
+- mcp-mongo
+- py-agents
+- py-crypto
+- py-evals
+- mcp-hub
+- py-data
+- py-llm
+- ts-ui
+- api
+- web
+ NX   Successfully ran target typecheck for 17 projects
+- py-guardrails
+- ts-api-client
+- orchestrator
+- py-contracts
+- py-telemetry
+- py-eventbus
+- mcp-mocks
+- mcp-mongo
+- py-agents
+- py-crypto
+- py-evals
+- mcp-hub
+- py-data
+- py-llm
+- ts-ui
+- api
+- web
+ Test Files  1 passed (1)
+      Tests  1 passed (1)
+============================= 238 passed in 1.82s ==============================
+============================== 53 passed in 1.38s ==============================
+============================== 1 passed in 0.31s ===============================
+============================== 1 passed in 0.27s ===============================
+============================== 1 passed in 0.33s ===============================
+============================== 1 passed in 0.33s ===============================
+============================== 1 passed in 0.24s ===============================
+============================== 1 passed in 0.24s ===============================
+============================== 1 passed in 0.24s ===============================
+============================== 1 passed in 0.31s ===============================
+============================== 1 passed in 0.17s ===============================
+ Test Files  1 passed (1)
+      Tests  1 passed (1)
+============================== 1 passed in 0.20s ===============================
+============================== 1 passed in 0.16s ===============================
+ Test Files  1 passed (1)
+      Tests  1 passed (1)
+FAILED libs/py-guardrails/tests/pii/test_redact_property.py::test_no_character_of_a_value_survives_in_any_glue - AssertionError: assert ['0', '0', '0...'0', '0', ...] == []
+======================== 1 failed, 178 passed in 37.52s ========================
+Failed tasks:
+- py-guardrails:test
+make: *** [test] Error 1
+make check exit=2
+
+# py-data targets alone (the only project this diff touches)
+All checks passed!
+Success: no issues found in 20 source files(B
+TOTAL                                       577      0   100%
+Required test coverage of 80% reached. Total coverage: 100.00%
+============================= 238 passed in 1.42s ==============================
+ NX   Successfully ran targets lint, typecheck, test for project py-data
+nx run-many -t lint typecheck test -p py-data exit=0
