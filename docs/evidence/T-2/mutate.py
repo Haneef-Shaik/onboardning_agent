@@ -15,7 +15,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[3]
 SRC = "libs/py-data/src/onb_data/safety_net.py"
 QA = "libs/py-data/src/onb_data/queue_allowance.py"
-CONFTEST = "libs/py-data/tests_int/conftest.py"
+CONFTEST = "libs/py-data/src/onb_data/safety_net_pytest.py"  # the shared plugin every Mongo suite loads
+CRYPTO_CONFTEST = "libs/py-crypto/tests_int/conftest.py"
+TELEMETRY_CONFTEST = "libs/py-telemetry/tests_int/conftest.py"
 
 # id: (what, file, [(old, new), ...])
 MUTATIONS: dict[str, tuple[str, str, list[tuple[str, str]]]] = {
@@ -166,6 +168,29 @@ MUTATIONS: dict[str, tuple[str, str, list[tuple[str, str]]]] = {
         SRC,
         [("(collection in QUEUE_COLLECTIONS and not unique)", "collection in QUEUE_COLLECTIONS")],
     ),
+    # --- attempt 3: every Mongo suite under the net (goal-verifier attempt 2) ----------------------
+    "P1": (
+        "suites: py-crypto's conftest no longer loads the plugin",
+        CRYPTO_CONFTEST,
+        [
+            (
+                "from onb_data.safety_net_pytest import (  # T-2 tenant safety net (PRD §7.9): registers these with pytest\n"
+                "    pytest_configure,\n    pytest_sessionfinish,\n    tenant_safety_net,\n"
+                "    tenant_safety_net_guard,\n    unscoped,\n)\n",
+                "",
+            )
+        ],
+    ),
+    "P2": (
+        "suites: py-telemetry's conftest loads only part of the plugin (no guard)",
+        TELEMETRY_CONFTEST,
+        [("    tenant_safety_net_guard,\n    unscoped,\n)", "    unscoped,\n)")],
+    ),
+    "P3": (
+        "plugin: a violation after the last test no longer fails the run",
+        CONFTEST,
+        [("        session.exitstatus = pytest.ExitCode.TESTS_FAILED\n", "        pass\n")],
+    ),
 }
 
 
@@ -190,6 +215,9 @@ def main() -> int:
         "unit": ["uv", "run", "--frozen", "pytest", "libs/py-data/tests", "-q", "-p", "no:cacheprovider"],
         "int": ["uv", "run", "--frozen", "pytest", "libs/py-data/tests_int", "-q", "-p", "no:cacheprovider"],
         "bus": ["uv", "run", "--frozen", "pytest", "libs/py-eventbus/tests_int", "-q", "-p", "no:cacheprovider"],
+        "cryp": ["uv", "run", "--frozen", "pytest", "libs/py-crypto/tests_int", "-q", "-p", "no:cacheprovider"],
+        "tele": ["uv", "run", "--frozen", "pytest", "libs/py-telemetry/tests_int", "-q", "-p", "no:cacheprovider"],
+        "tool": ["uv", "run", "--frozen", "pytest", "tools/tests/test_safety_net_suites.py", "-q", "-p", "no:cacheprovider"],
     }
     only = set(sys.argv[1:])
     for mid, (what, rel, edits) in MUTATIONS.items():
@@ -216,7 +244,7 @@ def main() -> int:
                 print(f"  {suite:4} FAILED {name}")
         caught = any(failures(output) for output in outputs.values())
         print(f"caught: {'yes' if caught else 'NO'}\n")
-    diff = run(["git", "status", "--porcelain", "--", SRC, QA, CONFTEST]).strip()
+    diff = run(["git", "status", "--porcelain", "--", SRC, QA, CONFTEST, CRYPTO_CONFTEST, TELEMETRY_CONFTEST]).strip()
     print(f"worktree after all mutations: {'clean' if not diff else diff}")
     return 0
 
