@@ -6,7 +6,7 @@
    FAILED libs/py-crypto/tests/test_sink.py::test_the_audit_record_names_the_verified_grant_but_holds_no_value
    FAILED libs/py-crypto/tests/test_sink.py::test_the_audit_record_to_document_matches_the_audit_log_shape
    FAILED libs/py-crypto/tests/test_vault.py::test_resolving_with_the_wrong_subject_or_field_is_refused
-   7 failed, 408 passed in 1.41s
+   7 failed, 417 passed in 0.84s
 == G2 (box 3: subject binding, the sink resolves with the token's own subject instead of the grant's) -> KILLED
    FAILED libs/py-crypto/tests/test_sink.py::test_rejects_another_hires_token - ...
    FAILED libs/py-crypto/tests/test_sink.py::test_rejects_another_hires_token_mixed_in_with_the_right_one
@@ -14,42 +14,43 @@
    FAILED libs/py-crypto/tests/test_sink.py::test_a_failing_audit_store_does_not_turn_a_rejection_into_a_release
    FAILED libs/py-crypto/tests/test_sink.py::test_the_audit_record_names_the_verified_grant_but_holds_no_value
    FAILED libs/py-crypto/tests/test_sink.py::test_the_audit_record_to_document_matches_the_audit_log_shape
-   6 failed, 409 passed in 0.68s
+   6 failed, 418 passed in 0.70s
 == G3 (box 1 bad signature: the Ed25519 signature is never checked) -> KILLED
    FAILED libs/py-crypto/tests/test_grants.py::test_bad_signature_another_key_claiming_our_kid_is_rejected
    FAILED libs/py-crypto/tests/test_grants.py::test_bad_signature_a_flipped_signature_bit_is_rejected
    FAILED libs/py-crypto/tests/test_grants.py::test_bad_signature_a_widened_payload_under_the_old_signature_is_rejected
    FAILED libs/py-crypto/tests/test_grants.py::test_a_non_canonical_base64_signature_is_rejected
    FAILED libs/py-crypto/tests/test_grants.py::test_a_rejection_message_never_echoes_the_grant
-   5 failed, 410 passed in 1.61s
+   5 failed, 419 passed in 1.05s
 == G4 (box 1 bad signature: any header accepted once the kid is known) -> KILLED
    FAILED libs/py-crypto/tests/test_grants.py::test_bad_signature_an_unexpected_header_is_rejected[header_change0]
    FAILED libs/py-crypto/tests/test_grants.py::test_bad_signature_an_unexpected_header_is_rejected[header_change2]
    FAILED libs/py-crypto/tests/test_grants.py::test_bad_signature_an_unexpected_header_is_rejected[header_change3]
-   3 failed, 412 passed in 3.11s
+   3 failed, 421 passed in 1.94s
 == G5 (box 1 expired: exp ignored) -> KILLED
    FAILED libs/py-crypto/tests/test_grants.py::test_expired_grant_is_rejected - ...
    FAILED libs/py-crypto/tests/test_sink.py::test_rejects_an_expired_grant - Fai...
-   2 failed, 413 passed in 1.32s
+   2 failed, 422 passed in 1.05s
 == G6 (box 1 expired: a signed grant may live longer than 10 minutes) -> KILLED
    FAILED libs/py-crypto/tests/test_grants.py::test_expired_a_signed_grant_living_longer_than_ten_minutes_is_rejected
-   1 failed, 414 passed in 0.66s
+   1 failed, 423 passed in 1.01s
 == G7 (box 1 wrong sink: sink id not compared) -> KILLED
    FAILED libs/py-crypto/tests/test_sink.py::test_rejects_the_wrong_sink - Asser...
-   1 failed, 414 passed in 1.18s
+   1 failed, 423 passed in 1.25s
 == G8 (box 1 another org: grant org not compared) -> KILLED
-   FAILED libs/py-crypto/tests/test_sink.py::test_rejects_another_orgs_grant - o...
-   1 failed, 414 passed in 1.11s
+   ERROR    onb_crypto.sink:sink.py:221 grant resolution failed: org=org_alpha sink=notify.telegram error=TenantViolationError
+   FAILED libs/py-crypto/tests/test_sink.py::test_rejects_another_orgs_grant - A...
+   1 failed, 423 passed in 2.83s
 == G9 (box 1 field not granted: grant fields not checked) -> KILLED
    FAILED libs/py-crypto/tests/test_sink.py::test_rejects_a_field_not_granted - ...
    FAILED libs/py-crypto/tests/test_sink.py::test_rejects_a_field_not_granted_at_the_shipped_telegram_sink
-   2 failed, 413 passed in 2.20s
+   2 failed, 422 passed in 1.49s
 == G10 (box 1 policy-forbidden field: the sink skips the field -> sink policy) -> KILLED
    FAILED libs/py-crypto/tests/test_sink.py::test_rejects_aadhaar_even_when_the_grant_lists_it
    FAILED libs/py-crypto/tests/test_sink.py::test_rejects_pan_and_bank_fields_even_when_the_grant_lists_them[pan]
    FAILED libs/py-crypto/tests/test_sink.py::test_rejects_pan_and_bank_fields_even_when_the_grant_lists_them[bank_account]
    FAILED libs/py-crypto/tests/test_sink.py::test_rejects_pan_and_bank_fields_even_when_the_grant_lists_them[ifsc]
-   4 failed, 411 passed in 1.03s
+   4 failed, 420 passed in 1.64s
 == G11 (box 1 policy-forbidden field: the never-sinkable floor is dropped from the policy) -> KILLED
    FAILED libs/py-crypto/tests/test_sink_policy.py::test_a_config_that_grants_a_never_sinkable_field_is_refused[aadhaar]
    FAILED libs/py-crypto/tests/test_sink_policy.py::test_a_config_that_grants_a_never_sinkable_field_is_refused[pan]
@@ -57,32 +58,35 @@
    FAILED libs/py-crypto/tests/test_sink_policy.py::test_a_config_that_grants_a_never_sinkable_field_is_refused[ifsc]
    FAILED libs/py-crypto/tests/test_sink_policy.py::test_a_config_that_grants_a_never_sinkable_field_is_refused[account_holder_name]
    FAILED libs/py-crypto/tests/test_sink_policy.py::test_the_policy_object_itself_refuses_a_never_sinkable_field
-   6 failed, 409 passed in 0.78s
+   6 failed, 418 passed in 1.52s
 == G12 (box 1 replayed jti: jti never consumed) -> KILLED
    FAILED libs/py-crypto/tests/test_sink.py::test_the_jti_is_kept_until_the_grant_expires
    FAILED libs/py-crypto/tests/test_sink.py::test_rejects_a_replayed_jti - Faile...
    FAILED libs/py-crypto/tests/test_sink.py::test_rejects_a_replayed_jti_even_after_a_failed_first_use
+   FAILED libs/py-crypto/tests/test_sink.py::test_an_unexpected_store_failure_is_a_rejection_and_is_audited
    FAILED libs/py-crypto/tests/test_sink.py::test_rejects_a_concurrent_replay_through_the_unique_jti_index
-   4 failed, 411 passed in 2.43s
+   5 failed, 419 passed in 1.13s
 == G13 (box 1 replayed jti: a concurrent duplicate insert is not turned into a rejection) -> KILLED
+   ERROR    onb_crypto.sink:sink.py:221 grant resolution failed: org=org_alpha sink=notify.telegram error=DuplicateKeyError
    FAILED libs/py-crypto/tests/test_sink.py::test_rejects_a_concurrent_replay_through_the_unique_jti_index
-   1 failed, 414 passed in 1.56s
+   1 failed, 423 passed in 1.29s
 == G14 (sink: a purged token is released as '[purged]') -> KILLED
    FAILED libs/py-crypto/tests/test_sink.py::test_rejects_a_purged_token - Faile...
-   1 failed, 414 passed in 0.78s
+   1 failed, 423 passed in 1.67s
 == G15 (box 2: the access log stores the raw value instead of the mask) -> KILLED
    FAILED libs/py-crypto/tests/test_sink.py::test_a_successful_resolution_writes_exactly_one_access_log_entry_holding_a_masked_value_only
    FAILED libs/py-crypto/tests/test_sink.py::test_an_email_resolves_at_the_email_sink_with_its_mask
-   2 failed, 413 passed in 0.99s
+   2 failed, 422 passed in 0.67s
 == G16 (issuer: signs a field the policy does not allow at that sink) -> KILLED
    FAILED libs/py-crypto/tests/test_grants.py::test_the_issuer_refuses_a_field_the_policy_does_not_allow_at_that_sink
-   1 failed, 414 passed in 0.68s
+   1 failed, 423 passed in 0.74s
 == G17 (issuer: lifetime not capped at 10 minutes) -> KILLED
    FAILED libs/py-crypto/tests/test_grants.py::test_the_issuer_refuses_a_lifetime_outside_zero_to_ten_minutes[ttl0]
    FAILED libs/py-crypto/tests/test_grants.py::test_the_issuer_refuses_a_lifetime_outside_zero_to_ten_minutes[ttl1]
    FAILED libs/py-crypto/tests/test_grants.py::test_the_issuer_refuses_a_lifetime_outside_zero_to_ten_minutes[ttl2]
    FAILED libs/py-crypto/tests/test_grants.py::test_the_issuer_refuses_a_lifetime_outside_zero_to_ten_minutes[ttl3]
-   4 failed, 411 passed in 1.54s
+   FAILED libs/py-crypto/tests/test_grants.py::test_the_issuer_refuses_a_lifetime_outside_zero_to_ten_minutes[ttl4]
+   5 failed, 419 passed in 0.66s
 source diff after all mutations: 0 files differ
 survivors: none
 exit=0
