@@ -2,4 +2,4 @@ libs/py-crypto/tests_int/test_vault_mongo.py::test_put_update_resolve_and_tamper
 libs/py-crypto/tests_int/test_vault_mongo.py::test_aadhaar_lands_only_in_its_partition_with_consent PASSED [ 50%]
 libs/py-crypto/tests_int/test_vault_mongo.py::test_the_unique_indexes_refuse_a_second_record_of_the_same_version PASSED [ 75%]
 libs/py-crypto/tests_int/test_vault_mongo.py::test_a_concurrent_update_of_one_field_has_one_winner PASSED [100%]
-============================== 4 passed in 2.49s ===============================
+============================== 4 passed in 1.57s ===============================

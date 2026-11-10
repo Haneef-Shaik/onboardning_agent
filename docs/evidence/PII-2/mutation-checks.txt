@@ -1,18 +1,18 @@
 == V1 (box 1: subject.id not signed) -> KILLED
    FAILED libs/py-crypto/tests/test_vault.py::test_tamper_changed_subject_id_fails_closed
-   1 failed, 264 passed in 0.49s
+   1 failed, 264 passed in 0.50s
 == V2 (box 1: ciphertext, nonce and key_version not signed) -> KILLED
    FAILED libs/py-crypto/tests/test_vault.py::test_tamper_ciphertext_swapped_between_records_fails_closed
    FAILED libs/py-crypto/tests/test_vault.py::test_tamper_with_any_other_signed_part_fails_closed[nonce-\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00]
    FAILED libs/py-crypto/tests/test_vault.py::test_tamper_with_any_other_signed_part_fails_closed[ciphertext-\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00]
-   3 failed, 262 passed in 0.45s
+   3 failed, 262 passed in 0.68s
 == V3 (box 1: field not signed) -> KILLED
    FAILED libs/py-crypto/tests/test_vault.py::test_tamper_changed_field_fails_closed
-   1 failed, 264 passed in 0.46s
+   1 failed, 264 passed in 0.85s
 == V4 (box 1: status not signed) -> KILLED
    FAILED libs/py-crypto/tests/test_vault.py::test_tamper_changed_status_fails_closed
    FAILED libs/py-crypto/tests/test_vault.py::test_the_vault_never_logs_values
-   2 failed, 263 passed in 0.60s
+   2 failed, 263 passed in 0.78s
 == V5 (box 1: sig never compared) -> KILLED
    FAILED libs/py-crypto/tests/test_vault.py::test_tamper_changed_subject_id_fails_closed
    FAILED libs/py-crypto/tests/test_vault.py::test_tamper_ciphertext_swapped_between_records_fails_closed
@@ -28,11 +28,11 @@
    FAILED libs/py-crypto/tests/test_vault.py::test_tamper_with_any_other_signed_part_fails_closed[ciphertext-\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00]
    FAILED libs/py-crypto/tests/test_vault.py::test_an_update_over_a_tampered_current_record_fails_closed
    FAILED libs/py-crypto/tests/test_vault.py::test_the_vault_never_logs_values
-   14 failed, 251 passed in 0.54s
+   14 failed, 251 passed in 0.75s
 == V6 (box 1 (defence in depth): AAD binds only org and field) -> KILLED
    FAILED libs/py-crypto/tests/test_vault.py::test_the_ciphertext_is_aes_gcm_bound_to_org_subject_field_token_and_version
    FAILED libs/py-crypto/tests/test_vault.py::test_tamper_ciphertext_swapped_and_resigned_still_fails_on_the_aad
-   2 failed, 263 passed in 0.56s
+   2 failed, 263 passed in 0.48s
 == V7 (box 2: the old record is never superseded) -> KILLED
    FAILED libs/py-crypto/tests/test_vault.py::test_tamper_changed_status_fails_closed
    FAILED libs/py-crypto/tests/test_vault.py::test_an_update_creates_a_new_token_supersedes_the_old_record_and_both_verify
@@ -42,7 +42,7 @@
    FAILED libs/py-crypto/tests/test_vault_aadhaar.py::test_an_aadhaar_update_supersedes_within_the_partition_and_records_consent_again
    FAILED libs/py-crypto/tests/test_vault_review_fixes.py::test_a_failed_supersede_leaves_no_live_old_value_and_the_next_update_cleans_up
    FAILED libs/py-crypto/tests/test_vault_review_fixes.py::test_an_old_record_purged_during_an_update_does_not_fail_the_update
-   8 failed, 257 passed in 0.58s
+   8 failed, 257 passed in 0.52s
 == V8 (box 2: an update does not get a new version) -> KILLED
    FAILED libs/py-crypto/tests/test_vault.py::test_tamper_changed_status_fails_closed
    FAILED libs/py-crypto/tests/test_vault.py::test_an_update_creates_a_new_token_supersedes_the_old_record_and_both_verify
@@ -55,7 +55,7 @@
    FAILED libs/py-crypto/tests/test_vault_review_fixes.py::test_a_replayed_active_copy_of_a_superseded_record_does_not_resolve
    FAILED libs/py-crypto/tests/test_vault_review_fixes.py::test_a_failed_supersede_leaves_no_live_old_value_and_the_next_update_cleans_up
    FAILED libs/py-crypto/tests/test_vault_review_fixes.py::test_an_old_record_purged_during_an_update_does_not_fail_the_update
-   11 failed, 254 passed in 0.68s
+   11 failed, 254 passed in 0.73s
 == V9 (box 3: Aadhaar written to the general partition) -> KILLED
    FAILED libs/py-crypto/tests/test_vault.py::test_resolving_with_the_wrong_subject_or_field_is_refused
    FAILED libs/py-crypto/tests/test_vault_aadhaar.py::test_aadhaar_records_land_only_in_the_aadhaar_partition
@@ -65,13 +65,13 @@
    FAILED libs/py-crypto/tests/test_vault_aadhaar.py::test_an_aadhaar_update_supersedes_within_the_partition_and_records_consent_again
    FAILED libs/py-crypto/tests/test_vault_aadhaar.py::test_aadhaar_is_stored_as_its_twelve_digits
    FAILED libs/py-crypto/tests/test_vault_review_fixes.py::test_a_failed_aadhaar_write_leaves_no_consent_record
-   8 failed, 257 passed in 0.74s
+   8 failed, 257 passed in 0.55s
 == V10 (box 3: Aadhaar encrypted with the data key) -> KILLED
    FAILED libs/py-crypto/tests/test_vault_aadhaar.py::test_aadhaar_uses_the_aadhaar_key_and_not_the_data_key
-   1 failed, 264 passed in 0.68s
+   1 failed, 264 passed in 0.54s
 == V11 (box 4: the 128 extra bits come from `random`, not `secrets`) -> KILLED
    FAILED libs/py-crypto/tests/test_tokens.py::test_tokens_use_secrets_for_every_random_bit
-   1 failed, 264 passed in 0.56s
+   1 failed, 264 passed in 0.52s
 == V12 (box 4: token without the 128 extra bits (wrong length)) -> KILLED
    FAILED libs/py-crypto/tests/test_tokens.py::test_tokens_have_the_documented_prefix_and_length
    FAILED libs/py-crypto/tests/test_tokens.py::test_tokens_use_secrets_for_every_random_bit
@@ -128,47 +128,45 @@
    FAILED libs/py-crypto/tests/test_vault_review_fixes.py::test_a_failed_supersede_leaves_no_live_old_value_and_the_next_update_cleans_up
    FAILED libs/py-crypto/tests/test_vault_review_fixes.py::test_an_old_record_purged_during_an_update_does_not_fail_the_update
    FAILED libs/py-crypto/tests/test_vault_review_fixes.py::test_a_purge_that_loses_a_race_is_a_conflict
-   55 failed, 210 passed in 1.41s
+   55 failed, 210 passed in 2.06s
 == V13 (box 3: a record in the wrong partition is accepted) -> KILLED
    FAILED libs/py-crypto/tests/test_vault_aadhaar.py::test_an_aadhaar_record_moved_into_the_general_partition_is_not_resolved_there
    FAILED libs/py-crypto/tests/test_vault_aadhaar.py::test_a_general_record_moved_into_the_aadhaar_partition_is_refused
-   2 failed, 263 passed in 0.54s
+   2 failed, 263 passed in 0.71s
 == V14 (binding: the reader's expected subject and field are ignored) -> KILLED
    FAILED libs/py-crypto/tests/test_vault.py::test_resolving_with_the_wrong_subject_or_field_is_refused
    FAILED libs/py-crypto/tests/test_vault.py::test_resolving_with_the_wrong_field_in_the_same_partition_is_refused
    FAILED libs/py-crypto/tests/test_vault_aadhaar.py::test_a_general_record_moved_into_the_aadhaar_partition_is_refused
-   3 failed, 262 passed in 0.70s
+   3 failed, 262 passed in 0.97s
 == V15 (box 2: a superseded token resolves by default) -> KILLED
    FAILED libs/py-crypto/tests/test_vault.py::test_a_superseded_token_does_not_resolve_by_default
    FAILED libs/py-crypto/tests/test_vault_review_fixes.py::test_a_replayed_active_copy_of_a_superseded_record_does_not_resolve
    FAILED libs/py-crypto/tests/test_vault_review_fixes.py::test_a_failed_supersede_leaves_no_live_old_value_and_the_next_update_cleans_up
-   3 failed, 262 passed in 0.64s
+   3 failed, 262 passed in 0.78s
 == V16 (retention: a purged record may keep ciphertext) -> KILLED
    FAILED libs/py-crypto/tests/test_vault.py::test_tamper_changed_status_fails_closed
    FAILED libs/py-crypto/tests/test_vault.py::test_a_purged_record_that_kept_its_ciphertext_fails_closed_even_when_signed
-   2 failed, 263 passed in 0.50s
+   2 failed, 263 passed in 0.58s
 == V17 (a token stored twice is accepted) -> KILLED
    FAILED libs/py-crypto/tests/test_vault.py::test_a_duplicated_token_fails_closed
-   1 failed, 264 passed in 0.70s
+   1 failed, 264 passed in 0.54s
 == V18 (box 2: an update builds on the current record without verifying it) -> KILLED
    FAILED libs/py-crypto/tests/test_vault.py::test_an_update_over_a_tampered_current_record_fails_closed
-   1 failed, 264 passed in 0.77s
+   1 failed, 264 passed in 0.53s
 == V19 (Aadhaar stored without a consent record) -> KILLED
    FAILED libs/py-crypto/tests/test_vault_aadhaar.py::test_aadhaar_needs_a_consent_record
-   1 failed, 264 passed in 0.93s
+   1 failed, 264 passed in 0.42s
 == V20 (review H1: an older record still marked active resolves (replayed or half-superseded)) -> KILLED
    FAILED libs/py-crypto/tests/test_vault_review_fixes.py::test_a_replayed_active_copy_of_a_superseded_record_does_not_resolve
    FAILED libs/py-crypto/tests/test_vault_review_fixes.py::test_a_failed_supersede_leaves_no_live_old_value_and_the_next_update_cleans_up
-   2 failed, 263 passed in 0.44s
+   2 failed, 263 passed in 0.62s
 == V21 (review: consent record left behind when the vault insert fails) -> KILLED
    FAILED libs/py-crypto/tests/test_vault_review_fixes.py::test_a_failed_aadhaar_write_leaves_no_consent_record
-   1 failed, 264 passed in 0.45s
+   1 failed, 264 passed in 0.47s
 == V22 (review: a supersede that matched nothing is accepted without re-reading) -> KILLED
    FAILED libs/py-crypto/tests/test_vault.py::test_an_update_that_loses_a_race_is_reported
    FAILED libs/py-crypto/tests/test_vault_review_fixes.py::test_a_failed_supersede_leaves_no_live_old_value_and_the_next_update_cleans_up
-   2 failed, 263 passed in 0.49s
-source diff after all mutations: libs/py-crypto/src/onb_crypto/tokens.py |  4 +-
- libs/py-crypto/src/onb_crypto/vault.py  | 85 ++++++++++++++++++++++++++-------
- 2 files changed, 71 insertions(+), 18 deletions(-)
+   2 failed, 263 passed in 0.45s
+source diff after all mutations: 0 files differ
 survivors: none
 exit=0
