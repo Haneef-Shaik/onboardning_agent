@@ -1,5 +1,5 @@
 # F-4 box 2: a test FastAPI app's span is returned by Jaeger's API through the compose collector
-# Date: 2026-11-10T04:50:33Z · branch goal/f-4-telemetry-lib · at 6591ae3
+# Date: 2026-11-10T04:57:35Z · branch goal/f-4-telemetry-lib · at d0984ed
 # Stack: COMPOSE_PROJECT_NAME=ob-f-4 (make up), Caddy HTTPS on 127.0.0.1:18101, Docker Engine 29.8.2 (macOS Docker Desktop)
 # Path: FastAPI app in the pytest process -> init_telemetry OTLP/HTTP -> socat tunnel -> otel-collector:4318
 #       -> collector otlp_grpc exporter -> jaeger:4317. Read back through Caddy (HTTPS + basic auth) -> jaeger:16686.
@@ -7,13 +7,13 @@
 ## 1. The test (sends the span, then reads it back from Jaeger's API through a tunnel)
 $ uv run --frozen --env-file .env pytest libs/py-telemetry/tests_int -k fastapi_span -q -s -p no:cacheprovider
 
-Jaeger returned trace cc794a254ced16ed8513a22b0cab5237 for service f4-probe-f668366a: [('f4-probe-f668366a', 'onb_telemetry', 'f4.resumed-after-wait'), ('f4-probe-f668366a', 'opentelemetry.instrumentation.fastapi', 'GET /ping'), ('f4-probe-f668366a', 'opentelemetry.instrumentation.fastapi', 'GET /ping http send')]
+Jaeger returned trace f111c199e04f7cc7f9d8b768921e3934 for service f4-probe-4e287ee5: [('f4-probe-4e287ee5', 'onb_telemetry', 'f4.resumed-after-wait'), ('f4-probe-4e287ee5', 'opentelemetry.instrumentation.fastapi', 'GET /ping'), ('f4-probe-4e287ee5', 'opentelemetry.instrumentation.fastapi', 'GET /ping http send')]
 .
 
-1 passed, 2 deselected, 1 warning in 1.25s
+1 passed, 2 deselected, 1 warning in 1.49s
 
 ## 2. curl through Caddy (the only published port) with basic auth; the password is in a curl config file, not shown
-$ curl -sk --noproxy '*' --resolve jaeger.localhost:18101:127.0.0.1 -K <curl.cfg: user = "admin:***"> https://jaeger.localhost:18101/api/v3/traces/cc794a254ced16ed8513a22b0cab5237
+$ curl -sk --noproxy '*' --resolve jaeger.localhost:18101:127.0.0.1 -K <curl.cfg: user = "admin:***"> https://jaeger.localhost:18101/api/v3/traces/f111c199e04f7cc7f9d8b768921e3934
 {
     "result": {
         "resourceSpans": [
@@ -23,13 +23,13 @@ $ curl -sk --noproxy '*' --resolve jaeger.localhost:18101:127.0.0.1 -K <curl.cfg
                         {
                             "key": "service.instance.id",
                             "value": {
-                                "stringValue": "d9f1259c-05d5-4804-9301-636bcb8a32a0"
+                                "stringValue": "e7c91715-0d6b-45bd-a1c1-125c37ceaed2"
                             }
                         },
                         {
                             "key": "service.name",
                             "value": {
-                                "stringValue": "f4-probe-f668366a"
+                                "stringValue": "f4-probe-4e287ee5"
                             }
                         },
                         {
@@ -60,14 +60,14 @@ $ curl -sk --noproxy '*' --resolve jaeger.localhost:18101:127.0.0.1 -K <curl.cfg
                         },
                         "spans": [
                             {
-                                "traceId": "cc794a254ced16ed8513a22b0cab5237",
-                                "spanId": "1250fae4f6748db3",
-                                "parentSpanId": "1eb95b19740ada45",
+                                "traceId": "f111c199e04f7cc7f9d8b768921e3934",
+                                "spanId": "d672a9b59bfb8f72",
+                                "parentSpanId": "03941ebb46edce4a",
                                 "flags": 256,
                                 "name": "GET /ping http send",
                                 "kind": 1,
-                                "startTimeUnixNano": "1794286227909509000",
-                                "endTimeUnixNano": "1794286227909526000",
+                                "startTimeUnixNano": "1794286649261151000",
+                                "endTimeUnixNano": "1794286649261166000",
                                 "attributes": [
                                     {
                                         "key": "asgi.event.type",
@@ -85,14 +85,14 @@ $ curl -sk --noproxy '*' --resolve jaeger.localhost:18101:127.0.0.1 -K <curl.cfg
                                 "status": {}
                             },
                             {
-                                "traceId": "cc794a254ced16ed8513a22b0cab5237",
-                                "spanId": "bd0d721b47dac464",
-                                "parentSpanId": "1eb95b19740ada45",
+                                "traceId": "f111c199e04f7cc7f9d8b768921e3934",
+                                "spanId": "72de75238d347643",
+                                "parentSpanId": "03941ebb46edce4a",
                                 "flags": 256,
                                 "name": "GET /ping http send",
                                 "kind": 1,
-                                "startTimeUnixNano": "1794286227909559000",
-                                "endTimeUnixNano": "1794286227909563000",
+                                "startTimeUnixNano": "1794286649261199000",
+                                "endTimeUnixNano": "1794286649261204000",
                                 "attributes": [
                                     {
                                         "key": "asgi.event.type",
@@ -104,13 +104,13 @@ $ curl -sk --noproxy '*' --resolve jaeger.localhost:18101:127.0.0.1 -K <curl.cfg
                                 "status": {}
                             },
                             {
-                                "traceId": "cc794a254ced16ed8513a22b0cab5237",
-                                "spanId": "1eb95b19740ada45",
+                                "traceId": "f111c199e04f7cc7f9d8b768921e3934",
+                                "spanId": "03941ebb46edce4a",
                                 "flags": 256,
                                 "name": "GET /ping",
                                 "kind": 2,
-                                "startTimeUnixNano": "1794286227908405000",
-                                "endTimeUnixNano": "1794286227909871000",
+                                "startTimeUnixNano": "1794286649260502000",
+                                "endTimeUnixNano": "1794286649261465000",
                                 "attributes": [
                                     {
                                         "key": "http.flavor",
@@ -202,14 +202,14 @@ $ curl -sk --noproxy '*' --resolve jaeger.localhost:18101:127.0.0.1 -K <curl.cfg
                         },
                         "spans": [
                             {
-                                "traceId": "cc794a254ced16ed8513a22b0cab5237",
-                                "spanId": "cf5f4b1f9c8a3643",
-                                "parentSpanId": "1eb95b19740ada45",
+                                "traceId": "f111c199e04f7cc7f9d8b768921e3934",
+                                "spanId": "399b5f303817aa50",
+                                "parentSpanId": "03941ebb46edce4a",
                                 "flags": 768,
                                 "name": "f4.resumed-after-wait",
                                 "kind": 1,
-                                "startTimeUnixNano": "1794286227910394000",
-                                "endTimeUnixNano": "1794286227910398000",
+                                "startTimeUnixNano": "1794286649261899000",
+                                "endTimeUnixNano": "1794286649261906000",
                                 "attributes": [
                                     {
                                         "key": "@jaeger@warnings",
@@ -217,7 +217,7 @@ $ curl -sk --noproxy '*' --resolve jaeger.localhost:18101:127.0.0.1 -K <curl.cfg
                                             "arrayValue": {
                                                 "values": [
                                                     {
-                                                        "stringValue": "clock skew adjustment disabled; not applying calculated delta of -1.258ms"
+                                                        "stringValue": "clock skew adjustment disabled; not applying calculated delta of -919\u00b5s"
                                                     }
                                                 ]
                                             }
@@ -235,11 +235,11 @@ $ curl -sk --noproxy '*' --resolve jaeger.localhost:18101:127.0.0.1 -K <curl.cfg
 }
 
 ## 3. The same spans, one per line: service traceId spanId parentSpanId kind(2=SERVER,1=INTERNAL) name scope
-f4-probe-f668366a cc794a254ced16ed8513a22b0cab5237 1250fae4f6748db3 1eb95b19740ada45 1 'GET /ping http send' opentelemetry.instrumentation.fastapi
-f4-probe-f668366a cc794a254ced16ed8513a22b0cab5237 bd0d721b47dac464 1eb95b19740ada45 1 'GET /ping http send' opentelemetry.instrumentation.fastapi
-f4-probe-f668366a cc794a254ced16ed8513a22b0cab5237 1eb95b19740ada45 - 2 'GET /ping' opentelemetry.instrumentation.fastapi
-f4-probe-f668366a cc794a254ced16ed8513a22b0cab5237 cf5f4b1f9c8a3643 1eb95b19740ada45 1 'f4.resumed-after-wait' onb_telemetry
+f4-probe-4e287ee5 f111c199e04f7cc7f9d8b768921e3934 d672a9b59bfb8f72 03941ebb46edce4a 1 'GET /ping http send' opentelemetry.instrumentation.fastapi
+f4-probe-4e287ee5 f111c199e04f7cc7f9d8b768921e3934 72de75238d347643 03941ebb46edce4a 1 'GET /ping http send' opentelemetry.instrumentation.fastapi
+f4-probe-4e287ee5 f111c199e04f7cc7f9d8b768921e3934 03941ebb46edce4a - 2 'GET /ping' opentelemetry.instrumentation.fastapi
+f4-probe-4e287ee5 f111c199e04f7cc7f9d8b768921e3934 399b5f303817aa50 03941ebb46edce4a 1 'f4.resumed-after-wait' onb_telemetry
 
 ## 4. Control: the same URL without credentials
-$ curl -sk --noproxy '*' --resolve jaeger.localhost:18101:127.0.0.1 -o /dev/null -w 'status=%{http_code}' https://jaeger.localhost:18101/api/v3/traces/cc794a254ced16ed8513a22b0cab5237
+$ curl -sk --noproxy '*' --resolve jaeger.localhost:18101:127.0.0.1 -o /dev/null -w 'status=%{http_code}' https://jaeger.localhost:18101/api/v3/traces/f111c199e04f7cc7f9d8b768921e3934
 status=401

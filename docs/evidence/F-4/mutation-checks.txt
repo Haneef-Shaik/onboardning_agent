@@ -1,24 +1,20 @@
-# F-4 mutation checks at 6591ae3 · 2026-11-10T04:50:22Z · ob-f-4 compose stack up for the live ones
+# F-4 mutation checks at d0984ed · 2026-11-10T04:57:11Z · ob-f-4 compose stack up for the live ones (M9-M11)
 $ uv run --frozen python docs/evidence/F-4/mutate.py   (exit 0 = every mutation caught and every file restored)
-exit=0
+exit=0 · 16/16 caught, 16/16 restored byte-for-byte
 
 ## M1 export stage runs before the hooks (pipeline.on_end order swapped)
    file: libs/py-telemetry/src/onb_telemetry/pipeline.py · live stack: no
    FAILED libs/py-telemetry/tests/test_pipeline.py::test_registered_processor_sees_every_span_before_export
    FAILED libs/py-telemetry/tests/test_pipeline.py::test_spans_from_many_threads_all_pass_the_hook_first
-   2 failed in 0.08s
+   2 failed in 0.11s
    caught: yes · restored byte-for-byte: yes
 
 ## M2 fail-open: a raising hook no longer stops export (return removed)
    file: libs/py-telemetry/src/onb_telemetry/pipeline.py · live stack: no
-   ERROR    onb_telemetry:pipeline.py:59 span hook ExplodingHook failed; span 'child-0' dropped, not exported
-       raise RuntimeError("redaction failed")
-   RuntimeError: redaction failed
-   ERROR    onb_telemetry:pipeline.py:59 span hook ExplodingHook failed; span 'root' dropped, not exported
-       raise RuntimeError("redaction failed")
-   RuntimeError: redaction failed
+   ERROR    onb_telemetry:pipeline.py:160 span hook ExplodingHook failed in on_end with RuntimeError
+   ERROR    onb_telemetry:pipeline.py:160 span hook ExplodingHook failed in on_end with RuntimeError
    FAILED libs/py-telemetry/tests/test_pipeline.py::test_a_failing_hook_stops_the_span_being_exported
-   1 failed in 0.07s
+   1 failed in 0.06s
    caught: yes · restored byte-for-byte: yes
 
 ## M3 hooks registered on the provider after the exporter (SDK add_span_processor order)
@@ -49,13 +45,13 @@ exit=0
 ## M7 GenAI content switches no longer forced off
    file: libs/py-telemetry/src/onb_telemetry/setup.py · live stack: no
    FAILED libs/py-telemetry/tests/test_setup.py::test_content_capture_is_off_by_default_for_genai_instrumentation
-   1 failed, 1 warning in 0.17s
+   1 failed, 1 warning in 0.19s
    caught: yes · restored byte-for-byte: yes
 
 ## M8 a foreign global provider is silently accepted
    file: libs/py-telemetry/src/onb_telemetry/setup.py · live stack: no
    FAILED libs/py-telemetry/tests/test_setup.py::test_init_refuses_when_another_provider_owns_the_global
-   1 failed, 1 warning in 0.13s
+   1 failed, 1 warning in 0.23s
    caught: yes · restored byte-for-byte: yes
 
 ## M9 no auto-instrumentation (FastAPI/httpx/PyMongo)
@@ -63,19 +59,52 @@ exit=0
    FAILED libs/py-telemetry/tests/test_setup.py::test_fastapi_app_created_after_init_gets_server_spans
    FAILED libs/py-telemetry/tests/test_setup.py::test_httpx_calls_get_client_spans
    FAILED libs/py-telemetry/tests_int/test_jaeger_roundtrip.py::test_fastapi_span_is_returned_by_jaeger_through_the_collector
-   3 failed, 1 warning in 2.89s
+   3 failed, 1 warning in 3.10s
    caught: yes · restored byte-for-byte: yes
 
 ## M10 OTLP exporter replaced by none (spans never leave the process)
    file: libs/py-telemetry/src/onb_telemetry/setup.py · live stack: yes
    FAILED libs/py-telemetry/tests/test_setup.py::test_otlp_exporter_is_batched_by_default
    FAILED libs/py-telemetry/tests_int/test_jaeger_roundtrip.py::test_fastapi_span_is_returned_by_jaeger_through_the_collector
-   2 failed, 1 warning in 31.56s
+   2 failed, 1 warning in 31.51s
    caught: yes · restored byte-for-byte: yes
 
 ## M11 test reset keeps PyMongo's stale command listener
    file: libs/py-telemetry/src/onb_telemetry/testing.py · live stack: yes
    FAILED libs/py-telemetry/tests_int/test_jaeger_roundtrip.py::test_pymongo_commands_get_spans
-   1 failed, 2 passed, 1 warning in 3.55s
+   1 failed, 2 passed, 1 warning in 2.77s
+   caught: yes · restored byte-for-byte: yes
+
+## M12 the export stage gets the original span, not the redacted copy
+   file: libs/py-telemetry/src/onb_telemetry/pipeline.py · live stack: no
+   FAILED libs/py-telemetry/tests/test_redaction.py::test_a_redacting_hook_changes_what_is_exported
+   1 failed in 0.09s
+   caught: yes · restored byte-for-byte: yes
+
+## M13 a hook failing in on_start is no longer contained
+   file: libs/py-telemetry/src/onb_telemetry/pipeline.py · live stack: no
+   FAILED libs/py-telemetry/tests/test_redaction.py::test_a_hook_failing_on_start_does_not_break_the_caller_and_the_span_is_dropped
+   1 failed in 0.07s
+   caught: yes · restored byte-for-byte: yes
+
+## M14 spans ending after shutdown began are still exported
+   file: libs/py-telemetry/src/onb_telemetry/pipeline.py · live stack: no
+   FAILED libs/py-telemetry/tests/test_redaction.py::test_spans_ending_after_shutdown_are_never_exported
+   1 failed in 0.02s
+   caught: yes · restored byte-for-byte: yes
+
+## M15 hook failure log carries the exception message (may hold PII)
+   file: libs/py-telemetry/src/onb_telemetry/pipeline.py · live stack: no
+   E       assert 'ValueError' in "ERROR    onb_telemetry:pipeline.py:160 span hook Leaky failed in on_end with cannot parse {'pan': 'RAW-VALUE-1234'}\n"
+   E        +  where "ERROR    onb_telemetry:pipeline.py:160 span hook Leaky failed in on_end with cannot parse {'pan': 'RAW-VALUE-1234'}\n" = <_pytest.logging.LogCaptureFixture object at 0x1079c70b0>.text
+   ERROR    onb_telemetry:pipeline.py:160 span hook Leaky failed in on_end with cannot parse {'pan': 'RAW-VALUE-1234'}
+   FAILED libs/py-telemetry/tests/test_redaction.py::test_failure_log_names_no_span_content
+   1 failed in 0.06s
+   caught: yes · restored byte-for-byte: yes
+
+## M16 a failed init leaves its provider exporting
+   file: libs/py-telemetry/src/onb_telemetry/setup.py · live stack: no
+   FAILED libs/py-telemetry/tests/test_setup.py::test_a_failed_init_leaves_nothing_exporting
+   1 failed, 1 warning in 0.15s
    caught: yes · restored byte-for-byte: yes
 

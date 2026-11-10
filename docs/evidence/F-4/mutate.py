@@ -13,9 +13,9 @@ MUTATIONS = [
     (
         "M1 export stage runs before the hooks (pipeline.on_end order swapped)",
         SRC / "pipeline.py",
-        """    def on_end(self, span: ReadableSpan) -> None:
+        """        current = span
         for hook in self._hooks:""",
-        """    def on_end(self, span: ReadableSpan) -> None:
+        """        current = span
         if self._export is not None:
             self._export.on_end(span)
         for hook in self._hooks:""",
@@ -26,9 +26,10 @@ MUTATIONS = [
     (
         "M2 fail-open: a raising hook no longer stops export (return removed)",
         SRC / "pipeline.py",
-        """                _log.exception("span hook %s failed; span %r dropped, not exported", type(hook).__name__, span.name)
+        """                _log_failure(hook, "on_end", exc)
                 return""",
-        """                _log.exception("span hook %s failed; span %r dropped, not exported", type(hook).__name__, span.name)""",
+        """                _log_failure(hook, "on_end", exc)
+                continue""",
         [f"{UNIT}/test_pipeline.py::test_a_failing_hook_stops_the_span_being_exported"],
         False,
     ),
@@ -107,6 +108,50 @@ MUTATIONS = [
         """\n\ndef""",
         [f"{INT}/test_jaeger_roundtrip.py"],
         True,
+    ),
+    (
+        "M12 the export stage gets the original span, not the redacted copy",
+        SRC / "pipeline.py",
+        """            export.on_end(current)""",
+        """            export.on_end(span)""",
+        [f"{UNIT}/test_redaction.py::test_a_redacting_hook_changes_what_is_exported"],
+        False,
+    ),
+    (
+        "M13 a hook failing in on_start is no longer contained",
+        SRC / "pipeline.py",
+        """            except Exception as exc:
+                _log_failure(hook, "on_start", exc)""",
+        """            except ZeroDivisionError as exc:
+                _log_failure(hook, "on_start", exc)""",
+        [f"{UNIT}/test_redaction.py::test_a_hook_failing_on_start_does_not_break_the_caller_and_the_span_is_dropped"],
+        False,
+    ),
+    (
+        "M14 spans ending after shutdown began are still exported",
+        SRC / "pipeline.py",
+        """        if self._closed or self._was_poisoned(span):""",
+        """        if self._was_poisoned(span):""",
+        [f"{UNIT}/test_redaction.py::test_spans_ending_after_shutdown_are_never_exported"],
+        False,
+    ),
+    (
+        "M15 hook failure log carries the exception message (may hold PII)",
+        SRC / "pipeline.py",
+        """type(stage).__name__, step, type(exc).__name__)""",
+        """type(stage).__name__, step, exc)""",
+        [f"{UNIT}/test_redaction.py::test_failure_log_names_no_span_content"],
+        False,
+    ),
+    (
+        "M16 a failed init leaves its provider exporting",
+        SRC / "setup.py",
+        """            _uninstrument_all()
+            provider.shutdown()
+            raise""",
+        """            raise""",
+        [f"{UNIT}/test_setup.py::test_a_failed_init_leaves_nothing_exporting"],
+        False,
     ),
 ]
 

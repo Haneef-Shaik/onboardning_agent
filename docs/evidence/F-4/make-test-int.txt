@@ -1,0 +1,136 @@
+# F-4 gate: make test-int at d0984ed · 2026-11-10T04:58:06Z · COMPOSE_PROJECT_NAME=ob-f-4
+$ make test-int
+exit=0
+
+infra/mongo/gen-keyfile.sh
+gen-keyfile: keeping existing infra/mongo/keyfile
+docker compose up -d --wait --build
+ Image onb/otel-collector:0.165.0 Building 
+#1 [internal] load local bake definitions
+#1 reading from stdin 641B done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 578B done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/otel/opentelemetry-collector-contrib:0.165.0@sha256:e40d61f10c9a617cca1ffd1be4d7e2b3a4b0f0001798ff07e58cabe82e618cea
+#3 DONE 0.0s
+
+#4 [internal] load metadata for docker.io/library/alpine:3.24.4@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf
+#4 DONE 0.0s
+
+#5 [internal] load .dockerignore
+#5 transferring context: 2B done
+#5 DONE 0.0s
+
+#6 [upstream 1/1] FROM docker.io/otel/opentelemetry-collector-contrib:0.165.0@sha256:e40d61f10c9a617cca1ffd1be4d7e2b3a4b0f0001798ff07e58cabe82e618cea
+#6 resolve docker.io/otel/opentelemetry-collector-contrib:0.165.0@sha256:e40d61f10c9a617cca1ffd1be4d7e2b3a4b0f0001798ff07e58cabe82e618cea done
+#6 DONE 0.0s
+
+#7 [stage-1 1/3] FROM docker.io/library/alpine:3.24.4@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf
+#7 resolve docker.io/library/alpine:3.24.4@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf done
+#7 DONE 0.0s
+
+#8 [stage-1 2/3] RUN adduser -D -H -u 10001 otel
+#8 CACHED
+
+#9 [stage-1 3/3] COPY --from=upstream /otelcol-contrib /otelcol-contrib
+#9 CACHED
+
+#10 exporting to image
+#10 exporting layers done
+#10 exporting manifest sha256:6efc46f1cfe29ffcac76fc7b2dc08818e90536322f11f5f88089c2fdde846450 done
+#10 exporting config sha256:b8157f7e9e003642561c403b1a4955a455a8d875887207a10995b70d1f3ed544 done
+#10 exporting attestation manifest sha256:fc550bb20227ba6e114a50ddfdffdfb783fd1d5e7ba5adbc6f6e7ca4d7446651 done
+#10 exporting manifest list sha256:dccf418b5b11b26c6aac7fe71d7a9ae22de470517b7677e29a07c7f6a67c304e done
+#10 naming to docker.io/onb/otel-collector:0.165.0 done
+#10 unpacking to docker.io/onb/otel-collector:0.165.0 done
+#10 DONE 0.0s
+
+#11 resolving provenance for metadata file
+#11 DONE 0.0s
+ Image onb/otel-collector:0.165.0 Built 
+ Container ob-f-4-mongo-1 Running 
+ Container ob-f-4-otel-collector-1 Running 
+ Container ob-f-4-jaeger-1 Running 
+ Container ob-f-4-caddy-1 Running 
+ Container ob-f-4-jaeger-1 Waiting 
+ Container ob-f-4-jaeger-1 Waiting 
+ Container ob-f-4-jaeger-1 Healthy 
+ Container ob-f-4-jaeger-1 Healthy 
+ Container ob-f-4-jaeger-1 Waiting 
+ Container ob-f-4-caddy-1 Waiting 
+ Container ob-f-4-mongo-1 Waiting 
+ Container ob-f-4-otel-collector-1 Waiting 
+ Container ob-f-4-jaeger-1 Healthy 
+ Container ob-f-4-mongo-1 Healthy 
+ Container ob-f-4-otel-collector-1 Healthy 
+ Container ob-f-4-caddy-1 Healthy 
+set -a && . ./.env && set +a && \
+	uv run --frozen pytest tools/tests_int -q -o cache_dir=.pytest_cache/tools-int && \
+	node_modules/.bin/nx run-many -t test-int --output-style=static
+............                                                             [100%]
+12 passed in 2.17s
+
+ NX   Running target test-int for 2 projects:
+
+- py-telemetry
+- py-data
+
+
+
+> nx run py-data:test-int
+
+> uv run --frozen pytest libs/py-data/tests_int -o cache_dir=.pytest_cache/py-data-int
+
+============================= test session starts ==============================
+platform darwin -- Python 3.12.13, pytest-9.2.0, pluggy-1.7.0
+cachedir: .pytest_cache/py-data-int
+rootdir: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-f-4
+configfile: pyproject.toml
+plugins: cov-7.1.0, anyio-4.16.0
+collected 4 items
+
+libs/py-data/tests_int/test_compose_mongo_transaction.py ....            [100%]
+
+============================== 4 passed in 0.89s ===============================
+
+> nx run py-telemetry:test-int
+
+> uv run --frozen pytest libs/py-telemetry/tests_int -o cache_dir=.pytest_cache/py-telemetry-int -rA -s
+
+============================= test session starts ==============================
+platform darwin -- Python 3.12.13, pytest-9.2.0, pluggy-1.7.0
+cachedir: .pytest_cache/py-telemetry-int
+rootdir: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-f-4
+configfile: pyproject.toml
+plugins: cov-7.1.0, anyio-4.16.0
+collected 3 items
+
+libs/py-telemetry/tests_int/test_jaeger_roundtrip.py 
+Jaeger returned trace 9358c824e99741059659789e47d5e6dc for service f4-probe-43b176c5: [('f4-probe-43b176c5', 'onb_telemetry', 'f4.resumed-after-wait'), ('f4-probe-43b176c5', 'opentelemetry.instrumentation.fastapi', 'GET /ping'), ('f4-probe-43b176c5', 'opentelemetry.instrumentation.fastapi', 'GET /ping http send')]
+...
+
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-f-4/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+==================================== PASSES ====================================
+=========================== short test summary info ============================
+PASSED libs/py-telemetry/tests_int/test_jaeger_roundtrip.py::test_fastapi_span_is_returned_by_jaeger_through_the_collector
+PASSED libs/py-telemetry/tests_int/test_jaeger_roundtrip.py::test_jaeger_lists_the_probe_service
+PASSED libs/py-telemetry/tests_int/test_jaeger_roundtrip.py::test_pymongo_commands_get_spans
+========================= 3 passed, 1 warning in 2.75s =========================
+
+
+
+ NX   Successfully ran target test-int for 2 projects
+
+
+  Run duration:      3.3s
+  Cache:             0/2 hit (0%)
+  Critical path:     3.3s (1 task)
+  Recoverable time:  <1ms
