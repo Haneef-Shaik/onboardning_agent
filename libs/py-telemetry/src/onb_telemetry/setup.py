@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import importlib
 import importlib.util
+import logging
 import os
 import threading
 from collections.abc import Sequence
@@ -42,13 +43,20 @@ _CONTENT_SWITCHES: dict[str, bool] = {
     "OPENINFERENCE_HIDE_OUTPUTS": False,
 }
 
+_log = logging.getLogger("onb_telemetry")
 _lock = threading.Lock()
 _active: TelemetryHandle | None = None
 
 
 @dataclass(frozen=True)
 class TelemetryHandle:
-    """What `init_telemetry` set up; `shutdown()` flushes, stops export and removes instrumentation."""
+    """What `init_telemetry` set up; `shutdown()` flushes, stops export and removes instrumentation.
+
+    Add span processors only with `register_span_processor`: one added straight to `provider`
+    (`provider.add_span_processor`) runs after export and bypasses the redaction hooks.
+    OTel lets a process set its global provider once, so after `shutdown()` a service cannot
+    initialise telemetry again (the test helpers in `onb_telemetry.testing` can).
+    """
 
     service_name: str
     provider: TracerProvider
@@ -65,12 +73,14 @@ class TelemetryHandle:
 
     def shutdown(self) -> None:
         global _active
-        for library in self.instrumented:
-            _instrumentor(library).uninstrument()
-        self.provider.shutdown()
-        with _lock:
-            if _active is self:
-                _active = None
+        try:
+            for library in self.instrumented:
+                _uninstrument(library)
+            self.provider.shutdown()
+        finally:
+            with _lock:
+                if _active is self:
+                    _active = None
 
 
 def init_telemetry(
@@ -103,7 +113,13 @@ def init_telemetry(
         provider.add_span_processor(pipeline)
         _install_global(provider)
         _apply_content_capture(config.capture_content)
-        instrumented = _instrument_libraries(provider) if instrument else ()
+        try:
+            instrumented = _instrument_libraries(provider) if instrument else ()
+        except Exception:
+            # The global provider cannot be unset; shut it down so nothing exports half-configured.
+            _uninstrument_all()
+            provider.shutdown()
+            raise
         _active = TelemetryHandle(service_name, provider, pipeline, config.capture_content, instrumented)
         return _active
 
@@ -158,6 +174,21 @@ def _apply_content_capture(capture: bool) -> None:
 def _instrumentor(library: str) -> Any:
     _, module_name, class_name = next(entry for entry in _INSTRUMENTATIONS if entry[0] == library)
     return getattr(importlib.import_module(module_name), class_name)()
+
+
+def _uninstrument(library: str) -> None:
+    try:
+        instrumentor = _instrumentor(library)
+        if instrumentor.is_instrumented_by_opentelemetry:
+            instrumentor.uninstrument()
+    except Exception as exc:  # keep going: the remaining libraries and the provider still shut down
+        _log.error("could not remove %s instrumentation: %s", library, type(exc).__name__)
+
+
+def _uninstrument_all() -> None:
+    for library, _, _ in _INSTRUMENTATIONS:
+        if importlib.util.find_spec(library) is not None:
+            _uninstrument(library)
 
 
 def _instrument_libraries(provider: TracerProvider) -> tuple[str, ...]:

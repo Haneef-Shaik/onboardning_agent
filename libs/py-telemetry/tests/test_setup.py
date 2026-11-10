@@ -223,3 +223,22 @@ def test_pymongo_is_instrumented() -> None:
 
 def test_force_flush(telemetry: CapturedTelemetry) -> None:
     assert telemetry.handle.force_flush() is True
+
+
+@pytest.mark.usefixtures("clean_globals")
+def test_a_failed_init_leaves_nothing_exporting(monkeypatch: pytest.MonkeyPatch) -> None:
+    from onb_telemetry import active_telemetry, setup
+    from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
+
+    def broken(provider: TracerProvider) -> tuple[str, ...]:
+        raise RuntimeError("instrumentor version conflict")
+
+    monkeypatch.setattr(setup, "_instrument_libraries", broken)
+    exporter = InMemorySpanExporter()
+    with pytest.raises(RuntimeError, match="version conflict"):
+        init_telemetry("svc-broken", exporter=exporter, batch=False)
+    with pytest.raises(RuntimeError, match="not initialised"):
+        active_telemetry()
+    with trace.get_tracer("test").start_as_current_span("after-failure"):
+        pass
+    assert exporter.get_finished_spans() == ()

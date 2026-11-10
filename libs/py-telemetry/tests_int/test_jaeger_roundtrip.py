@@ -160,4 +160,4 @@ def test_pymongo_commands_get_spans(tunnels: Tunnels) -> None:
         assert mongo_spans, [s.name for s in captured.spans()]
         attrs = dict(mongo_spans[0].attributes or {})
         assert attrs.get("db.system") == "mongodb" or attrs.get("db.system.name") == "mongodb"
-        assert password not in json.dumps(attrs, default=str)
+        assert password not in json.dumps(attrs, default=str), "the Mongo password is in span attributes"
