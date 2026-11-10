@@ -14,6 +14,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[3]
 SRC = "libs/py-data/src/onb_data/safety_net.py"
+QA = "libs/py-data/src/onb_data/queue_allowance.py"
 CONFTEST = "libs/py-data/tests_int/conftest.py"
 
 # id: (what, file, [(old, new), ...])
@@ -109,6 +110,62 @@ MUTATIONS: dict[str, tuple[str, str, list[tuple[str, str]]]] = {
         SRC,
         [("            self._allowed.reset(token)\n", "            pass\n")],
     ),
+    # --- attempt 2: the worker-queue allowance (ADR 0002) -----------------------------------------
+    "Q1": (
+        "queue: the allowance is removed (proves the bus needs it)",
+        SRC,
+        [("    if queue_command_allowed(command_name, command, str(collection)):\n", "    if False:\n")],
+    ),
+    "Q2": (
+        "queue: the allowance applies to any tenant collection",
+        QA,
+        [("    if collection not in QUEUE_COLLECTIONS:\n        return False\n", "")],
+    ),
+    "Q3": (
+        "queue: a claim is allowed on dead_letters too",
+        QA,
+        [("        collection == JOBS\n        and not command.get", "        True\n        and not command.get")],
+    ),
+    "Q4": (
+        "queue: a claim may filter on any field (org_id, _id, payload)",
+        QA,
+        [("        elif key not in CLAIM_FILTER_FIELDS:\n", "        elif False:\n")],
+    ),
+    "Q5": (
+        "queue: a worker update may write any field (org_id, payload, consumer)",
+        QA,
+        [(" or not set(fields) <= allowed:\n", ":\n")],
+    ),
+    "Q6": (
+        "queue: a leased write may use any filter",
+        QA,
+        [('set(query) != {"_id", "lease_token"}', "False")],
+    ),
+    "Q7": (
+        "queue: a leased delete may remove many",
+        QA,
+        [('        return statement.get("limit") == 1\n', "        return True\n")],
+    ),
+    "Q8": (
+        "queue: a leased update may be multi or upsert",
+        QA,
+        [('not statement.get("multi") and not statement.get("upsert") and ', "")],
+    ),
+    "Q9": (
+        "queue: a dead letter without org_id is allowed for any reason",
+        QA,
+        [
+            (
+                '    return document.get("status") == "dead" and isinstance(reason, str) and reason in ORPHAN_REASONS\n',
+                "    return True\n",
+            )
+        ],
+    ),
+    "Q10": (
+        "queue: the index exception extends to unique indexes",
+        SRC,
+        [("(collection in QUEUE_COLLECTIONS and not unique)", "collection in QUEUE_COLLECTIONS")],
+    ),
 }
 
 
@@ -129,9 +186,15 @@ def summary(output: str) -> str:
 
 
 def main() -> int:
-    unit = ["uv", "run", "--frozen", "pytest", "libs/py-data/tests", "-q", "-p", "no:cacheprovider"]
-    integ = ["uv", "run", "--frozen", "pytest", "libs/py-data/tests_int", "-q", "-p", "no:cacheprovider"]
+    suites = {
+        "unit": ["uv", "run", "--frozen", "pytest", "libs/py-data/tests", "-q", "-p", "no:cacheprovider"],
+        "int": ["uv", "run", "--frozen", "pytest", "libs/py-data/tests_int", "-q", "-p", "no:cacheprovider"],
+        "bus": ["uv", "run", "--frozen", "pytest", "libs/py-eventbus/tests_int", "-q", "-p", "no:cacheprovider"],
+    }
+    only = set(sys.argv[1:])
     for mid, (what, rel, edits) in MUTATIONS.items():
+        if only and mid not in only:
+            continue
         path = ROOT / rel
         original = path.read_text()
         mutated = original
@@ -142,19 +205,18 @@ def main() -> int:
             mutated = mutated.replace(old, new)
         path.write_text(mutated)
         try:
-            out_unit, out_int = run(unit), run(integ)
+            outputs = {suite: run(args) for suite, args in suites.items()}
         finally:
             path.write_text(original)
         print(f"## {mid} ({rel}): {what}")
-        print(f"unit: {summary(out_unit)}")
-        print(f"int:  {summary(out_int)}")
-        for name in failures(out_unit):
-            print(f"  unit FAILED {name}")
-        for name in failures(out_int):
-            print(f"  int  FAILED {name}")
-        caught = bool(failures(out_unit) or failures(out_int))
+        for suite, output in outputs.items():
+            print(f"{suite + ':':5} {summary(output)}")
+        for suite, output in outputs.items():
+            for name in failures(output):
+                print(f"  {suite:4} FAILED {name}")
+        caught = any(failures(output) for output in outputs.values())
         print(f"caught: {'yes' if caught else 'NO'}\n")
-    diff = run(["git", "status", "--porcelain", "--", SRC, CONFTEST]).strip()
+    diff = run(["git", "status", "--porcelain", "--", SRC, QA, CONFTEST]).strip()
     print(f"worktree after all mutations: {'clean' if not diff else diff}")
     return 0
 
