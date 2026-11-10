@@ -1,0 +1,3 @@
+ERROR libs/py-evals/tests/test_check_catalog.py
+!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+1 error in 0.18s
