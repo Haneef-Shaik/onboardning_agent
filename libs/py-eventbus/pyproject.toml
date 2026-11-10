@@ -3,7 +3,12 @@ name = "onb-eventbus"
 version = "0.1.0"
 description = "MongoDB event bus"
 requires-python = ">=3.12,<3.13"
-dependencies = []
+dependencies = [
+  "onb-data",
+  "onb-telemetry",
+  "opentelemetry-api>=1.45,<2",
+  "pymongo>=4.10,<5",
+]
 
 [build-system]
 requires = ["hatchling>=1.25"]
