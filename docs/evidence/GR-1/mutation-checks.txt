@@ -2,9 +2,9 @@ M1 injection pattern 'ignore_instructions' removed -> KILLED by FAILED libs/py-g
 M2 injection normalisation skips the skeleton (zero-width/homoglyphs) -> KILLED by FAILED libs/py-guardrails/tests/injection/test_injection_corpus.py::test_every_known_pattern_in_the_corpus_is_detected
 M3 spaced-out letters not joined -> KILLED by FAILED libs/py-guardrails/tests/injection/test_injection_corpus.py::test_every_known_pattern_in_the_corpus_is_detected
 M4 injection finding does not block -> KILLED by FAILED libs/py-guardrails/tests/test_external.py::test_the_local_detector_still_blocks_when_bedrock_would_pass
-M5 tool results not treated as untrusted -> KILLED by FAILED libs/py-guardrails/tests/test_guarded.py::test_an_injection_in_a_tool_result_is_blocked
-M6 input PII redaction off for untrusted text -> KILLED by FAILED libs/py-guardrails/tests/test_external.py::test_bedrock_sees_only_redacted_text_and_passes_are_recorded
-M7 input PII redaction off for system/other text -> KILLED by FAILED libs/py-guardrails/tests/test_guarded.py::test_aadhaar_and_pan_in_free_text_reach_the_fake_llm_only_as_markers
+M5 tool results treated as trusted -> KILLED by FAILED libs/py-guardrails/tests/test_guarded.py::test_an_injection_in_a_tool_result_is_blocked
+M6 input PII redaction off for untrusted string content -> KILLED by FAILED libs/py-guardrails/tests/test_external.py::test_bedrock_sees_only_redacted_text_and_passes_are_recorded
+M7 input PII redaction off for system messages -> KILLED by FAILED libs/py-guardrails/tests/test_guarded.py::test_aadhaar_and_pan_in_free_text_reach_the_fake_llm_only_as_markers
 M8 untrusted text not delimited -> KILLED by FAILED libs/py-guardrails/tests/test_guarded.py::test_untrusted_messages_are_delimited_and_the_system_prompt_carries_the_notice
 M9 delimiter tag inside text not escaped -> KILLED by FAILED libs/py-guardrails/tests/test_parts.py::test_a_closing_tag_inside_untrusted_text_is_escaped
 M10 output PII scan off for tool-call args -> KILLED by FAILED libs/py-guardrails/tests/test_guarded.py::test_pii_in_the_reply_and_in_tool_call_arguments_is_redacted
@@ -23,6 +23,18 @@ M22 blocked decision audited as success -> KILLED by FAILED libs/py-guardrails/t
 M23 external guard error fails open -> KILLED by FAILED libs/py-guardrails/tests/test_external.py::test_an_unreachable_guard_fails_closed
 M24 external intervention ignored -> KILLED by FAILED libs/py-guardrails/tests/test_external.py::test_an_intervention_on_the_input_blocks_before_the_model
 M25 external guard sees unredacted text -> KILLED by FAILED libs/py-guardrails/tests/test_external.py::test_bedrock_sees_only_redacted_text_and_passes_are_recorded
-M26 trusted messages delimited like chat -> KILLED by FAILED libs/py-guardrails/tests/test_guarded.py::test_untrusted_messages_are_delimited_and_the_system_prompt_carries_the_notice
+M26 trusted instructions delimited like chat -> KILLED by FAILED libs/py-guardrails/tests/test_guarded.py::test_untrusted_messages_are_delimited_and_the_system_prompt_carries_the_notice
+M27 trusted instructions not scanned for injection -> KILLED by FAILED libs/py-guardrails/tests/test_review_fixes.py::test_a_trusted_message_is_still_scanned_so_interpolated_text_cannot_inject
+M28 unknown content blocks pass through untouched -> KILLED by FAILED libs/py-guardrails/tests/test_review_fixes.py::test_a_tool_result_block_is_scanned_redacted_and_delimited
+M29 structural keys (ids, names) redacted -> KILLED by FAILED libs/py-guardrails/tests/test_review_fixes.py::test_tool_call_ids_and_names_are_never_rewritten
+M30 provider timeout reported as a budget block -> KILLED by FAILED libs/py-guardrails/tests/test_review_fixes.py::test_a_provider_timeout_is_not_reported_as_a_budget_block
+M31 external guard not bounded by the time left -> KILLED by FAILED libs/py-guardrails/tests/test_review_fixes.py::test_a_hanging_external_guard_is_cut_off_by_the_time_budget_and_fails_closed
+M32 external output guard skips tool calls -> KILLED by FAILED libs/py-guardrails/tests/test_review_fixes.py::test_the_external_output_guard_sees_tool_call_arguments
+M33 reported input/output token parts ignored -> KILLED by FAILED libs/py-guardrails/tests/test_review_fixes.py::test_a_zero_total_with_large_parts_still_charges_the_parts
+M34 a failed model call uses no step -> KILLED by FAILED libs/py-guardrails/tests/test_review_fixes.py::test_a_failed_model_call_still_uses_a_step[error0]
+M35 additional_kwargs of input messages not redacted -> KILLED by FAILED libs/py-guardrails/tests/test_review_fixes.py::test_pii_in_additional_kwargs_of_input_messages_is_redacted
+M36 Bedrock metadata keys reported as policies -> KILLED by FAILED libs/py-guardrails/tests/test_review_fixes.py::test_bedrock_metadata_keys_are_not_reported_as_policies
+M37 provider copies of tool calls counted as PII hits -> KILLED by FAILED libs/py-guardrails/tests/test_review_fixes.py::test_output_pii_is_counted_once_and_redacted_everywhere
+M38 nothing-to-check recorded as an external pass -> KILLED by FAILED libs/py-guardrails/tests/test_review_fixes.py::test_nothing_to_check_records_no_external_decision
 tree clean after restore: True
-26/26 mutations killed
+38/38 mutations killed
