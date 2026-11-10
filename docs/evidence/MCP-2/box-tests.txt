@@ -278,22 +278,22 @@ apps/mcp-mongo/tests/test_tool_surface.py::test_no_source_file_but_the_admin_fil
 apps/mcp-mongo/tests/test_tool_surface.py::test_the_admin_exemption_is_exactly_the_provisioning_file PASSED [ 98%]
 apps/mcp-mongo/tests/test_tool_surface.py::test_the_package_has_no_subpackages PASSED [ 98%]
 apps/mcp-mongo/tests/test_tool_surface.py::test_only_the_server_module_builds_the_mcp_server_or_registers_tools PASSED [ 99%]
-apps/mcp-mongo/tests/test_tool_surface.py::test_the_server_main_serves_has_exactly_the_prd_tools PASSED [ 99%]
+apps/mcp-mongo/tests/test_tool_surface.py::test_the_app_main_serves_lists_exactly_the_prd_tools_over_mcp PASSED [ 99%]
 apps/mcp-mongo/tests/test_tool_surface.py::test_calling_a_tool_that_does_not_exist_is_an_error PASSED [100%]
 ============================ Hypothesis Statistics =============================
 
 apps/mcp-mongo/tests/test_validator_properties.py::test_an_accepted_filter_never_holds_a_forbidden_operator:
 
-  - during generate phase (3.40 seconds):
-    - Typical runtimes: ~ 0-2 ms, of which ~ 0-2 ms in data generation
-    - 600 passing, 0 failing, and 1780 invalid test cases
+  - during generate phase (2.16 seconds):
+    - Typical runtimes: ~ 0-1 ms, of which ~ 0-1 ms in data generation
+    - 600 passing, 0 failing, and 1864 invalid test cases
     - Events:
-      * 69.37%, gave up because: failed to satisfy assume() in test_an_accepted_filter_never_holds_a_forbidden_operator (line 131)
-      * 24.33%, count: rejected
-      * 24.33%, find: rejected
-      * 1.01%, Retried draw from one_of(sampled_from(['$abs', '$add', '$addFields', '$addToSet', '$all', '$and', '$arrayElemAt', '$avg', '$ceil', '$cmp', '$concat', '$concatArrays', '$cond', '$count', '$currentDate', '$dateAdd', '$dateDiff', '$dateSubtract', '$dateToString', '$dayOfMonth', '$dayOfWeek', '$dayOfYear', '$divide', '$each', '$elemMatch', '$eq', '$exists', '$expr', '$filter', '$first', '$floor', '$group', '$gt', '$gte', '$hour', '$ifNull', '$in', '$inc', '$isArray', '$last', '$limit', '$literal', '$lt', '$lte', '$map', '$match', '$max', '$min', '$minute', '$mod', '$month', '$mul', '$multiply', '$ne', '$nin', '$nor', '$not', '$oid', '$or', '$project', '$pull', '$push', '$rename', '$round', '$set', '$size', '$slice', '$sort', '$split', '$strLenCP', '$substrCP', '$subtract', '$sum', '$switch', '$toBool', '$toDate', '$toDouble', '$toInt', '$toLower', '$toString', '$toUpper', '$trim', '$trunc', '$type', '$unset', '$unwind', '$week', '$year']), sampled_from(['$accumulator', '$function', '$graphLookup', '$lookup', '$merge', '$out', '$unionWith', '$where']), sampled_from(['＄where', '﹩function', '$whеre', '$\u200bwhere', '$WHERE', '$where ', ' $where', '$lookup\x00', '$func\xadtion']), sampled_from(['status', 'a', 'a.b', 'pii.mobile', 'org_id', 'tags', 'items.$', 'x.$where', '$']), text(min_size=1, max_size=8), text(min_size=1, max_size=6).map(lambda s: '$' + s)).filter(not_yet_in_unique_list) to satisfy filter
-      * 0.88%, count: accepted
-      * 0.88%, find: accepted
+      * 69.48%, gave up because: failed to satisfy assume() in test_an_accepted_filter_never_holds_a_forbidden_operator (line 131)
+      * 23.25%, count: rejected
+      * 23.25%, find: rejected
+      * 1.10%, count: accepted
+      * 1.10%, find: accepted
+      * 0.85%, Retried draw from one_of(sampled_from(['$abs', '$add', '$addFields', '$addToSet', '$all', '$and', '$arrayElemAt', '$avg', '$ceil', '$cmp', '$concat', '$concatArrays', '$cond', '$count', '$currentDate', '$dateAdd', '$dateDiff', '$dateSubtract', '$dateToString', '$dayOfMonth', '$dayOfWeek', '$dayOfYear', '$divide', '$each', '$elemMatch', '$eq', '$exists', '$expr', '$filter', '$first', '$floor', '$group', '$gt', '$gte', '$hour', '$ifNull', '$in', '$inc', '$isArray', '$last', '$limit', '$literal', '$lt', '$lte', '$map', '$match', '$max', '$min', '$minute', '$mod', '$month', '$mul', '$multiply', '$ne', '$nin', '$nor', '$not', '$oid', '$or', '$project', '$pull', '$push', '$rename', '$round', '$set', '$size', '$slice', '$sort', '$split', '$strLenCP', '$substrCP', '$subtract', '$sum', '$switch', '$toBool', '$toDate', '$toDouble', '$toInt', '$toLower', '$toString', '$toUpper', '$trim', '$trunc', '$type', '$unset', '$unwind', '$week', '$year']), sampled_from(['$accumulator', '$function', '$graphLookup', '$lookup', '$merge', '$out', '$unionWith', '$where']), sampled_from(['＄where', '﹩function', '$whеre', '$\u200bwhere', '$WHERE', '$where ', ' $where', '$lookup\x00', '$func\xadtion']), sampled_from(['status', 'a', 'a.b', 'pii.mobile', 'org_id', 'tags', 'items.$', 'x.$where', '$']), text(min_size=1, max_size=8), text(min_size=1, max_size=6).map(lambda s: '$' + s)).filter(not_yet_in_unique_list) to satisfy filter
       * 0.04%, Draw for recursive(one_of(none(), booleans(), integers(min_value=-5, max_value=5), sampled_from(['$a', '$$NOW', 'open', 'org_id', '$where', 'function () { return 1; }']), text(max_size=6)), lambda children: st.one_of(st.lists(children, max_size=3), st.dictionaries(KEYS, children, max_size=3)), min_leaves=None, max_leaves=25) exceeded max_leaves=25 and had to be retried
 
   - Stopped because settings.max_examples=600
@@ -301,12 +301,12 @@ apps/mcp-mongo/tests/test_validator_properties.py::test_an_accepted_filter_never
 
 apps/mcp-mongo/tests/test_validator_properties.py::test_an_accepted_pipeline_never_holds_a_forbidden_operator:
 
-  - during generate phase (3.64 seconds):
-    - Typical runtimes: ~ 0-15 ms, of which ~ 0-15 ms in data generation
-    - 600 passing, 0 failing, and 116 invalid test cases
+  - during generate phase (1.23 seconds):
+    - Typical runtimes: ~ 0-3 ms, of which ~ 0-3 ms in data generation
+    - 600 passing, 0 failing, and 129 invalid test cases
     - Events:
-      * 83.66%, aggregate: rejected
-      * 1.40%, Retried draw from one_of(sampled_from(['$abs', '$add', '$addFields', '$addToSet', '$all', '$and', '$arrayElemAt', '$avg', '$ceil', '$cmp', '$concat', '$concatArrays', '$cond', '$count', '$currentDate', '$dateAdd', '$dateDiff', '$dateSubtract', '$dateToString', '$dayOfMonth', '$dayOfWeek', '$dayOfYear', '$divide', '$each', '$elemMatch', '$eq', '$exists', '$expr', '$filter', '$first', '$floor', '$group', '$gt', '$gte', '$hour', '$ifNull', '$in', '$inc', '$isArray', '$last', '$limit', '$literal', '$lt', '$lte', '$map', '$match', '$max', '$min', '$minute', '$mod', '$month', '$mul', '$multiply', '$ne', '$nin', '$nor', '$not', '$oid', '$or', '$project', '$pull', '$push', '$rename', '$round', '$set', '$size', '$slice', '$sort', '$split', '$strLenCP', '$substrCP', '$subtract', '$sum', '$switch', '$toBool', '$toDate', '$toDouble', '$toInt', '$toLower', '$toString', '$toUpper', '$trim', '$trunc', '$type', '$unset', '$unwind', '$week', '$year']), sampled_from(['$accumulator', '$function', '$graphLookup', '$lookup', '$merge', '$out', '$unionWith', '$where']), sampled_from(['＄where', '﹩function', '$whеre', '$\u200bwhere', '$WHERE', '$where ', ' $where', '$lookup\x00', '$func\xadtion']), sampled_from(['status', 'a', 'a.b', 'pii.mobile', 'org_id', 'tags', 'items.$', 'x.$where', '$']), text(min_size=1, max_size=8), text(min_size=1, max_size=6).map(lambda s: '$' + s)).filter(not_yet_in_unique_list) to satisfy filter
+      * 82.17%, aggregate: rejected
+      * 1.78%, Retried draw from one_of(sampled_from(['$abs', '$add', '$addFields', '$addToSet', '$all', '$and', '$arrayElemAt', '$avg', '$ceil', '$cmp', '$concat', '$concatArrays', '$cond', '$count', '$currentDate', '$dateAdd', '$dateDiff', '$dateSubtract', '$dateToString', '$dayOfMonth', '$dayOfWeek', '$dayOfYear', '$divide', '$each', '$elemMatch', '$eq', '$exists', '$expr', '$filter', '$first', '$floor', '$group', '$gt', '$gte', '$hour', '$ifNull', '$in', '$inc', '$isArray', '$last', '$limit', '$literal', '$lt', '$lte', '$map', '$match', '$max', '$min', '$minute', '$mod', '$month', '$mul', '$multiply', '$ne', '$nin', '$nor', '$not', '$oid', '$or', '$project', '$pull', '$push', '$rename', '$round', '$set', '$size', '$slice', '$sort', '$split', '$strLenCP', '$substrCP', '$subtract', '$sum', '$switch', '$toBool', '$toDate', '$toDouble', '$toInt', '$toLower', '$toString', '$toUpper', '$trim', '$trunc', '$type', '$unset', '$unwind', '$week', '$year']), sampled_from(['$accumulator', '$function', '$graphLookup', '$lookup', '$merge', '$out', '$unionWith', '$where']), sampled_from(['＄where', '﹩function', '$whеre', '$\u200bwhere', '$WHERE', '$where ', ' $where', '$lookup\x00', '$func\xadtion']), sampled_from(['status', 'a', 'a.b', 'pii.mobile', 'org_id', 'tags', 'items.$', 'x.$where', '$']), text(min_size=1, max_size=8), text(min_size=1, max_size=6).map(lambda s: '$' + s)).filter(not_yet_in_unique_list) to satisfy filter
       * 0.14%, aggregate: accepted
 
   - Stopped because settings.max_examples=600
@@ -314,91 +314,91 @@ apps/mcp-mongo/tests/test_validator_properties.py::test_an_accepted_pipeline_nev
 
 apps/mcp-mongo/tests/test_validator_properties.py::test_an_accepted_update_never_holds_a_forbidden_operator:
 
-  - during generate phase (4.92 seconds):
-    - Typical runtimes: ~ 0-6 ms, of which ~ 0-5 ms in data generation
-    - 600 passing, 0 failing, and 1383 invalid test cases
+  - during generate phase (2.46 seconds):
+    - Typical runtimes: ~ 0-2 ms, of which ~ 0-2 ms in data generation
+    - 600 passing, 0 failing, and 1188 invalid test cases
     - Events:
-      * 62.23%, gave up because: failed to satisfy assume() in test_an_accepted_update_never_holds_a_forbidden_operator (line 145)
-      * 30.26%, update_one: rejected
-      * 3.48%, Retried draw from one_of(sampled_from(['$abs', '$add', '$addFields', '$addToSet', '$all', '$and', '$arrayElemAt', '$avg', '$ceil', '$cmp', '$concat', '$concatArrays', '$cond', '$count', '$currentDate', '$dateAdd', '$dateDiff', '$dateSubtract', '$dateToString', '$dayOfMonth', '$dayOfWeek', '$dayOfYear', '$divide', '$each', '$elemMatch', '$eq', '$exists', '$expr', '$filter', '$first', '$floor', '$group', '$gt', '$gte', '$hour', '$ifNull', '$in', '$inc', '$isArray', '$last', '$limit', '$literal', '$lt', '$lte', '$map', '$match', '$max', '$min', '$minute', '$mod', '$month', '$mul', '$multiply', '$ne', '$nin', '$nor', '$not', '$oid', '$or', '$project', '$pull', '$push', '$rename', '$round', '$set', '$size', '$slice', '$sort', '$split', '$strLenCP', '$substrCP', '$subtract', '$sum', '$switch', '$toBool', '$toDate', '$toDouble', '$toInt', '$toLower', '$toString', '$toUpper', '$trim', '$trunc', '$type', '$unset', '$unwind', '$week', '$year']), sampled_from(['$accumulator', '$function', '$graphLookup', '$lookup', '$merge', '$out', '$unionWith', '$where']), sampled_from(['＄where', '﹩function', '$whеre', '$\u200bwhere', '$WHERE', '$where ', ' $where', '$lookup\x00', '$func\xadtion']), sampled_from(['status', 'a', 'a.b', 'pii.mobile', 'org_id', 'tags', 'items.$', 'x.$where', '$']), text(min_size=1, max_size=8), text(min_size=1, max_size=6).map(lambda s: '$' + s)).filter(not_yet_in_unique_list) to satisfy filter
+      * 59.23%, gave up because: failed to satisfy assume() in test_an_accepted_update_never_holds_a_forbidden_operator (line 145)
+      * 33.56%, update_one: rejected
+      * 3.91%, Retried draw from one_of(sampled_from(['$abs', '$add', '$addFields', '$addToSet', '$all', '$and', '$arrayElemAt', '$avg', '$ceil', '$cmp', '$concat', '$concatArrays', '$cond', '$count', '$currentDate', '$dateAdd', '$dateDiff', '$dateSubtract', '$dateToString', '$dayOfMonth', '$dayOfWeek', '$dayOfYear', '$divide', '$each', '$elemMatch', '$eq', '$exists', '$expr', '$filter', '$first', '$floor', '$group', '$gt', '$gte', '$hour', '$ifNull', '$in', '$inc', '$isArray', '$last', '$limit', '$literal', '$lt', '$lte', '$map', '$match', '$max', '$min', '$minute', '$mod', '$month', '$mul', '$multiply', '$ne', '$nin', '$nor', '$not', '$oid', '$or', '$project', '$pull', '$push', '$rename', '$round', '$set', '$size', '$slice', '$sort', '$split', '$strLenCP', '$substrCP', '$subtract', '$sum', '$switch', '$toBool', '$toDate', '$toDouble', '$toInt', '$toLower', '$toString', '$toUpper', '$trim', '$trunc', '$type', '$unset', '$unwind', '$week', '$year']), sampled_from(['$accumulator', '$function', '$graphLookup', '$lookup', '$merge', '$out', '$unionWith', '$where']), sampled_from(['＄where', '﹩function', '$whеre', '$\u200bwhere', '$WHERE', '$where ', ' $where', '$lookup\x00', '$func\xadtion']), sampled_from(['status', 'a', 'a.b', 'pii.mobile', 'org_id', 'tags', 'items.$', 'x.$where', '$']), text(min_size=1, max_size=8), text(min_size=1, max_size=6).map(lambda s: '$' + s)).filter(not_yet_in_unique_list) to satisfy filter
 
   - Stopped because settings.max_examples=600
 
 
 apps/mcp-mongo/tests/test_validator_properties.py::test_an_accepted_insert_never_holds_a_forbidden_operator_pii_or_org:
 
-  - during generate phase (2.64 seconds):
-    - Typical runtimes: ~ 0-14 ms, of which ~ 0-13 ms in data generation
-    - 600 passing, 0 failing, and 34 invalid test cases
+  - during generate phase (0.85 seconds):
+    - Typical runtimes: ~ 0-3 ms, of which ~ 0-2 ms in data generation
+    - 600 passing, 0 failing, and 32 invalid test cases
     - Events:
-      * 92.43%, insert_one: rejected
-      * 5.21%, Retried draw from one_of(sampled_from(['$abs', '$add', '$addFields', '$addToSet', '$all', '$and', '$arrayElemAt', '$avg', '$ceil', '$cmp', '$concat', '$concatArrays', '$cond', '$count', '$currentDate', '$dateAdd', '$dateDiff', '$dateSubtract', '$dateToString', '$dayOfMonth', '$dayOfWeek', '$dayOfYear', '$divide', '$each', '$elemMatch', '$eq', '$exists', '$expr', '$filter', '$first', '$floor', '$group', '$gt', '$gte', '$hour', '$ifNull', '$in', '$inc', '$isArray', '$last', '$limit', '$literal', '$lt', '$lte', '$map', '$match', '$max', '$min', '$minute', '$mod', '$month', '$mul', '$multiply', '$ne', '$nin', '$nor', '$not', '$oid', '$or', '$project', '$pull', '$push', '$rename', '$round', '$set', '$size', '$slice', '$sort', '$split', '$strLenCP', '$substrCP', '$subtract', '$sum', '$switch', '$toBool', '$toDate', '$toDouble', '$toInt', '$toLower', '$toString', '$toUpper', '$trim', '$trunc', '$type', '$unset', '$unwind', '$week', '$year']), sampled_from(['$accumulator', '$function', '$graphLookup', '$lookup', '$merge', '$out', '$unionWith', '$where']), sampled_from(['＄where', '﹩function', '$whеre', '$\u200bwhere', '$WHERE', '$where ', ' $where', '$lookup\x00', '$func\xadtion']), sampled_from(['status', 'a', 'a.b', 'pii.mobile', 'org_id', 'tags', 'items.$', 'x.$where', '$']), text(min_size=1, max_size=8), text(min_size=1, max_size=6).map(lambda s: '$' + s)).filter(not_yet_in_unique_list) to satisfy filter
-      * 2.21%, insert_one: accepted
+      * 91.46%, insert_one: rejected
+      * 6.96%, Retried draw from one_of(sampled_from(['$abs', '$add', '$addFields', '$addToSet', '$all', '$and', '$arrayElemAt', '$avg', '$ceil', '$cmp', '$concat', '$concatArrays', '$cond', '$count', '$currentDate', '$dateAdd', '$dateDiff', '$dateSubtract', '$dateToString', '$dayOfMonth', '$dayOfWeek', '$dayOfYear', '$divide', '$each', '$elemMatch', '$eq', '$exists', '$expr', '$filter', '$first', '$floor', '$group', '$gt', '$gte', '$hour', '$ifNull', '$in', '$inc', '$isArray', '$last', '$limit', '$literal', '$lt', '$lte', '$map', '$match', '$max', '$min', '$minute', '$mod', '$month', '$mul', '$multiply', '$ne', '$nin', '$nor', '$not', '$oid', '$or', '$project', '$pull', '$push', '$rename', '$round', '$set', '$size', '$slice', '$sort', '$split', '$strLenCP', '$substrCP', '$subtract', '$sum', '$switch', '$toBool', '$toDate', '$toDouble', '$toInt', '$toLower', '$toString', '$toUpper', '$trim', '$trunc', '$type', '$unset', '$unwind', '$week', '$year']), sampled_from(['$accumulator', '$function', '$graphLookup', '$lookup', '$merge', '$out', '$unionWith', '$where']), sampled_from(['＄where', '﹩function', '$whеre', '$\u200bwhere', '$WHERE', '$where ', ' $where', '$lookup\x00', '$func\xadtion']), sampled_from(['status', 'a', 'a.b', 'pii.mobile', 'org_id', 'tags', 'items.$', 'x.$where', '$']), text(min_size=1, max_size=8), text(min_size=1, max_size=6).map(lambda s: '$' + s)).filter(not_yet_in_unique_list) to satisfy filter
+      * 3.48%, insert_one: accepted
 
   - Stopped because settings.max_examples=600
 
 
 apps/mcp-mongo/tests/test_validator_properties.py::test_a_valid_filter_is_accepted_and_rejected_once_a_forbidden_operator_is_injected:
 
-  - during generate phase (3.18 seconds):
-    - Typical runtimes: ~ 0-13 ms, of which ~ 0-11 ms in data generation
-    - 600 passing, 0 failing, and 52 invalid test cases
+  - during generate phase (1.00 seconds):
+    - Typical runtimes: ~ 0-2 ms, of which ~ 0-2 ms in data generation
+    - 600 passing, 0 failing, and 49 invalid test cases
     - Events:
-      * 3.83%, Draw for recursive(dictionaries(keys=sampled_from(['status', 'team', 'profile.name', 'tasks', 'start']), values=one_of(one_of(integers(min_value=-3, max_value=3), sampled_from(['open', 'done', 'eng']), booleans()), dictionaries(keys=sampled_from(['$eq', '$ne', '$gt', '$gte', '$lt', '$lte']), values=one_of(integers(min_value=-3, max_value=3), sampled_from(['open', 'done', 'eng']), booleans()), min_size=1, max_size=2), builds(lambda xs: {'$in': xs}, lists(one_of(integers(min_value=-3, max_value=3), sampled_from(['open', 'done', 'eng']), booleans()), max_size=3)), builds(lambda v: {'$exists': v}, booleans())), min_size=1, max_size=3), lambda inner: st.one_of(st.builds(lambda xs: {'$and': xs}, st.lists(inner, min_size=1, max_size=3)), st.builds(lambda xs: {'$or': xs}, st.lists(inner, min_size=1, max_size=3)), st.builds(lambda f, c: {f: {'$elemMatch': c}}, FIELDS, inner)), min_leaves=None, max_leaves=8) exceeded max_leaves=8 and had to be retried
+      * 1.69%, Draw for recursive(dictionaries(keys=sampled_from(['status', 'team', 'profile.name', 'tasks', 'start']), values=one_of(one_of(integers(min_value=-3, max_value=3), sampled_from(['open', 'done', 'eng']), booleans()), dictionaries(keys=sampled_from(['$eq', '$ne', '$gt', '$gte', '$lt', '$lte']), values=one_of(integers(min_value=-3, max_value=3), sampled_from(['open', 'done', 'eng']), booleans()), min_size=1, max_size=2), builds(lambda xs: {'$in': xs}, lists(one_of(integers(min_value=-3, max_value=3), sampled_from(['open', 'done', 'eng']), booleans()), max_size=3)), builds(lambda v: {'$exists': v}, booleans())), min_size=1, max_size=3), lambda inner: st.one_of(st.builds(lambda xs: {'$and': xs}, st.lists(inner, min_size=1, max_size=3)), st.builds(lambda xs: {'$or': xs}, st.lists(inner, min_size=1, max_size=3)), st.builds(lambda f, c: {f: {'$elemMatch': c}}, FIELDS, inner)), min_leaves=None, max_leaves=8) exceeded max_leaves=8 and had to be retried
 
   - Stopped because settings.max_examples=600
 
 
 apps/mcp-mongo/tests/test_validator_properties.py::test_a_mutated_filter_is_accepted_only_without_a_forbidden_operator:
 
-  - during generate phase (1.75 seconds):
-    - Typical runtimes: ~ 0-9 ms, of which ~ 0-8 ms in data generation
-    - 600 passing, 0 failing, and 17 invalid test cases
+  - during generate phase (0.61 seconds):
+    - Typical runtimes: ~ 0-1 ms, of which ~ 0-1 ms in data generation
+    - 600 passing, 0 failing, and 21 invalid test cases
     - Events:
-      * 79.42%, find: accepted
-      * 17.83%, find: rejected
-      * 11.83%, Retried draw from integers(min_value=0, max_value=19).flatmap(lambda n: DANGER if n == 0 else valid).filter(not_yet_in_unique_list) to satisfy filter
+      * 80.68%, find: accepted
+      * 15.94%, find: rejected
+      * 12.08%, Retried draw from integers(min_value=0, max_value=19).flatmap(lambda n: DANGER if n == 0 else valid).filter(not_yet_in_unique_list) to satisfy filter
 
   - Stopped because settings.max_examples=600
 
 
 apps/mcp-mongo/tests/test_validator_properties.py::test_a_mutated_pipeline_is_accepted_only_without_a_forbidden_operator:
 
-  - during generate phase (1.67 seconds):
-    - Typical runtimes: ~ 0-4 ms, of which ~ 0-3 ms in data generation
-    - 600 passing, 0 failing, and 195 invalid test cases
+  - during generate phase (0.80 seconds):
+    - Typical runtimes: ~ 0-1 ms, of which ~ 0-1 ms in data generation
+    - 600 passing, 0 failing, and 208 invalid test cases
     - Events:
-      * 48.93%, aggregate: accepted
-      * 26.54%, aggregate: rejected
-      * 4.78%, Retried draw from integers(min_value=0, max_value=19).flatmap(lambda n: DANGER if n == 0 else valid).filter(not_yet_in_unique_list) to satisfy filter
+      * 42.82%, aggregate: accepted
+      * 31.44%, aggregate: rejected
+      * 5.32%, Retried draw from integers(min_value=0, max_value=19).flatmap(lambda n: DANGER if n == 0 else valid).filter(not_yet_in_unique_list) to satisfy filter
 
   - Stopped because settings.max_examples=600
 
 
 apps/mcp-mongo/tests/test_validator_properties.py::test_a_mutated_update_is_accepted_only_without_a_forbidden_operator_pii_or_org:
 
-  - during generate phase (2.40 seconds):
-    - Typical runtimes: ~ 0-4 ms, of which ~ 0-4 ms in data generation
-    - 600 passing, 0 failing, and 361 invalid test cases
+  - during generate phase (1.32 seconds):
+    - Typical runtimes: ~ 0-1 ms, of which ~ 0-1 ms in data generation
+    - 600 passing, 0 failing, and 433 invalid test cases
     - Events:
-      * 48.70%, update_one: rejected
-      * 13.74%, update_one: accepted
-      * 10.51%, Retried draw from integers(min_value=0, max_value=19).flatmap(lambda n: DANGER if n == 0 else valid).filter(not_yet_in_unique_list) to satisfy filter
+      * 44.43%, update_one: rejected
+      * 13.65%, update_one: accepted
+      * 10.16%, Retried draw from integers(min_value=0, max_value=19).flatmap(lambda n: DANGER if n == 0 else valid).filter(not_yet_in_unique_list) to satisfy filter
 
   - Stopped because settings.max_examples=600
 
 
 apps/mcp-mongo/tests/test_validator_properties.py::test_a_mutated_insert_is_accepted_only_without_a_forbidden_operator_pii_or_org:
 
-  - during generate phase (1.13 seconds):
-    - Typical runtimes: ~ 0-3 ms, of which ~ 0-3 ms in data generation
-    - 600 passing, 0 failing, and 29 invalid test cases
+  - during generate phase (0.47 seconds):
+    - Typical runtimes: ~ 0-1 ms, of which < 1ms in data generation
+    - 600 passing, 0 failing, and 17 invalid test cases
     - Events:
-      * 78.22%, insert_one: accepted
-      * 29.41%, Retried draw from integers(min_value=0, max_value=19).flatmap(lambda n: DANGER if n == 0 else valid).filter(not_yet_in_unique_list) to satisfy filter
-      * 17.17%, insert_one: rejected
+      * 80.55%, insert_one: accepted
+      * 30.63%, Retried draw from integers(min_value=0, max_value=19).flatmap(lambda n: DANGER if n == 0 else valid).filter(not_yet_in_unique_list) to satisfy filter
+      * 16.69%, insert_one: rejected
 
   - Stopped because settings.max_examples=600
 
 
-============================= 274 passed in 29.96s =============================
+============================= 274 passed in 13.69s =============================

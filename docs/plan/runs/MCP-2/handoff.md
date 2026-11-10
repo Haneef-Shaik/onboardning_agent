@@ -1,11 +1,33 @@
-# Handoff — MCP-2 · Reject dangerous and cross-tenant queries        attempt 3 · goal/mcp-2-query-validator · see `git log -1` (code at 90ec295)
+# Handoff — MCP-2 · Reject dangerous and cross-tenant queries        attempt 4 · goal/mcp-2-query-validator · see `git log -1` (code at 6b1ac5f)
+
+**Attempt 4 (verifier failed attempt 3 on box 4; orchestrator decision below).** The attempt-3
+survivor was this: `main.py` built an aliased `FastMCP` (`FastMCP as Hub`) with
+`tools=[..., Tool.from_function(db_users.run_command)]` and served that app. The old `main()` test
+listed `build_server`'s tools, not the served app's, and the AST rule matched local names only.
+
+Following the orchestrator's decision, box 4 is now proved **behaviourally**. The new test,
+`test_the_app_main_serves_lists_exactly_the_prd_tools_over_mcp`:
+1. Runs the real `main()` with only its I/O patched.
+2. Captures the exact app object `main()` passes to `uvicorn.run`.
+3. Starts that app's own lifespan.
+4. Connects a real MCP `ClientSession` to it over streamable HTTP (in-process ASGI).
+5. Calls `list_tools()` and asserts the set is exactly the six PRD tools, that no name or description
+   matches delete/remove/drop/index/admin/run_command/command/eval/rename/replace (word match), and
+   that each tool has `destructiveHint=False`.
+
+The static source scan stays as a second layer, with the exact-path `db_users.py` exemption. The AST
+rule stays as a cheap extra and is not relied on for aliases. The attempt-3 bypass is now mutation
+**V35**, and only the behavioural test kills it:
+`AssertionError: assert {'aggregate',...command', ...} == {'aggregate',... 'update_one'}` at
+`test_tool_surface.py:213` (`docs/evidence/MCP-2/v35-behavioural-kill.txt`). Total: **35 of 35**
+mutations caught.
 
 **Attempt 3 (verifier failed attempt 2 on box 4 with two surviving mutations).**
 - **Mb:** `main.py` registered a `run_command` tool whose body lived in the exempt `db_users.py`. The served-tool tests only inspected `build_server()`.
 - **Md:** a nested `helpers/db_users.py` holding `.drop()` was exempt, because the exemption matched the stem at any depth.
 
 Fixed in 90ec295, all in `test_tool_surface.py`:
-1. `test_the_server_main_serves_has_exactly_the_prd_tools` runs the real `main()` with I/O patched and lists the tools of the server it hands to uvicorn. They must be exactly the PRD tools, with `destructiveHint=False`.
+1. (replaced in attempt 4 by the behavioural MCP-session test) `test_the_server_main_serves_has_exactly_the_prd_tools` ran the real `main()` with I/O patched and lists the tools of the server it hands to uvicorn. They must be exactly the PRD tools, with `destructiveHint=False`.
 2. `test_only_the_server_module_builds_the_mcp_server_or_registers_tools` is an AST rule. Outside `server.py`, no file may call `add_tool`/`tool`/`remove_tool`/`resource`/`prompt` (including as decorators) or construct `FastMCP`/`Server`/`Tool`/`TracedTool`/`FuncMetadata`. It also asserts that `server.py` itself does, so the rule is not vacuous.
 3. The exemption is now the exact resolved path `src/onb_mcp_mongo/db_users.py` (`ADMIN_FILES`). The scan covers every other `*.py` at any depth.
 4. `test_the_package_has_no_subpackages` keeps the top-level import closure complete.
@@ -47,7 +69,7 @@ It rejects:
 | An injection corpus of 40+ payloads (nested, dotted, unicode, `$where`, `$function`, `$accumulator`, `$expr` with JS, `$lookup`, `$graphLookup`, `$out`, `$merge`, `$unionWith`) is all rejected, each with a named reason (test) | yes | **Corpus:** `apps/mcp-mongo/tests/corpus.py` has **82 payloads**, each with an expected `denial.reason`. `REQUIRED_KINDS` maps every kind the card names to corpus ids. **Validator level:** `test_validator.py::test_every_corpus_payload_is_rejected_with_its_named_reason[*]` passes 82 of 82. **Supporting tests:** `test_the_corpus_has_at_least_40_payloads_with_unique_ids` and `test_the_corpus_covers_every_kind_the_card_names[*]` (12 kinds). **Over MCP with a real client:** `test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[*]` passes 82 of 82. Each call is `isError`, the driver gets no calls, and the span has `outcome=denied` and `denial.reason` equal to the expected reason. Command: `uv run --frozen pytest apps/mcp-mongo/tests/test_validator.py apps/mcp-mongo/tests/test_server_validator.py apps/mcp-mongo/tests/test_validator_properties.py apps/mcp-mongo/tests/test_tool_surface.py -v` → `268 passed` (`docs/evidence/MCP-2/box-tests.txt`; it lists 82 PASSED for each corpus test). |
 | A hypothesis test never produces an accepted query containing a forbidden operator | yes | `apps/mcp-mongo/tests/test_validator_properties.py`, 9 properties at 600 examples each. **Random trees:** `test_an_accepted_{filter,pipeline,update,insert}_never_holds_a_forbidden_operator`. Keys mix allowlisted operators, forbidden ones, look-alikes (fullwidth `＄`, Cyrillic `е`, zero-width, soft hyphen, case, padding) and random `$x`. **Grammar-built calls:** `test_a_mutated_{filter,pipeline,update,insert}_*`, where 1 key in 20 is replaced by a dangerous one; acceptance is 76% for find, 41% aggregate, 14% update and 81% insert (statistics in `box-tests.txt`), so the property is not vacuous. **Injection:** `test_a_valid_filter_is_accepted_and_rejected_once_a_forbidden_operator_is_injected` puts each forbidden operator at a random depth and checks both find and `$match`. **Oracle:** every name and dotted segment of an accepted call is checked, after NFKC, against the forbidden set and the allowlists. Per context, filters hold only query and expression operators, inserts no operator, and updates only update operators; `pii` and `org_id` are never written. Result: `600 passing, 0 failing` for each property (`box-tests.txt`). The property tests alone catch 8 of 10 operator and name mutations (`mutation-checks-properties.txt`); the 2 misses only change the reason, see Mutation checks. |
 | An update touching `pii.mobile` and a `$set` of `org_id` are rejected (tests) | yes | **Validator:** `test_validator.py::test_an_update_touching_pii_mobile_is_rejected` (`pii_read_only`); `test_every_update_operator_on_pii_mobile_is_rejected[$set,$unset,$inc,$mul,$min,$max,$push,$addToSet,$pull]`; `test_a_set_of_org_id_is_rejected` and `test_a_set_of_an_org_id_subfield_is_rejected` (`org_id_not_allowed`). **Over MCP:** `test_server_validator.py::test_an_update_touching_pii_mobile_is_denied_over_mcp` (the stored `pii.mobile` is unchanged, the driver gets no calls, `denial.reason=pii_read_only`) and `test_a_set_of_org_id_is_denied_over_mcp` (`org_id` stays `org_a`). **Corpus:** `pii-*` (8 payloads) and `org-*` (10). All PASSED (`box-tests.txt`). |
-| A test asserts no delete, drop, index, admin or `runCommand` tool exists | yes | `apps/mcp-mongo/tests/test_tool_surface.py` has ten tests. **Served tools:** `test_no_delete_drop_index_admin_or_run_command_tool_is_served` checks that `tools/list` over MCP is exactly the six PRD tools, that no name contains delete/remove/drop/index/admin/command/runcommand/eval/rename/replace, and that each tool has `destructiveHint=False`. **Built tools:** `test_the_server_is_built_only_from_the_prd_tools` checks `CONTRACTS` and `HANDLERS`. **What production serves:** `test_the_server_main_serves_has_exactly_the_prd_tools` runs `main()` and lists the served server's tools. **Who may register:** `test_only_the_server_module_builds_the_mcp_server_or_registers_tools` is the AST rule. **Source scan:** `test_no_source_file_but_the_admin_file_calls_a_delete_drop_index_or_command_method` scans every `*.py` under `src/`, at any depth, except the exact file `src/onb_mcp_mongo/db_users.py` for `.delete_*`, `.drop*`, `.create_index*`, `.command(`, `replace_one`, `bulk_write` and others, and asserts the scanned set covers the whole tool closure. **Admin code unreachable:** `test_the_tool_closure_holds_the_tool_code_and_not_the_admin_code` builds the AST import closure from `server.py`; it must contain every handler's and contract's module (plus tools, policy, validator and validator_rules) and must not contain `db_users`. `test_importing_the_tools_never_loads_the_admin_code` uses a fresh interpreter that imports every closure module and checks `db_users` is not in `sys.modules`. **The exemption itself:** `test_the_admin_exemption_is_exactly_the_provisioning_file` pins it to that one resolved path, and `test_the_package_has_no_subpackages` keeps the import closure complete. **Missing tools:** `test_calling_a_tool_that_does_not_exist_is_an_error` tries `delete_one`, `drop_collection`, `create_index`, `run_command` and `admin_command`. All 10 PASSED (`box-tests.txt`). Mutations V26–V34 fail them. |
+| A test asserts no delete, drop, index, admin or `runCommand` tool exists | yes | `apps/mcp-mongo/tests/test_tool_surface.py` has ten tests. **Served tools:** `test_no_delete_drop_index_admin_or_run_command_tool_is_served` checks that `tools/list` over MCP is exactly the six PRD tools, that no name contains delete/remove/drop/index/admin/command/runcommand/eval/rename/replace, and that each tool has `destructiveHint=False`. **Built tools:** `test_the_server_is_built_only_from_the_prd_tools` checks `CONTRACTS` and `HANDLERS`. **What production serves (the primary proof, attempt 4):** `test_the_app_main_serves_lists_exactly_the_prd_tools_over_mcp` captures the exact app `main()` hands to `uvicorn.run`, connects a real MCP client session to it, and asserts `list_tools()` is exactly the six PRD tools, with no forbidden word in any name or description and `destructiveHint=False`. **Who may register:** `test_only_the_server_module_builds_the_mcp_server_or_registers_tools` is the AST rule. **Source scan:** `test_no_source_file_but_the_admin_file_calls_a_delete_drop_index_or_command_method` scans every `*.py` under `src/`, at any depth, except the exact file `src/onb_mcp_mongo/db_users.py` for `.delete_*`, `.drop*`, `.create_index*`, `.command(`, `replace_one`, `bulk_write` and others, and asserts the scanned set covers the whole tool closure. **Admin code unreachable:** `test_the_tool_closure_holds_the_tool_code_and_not_the_admin_code` builds the AST import closure from `server.py`; it must contain every handler's and contract's module (plus tools, policy, validator and validator_rules) and must not contain `db_users`. `test_importing_the_tools_never_loads_the_admin_code` uses a fresh interpreter that imports every closure module and checks `db_users` is not in `sys.modules`. **The exemption itself:** `test_the_admin_exemption_is_exactly_the_provisioning_file` pins it to that one resolved path, and `test_the_package_has_no_subpackages` keeps the import closure complete. **Missing tools:** `test_calling_a_tool_that_does_not_exist_is_an_error` tries `delete_one`, `drop_collection`, `create_index`, `run_command` and `admin_command`. All 10 PASSED (`box-tests.txt`). Mutations V26–V35 fail them; V35, the attempt-3 bypass, is killed only by the behavioural test. |
 
 ## Claims the next goals may rely on
 | Claim | Proved by |
@@ -66,8 +88,8 @@ It rejects:
 ## Gates
 | Gate | Command | Result |
 |------|---------|--------|
-| Check | `rtk proxy make check` (90ec295) | `make check: all passed`, exit=0. Lint, typecheck and test for 17 projects; mcp-mongo `509 passed` (`docs/evidence/MCP-2/make-check.txt`) |
-| Integration | `rtk proxy make test-int` (rebased branch) | exit=0. `12`, `3`, `28`, `10`, `17`, `77`, `8` and `2 passed`; `Successfully ran target test-int for 7 projects` (`docs/evidence/MCP-2/make-test-int.txt`, compose project `ob-mcp-2` on 19500/19501) |
+| Check | `rtk proxy make check` (6b1ac5f) | `make check: all passed`, exit=0. Lint, typecheck and test for 17 projects; mcp-mongo `509 passed` (`docs/evidence/MCP-2/make-check.txt`) |
+| Integration | `rtk proxy make test-int` (rebased branch) | exit=0. `12`, `10`, `3`, `28`, `77`, `17`, `8` and `2 passed`; `Successfully ran target test-int for 7 projects` (`docs/evidence/MCP-2/make-test-int.txt`, compose project `ob-mcp-2` on 19500/19501) |
 | Box tests | `uv run --frozen pytest apps/mcp-mongo/tests/test_validator.py …/test_server_validator.py …/test_validator_properties.py …/test_tool_surface.py -v` | `274 passed`; 164 corpus PASSED lines (82 payloads × 2 tests) (`box-tests.txt`) |
 | Plan | `python3 scripts/plan/plan.py check` | `plan ok: 67 goals, 34 ledger rows` |
 
@@ -82,7 +104,7 @@ It rejects:
 | MCP-1 | "MCP-2 should cap depth; narrow `_mentions_org`; include sort keys" | Depth is capped and sort and projection keys are checked. `_mentions_org` in `policy.py` was **not** narrowed: it is MCP-1's code, and MCP-3 also edits this app, so it is left for a merge-safe follow-up. It still refuses a value equal to `"org_id"` after the validator accepts it, which is safe |
 
 ## Mutation checks
-**All guards:** `docs/evidence/MCP-2/mutation-checks.txt` (script `docs/evidence/MCP-2/mutate.py`) gives `SUMMARY: 34 of 34 mutations caught, every file restored` (byte-for-byte sha256), run on the rebased branch.
+**All guards:** `docs/evidence/MCP-2/mutation-checks.txt` (script `docs/evidence/MCP-2/mutate.py`) gives `SUMMARY: 35 of 35 mutations caught, every file restored` (byte-for-byte sha256), run on the rebased branch.
 
 | # | Guard broken | Failed |
 |---|--------------|--------|
@@ -118,15 +140,16 @@ It rejects:
 | V30 | `validator_rules.py`, deep in the closure, loads `db_users` with `importlib` (invisible to the AST) | 1: `test_importing_the_tools_never_loads_the_admin_code` |
 | V31 | A `.drop(` call added to `settings.py`, outside the tool closure but not admin code | 1: the source scan |
 
-| V32 | Mb: `run_command` defined in `db_users.py` and registered by `main.py` with `server.add_tool` | 2: `test_only_the_server_module_builds_the_mcp_server_or_registers_tools`, `test_the_server_main_serves_has_exactly_the_prd_tools` |
+| V32 | Mb: `run_command` defined in `db_users.py` and registered by `main.py` with `server.add_tool` | 2: `test_only_the_server_module_builds_the_mcp_server_or_registers_tools`, `test_the_app_main_serves_lists_exactly_the_prd_tools_over_mcp` |
 | V33 | Mb variant: `main.py` registers a tool with `@server.tool()` | the same 2 tests |
 | V34 | Md: a new nested `helpers/db_users.py` with `.drop()`, imported by `tools.py` | 2: the source scan and `test_the_package_has_no_subpackages` |
+| V35 | Attempt-3 bypass: `main.py` serves an aliased `FastMCP` holding the PRD tools plus `Tool.from_function(db_users.run_command)` | 1: `test_the_app_main_serves_lists_exactly_the_prd_tools_over_mcp` (`v35-behavioural-kill.txt`). The AST rule misses it, as the decision accepts |
 
-V28–V34 test the narrowing:
+V28–V35 test the narrowing:
 - A destructive call in any file other than the one admin file fails.
 - The admin module cannot become reachable from a tool, statically or dynamically.
 - Nothing outside `server.py` can register a tool.
-- What `main()` actually serves is checked.
+- What `main()` actually serves is checked over a real MCP session, whatever the source looks like.
 
 V32 and V34 are the verifier's attempt-2 survivors. Both are caught now, and the temporary files V34 creates are removed afterwards.
 
@@ -179,7 +202,15 @@ Left open:
 - **MCP-1 follow-up:** `$date` decoding; narrow `_mentions_org`.
 
 ## Decisions forced (ADRs written)
-None written. Choices made:
+**Box 4 proof, attempt 4.** The orchestrator decided this as integrator, on Haneef's behalf; Haneef can override it.
+- **Option rejected:** moving `db_users.py` out of the app. The start-up privilege check must stay in the served app and needs `.command("connectionStatus")`, and moving the file would rewrite MCP-3's merged code.
+- **Decision:** box 4 is proved behaviourally, as its text literally asks ("a test asserts no … tool exists"). A real MCP client lists the tools of the exact app `main()` serves. This catches every registration or aliasing bypass, whatever the source looks like.
+- **Second layer:** the static source scan, with the exact-path `db_users.py` exemption.
+- **Not done:** the AST rule is not extended to resolve aliases.
+
+No ADR file was written; this record and the orchestrator's message are the decision.
+
+Other choices made:
 1. `$regex`, `$text` and `$regexMatch` are off for ReDoS reasons.
 2. A field-path string in an expression is checked like a field, so `"$org_id"` is refused even though it only reads the caller's org. This keeps "org_id is never named" literal.
 3. The validator runs in the server, not in each handler, so every tool is covered by one call.

@@ -12,7 +12,7 @@ uv run --frozen pytest tools/tests scripts/plan/test_plan.py -q
 ........................................................................ [ 43%]
 ........................................................................ [ 87%]
 .....................                                                         [100%]
-165 passed, 67 subtests passed in 5.22s
+165 passed, 67 subtests passed in 5.99s
 node_modules/.bin/nx run-many -t lint --output-style=static
 
  NX   Running target lint for 17 projects:
@@ -184,9 +184,9 @@ node_modules/.bin/nx run-many -t lint --output-style=static
 
 Nx read the output from the cache instead of running the command for 16 out of 17 tasks.
 
-  Run duration:      522ms
+  Run duration:      487ms
   Cache:             16/17 hit (94%)
-  Critical path:     493ms (1 task)
+  Critical path:     462ms (1 task)
   Recoverable time:  1ms (0% of the run)
 node_modules/.bin/nx run-many -t typecheck --output-style=static
 
@@ -320,10 +320,10 @@ Success: no issues found in 2 source files
 
 Nx read the output from the cache instead of running the command for 16 out of 17 tasks.
 
-  Run duration:      1.0s
+  Run duration:      912ms
   Cache:             16/17 hit (94%)
-  Critical path:     991ms (1 task)
-  Recoverable time:  <1ms
+  Critical path:     882ms (1 task)
+  Recoverable time:  1ms (0% of the run)
 node_modules/.bin/nx run-many -t test --output-style=static
 
  NX   Running target test for 17 projects:
@@ -897,7 +897,7 @@ apps/mcp-mongo/tests/test_validator.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m
 [0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m          [ 98%][0m
 apps/mcp-mongo/tests/test_validator_properties.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m              [100%][0m
 
-[32m============================= [32m[1m509 passed[0m[32m in 23.94s[0m[32m =============================[0m
+[32m============================= [32m[1m509 passed[0m[32m in 17.92s[0m[32m =============================[0m
 
 
 
@@ -905,9 +905,9 @@ apps/mcp-mongo/tests/test_validator_properties.py [32m.[0m[32m.[0m[32m.[0m
 
 Nx read the output from the cache instead of running the command for 16 out of 17 tasks.
 
-  Run duration:      25.5s
+  Run duration:      19.6s
   Cache:             16/17 hit (94%)
-  Critical path:     25.5s (1 task)
+  Critical path:     19.6s (1 task)
   Recoverable time:  1ms (0% of the run)
 make check: all passed
 exit=0
