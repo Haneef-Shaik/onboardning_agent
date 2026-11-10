@@ -44,6 +44,15 @@ SCOPED_COMMANDS: dict[str, dict[str, Any]] = {
     "delete": {"delete": "hires", "deletes": [{"q": {"org_id": ORG, "_id": "a1"}, "limit": 1}]},
     "aggregate": {"aggregate": "hires", "pipeline": [{"$match": {"org_id": ORG}}, {"$sort": {"a": 1}}]},
     "insert": {"insert": "hires", "documents": [{"org_id": ORG, "name": "x"}, {"org_id": ORG}]},
+    "update upsert setOnInsert own org": {
+        "update": "hires",
+        "updates": [{"q": {"org_id": ORG}, "u": {"$set": {"a": 1}, "$setOnInsert": {"org_id": ORG}}, "upsert": True}],
+    },
+    "replacement keeps org": {"update": "hires", "updates": [{"q": {"org_id": ORG}, "u": {"org_id": ORG, "a": 1}}]},
+    "findAndModify remove": {"findAndModify": "hires", "query": {"org_id": ORG}, "remove": True},
+    "explain scoped find": {"explain": {"find": "hires", "filter": {"org_id": ORG}}},
+    "create collection": {"create": "hires"},
+    "view scoped": {"create": "v", "viewOn": "hires", "pipeline": [{"$match": {"org_id": ORG}}]},
     "createIndexes": {
         "createIndexes": "hires",
         "indexes": [{"key": {"org_id": 1, "email_hash": 1}, "name": "org_email", "unique": True}],
@@ -102,6 +111,42 @@ UNSCOPED_COMMANDS: dict[str, dict[str, Any]] = {
         "indexes": [{"key": {"email_hash": 1, "org_id": 1}, "name": "email_org"}],
     },
     "mapReduce": {"mapReduce": "hires", "map": "f", "reduce": "g", "out": {"inline": 1}},
+    # Review fixes: the update body, change streams, explain, views, odd lookups.
+    "update moves org": {
+        "update": "hires",
+        "updates": [{"q": {"org_id": ORG}, "u": {"$set": {"org_id": "org_beta"}}, "multi": True}],
+    },
+    "update unsets org": {"update": "hires", "updates": [{"q": {"org_id": ORG}, "u": {"$unset": {"org_id": ""}}}]},
+    "update renames into org": {
+        "update": "hires",
+        "updates": [{"q": {"org_id": ORG}, "u": {"$rename": {"other": "org_id"}}}],
+    },
+    "update dotted org path": {"update": "hires", "updates": [{"q": {"org_id": ORG}, "u": {"$set": {"org_id.x": 1}}}]},
+    "replacement drops org": {"update": "hires", "updates": [{"q": {"org_id": ORG}, "u": {"name": "x"}}]},
+    "replacement other org": {
+        "update": "hires",
+        "updates": [{"q": {"org_id": ORG}, "u": {"org_id": "org_beta", "name": "x"}}],
+    },
+    "pipeline update": {"update": "hires", "updates": [{"q": {"org_id": ORG}, "u": [{"$set": {"a": 1}}]}]},
+    "findAndModify moves org": {
+        "findAndModify": "hires",
+        "query": {"org_id": ORG},
+        "update": {"$set": {"org_id": "x"}},
+    },
+    "db change stream": {"aggregate": 1, "pipeline": [{"$changeStream": {}}]},
+    "explain find": {"explain": {"find": "hires", "filter": {}}, "verbosity": "executionStats"},
+    "explain non-command": {"explain": "nope"},
+    "view joining tenant data": {
+        "create": "v",
+        "viewOn": "orgs",
+        "pipeline": [{"$lookup": {"from": "hires", "as": "h", "localField": "_id", "foreignField": "org_id"}}],
+    },
+    "view on tenant collection": {"create": "v", "viewOn": "hires", "pipeline": [{"$match": {"name": "x"}}]},
+    "lookup from mapping": {
+        "aggregate": "hires",
+        "pipeline": [{"$match": {"org_id": ORG}}, {"$lookup": {"from": {"db": "x", "coll": "y"}, "as": "z"}}],
+    },
+    "insert org $eq document": {"insert": "hires", "documents": [{"org_id": {"$eq": ORG}}]},
     "client bulkWrite on tenant ns": {"bulkWrite": 1, "ops": [], "nsInfo": [{"ns": "app.hires"}]},
 }
 
@@ -146,6 +191,40 @@ def test_a_malformed_command_is_flagged_not_crashed() -> None:
     assert find_violation("aggregate", {"aggregate": "hires"}, DB) is not None
     assert find_violation("insert", {"insert": "hires"}, DB) is not None
     assert find_violation("createIndexes", {"createIndexes": "hires"}, DB) is not None
+
+
+def test_malformed_updates_and_views_are_flagged() -> None:
+    bad_operator = {"update": "hires", "updates": [{"q": {"org_id": ORG}, "u": {"$set": 1}}]}
+    empty = {"update": "hires", "updates": [{"q": {"org_id": ORG}, "u": {}}]}
+    view = {"create": "v", "viewOn": "hires", "pipeline": "nope"}
+    assert find_violation("update", bad_operator, DB) is not None
+    assert find_violation("update", empty, DB) is not None
+    assert find_violation("create", view, DB) is not None
+
+
+def test_a_view_on_a_global_collection_and_a_database_aggregate_pass() -> None:
+    view = {"create": "v", "viewOn": "orgs", "pipeline": [{"$sort": {"slug": 1}}]}
+    assert find_violation("create", view, DB) is None
+    assert find_violation("aggregate", {"aggregate": 1, "pipeline": [{"$documents": [{"a": 1}]}]}, DB) is None
+
+
+def test_a_cluster_wide_change_stream_is_flagged() -> None:
+    command = {"aggregate": 1, "pipeline": [{"$changeStream": {"allChangesForCluster": True}}]}
+    assert find_violation("aggregate", command, "admin") is not None
+
+
+def test_a_change_stream_on_a_global_collection_passes() -> None:
+    assert find_violation("aggregate", {"aggregate": "orgs", "pipeline": [{"$changeStream": {}}]}, DB) is None
+
+
+def test_a_command_the_check_cannot_parse_is_recorded_not_lost(monkeypatch: pytest.MonkeyPatch) -> None:
+    def broken(*_args: object) -> str | None:
+        raise RuntimeError("boom")
+
+    monkeypatch.setattr(safety_net, "find_violation", broken)
+    listener = TenantCommandListener()
+    listener.started(started({"find": "hires", "filter": {"org_id": ORG}}))
+    assert [v.reason for v in listener.violations] == ["the safety net could not check this command"]
 
 
 def test_an_aggregate_on_a_global_collection_needs_no_org_match() -> None:

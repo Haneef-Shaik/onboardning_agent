@@ -24,7 +24,7 @@ def tenant_index_violations(client: Client, databases: list[str] | None = None) 
     names = databases if databases is not None else client.list_database_names()
     for db_name in sorted(set(names) - SYSTEM_DATABASES):
         database = client[db_name]
-        for info in database.list_collections(filter={"type": "collection"}):
+        for info in database.list_collections(filter={"type": {"$in": ["collection", "timeseries"]}}):
             collection = str(info["name"])
             if not is_tenant_collection(db_name, collection):
                 continue

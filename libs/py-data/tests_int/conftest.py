@@ -31,6 +31,15 @@ def pytest_configure(config: pytest.Config) -> None:
     install_safety_net()
 
 
+def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
+    """Unscoped commands sent after the last test's guard (session fixture teardown) fail the run too."""
+    leftover = install_safety_net().drain()
+    if leftover:
+        lines = "\n".join(v.describe() for v in leftover)
+        session.config.get_terminal_writer().line(f"tenant safety net, after the last test:\n{lines}", red=True)
+        session.exitstatus = pytest.ExitCode.TESTS_FAILED
+
+
 @pytest.fixture(scope="session")
 def tenant_safety_net() -> TenantCommandListener:
     return install_safety_net()

@@ -26,7 +26,7 @@ from typing import Any
 from pymongo import monitoring
 
 from .errors import UnscopedCommandError
-from .scoping import CROSS_COLLECTION_STAGES, ORG_FIELD
+from .scoping import CROSS_COLLECTION_STAGES, ORG_FIELD, _touches_org
 from .store import GLOBAL_COLLECTIONS
 
 __all__ = [
@@ -44,7 +44,7 @@ _log = logging.getLogger(__name__)
 _SYSTEM_DATABASES = frozenset({"admin", "config", "local"})
 
 # command name -> the field that holds its filter.
-_FILTER_FIELD = {"find": "filter", "count": "query", "distinct": "query", "findAndModify": "query"}
+_FILTER_FIELD = {"find": "filter", "count": "query", "distinct": "query"}
 # command name -> (list field, filter field in each statement).
 _STATEMENT_FILTERS = {"update": ("updates", "q"), "delete": ("deletes", "q")}
 # Commands that cannot be org-scoped through this layer at all.
@@ -62,11 +62,27 @@ def is_tenant_collection(database: str, collection: object) -> bool:
     )
 
 
-def _is_org_equality(value: object) -> bool:
-    """`org_id: "<org>"` or `org_id: {"$eq": "<org>"}`: one org, nothing else."""
-    if isinstance(value, str):
-        return bool(value)
-    return isinstance(value, Mapping) and set(value) == {"$eq"} and isinstance(value["$eq"], str) and bool(value["$eq"])
+def _is_org_string(value: object) -> bool:
+    return isinstance(value, str) and bool(value)
+
+
+def _org_value(value: object) -> str | None:
+    """The one org an `org_id` equality names (`"<org>"` or `{"$eq": "<org>"}`), else None."""
+    if isinstance(value, Mapping) and set(value) == {"$eq"}:
+        value = value["$eq"]
+    return value if isinstance(value, str) and value else None
+
+
+def _filter_org(query: object) -> str | None:
+    """The org a scoped filter pins, or None when it pins none."""
+    if not isinstance(query, Mapping):
+        return None
+    if ORG_FIELD in query:
+        return _org_value(query[ORG_FIELD])
+    branches = query.get("$and")
+    if not isinstance(branches, list):
+        return None
+    return next((org for org in map(_filter_org, branches) if org is not None), None)
 
 
 def _is_scoped_filter(query: object) -> bool:
@@ -74,23 +90,21 @@ def _is_scoped_filter(query: object) -> bool:
 
     `$or`, `$nor`, `$in`, `$ne`, `$exists` and the like never count: they can match other orgs.
     """
-    if not isinstance(query, Mapping):
-        return False
-    if ORG_FIELD in query:
-        return _is_org_equality(query[ORG_FIELD])
-    branches = query.get("$and")
-    return isinstance(branches, list) and any(_is_scoped_filter(branch) for branch in branches)
+    return _filter_org(query) is not None
 
 
 def _foreign_stage(node: object, database: str) -> str | None:
-    """A stage at any depth that reads or writes a tenant collection outside the leading `$match`."""
+    """A stage at any depth that reads or writes a tenant collection outside the leading `$match`.
+
+    A `from`/`coll` that is missing or not a plain name (e.g. `{db, coll}`) counts as foreign.
+    """
     if isinstance(node, Mapping):
         for key, value in node.items():
             if key in {"$out", "$merge"}:
                 return f"pipeline stage {key} writes another collection"
             if key in CROSS_COLLECTION_STAGES:
                 target = value.get("from", value.get("coll")) if isinstance(value, Mapping) else value
-                if target is None or is_tenant_collection(database, target):
+                if not isinstance(target, str) or is_tenant_collection(database, target):
                     return f"pipeline stage {key} reads a tenant collection outside the org $match"
             found = _foreign_stage(value, database)
             if found:
@@ -110,12 +124,42 @@ def _aggregate_violation(command: Mapping[str, Any], database: str) -> str | Non
     foreign = _foreign_stage(pipeline, database)
     if foreign:
         return foreign
-    if not is_tenant_collection(database, command.get("aggregate")):
+    target = command.get("aggregate")
+    if not isinstance(target, str):
+        # Database- or cluster-level (`aggregate: 1`): a change stream there sees every collection.
+        if any(isinstance(stage, Mapping) and "$changeStream" in stage for stage in pipeline):
+            return "database-level change stream sees every org"
         return None
+    if not is_tenant_collection(database, target):
+        return None
+    return _pipeline_start_violation(pipeline, "aggregate")
+
+
+def _pipeline_start_violation(pipeline: list[Any], what: str) -> str | None:
     first = pipeline[0] if pipeline else None
     if not isinstance(first, Mapping) or not _is_scoped_filter(first.get("$match")):
-        return "aggregate does not start with a $match on org_id"
+        return f"{what} does not start with a $match on org_id"
     return None
+
+
+def _view_violation(command: Mapping[str, Any], database: str) -> str | None:
+    """`create` of a view: it may not join tenant data, and a view on a tenant collection pins one org."""
+    pipeline = command.get("pipeline", [])
+    if not isinstance(pipeline, list):
+        return "view without a pipeline list"
+    foreign = _foreign_stage(pipeline, database)
+    if foreign:
+        return foreign
+    if is_tenant_collection(database, command.get("viewOn")):
+        return _pipeline_start_violation(pipeline, "view")
+    return None
+
+
+def _explain_violation(command: Mapping[str, Any], database: str) -> str | None:
+    inner = command.get("explain")
+    if not isinstance(inner, Mapping) or not inner:
+        return "explain without a command to explain"
+    return find_violation(str(next(iter(inner))), inner, database)
 
 
 def find_index_violation(collection: str, key: object) -> str | None:
@@ -145,8 +189,34 @@ def _insert_violation(command: Mapping[str, Any]) -> str | None:
     documents = command.get("documents")
     if not isinstance(documents, list):
         return "insert without a document list"
-    if not all(isinstance(doc, Mapping) and _is_org_equality(doc.get(ORG_FIELD)) for doc in documents):
+    if not all(isinstance(doc, Mapping) and _is_org_string(doc.get(ORG_FIELD)) for doc in documents):
         return "insert of a document without a string org_id"
+    return None
+
+
+def _operator_update_violation(update: Mapping[str, Any], org: str) -> str | None:
+    """An operator update may not write `org_id`, except `$setOnInsert` of the filter's own org."""
+    for op, fields in update.items():
+        if not isinstance(fields, Mapping):
+            return f"update operator {op} without a field document"
+        if op == "$setOnInsert" and fields.get(ORG_FIELD, org) == org:
+            continue
+        renamed_to = list(fields.values()) if op == "$rename" else []
+        if any(_touches_org(path) for path in [*fields, *renamed_to]):
+            return "an update writes org_id"
+    return None
+
+
+def _update_body_violation(update: object, org: str) -> str | None:
+    """The `u` of an update statement or the `update` of findAndModify, checked against its filter's org."""
+    if isinstance(update, list):
+        return "pipeline-style updates are not checked; use operator updates"
+    if not isinstance(update, Mapping) or not update:
+        return "update without an update document"
+    if all(str(key).startswith("$") for key in update):
+        return _operator_update_violation(update, org)
+    if update.get(ORG_FIELD) != org:
+        return "a replacement document must keep the filter's org_id"
     return None
 
 
@@ -154,8 +224,21 @@ def _statements_violation(command: Mapping[str, Any], list_field: str, filter_fi
     statements = command.get(list_field)
     if not isinstance(statements, list):
         return f"{list_field} is not a list"
-    if not all(isinstance(s, Mapping) and _is_scoped_filter(s.get(filter_field)) for s in statements):
+    orgs = [_filter_org(s.get(filter_field)) if isinstance(s, Mapping) else None for s in statements]
+    if any(org is None for org in orgs):
         return f"a statement in {list_field} has no org_id filter"
+    if list_field == "updates":
+        reasons = (_update_body_violation(s.get("u"), str(org)) for s, org in zip(statements, orgs, strict=True))
+        return next((reason for reason in reasons if reason), None)
+    return None
+
+
+def _find_and_modify_violation(command: Mapping[str, Any]) -> str | None:
+    org = _filter_org(command.get("query"))
+    if org is None:
+        return "findAndModify filter has no org_id equality"
+    if "update" in command:
+        return _update_body_violation(command["update"], org)
     return None
 
 
@@ -180,11 +263,17 @@ def find_violation(command_name: str, command: Mapping[str, Any], database: str)
         return _bulk_write_violation(command)
     if command_name == "aggregate":
         return _aggregate_violation(command, database)
+    if command_name == "explain":
+        return _explain_violation(command, database)
+    if command_name == "create" and "viewOn" in command:
+        return _view_violation(command, database)
     collection = command.get(command_name)
     if not is_tenant_collection(database, collection):
         return None
     if command_name in _NEVER_SCOPED:
         return f"{command_name} cannot be scoped to one org"
+    if command_name == "findAndModify":
+        return _find_and_modify_violation(command)
     if command_name in _FILTER_FIELD:
         if _is_scoped_filter(command.get(_FILTER_FIELD[command_name])):
             return None
@@ -232,7 +321,10 @@ class TenantCommandListener(monitoring.CommandListener):
     def started(self, event: monitoring.CommandStartedEvent) -> None:
         if self._allowed.get() is not None:
             return
-        reason = find_violation(event.command_name, event.command, event.database_name)
+        try:
+            reason = find_violation(event.command_name, event.command, event.database_name)
+        except Exception:  # pymongo would swallow it and lose the violation: record it instead
+            reason = "the safety net could not check this command"
         if reason is None:
             return
         violation = Violation(
@@ -278,7 +370,10 @@ class TenantCommandListener(monitoring.CommandListener):
     @contextmanager
     def allowing_unscoped(self, reason: str) -> Iterator[None]:
         """Let this thread or task send unscoped commands inside the block, e.g. a test's root
-        read-back that checks isolation from outside. Needs a reason; never for application code."""
+        read-back that checks isolation from outside. Needs a reason; never for application code.
+
+        It is a contextvar: other threads are not affected, but an asyncio task created inside the
+        block copies the context and stays exempt for its whole life. Do not spawn tasks in it."""
         if not isinstance(reason, str) or not reason.strip():
             raise ValueError("allowing unscoped commands needs a reason")
         token = self._allowed.set(reason)

@@ -1,0 +1,18 @@
+FAILED libs/py-data/tests/test_safety_net.py::test_an_unscoped_command_on_a_tenant_collection_is_flagged[update moves org]
+FAILED libs/py-data/tests/test_safety_net.py::test_an_unscoped_command_on_a_tenant_collection_is_flagged[update unsets org]
+FAILED libs/py-data/tests/test_safety_net.py::test_an_unscoped_command_on_a_tenant_collection_is_flagged[update renames into org]
+FAILED libs/py-data/tests/test_safety_net.py::test_an_unscoped_command_on_a_tenant_collection_is_flagged[update dotted org path]
+FAILED libs/py-data/tests/test_safety_net.py::test_an_unscoped_command_on_a_tenant_collection_is_flagged[replacement drops org]
+FAILED libs/py-data/tests/test_safety_net.py::test_an_unscoped_command_on_a_tenant_collection_is_flagged[replacement other org]
+FAILED libs/py-data/tests/test_safety_net.py::test_an_unscoped_command_on_a_tenant_collection_is_flagged[pipeline update]
+FAILED libs/py-data/tests/test_safety_net.py::test_an_unscoped_command_on_a_tenant_collection_is_flagged[findAndModify moves org]
+FAILED libs/py-data/tests/test_safety_net.py::test_an_unscoped_command_on_a_tenant_collection_is_flagged[db change stream]
+FAILED libs/py-data/tests/test_safety_net.py::test_an_unscoped_command_on_a_tenant_collection_is_flagged[explain find]
+FAILED libs/py-data/tests/test_safety_net.py::test_an_unscoped_command_on_a_tenant_collection_is_flagged[explain non-command]
+FAILED libs/py-data/tests/test_safety_net.py::test_an_unscoped_command_on_a_tenant_collection_is_flagged[view joining tenant data]
+FAILED libs/py-data/tests/test_safety_net.py::test_an_unscoped_command_on_a_tenant_collection_is_flagged[view on tenant collection]
+FAILED libs/py-data/tests/test_safety_net.py::test_an_unscoped_command_on_a_tenant_collection_is_flagged[lookup from mapping]
+FAILED libs/py-data/tests/test_safety_net.py::test_an_unscoped_command_on_a_tenant_collection_is_flagged[insert org $eq document]
+FAILED libs/py-data/tests/test_safety_net.py::test_a_cluster_wide_change_stream_is_flagged
+FAILED libs/py-data/tests/test_safety_net.py::test_a_command_the_check_cannot_parse_is_recorded_not_lost
+17 failed, 74 passed in 0.40s
