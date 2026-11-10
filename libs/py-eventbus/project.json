@@ -24,7 +24,7 @@
       "executor": "@nxlv/python:run-commands",
       "cache": true,
       "options": {
-        "command": "uv run --frozen mypy --cache-dir .mypy_cache/py-eventbus libs/py-eventbus/src libs/py-eventbus/tests",
+        "command": "uv run --frozen mypy --cache-dir .mypy_cache/py-eventbus libs/py-eventbus/src libs/py-eventbus/tests libs/py-eventbus/tests_int",
         "cwd": "."
       }
     },
@@ -37,6 +37,14 @@
         "env": {
           "COVERAGE_FILE": ".coverage.py-eventbus"
         }
+      }
+    },
+    "test-int": {
+      "executor": "@nxlv/python:run-commands",
+      "cache": false,
+      "options": {
+        "command": "uv run --frozen pytest libs/py-eventbus/tests_int -o cache_dir=.pytest_cache/py-eventbus-int",
+        "cwd": "."
       }
     }
   }
