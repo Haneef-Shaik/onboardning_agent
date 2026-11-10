@@ -1,4 +1,4 @@
-# Handoff — AUTH-1 · Log in with a JWT that carries org and role        attempt 1 · goal/auth-1-jwt-roles · see `git log -1` (evidence captured at 9c5a8d0)
+# Handoff — AUTH-1 · Log in with a JWT that carries org and role        attempt 2 · goal/auth-1-jwt-roles · see `git log -1` (attempt 1 failed only on two unexplained `type: ignore` in test_login.py; fixed by typing the helper as `httpx.Response`, gates re-run)
 
 **Outcome claimed.** HR_ADMIN, HR and MANAGER users log in at `POST /auth/login` with email and
 password (bcrypt). They get an HS256 JWT `{sub, org_id, role, iat, exp, iss, aud}`. `GET /me` returns

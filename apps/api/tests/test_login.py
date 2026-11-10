@@ -2,6 +2,7 @@
 
 from datetime import UTC, datetime, timedelta
 
+import httpx
 import jwt
 import pytest
 from fastapi.testclient import TestClient
@@ -13,17 +14,13 @@ from onb_contracts.auth import BEARER, Role
 ACME_HR = ("u_acme_hr1", "org_acme", Role.HR)
 
 
-def _login(client: TestClient, email: str, password: str) -> object:
-    return client.post("/auth/login", json={"email": email, "password": password})
-
-
-def _assert_401(response: object) -> None:
-    assert getattr(response, "status_code", None) == 401
-    body = response.json()  # type: ignore[attr-defined]
+def _assert_401(response: httpx.Response) -> None:
+    assert response.status_code == 401
+    body = response.json()
     assert body["success"] is False
     assert body["data"] is None
     assert body["error"]["code"] == "UNAUTHENTICATED"
-    assert response.headers["www-authenticate"] == "Bearer"  # type: ignore[attr-defined]
+    assert response.headers["www-authenticate"] == "Bearer"
 
 
 # --- login ------------------------------------------------------------------------------------

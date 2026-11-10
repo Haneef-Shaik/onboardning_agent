@@ -162,5 +162,5 @@ libs/py-contracts/tests/test_auth_contracts.py::test_me_carries_the_role_and_org
     from starlette.testclient import TestClient as TestClient  # noqa
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-======================== 149 passed, 1 warning in 1.27s ========================
+======================== 149 passed, 1 warning in 2.94s ========================
 exit=0
