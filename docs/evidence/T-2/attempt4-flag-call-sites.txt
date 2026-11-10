@@ -44,6 +44,28 @@
   1  find pii_vault_aadhaar: product=-  test=libs/py-crypto/tests_int/test_vault_mongo.py:124
   1  update pii_vault: product=-  test=libs/py-crypto/tests_int/test_vault_mongo.py:95
 
+##### libs/py-evals/tests_int   (attempt 5, after rebasing onto main e892d97: 16 flags)
+  1  find approvals: product=-  test=libs/py-evals/tests_int/test_fixture_mongo.py:36
+  1  find documents_meta: product=-  test=libs/py-evals/tests_int/test_fixture_mongo.py:36
+  1  find eval_runs: product=-  test=libs/py-evals/tests_int/test_selftest.py:56
+  1  find knowledge_docs: product=-  test=libs/py-evals/tests_int/test_fixture_mongo.py:36
+  1  find new_hires: product=-  test=libs/py-evals/tests_int/test_fixture_mongo.py:35
+  1  find new_hires: product=-  test=libs/py-evals/tests_int/test_fixture_mongo.py:36
+  1  find onboarding_runs: product=-  test=libs/py-evals/tests_int/test_fixture_mongo.py:36
+  1  find org_keys: product=-  test=libs/py-evals/tests_int/test_fixture_mongo.py:36
+  1  find pii_consent: product=-  test=libs/py-evals/tests_int/test_fixture_mongo.py:36
+  1  find pii_vault: product=-  test=libs/py-evals/tests_int/test_fixture_mongo.py:34
+  1  find pii_vault: product=-  test=libs/py-evals/tests_int/test_fixture_mongo.py:36
+  1  find pii_vault_aadhaar: product=-  test=libs/py-evals/tests_int/test_fixture_mongo.py:34
+  1  find pii_vault_aadhaar: product=-  test=libs/py-evals/tests_int/test_fixture_mongo.py:36
+  1  find run_tasks: product=-  test=libs/py-evals/tests_int/test_fixture_mongo.py:36
+  1  find templates: product=-  test=libs/py-evals/tests_int/test_fixture_mongo.py:36
+  1  find users: product=-  test=libs/py-evals/tests_int/test_fixture_mongo.py:36
+# py-evals fixture :34..36    root read of the whole seeded fixture database (every org) to scan for raw PII
+# py-evals selftest :56       root read-back by _id of the eval_runs record, to check its org_id
+# The eval harness's own seeding (load_fixture through tenant repositories and the vault) and its
+# eval_runs write passed the net. After marking, the same run prints no call sites.
+
 # What each site is (line numbers are before the marking edits):
 # api :97                     root read of both orgs' users (test_user_records_are_tenant_documents)
 # mcp-mongo db_users :94      _count helper: root count across orgs proving a refused write left nothing

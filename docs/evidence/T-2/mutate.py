@@ -20,6 +20,7 @@ CRYPTO_CONFTEST = "libs/py-crypto/tests_int/conftest.py"
 TELEMETRY_CONFTEST = "libs/py-telemetry/tests_int/conftest.py"
 API_CONFTEST = "apps/api/tests_int/conftest.py"
 MCPM_CONFTEST = "apps/mcp-mongo/tests_int/conftest.py"
+EVALS_CONFTEST = "libs/py-evals/tests_int/conftest.py"
 PLUGIN_IMPORT = (
     "from onb_data.safety_net_pytest import (  # T-2 tenant safety net (PRD §7.9): registers these with pytest\n"
     "    pytest_configure,\n    pytest_sessionfinish,\n    tenant_safety_net,\n"
@@ -203,6 +204,11 @@ MUTATIONS: dict[str, tuple[str, str, list[tuple[str, str]]]] = {
         MCPM_CONFTEST,
         [(PLUGIN_IMPORT, "")],
     ),
+    "P6": (
+        "suites: libs/py-evals' conftest no longer loads the plugin",
+        EVALS_CONFTEST,
+        [(PLUGIN_IMPORT, "")],
+    ),
     "P3": (
         "plugin: a violation after the last test no longer fails the run",
         CONFTEST,
@@ -236,6 +242,7 @@ def main() -> int:
         "tele": ["uv", "run", "--frozen", "pytest", "libs/py-telemetry/tests_int", "-q", "-p", "no:cacheprovider"],
         "api": ["uv", "run", "--frozen", "pytest", "apps/api/tests_int", "-q", "-p", "no:cacheprovider"],
         "mcpm": ["uv", "run", "--frozen", "pytest", "apps/mcp-mongo/tests_int", "-q", "-p", "no:cacheprovider"],
+        "eval": ["uv", "run", "--frozen", "pytest", "libs/py-evals/tests_int", "-q", "-p", "no:cacheprovider"],
         "tool": ["uv", "run", "--frozen", "pytest", "tools/tests/test_safety_net_suites.py", "-q", "-p", "no:cacheprovider"],
     }
     only = set(sys.argv[1:])
@@ -263,7 +270,7 @@ def main() -> int:
                 print(f"  {suite:4} FAILED {name}")
         caught = any(failures(output) for output in outputs.values())
         print(f"caught: {'yes' if caught else 'NO'}\n")
-    diff = run(["git", "status", "--porcelain", "--", SRC, QA, CONFTEST, CRYPTO_CONFTEST, TELEMETRY_CONFTEST, API_CONFTEST, MCPM_CONFTEST]).strip()
+    diff = run(["git", "status", "--porcelain", "--", SRC, QA, CONFTEST, CRYPTO_CONFTEST, TELEMETRY_CONFTEST, API_CONFTEST, MCPM_CONFTEST, EVALS_CONFTEST]).strip()
     print(f"worktree after all mutations: {'clean' if not diff else diff}")
     return 0
 
