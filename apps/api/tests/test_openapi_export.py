@@ -4,7 +4,6 @@ import json
 from pathlib import Path
 
 import pytest
-
 from onb_api.openapi import export_openapi, main
 
 
