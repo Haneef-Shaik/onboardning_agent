@@ -1,4 +1,14 @@
-# Handoff — AUD-1 · Record every privileged action in an append-only audit log        attempt 1 · goal/aud-1-audit-log · see `git log -1` (code at dd5a058)
+# Handoff — AUD-1 · Record every privileged action in an append-only audit log        attempt 2 · goal/aud-1-audit-log (rebased onto main by the orchestrator: EVAL-1, MCP-3) · see `git log -1` (code at faf047d)
+
+**Attempt history.**
+- **Attempt 1 passed** at 2805a1e.
+- **The orchestrator then rebased the branch onto main,** which now includes EVAL-1 and MCP-3. `make check` still passed, but `make test-int` failed with `UnknownCollectionError: audit_log is append-only`, because those goals reached `audit_log` through `store.tenant(...)`, which AUD-1 now refuses.
+- **Attempt 2 moves those callers to the append-only handle.** `append_only` is not relaxed and no assertion is weakened.
+  - EVAL-1 harness, write: `ToolBox._record` now writes through `store.append_only("audit_log").insert_one(...)`.
+  - EVAL-1 harness, reads: `Runner._audit` reads through `append_only(...).find(...)`. `StoreState.find`, the `final_state` check reader, uses `append_only()` for collections in `APPEND_ONLY_COLLECTIONS`.
+  - EVAL-1 test double: `tests/memory_store.py` now mirrors `DataStore`. `tenant()` refuses append-only collections, and a new `MemoryAppendOnly` offers insert, find and count only. New test: `test_final_state_reads_the_audit_log_through_its_append_only_handle`.
+  - MCP-3 tests: `test_db_users_int.py` reaches `audit_log` through `append_only()` (a `_writable` helper for the parametrised case). The proof is unchanged: with the policy bypassed, the least-privilege Mongo user's insert or find is refused by MongoDB (`OperationFailure`, code UNAUTHORIZED), and a root read-back counts 0.
+- **All gates were re-run on the rebased branch,** and so were the 17 mutation checks.
 
 **Outcome claimed.** One call, `await AuditLog(store).audit(actor=, action=, target=, outcome=, reason=)`, made inside `tenant_scope(org)`, appends one record:
 
@@ -35,7 +45,8 @@
 | Gate | Command | Result |
 |------|---------|--------|
 | Check | `make check` | `make check: all passed`, exit=0. Lint and typecheck for 17 projects; py-data coverage 99.26% (`docs/evidence/AUD-1/make-check.txt`). |
-| Integration | `make test-int` | exit=0, `Successfully ran target test-int for 6 projects`; api `18 passed`, which includes the 10 new tests in `test_mongo_audit.py` (`docs/evidence/AUD-1/make-test-int.txt`). Compose project `ob-aud-1`, Caddy on 19700/19701. |
+| Integration | `make test-int` | Attempt 2, rebased: exit=0, `Successfully ran target test-int for 7 projects` (`docs/evidence/AUD-1/make-test-int.txt`).<br>• api: `18 passed`, which includes the 10 tests in `test_mongo_audit.py`.<br>• mcp-mongo: `77 passed`.<br>• py-evals: `test_selftest.py` passed.<br>• MCP-3's `audit_log` cases PASSED; the named list is in `docs/evidence/AUD-1/mcp3-audit-log-int.txt`.<br>Compose project `ob-aud-1`, Caddy on 19700/19701. |
+| Eval self-test | `make evals-selftest` | `result: PASS`, `1 passed`, exit=0 (`docs/evidence/AUD-1/make-evals-selftest.txt`, attempt 2). |
 | Contracts | `make contracts-check` | `contracts-check: openapi.json and the TS client are up to date`, exit=0 (`make-contracts-check.txt`). `listAudit` and the `AuditRecordsEnvelope` schemas were regenerated. |
 
 `make test-xt` (T-3), the evals and the PII scan (SEC-1) do not exist yet.
@@ -47,6 +58,8 @@
 | T-1/EVT-1 | `session_kwargs()` joins the ambient transaction | Yes. It is used, and its effect is documented in the failure contract. |
 | T-1 | `connect(tz_aware=True)`, so Mongo returns aware datetimes | Yes. The live API answer is `…Z` UTC. |
 | AUTH-1 | `require_role(...)` gives 403; every route needs a `ROLE_MATRIX` row | Yes. A row was added, and the completeness tests pass. |
+| EVAL-1 | The harness writes `audit_log` documents `{kind: "mcp_call", tool, args_json, outcome, result_org_ids, actor_role, at}` and reads them back by `kind` | Yes, through `append_only()` now (attempt 2). The document shape is unchanged; the self-test passes. |
+| MCP-3 | The least-privilege users are refused inserts, reads and writes on `audit_log` at the MongoDB level | Yes. The same tests now reach `audit_log` through `append_only()`, and all pass against the compose Mongo. |
 | C-1 | Envelope `meta.page`; the route walk forbids org inputs | Yes. `test_no_request_model_or_parameter_declares_org_id` still passes with `/audit`'s parameters. |
 
 ## Mutation checks
@@ -96,6 +109,11 @@ Still open:
 - `GET /audit` reads are not audited themselves. The card doesn't ask for it.
 
 ## Found for other goals
+- **HUB-1 / MS-1 (important):** two record shapes now share `audit_log`.
+  - EVAL-1's stand-in hub writes `{kind: "mcp_call", tool, args_json, outcome: allowed|denied|error, result_org_ids, actor_role, at}`.
+  - `AuditLog` writes `{actor, action, target, outcome: success|denied|failed, reason, trace_id, at}`.
+  - `GET /audit` reads with `AuditEntry.from_document`, so an `mcp_call` document in a real org would make its page return a 500.
+  - Today only eval scratch databases hold `mcp_call` documents. HUB-1 must write MCP audit through `AuditLog.audit(...)` (for example `action="mcp.tool_call"`, `target="tool:<name>"`). The eval-only fields (`args_json`, `result_org_ids`) should then live under a field the read model ignores, or the runner's `_audit` should read the `AuditLog` shape. The EVAL-1 handoff already asks HUB-1 to settle this shape. Decide it there, not by relaxing `from_document`.
 - **All writers (T-3, HIRE-1, MS-1, REG-1, GR-1, TPL-2, RUN-2):**
   - Depend on `onb_data.Auditor` and test with `onb_data.testing.InMemoryAuditLog`.
   - Targets are `kind:id`; never put a name, email or PAN in `target` or `reason`.

@@ -1,0 +1,6 @@
+apps/mcp-mongo/tests_int/test_db_users_int.py::test_the_read_only_user_cannot_insert_with_the_policy_bypassed[run_tasks] PASSED [ 20%]
+apps/mcp-mongo/tests_int/test_db_users_int.py::test_the_read_only_user_cannot_insert_with_the_policy_bypassed[new_hires] PASSED [ 40%]
+apps/mcp-mongo/tests_int/test_db_users_int.py::test_the_read_only_user_cannot_insert_with_the_policy_bypassed[audit_log] PASSED [ 60%]
+apps/mcp-mongo/tests_int/test_db_users_int.py::test_the_read_write_user_cannot_write_outside_its_collections PASSED [ 80%]
+apps/mcp-mongo/tests_int/test_db_users_int.py::test_the_read_only_user_cannot_read_outside_its_collections PASSED [100%]
+======================= 5 passed, 54 deselected in 6.73s =======================
