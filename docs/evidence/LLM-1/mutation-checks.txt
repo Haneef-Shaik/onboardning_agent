@@ -1,12 +1,17 @@
 M1 CAUGHT: org override checked before the manifest (libs/py-llm/src/onb_llm/resolution.py)
     FAILED libs/py-llm/tests/test_resolution.py::test_manifest_wins_over_org_override_and_default
-    result: 1 failed, 102 passed in 6.15s
+    result: 1 failed, 122 passed in 5.01s
 M2 CAUGHT: org override ignored (falls through to the default) (libs/py-llm/src/onb_llm/resolution.py)
     FAILED libs/py-llm/tests/test_health.py::test_checks_every_alias_served_by_the_connector
     FAILED libs/py-llm/tests/test_health.py::test_reports_an_unhealthy_alias_and_exits_1
     FAILED libs/py-llm/tests/test_resolution.py::test_org_override_applies_when_the_manifest_names_no_model
     FAILED libs/py-llm/tests/test_resolution.py::test_an_unknown_alias_fails_naming_the_known_ones
-    result: 4 failed, 99 passed in 3.76s
+    FAILED libs/py-llm/tests/test_resolution.py::test_a_manifest_or_org_override_may_only_set_sampling_params[org_override-guardrail_id]
+    FAILED libs/py-llm/tests/test_resolution.py::test_a_manifest_or_org_override_may_only_set_sampling_params[org_override-guardrail_version]
+    FAILED libs/py-llm/tests/test_resolution.py::test_a_manifest_or_org_override_may_only_set_sampling_params[org_override-endpoint_url]
+    FAILED libs/py-llm/tests/test_resolution.py::test_a_manifest_or_org_override_may_only_set_sampling_params[org_override-base_url]
+    FAILED libs/py-llm/tests/test_resolution.py::test_a_manifest_or_org_override_may_only_set_sampling_params[org_override-script_file]
+    result: 9 failed, 114 passed in 17.50s
 M3 CAUGHT: default ignored: no selection resolves to the first alias (libs/py-llm/src/onb_llm/resolution.py)
     FAILED libs/py-llm/tests/test_resolution.py::test_global_default_applies_when_neither_manifest_nor_org_names_a_model
     FAILED libs/py-llm/tests/test_runtime.py::test_chat_model_calls_produce_an_llm_span_with_connector_model_and_tokens
@@ -14,30 +19,32 @@ M3 CAUGHT: default ignored: no selection resolves to the first alias (libs/py-ll
     FAILED libs/py-llm/tests/test_runtime.py::test_a_failed_call_ends_its_span_as_an_error_without_the_message
     FAILED libs/py-llm/tests/test_runtime.py::test_the_returned_model_is_a_new_object_each_time
     FAILED libs/py-llm/tests/test_runtime.py::test_chat_model_for_resolves_and_creates_in_one_step
-    result: 6 failed, 97 passed in 3.55s
+    FAILED libs/py-llm/tests/test_runtime.py::test_the_connectors_own_callbacks_are_kept_next_to_the_span_handler[list]
+    FAILED libs/py-llm/tests/test_runtime.py::test_the_connectors_own_callbacks_are_kept_next_to_the_span_handler[manager]
+    result: 8 failed, 115 passed in 3.25s
 M4 CAUGHT: discovery hard-codes the built-ins instead of reading entry points (libs/py-llm/src/onb_llm/registry.py)
     FAILED libs/py-llm/tests/test_registry.py::test_a_connector_package_registered_by_entry_point_is_discovered_with_no_core_change
-    result: 1 failed, 102 passed in 3.82s
+    result: 1 failed, 122 passed in 3.41s
 M5 CAUGHT: entry-point name / connector name mismatch accepted (libs/py-llm/src/onb_llm/registry.py)
     FAILED libs/py-llm/tests/test_registry.py::test_an_entry_point_name_must_match_the_connector_name
-    result: 1 failed, 102 passed in 5.22s
+    result: 1 failed, 122 passed in 17.47s
 M6 CAUGHT: required env never checked (libs/py-llm/src/onb_llm/runtime.py)
     FAILED libs/py-llm/tests/test_health.py::test_bedrock_without_aws_region_fails_at_startup_from_the_command_line
     FAILED libs/py-llm/tests/test_runtime.py::test_selecting_bedrock_without_aws_region_fails_at_startup_with_a_clear_message
     FAILED libs/py-llm/tests/test_runtime.py::test_a_blank_required_variable_counts_as_missing
     FAILED libs/py-llm/tests/test_runtime.py::test_a_manifest_selecting_bedrock_is_checked_when_resolved
     FAILED libs/py-llm/tests/test_runtime.py::test_the_runtime_does_not_read_the_process_environment
-    result: 5 failed, 98 passed in 10.05s
+    result: 5 failed, 118 passed in 16.71s
 M7 CAUGHT: a blank required variable counts as set (libs/py-llm/src/onb_llm/runtime.py)
     FAILED libs/py-llm/tests/test_runtime.py::test_a_blank_required_variable_counts_as_missing
-    result: 1 failed, 102 passed in 7.27s
+    result: 1 failed, 122 passed in 3.05s
 M8 CAUGHT: startup skips the configured connectors (checked only on resolve) (libs/py-llm/src/onb_llm/runtime.py)
     FAILED libs/py-llm/tests/test_health.py::test_bedrock_without_aws_region_fails_at_startup_from_the_command_line
     FAILED libs/py-llm/tests/test_runtime.py::test_selecting_bedrock_without_aws_region_fails_at_startup_with_a_clear_message
     FAILED libs/py-llm/tests/test_runtime.py::test_a_blank_required_variable_counts_as_missing
     FAILED libs/py-llm/tests/test_runtime.py::test_an_alias_naming_an_uninstalled_connector_fails_at_startup
     FAILED libs/py-llm/tests/test_runtime.py::test_the_runtime_does_not_read_the_process_environment
-    result: 5 failed, 98 passed in 3.83s
+    result: 5 failed, 118 passed in 4.29s
 M9 CAUGHT: a required ${VAR} that is unset becomes empty (libs/py-llm/src/onb_llm/interpolation.py)
     FAILED libs/py-llm/tests/test_config.py::test_interpolation_of_an_unset_or_empty_variable_fails_naming_it_and_where[env0]
     FAILED libs/py-llm/tests/test_config.py::test_interpolation_of_an_unset_or_empty_variable_fails_naming_it_and_where[env1]
@@ -45,24 +52,26 @@ M9 CAUGHT: a required ${VAR} that is unset becomes empty (libs/py-llm/src/onb_ll
     FAILED libs/py-llm/tests/test_config.py::test_load_reports_the_file_and_the_variable
     FAILED libs/py-llm/tests/test_config.py::test_the_repository_config_fails_without_model_env
     FAILED libs/py-llm/tests/test_health.py::test_a_config_error_exits_2
-    result: 6 failed, 97 passed in 7.04s
+    result: 6 failed, 117 passed in 3.44s
 M10 CAUGHT: fake model repeats its last turn instead of failing when the script runs out (libs/py-llm/src/onb_llm/connectors/fake.py)
     FAILED libs/py-llm/tests/test_fake_connector.py::test_a_script_that_runs_out_fails_loudly
-    result: 1 failed, 102 passed in 4.02s
+    result: 1 failed, 122 passed in 8.39s
 M11 CAUGHT: fake model accepts a scripted call to a tool that was not bound (libs/py-llm/src/onb_llm/connectors/fake.py)
     FAILED libs/py-llm/tests/test_fake_connector.py::test_a_scripted_call_to_a_tool_that_was_not_bound_fails
-    result: 1 failed, 102 passed in 3.32s
+    result: 1 failed, 122 passed in 2.49s
 M12 CAUGHT: no LLM span handler attached to the chat model (libs/py-llm/src/onb_llm/runtime.py)
     FAILED libs/py-llm/tests/test_runtime.py::test_chat_model_calls_produce_an_llm_span_with_connector_model_and_tokens
     FAILED libs/py-llm/tests/test_runtime.py::test_the_llm_span_holds_no_prompt_or_completion_text
     FAILED libs/py-llm/tests/test_runtime.py::test_a_failed_call_ends_its_span_as_an_error_without_the_message
-    result: 3 failed, 100 passed in 6.01s
+    FAILED libs/py-llm/tests/test_runtime.py::test_the_connectors_own_callbacks_are_kept_next_to_the_span_handler[list]
+    FAILED libs/py-llm/tests/test_runtime.py::test_the_connectors_own_callbacks_are_kept_next_to_the_span_handler[manager]
+    result: 5 failed, 118 passed in 1.82s
 M13 CAUGHT: the error span carries the exception message (libs/py-llm/src/onb_llm/telemetry.py)
     FAILED libs/py-llm/tests/test_runtime.py::test_a_failed_call_ends_its_span_as_an_error_without_the_message
-    result: 1 failed, 102 passed in 5.65s
+    result: 1 failed, 122 passed in 1.83s
 M14 CAUGHT: a model id is written in code (libs/py-llm/src/onb_llm/connectors/bedrock.py)
     FAILED libs/py-llm/tests/test_no_model_ids_in_code.py::test_no_model_ids_outside_config_env_example_and_tests
-    result: 1 failed, 102 passed in 10.97s
+    result: 1 failed, 122 passed in 2.53s
 M15 CAUGHT: bedrock no longer requires AWS_REGION (libs/py-llm/src/onb_llm/connectors/bedrock.py)
     FAILED libs/py-llm/tests/test_health.py::test_bedrock_without_aws_region_fails_at_startup_from_the_command_line
     FAILED libs/py-llm/tests/test_provider_connectors.py::test_bedrock_needs_aws_region
@@ -70,6 +79,27 @@ M15 CAUGHT: bedrock no longer requires AWS_REGION (libs/py-llm/src/onb_llm/conne
     FAILED libs/py-llm/tests/test_runtime.py::test_a_blank_required_variable_counts_as_missing
     FAILED libs/py-llm/tests/test_runtime.py::test_a_manifest_selecting_bedrock_is_checked_when_resolved
     FAILED libs/py-llm/tests/test_runtime.py::test_the_runtime_does_not_read_the_process_environment
-    result: 6 failed, 97 passed in 14.12s
+    result: 6 failed, 117 passed in 8.04s
+M16 CAUGHT: a manifest or org override may set any param (e.g. switch the guardrail off) (libs/py-llm/src/onb_llm/resolution.py)
+    FAILED libs/py-llm/tests/test_resolution.py::test_a_manifest_or_org_override_may_only_set_sampling_params[manifest-guardrail_id]
+    FAILED libs/py-llm/tests/test_resolution.py::test_a_manifest_or_org_override_may_only_set_sampling_params[manifest-guardrail_version]
+    FAILED libs/py-llm/tests/test_resolution.py::test_a_manifest_or_org_override_may_only_set_sampling_params[manifest-endpoint_url]
+    FAILED libs/py-llm/tests/test_resolution.py::test_a_manifest_or_org_override_may_only_set_sampling_params[manifest-base_url]
+    FAILED libs/py-llm/tests/test_resolution.py::test_a_manifest_or_org_override_may_only_set_sampling_params[manifest-script_file]
+    FAILED libs/py-llm/tests/test_resolution.py::test_a_manifest_or_org_override_may_only_set_sampling_params[org_override-guardrail_id]
+    FAILED libs/py-llm/tests/test_resolution.py::test_a_manifest_or_org_override_may_only_set_sampling_params[org_override-guardrail_version]
+    FAILED libs/py-llm/tests/test_resolution.py::test_a_manifest_or_org_override_may_only_set_sampling_params[org_override-endpoint_url]
+    FAILED libs/py-llm/tests/test_resolution.py::test_a_manifest_or_org_override_may_only_set_sampling_params[org_override-base_url]
+    FAILED libs/py-llm/tests/test_resolution.py::test_a_manifest_or_org_override_may_only_set_sampling_params[org_override-script_file]
+    result: 10 failed, 113 passed in 1.21s
+M17 CAUGHT: config validation errors print the interpolated input (libs/py-llm/src/onb_llm/config.py)
+    FAILED libs/py-llm/tests/test_config.py::test_a_validation_error_never_shows_an_interpolated_value
+    result: 1 failed, 122 passed in 1.56s
+M18 CAUGHT: langchain build errors carry the provider's message (libs/py-llm/src/onb_llm/connectors/langchain.py)
+    FAILED libs/py-llm/tests/test_provider_connectors.py::test_langchain_reports_a_build_failure_by_type_only
+    result: 1 failed, 122 passed in 2.10s
+M19 CAUGHT: a connector-set callback manager is dropped (libs/py-llm/src/onb_llm/runtime.py)
+    FAILED libs/py-llm/tests/test_runtime.py::test_the_connectors_own_callbacks_are_kept_next_to_the_span_handler[manager]
+    result: 1 failed, 122 passed in 2.79s
 
-15 of 15 mutations caught; all files restored.
+19 of 19 mutations caught; all files restored.

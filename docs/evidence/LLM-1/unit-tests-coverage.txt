@@ -1,0 +1,180 @@
+
+ NX   It's time to update Nx 🎉
+
+Your repository uses a higher version of Nx (24.0.5) than your global CLI version (22.6.1)
+For more information, see https://nx.dev/more-concepts/global-nx
+
+
+> nx run py-llm:test -v
+
+> uv run --frozen pytest libs/py-llm/tests -o cache_dir=.pytest_cache/py-llm --cov=onb_llm --cov-report=term-missing --cov-fail-under=80 -v
+
+============================= test session starts ==============================
+platform darwin -- Python 3.12.13, pytest-9.2.0, pluggy-1.7.0 -- /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-llm-1/.venv/bin/python
+cachedir: .pytest_cache/py-llm
+hypothesis profile 'default'
+rootdir: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-llm-1
+configfile: pyproject.toml
+plugins: hypothesis-6.170.15, langsmith-0.14.17, cov-7.1.0, anyio-4.16.0
+collecting ... collected 123 items
+
+libs/py-llm/tests/test_config.py::test_interpolation_substitutes_set_variables PASSED [  0%]
+libs/py-llm/tests/test_config.py::test_interpolation_uses_the_default_when_the_variable_is_unset_or_empty PASSED [  1%]
+libs/py-llm/tests/test_config.py::test_interpolation_of_an_unset_or_empty_variable_fails_naming_it_and_where[env0] PASSED [  2%]
+libs/py-llm/tests/test_config.py::test_interpolation_of_an_unset_or_empty_variable_fails_naming_it_and_where[env1] PASSED [  3%]
+libs/py-llm/tests/test_config.py::test_interpolation_of_an_unset_or_empty_variable_fails_naming_it_and_where[env2] PASSED [  4%]
+libs/py-llm/tests/test_config.py::test_text_without_placeholders_is_unchanged PASSED [  4%]
+libs/py-llm/tests/test_config.py::test_load_interpolates_every_string_in_the_file PASSED [  5%]
+libs/py-llm/tests/test_config.py::test_load_reports_the_file_and_the_variable PASSED [  6%]
+libs/py-llm/tests/test_config.py::test_a_missing_file_fails_clearly PASSED [  7%]
+libs/py-llm/tests/test_config.py::test_malformed_files_are_rejected[not-a-mapping] PASSED [  8%]
+libs/py-llm/tests/test_config.py::test_malformed_files_are_rejected[bad-yaml] PASSED [  8%]
+libs/py-llm/tests/test_config.py::test_malformed_files_are_rejected[no-default] PASSED [  9%]
+libs/py-llm/tests/test_config.py::test_malformed_files_are_rejected[default-alias-unknown] PASSED [ 10%]
+libs/py-llm/tests/test_config.py::test_malformed_files_are_rejected[alias-of-alias] PASSED [ 11%]
+libs/py-llm/tests/test_config.py::test_malformed_files_are_rejected[unknown-key] PASSED [ 12%]
+libs/py-llm/tests/test_config.py::test_a_selection_is_either_an_alias_or_a_connector_and_model[fields0] PASSED [ 13%]
+libs/py-llm/tests/test_config.py::test_a_selection_is_either_an_alias_or_a_connector_and_model[fields1] PASSED [ 13%]
+libs/py-llm/tests/test_config.py::test_a_selection_is_either_an_alias_or_a_connector_and_model[fields2] PASSED [ 14%]
+libs/py-llm/tests/test_config.py::test_a_selection_is_either_an_alias_or_a_connector_and_model[fields3] PASSED [ 15%]
+libs/py-llm/tests/test_config.py::test_a_selection_is_either_an_alias_or_a_connector_and_model[fields4] PASSED [ 16%]
+libs/py-llm/tests/test_config.py::test_a_selection_is_either_an_alias_or_a_connector_and_model[fields5] PASSED [ 17%]
+libs/py-llm/tests/test_config.py::test_a_selection_is_either_an_alias_or_a_connector_and_model[fields6] PASSED [ 17%]
+libs/py-llm/tests/test_config.py::test_selections_are_immutable PASSED   [ 18%]
+libs/py-llm/tests/test_config.py::test_the_repository_config_names_the_three_aliases_and_takes_models_from_env PASSED [ 19%]
+libs/py-llm/tests/test_config.py::test_the_repository_config_lets_env_switch_the_connector PASSED [ 20%]
+libs/py-llm/tests/test_config.py::test_a_validation_error_never_shows_an_interpolated_value PASSED [ 21%]
+libs/py-llm/tests/test_config.py::test_the_repository_config_passes_the_region_and_a_fake_script_through_params PASSED [ 21%]
+libs/py-llm/tests/test_config.py::test_the_repository_config_fails_without_model_env PASSED [ 22%]
+libs/py-llm/tests/test_fake_connector.py::test_the_fake_connector_replays_a_scripted_tool_calling_conversation PASSED [ 23%]
+libs/py-llm/tests/test_fake_connector.py::test_the_replay_is_deterministic PASSED [ 24%]
+libs/py-llm/tests/test_fake_connector.py::test_a_script_that_runs_out_fails_loudly PASSED [ 25%]
+libs/py-llm/tests/test_fake_connector.py::test_a_scripted_call_to_a_tool_that_was_not_bound_fails PASSED [ 26%]
+libs/py-llm/tests/test_fake_connector.py::test_usage_is_estimated_deterministically_when_the_script_gives_none PASSED [ 26%]
+libs/py-llm/tests/test_fake_connector.py::test_a_copy_starts_its_own_replay_and_call_log PASSED [ 27%]
+libs/py-llm/tests/test_fake_connector.py::test_an_empty_script_file_means_the_default_script PASSED [ 28%]
+libs/py-llm/tests/test_fake_connector.py::test_common_sampling_params_are_accepted_and_ignored PASSED [ 29%]
+libs/py-llm/tests/test_fake_connector.py::test_the_default_script_answers_ok PASSED [ 30%]
+libs/py-llm/tests/test_fake_connector.py::test_a_script_can_come_from_a_json_file PASSED [ 30%]
+libs/py-llm/tests/test_fake_connector.py::test_a_bad_script_is_rejected_when_the_model_is_created[params0] PASSED [ 31%]
+libs/py-llm/tests/test_fake_connector.py::test_a_bad_script_is_rejected_when_the_model_is_created[params1] PASSED [ 32%]
+libs/py-llm/tests/test_fake_connector.py::test_a_bad_script_is_rejected_when_the_model_is_created[params2] PASSED [ 33%]
+libs/py-llm/tests/test_fake_connector.py::test_a_bad_script_is_rejected_when_the_model_is_created[params3] PASSED [ 34%]
+libs/py-llm/tests/test_fake_connector.py::test_a_bad_script_is_rejected_when_the_model_is_created[params4] PASSED [ 34%]
+libs/py-llm/tests/test_fake_connector.py::test_a_bad_script_is_rejected_when_the_model_is_created[params5] PASSED [ 35%]
+libs/py-llm/tests/test_fake_connector.py::test_a_bad_script_is_rejected_when_the_model_is_created[params6] PASSED [ 36%]
+libs/py-llm/tests/test_fake_connector.py::test_the_fake_connector_is_always_healthy PASSED [ 37%]
+libs/py-llm/tests/test_fake_connector.py::test_the_fake_connector_needs_no_environment PASSED [ 38%]
+libs/py-llm/tests/test_health.py::test_checks_every_alias_served_by_the_connector PASSED [ 39%]
+libs/py-llm/tests/test_health.py::test_fails_when_no_alias_uses_the_connector PASSED [ 39%]
+libs/py-llm/tests/test_health.py::test_reports_an_unhealthy_alias_and_exits_1 PASSED [ 40%]
+libs/py-llm/tests/test_health.py::test_a_config_error_exits_2 PASSED     [ 41%]
+libs/py-llm/tests/test_health.py::test_bedrock_without_aws_region_fails_at_startup_from_the_command_line PASSED [ 42%]
+libs/py-llm/tests/test_no_model_ids_in_code.py::test_no_model_ids_outside_config_env_example_and_tests PASSED [ 43%]
+libs/py-llm/tests/test_no_model_ids_in_code.py::test_git_grep_catches_real_looking_ids[anthropic.claude-3-5-sonnet-20241022-v2:0] PASSED [ 43%]
+libs/py-llm/tests/test_no_model_ids_in_code.py::test_git_grep_catches_real_looking_ids[us.anthropic.claude-sonnet-4-20250514-v1:0] PASSED [ 44%]
+libs/py-llm/tests/test_no_model_ids_in_code.py::test_git_grep_catches_real_looking_ids[amazon.nova-pro-v1:0] PASSED [ 45%]
+libs/py-llm/tests/test_no_model_ids_in_code.py::test_git_grep_catches_real_looking_ids[meta.llama3-1-70b-instruct-v1:0] PASSED [ 46%]
+libs/py-llm/tests/test_no_model_ids_in_code.py::test_git_grep_catches_real_looking_ids[claude-opus-4-1] PASSED [ 47%]
+libs/py-llm/tests/test_no_model_ids_in_code.py::test_git_grep_catches_real_looking_ids[gpt-4o-mini] PASSED [ 47%]
+libs/py-llm/tests/test_no_model_ids_in_code.py::test_git_grep_catches_real_looking_ids[gemini-2.5-pro] PASSED [ 48%]
+libs/py-llm/tests/test_no_model_ids_in_code.py::test_git_grep_ignores_ordinary_names[langchain-aws] PASSED [ 49%]
+libs/py-llm/tests/test_no_model_ids_in_code.py::test_git_grep_ignores_ordinary_names[metadata.version-1] PASSED [ 50%]
+libs/py-llm/tests/test_no_model_ids_in_code.py::test_git_grep_ignores_ordinary_names[init_chat_model] PASSED [ 51%]
+libs/py-llm/tests/test_no_model_ids_in_code.py::test_git_grep_ignores_ordinary_names[bedrock_converse:x] PASSED [ 52%]
+libs/py-llm/tests/test_onb_llm.py::test_package_imports_and_names_its_project PASSED [ 52%]
+libs/py-llm/tests/test_provider_connectors.py::test_bedrock_needs_aws_region PASSED [ 53%]
+libs/py-llm/tests/test_provider_connectors.py::test_bedrock_builds_a_converse_model_from_the_given_model_id PASSED [ 54%]
+libs/py-llm/tests/test_provider_connectors.py::test_bedrock_applies_a_guardrail_when_one_is_configured PASSED [ 55%]
+libs/py-llm/tests/test_provider_connectors.py::test_bedrock_ignores_an_empty_guardrail_id PASSED [ 56%]
+libs/py-llm/tests/test_provider_connectors.py::test_a_guardrail_id_without_a_version_is_rejected PASSED [ 56%]
+libs/py-llm/tests/test_provider_connectors.py::test_bedrock_uses_the_region_from_params_over_the_process_env PASSED [ 57%]
+libs/py-llm/tests/test_provider_connectors.py::test_bedrock_reports_a_build_failure_by_type_and_param_names_only PASSED [ 58%]
+libs/py-llm/tests/test_provider_connectors.py::test_langchain_reports_a_build_failure_by_type_only PASSED [ 59%]
+libs/py-llm/tests/test_provider_connectors.py::test_bedrock_rejects_an_empty_model PASSED [ 60%]
+libs/py-llm/tests/test_provider_connectors.py::test_langchain_builds_any_provider_model_through_init_chat_model PASSED [ 60%]
+libs/py-llm/tests/test_provider_connectors.py::test_langchain_accepts_the_provider_as_a_param PASSED [ 61%]
+libs/py-llm/tests/test_provider_connectors.py::test_langchain_needs_a_provider PASSED [ 62%]
+libs/py-llm/tests/test_provider_connectors.py::test_langchain_reports_an_unsupported_provider_as_config_error PASSED [ 63%]
+libs/py-llm/tests/test_provider_connectors.py::test_langchain_needs_no_environment_of_its_own PASSED [ 64%]
+libs/py-llm/tests/test_provider_connectors.py::test_ping_reports_a_healthy_model PASSED [ 65%]
+libs/py-llm/tests/test_provider_connectors.py::test_ping_reports_a_failure_by_exception_type_only PASSED [ 65%]
+libs/py-llm/tests/test_provider_connectors.py::test_provider_healthchecks_build_the_model_and_ping_it PASSED [ 66%]
+libs/py-llm/tests/test_provider_connectors.py::test_a_healthcheck_whose_model_cannot_be_built_is_unhealthy PASSED [ 67%]
+libs/py-llm/tests/test_registry.py::test_the_built_in_connectors_are_found_by_entry_point PASSED [ 68%]
+libs/py-llm/tests/test_registry.py::test_a_connector_package_registered_by_entry_point_is_discovered_with_no_core_change PASSED [ 69%]
+libs/py-llm/tests/test_registry.py::test_an_unknown_connector_fails_naming_the_installed_ones PASSED [ 69%]
+libs/py-llm/tests/test_registry.py::test_an_entry_point_that_fails_to_load_is_reported_by_name PASSED [ 70%]
+libs/py-llm/tests/test_registry.py::test_an_entry_point_that_is_not_a_connector_is_rejected PASSED [ 71%]
+libs/py-llm/tests/test_registry.py::test_an_entry_point_name_must_match_the_connector_name PASSED [ 72%]
+libs/py-llm/tests/test_registry.py::test_two_packages_claiming_one_name_are_rejected PASSED [ 73%]
+libs/py-llm/tests/test_registry.py::test_registry_of_rejects_duplicates PASSED [ 73%]
+libs/py-llm/tests/test_resolution.py::test_manifest_wins_over_org_override_and_default PASSED [ 74%]
+libs/py-llm/tests/test_resolution.py::test_org_override_applies_when_the_manifest_names_no_model PASSED [ 75%]
+libs/py-llm/tests/test_resolution.py::test_global_default_applies_when_neither_manifest_nor_org_names_a_model PASSED [ 76%]
+libs/py-llm/tests/test_resolution.py::test_an_explicit_connector_and_model_resolve_without_an_alias PASSED [ 77%]
+libs/py-llm/tests/test_resolution.py::test_params_layer_connector_then_alias_then_selection PASSED [ 78%]
+libs/py-llm/tests/test_resolution.py::test_resolution_leaves_the_config_unchanged PASSED [ 78%]
+libs/py-llm/tests/test_resolution.py::test_an_unknown_alias_fails_naming_the_known_ones PASSED [ 79%]
+libs/py-llm/tests/test_resolution.py::test_a_manifest_or_org_override_may_only_set_sampling_params[manifest-guardrail_id] PASSED [ 80%]
+libs/py-llm/tests/test_resolution.py::test_a_manifest_or_org_override_may_only_set_sampling_params[manifest-guardrail_version] PASSED [ 81%]
+libs/py-llm/tests/test_resolution.py::test_a_manifest_or_org_override_may_only_set_sampling_params[manifest-endpoint_url] PASSED [ 82%]
+libs/py-llm/tests/test_resolution.py::test_a_manifest_or_org_override_may_only_set_sampling_params[manifest-base_url] PASSED [ 82%]
+libs/py-llm/tests/test_resolution.py::test_a_manifest_or_org_override_may_only_set_sampling_params[manifest-script_file] PASSED [ 83%]
+libs/py-llm/tests/test_resolution.py::test_a_manifest_or_org_override_may_only_set_sampling_params[org_override-guardrail_id] PASSED [ 84%]
+libs/py-llm/tests/test_resolution.py::test_a_manifest_or_org_override_may_only_set_sampling_params[org_override-guardrail_version] PASSED [ 85%]
+libs/py-llm/tests/test_resolution.py::test_a_manifest_or_org_override_may_only_set_sampling_params[org_override-endpoint_url] PASSED [ 86%]
+libs/py-llm/tests/test_resolution.py::test_a_manifest_or_org_override_may_only_set_sampling_params[org_override-base_url] PASSED [ 86%]
+libs/py-llm/tests/test_resolution.py::test_a_manifest_or_org_override_may_only_set_sampling_params[org_override-script_file] PASSED [ 87%]
+libs/py-llm/tests/test_resolution.py::test_the_task_record_names_the_model_but_holds_no_params PASSED [ 88%]
+libs/py-llm/tests/test_runtime.py::test_selecting_bedrock_without_aws_region_fails_at_startup_with_a_clear_message PASSED [ 89%]
+libs/py-llm/tests/test_runtime.py::test_bedrock_starts_when_aws_region_is_set PASSED [ 90%]
+libs/py-llm/tests/test_runtime.py::test_a_blank_required_variable_counts_as_missing PASSED [ 91%]
+libs/py-llm/tests/test_runtime.py::test_an_alias_naming_an_uninstalled_connector_fails_at_startup PASSED [ 91%]
+libs/py-llm/tests/test_runtime.py::test_a_manifest_selecting_bedrock_is_checked_when_resolved PASSED [ 92%]
+libs/py-llm/tests/test_runtime.py::test_the_runtime_does_not_read_the_process_environment PASSED [ 93%]
+libs/py-llm/tests/test_runtime.py::test_chat_model_calls_produce_an_llm_span_with_connector_model_and_tokens PASSED [ 94%]
+libs/py-llm/tests/test_runtime.py::test_the_llm_span_holds_no_prompt_or_completion_text PASSED [ 95%]
+libs/py-llm/tests/test_runtime.py::test_a_failed_call_ends_its_span_as_an_error_without_the_message PASSED [ 95%]
+libs/py-llm/tests/test_runtime.py::test_the_returned_model_is_a_new_object_each_time PASSED [ 96%]
+libs/py-llm/tests/test_runtime.py::test_chat_model_for_resolves_and_creates_in_one_step PASSED [ 97%]
+libs/py-llm/tests/test_runtime.py::test_the_connectors_own_callbacks_are_kept_next_to_the_span_handler[list] PASSED [ 98%]
+libs/py-llm/tests/test_runtime.py::test_the_connectors_own_callbacks_are_kept_next_to_the_span_handler[manager] PASSED [ 99%]
+libs/py-llm/tests/test_runtime.py::test_runtime_exposes_its_config_and_registry PASSED [100%]
+
+================================ tests coverage ================================
+______________ coverage: platform darwin, python 3.12.13-final-0 _______________
+
+Name                                              Stmts   Miss  Cover   Missing
+-------------------------------------------------------------------------------
+libs/py-llm/src/onb_llm/__init__.py                   9      0   100%
+libs/py-llm/src/onb_llm/config.py                    64      0   100%
+libs/py-llm/src/onb_llm/connector.py                 17      0   100%
+libs/py-llm/src/onb_llm/connectors/__init__.py        0      0   100%
+libs/py-llm/src/onb_llm/connectors/base.py           20      0   100%
+libs/py-llm/src/onb_llm/connectors/bedrock.py        35      0   100%
+libs/py-llm/src/onb_llm/connectors/fake.py           70      0   100%
+libs/py-llm/src/onb_llm/connectors/langchain.py      23      1    96%   38
+libs/py-llm/src/onb_llm/connectors/script.py         59      0   100%
+libs/py-llm/src/onb_llm/errors.py                    13      0   100%
+libs/py-llm/src/onb_llm/health.py                    37      1    97%   50
+libs/py-llm/src/onb_llm/interpolation.py             25      1    96%   44
+libs/py-llm/src/onb_llm/registry.py                  45      0   100%
+libs/py-llm/src/onb_llm/resolution.py                43      1    98%   81
+libs/py-llm/src/onb_llm/runtime.py                   68      0   100%
+libs/py-llm/src/onb_llm/telemetry.py                 56      3    95%   48, 55, 72
+-------------------------------------------------------------------------------
+TOTAL                                               584      7    99%
+Required test coverage of 80% reached. Total coverage: 98.80%
+============================= 123 passed in 2.79s ==============================
+
+
+
+ NX   Successfully ran target test for project py-llm
+
+
+  Run duration:      4.3s
+  Cache:             Skipped (--skip-nx-cache)
+  Critical path:     4.2s (1 task)
+  Recoverable time:  <1ms
+exit=0

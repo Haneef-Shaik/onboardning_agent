@@ -112,8 +112,8 @@ MUTATIONS = (
         "M12",
         "no LLM span handler attached to the chat model",
         SRC / "runtime.py",
-        "        return created.model_copy(update={\"callbacks\": [*existing, handler]})",
-        "        return created.model_copy(update={\"callbacks\": existing})",
+        "        return created.model_copy(update={\"callbacks\": _with_handler(created.callbacks, handler)})",
+        "        return created.model_copy(update={\"callbacks\": created.callbacks})",
     ),
     Mutation(
         "M13",
@@ -138,6 +138,34 @@ MUTATIONS = (
         SRC / "connectors/bedrock.py",
         "    required_env: tuple[str, ...] = (\"AWS_REGION\",)",
         "    required_env: tuple[str, ...] = ()",
+    ),
+    Mutation(
+        "M16",
+        "a manifest or org override may set any param (e.g. switch the guardrail off)",
+        SRC / "resolution.py",
+        "    if source != \"default\":\n        _check_selection_params(selection, source)\n",
+        "",
+    ),
+    Mutation(
+        "M17",
+        "config validation errors print the interpolated input",
+        SRC / "config.py",
+        "is invalid:\\n{_describe(error)}",
+        "is invalid:\\n{error}",
+    ),
+    Mutation(
+        "M18",
+        "langchain build errors carry the provider's message",
+        SRC / "connectors/langchain.py",
+        "({type(error).__name__}); \"",
+        "({type(error).__name__}: {error}); \"",
+    ),
+    Mutation(
+        "M19",
+        "a connector-set callback manager is dropped",
+        SRC / "runtime.py",
+        "    if isinstance(callbacks, BaseCallbackManager):",
+        "    if isinstance(callbacks, BaseCallbackManager):\n        return [handler]",
     ),
 )
 
