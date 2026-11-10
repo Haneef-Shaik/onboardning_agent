@@ -193,7 +193,28 @@ async def _tools_over_mcp(app: Any) -> list[Any]:
             return list((await session.list_tools()).tools)
 
 
-def _served_app(monkeypatch: pytest.MonkeyPatch) -> Any:
+# Every supported configuration: required settings only (defaults for the rest), and every
+# optional setting at a realistic non-default, production-like value. A setting added to
+# settings.py must be added here (asserted by test_every_optional_setting_is_exercised).
+REQUIRED_ENV = {
+    "MCP_MONGO_URI": "mongodb://r@h/",
+    "MCP_MONGO_WRITE_URI": "mongodb://w@h/",
+    "MCP_CALL_CONTEXT_KEY": "k" * 40,
+}
+OPTIONAL_ENV = {
+    "MCP_MONGO_DATABASE": "onb_prod",
+    "MCP_MONGO_HOST": "0.0.0.0",  # noqa: S104  # what a networked deployment sets
+    "MCP_MONGO_PORT": "9001",
+}
+CONFIGS = {"required-only": {}, "all-non-default": OPTIONAL_ENV}
+
+
+@pytest.fixture(params=sorted(CONFIGS))
+def config(request: pytest.FixtureRequest) -> dict[str, str]:
+    return CONFIGS[request.param]
+
+
+def _served_app(monkeypatch: pytest.MonkeyPatch, extra: dict[str, str]) -> Any:
     """Run the real entry point with only its I/O patched and return the exact app it hands to
     uvicorn.run: whatever main() builds, wraps or substitutes is what gets checked."""
     served: list[Any] = []
@@ -202,11 +223,10 @@ def _served_app(monkeypatch: pytest.MonkeyPatch) -> Any:
     monkeypatch.setattr(main_module, "connect", lambda *a, **k: make_store(FakeDatabase()))
     monkeypatch.setattr("uvicorn.run", lambda app, *a, **k: served.append(app))
     # The production path: configuration from the process environment, main() called bare.
-    for name in ("MCP_MONGO_DATABASE", "MCP_MONGO_HOST", "MCP_MONGO_PORT"):
+    for name in OPTIONAL_ENV:
         monkeypatch.delenv(name, raising=False)
-    monkeypatch.setenv("MCP_MONGO_URI", "mongodb://r@h/")
-    monkeypatch.setenv("MCP_MONGO_WRITE_URI", "mongodb://w@h/")
-    monkeypatch.setenv("MCP_CALL_CONTEXT_KEY", "k" * 40)
+    for name, value in {**REQUIRED_ENV, **extra}.items():
+        monkeypatch.setenv(name, value)
     main_module.main()
     assert len(served) == 1
     return served[0]
@@ -232,19 +252,24 @@ def _route_table(app: Any, prefix: str = "") -> list[tuple[str, str, str]]:
 EXPECTED_ROUTES = [("Route", "/mcp", "StreamableHTTPASGIApp")]
 
 
-def test_the_app_main_serves_is_exactly_one_mcp_endpoint(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Box 4: no second endpoint, mount, sub-app or middleware wrapper in what production serves."""
-    app = _served_app(monkeypatch)
+def test_the_app_main_serves_is_exactly_one_mcp_endpoint(
+    monkeypatch: pytest.MonkeyPatch, config: dict[str, str]
+) -> None:
+    """Box 4: no second endpoint, mount, sub-app or middleware wrapper in what production serves,
+    in every configuration."""
+    app = _served_app(monkeypatch, config)
     assert type(app) is Starlette  # not a wrapper or subclass around it
     assert _route_table(app) == EXPECTED_ROUTES
     assert app.user_middleware == []
 
 
-def test_the_app_main_serves_lists_exactly_the_prd_tools_over_mcp(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_the_app_main_serves_lists_exactly_the_prd_tools_over_mcp(
+    monkeypatch: pytest.MonkeyPatch, config: dict[str, str]
+) -> None:
     """Box 4, behaviourally: what production serves, seen by a real MCP client on its one endpoint,
     has exactly the six PRD tools, none named or described as delete/drop/index/admin/runCommand,
     none destructive."""
-    tools = asyncio.run(_tools_over_mcp(_served_app(monkeypatch)))
+    tools = asyncio.run(_tools_over_mcp(_served_app(monkeypatch, config)))
     assert {tool.name for tool in tools} == PRD_TOOLS
     for tool in tools:
         assert not _FORBIDDEN_WORD.search(tool.name), tool.name
@@ -262,3 +287,89 @@ def test_calling_a_tool_that_does_not_exist_is_an_error(db: FakeDatabase) -> Non
         result = call(db, fn)
         assert result.isError, name
     assert db.calls() == []
+
+
+def test_every_optional_setting_is_exercised() -> None:
+    """The non-default configuration covers every MCP_* variable settings.py reads."""
+    names = set(re.findall(r'"(MCP_[A-Z_]+)"', (SRC / "settings.py").read_text()))
+    assert names == set(REQUIRED_ENV) | set(OPTIONAL_ENV)
+
+
+# --- static rules (second layer): who may touch the MCP server API and the environment ----------
+
+# contracts.py subclasses the SDK's argument-model base; it cannot build a server or a tool.
+ALLOWED_MCP_SERVER_IMPORTS = {("contracts.py", "mcp.server.fastmcp.utilities.func_metadata", "ArgModelBase")}
+_ENV_NAMES = frozenset({"environ", "environb", "getenv", "getenvb", "putenv", "unsetenv"})
+
+
+def _mcp_server_imports(path: Path) -> list[tuple[str, str, str]]:
+    """Every import from mcp.server (any alias, any form) and any string naming it."""
+    found: list[tuple[str, str, str]] = []
+    for node in ast.walk(ast.parse(path.read_text())):
+        if isinstance(node, ast.ImportFrom) and (node.module or "").split(".")[:2] == ["mcp", "server"]:
+            found += [(path.name, node.module or "", alias.name) for alias in node.names]
+        elif isinstance(node, ast.ImportFrom) and node.module == "mcp":
+            found += [(path.name, "mcp", alias.name) for alias in node.names if alias.name == "server"]
+        elif isinstance(node, ast.Import):
+            found += [(path.name, a.name, "*") for a in node.names if a.name.split(".")[:2] == ["mcp", "server"]]
+        elif isinstance(node, ast.Constant) and isinstance(node.value, str) and "mcp.server" in node.value:
+            found.append((path.name, node.value, "<string>"))
+    return found
+
+
+def test_only_the_server_module_imports_the_mcp_server_api() -> None:
+    """Building a server or a tool needs mcp.server; outside server.py it may not be imported under
+    any name (from-import, plain import, `from mcp import server`, or a dynamic-import string)."""
+    others = sorted(path for path in SRC.rglob("*.py") if path != SRC / f"{TOOL_ENTRY}.py")
+    found = {hit for path in others for hit in _mcp_server_imports(path)}
+    assert found == ALLOWED_MCP_SERVER_IMPORTS
+    assert _mcp_server_imports(SRC / f"{TOOL_ENTRY}.py")  # not vacuous
+
+
+def _names_environment(node: ast.AST) -> bool:
+    """os.environ, getenv and friends, by attribute, bare name, string (getattr) or `from os import`."""
+    if isinstance(node, ast.ImportFrom):
+        return node.module == "os" and any(alias.name in _ENV_NAMES for alias in node.names)
+    name = getattr(node, "attr", None) if isinstance(node, ast.Attribute) else getattr(node, "id", None)
+    if isinstance(node, ast.Constant):
+        name = node.value if isinstance(node.value, str) else None
+    return name in _ENV_NAMES
+
+
+def _environment_reads(tree: ast.AST) -> list[ast.AST]:
+    return [node for node in ast.walk(tree) if _names_environment(node)]
+
+
+def _inside_load_settings(tree: ast.AST) -> set[int]:
+    inside: set[int] = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id == "load_settings":
+            inside |= {id(child) for arg in node.args for child in ast.walk(arg)}
+    return inside
+
+
+def test_main_reads_the_environment_only_by_passing_it_to_load_settings() -> None:
+    """main.py: os.environ, and the env parameter, appear only as the argument of load_settings, so
+    no branch in main() can depend on a variable settings.py does not define."""
+    tree = ast.parse((SRC / "main.py").read_text())
+    inside = _inside_load_settings(tree)
+    env_param = [
+        node
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Name) and node.id == "env" and isinstance(node.ctx, ast.Load)
+    ]
+    outside = [node for node in _environment_reads(tree) + env_param if id(node) not in inside]
+    assert outside == [], [ast.unparse(node) for node in outside]
+    assert inside  # not vacuous: main() does call load_settings with the environment
+
+
+def test_no_other_module_reads_the_environment() -> None:
+    """Only main.py (through load_settings) and the admin provisioning CLI read the environment."""
+    allowed = {SRC / "main.py"} | set(ADMIN_FILES)
+    others = sorted(path for path in SRC.rglob("*.py") if path.resolve() not in {p.resolve() for p in allowed})
+    hits = [
+        f"{path.name}: {ast.unparse(node)}"
+        for path in others
+        for node in _environment_reads(ast.parse(path.read_text()))
+    ]
+    assert hits == []
