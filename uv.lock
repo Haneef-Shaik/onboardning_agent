@@ -478,12 +478,14 @@ source = { editable = "libs/py-crypto" }
 dependencies = [
     { name = "cryptography" },
     { name = "onb-data" },
+    { name = "pymongo" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "cryptography", specifier = ">=46,<47" },
     { name = "onb-data", editable = "libs/py-data" },
+    { name = "pymongo", specifier = ">=4.10,<5" },
 ]
 
 [[package]]

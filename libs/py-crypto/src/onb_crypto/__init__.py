@@ -5,6 +5,7 @@ from onb_crypto.envelope import WRAP_ALG, WrappedKey, unwrap_key, wrap_key
 from onb_crypto.errors import (
     CryptoError,
     DecryptionError,
+    KeyRewrapConflictError,
     KeyUnwrapError,
     KeyVersionConflictError,
     MasterKeyError,
@@ -18,7 +19,7 @@ from onb_crypto.key_store import (
     RepositoryOrgKeyStore,
     ensure_org_keys_index,
 )
-from onb_crypto.keyring import Keyring, OrgKeys, Sealed
+from onb_crypto.keyring import Keyring, OrgKeys, Sealed, associated_data
 from onb_crypto.keys import KEY_BYTES, MASTER_KEY_ENV, KeyPurpose, MasterKey, SecretKey
 from onb_crypto.masks import (
     MaskedField,
@@ -42,6 +43,7 @@ __all__ = [
     "CryptoError",
     "DecryptionError",
     "KeyPurpose",
+    "KeyRewrapConflictError",
     "KeyUnwrapError",
     "KeyVersionConflictError",
     "Keyring",
@@ -57,6 +59,7 @@ __all__ = [
     "SecretKey",
     "UnknownKeyVersionError",
     "WrappedKey",
+    "associated_data",
     "blind_index",
     "ensure_org_keys_index",
     "mask",

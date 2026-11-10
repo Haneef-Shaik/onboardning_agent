@@ -1,0 +1,5 @@
+ERROR libs/py-crypto/tests/test_keyring_review_fixes.py
+ERROR libs/py-crypto/tests/test_rotation_runbook.py
+FAILED libs/py-crypto/tests/test_keyring.py::test_rotation_replaces_encryption_and_signing_keys_and_keeps_index_keys
+FAILED libs/py-crypto/tests/test_no_key_material_in_logs.py::test_no_key_material_appears_in_logs
+2 failed, 129 passed, 2 errors in 1.38s

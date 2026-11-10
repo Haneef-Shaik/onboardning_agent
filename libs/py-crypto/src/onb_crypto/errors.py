@@ -3,6 +3,7 @@
 __all__ = [
     "CryptoError",
     "DecryptionError",
+    "KeyRewrapConflictError",
     "KeyUnwrapError",
     "KeyVersionConflictError",
     "MasterKeyError",
@@ -37,3 +38,7 @@ class UnknownKeyVersionError(CryptoError):
 
 class KeyVersionConflictError(CryptoError):
     """That key version already exists for the org (keys created twice, or a concurrent rotation)."""
+
+
+class KeyRewrapConflictError(CryptoError):
+    """A master-key re-wrap could not complete cleanly (a concurrent change); run it again."""

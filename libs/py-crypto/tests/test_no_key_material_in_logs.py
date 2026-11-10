@@ -7,6 +7,7 @@ import logging
 import pytest
 from onb_crypto import (
     MASTER_KEY_ENV,
+    BlindIndexField,
     DecryptionError,
     KeyPurpose,
     Keyring,
@@ -16,6 +17,7 @@ from onb_crypto import (
     rewrap_orgs,
     rotate_orgs,
 )
+from onb_data import tenant_scope
 
 from .fakes import ORG_A, ORG_B, InMemoryOrgKeyStore, encoded_master_key
 
@@ -43,23 +45,29 @@ def test_no_key_material_appears_in_logs(caplog: pytest.LogCaptureFixture) -> No
     errors: list[str] = []
 
     async def every_operation() -> list[bytes]:
-        await keyring.create(ORG_A)
-        await keyring.create(ORG_B)
-        v1 = await keyring.active(ORG_A)
-        sealed = await keyring.encrypt(ORG_A, b"9000000001", associated_data=AD)
-        await keyring.decrypt(ORG_A, sealed, associated_data=AD)
-        try:
-            await keyring.decrypt(ORG_B, sealed, associated_data=AD)
-        except DecryptionError as exc:
-            errors.append(f"{exc!r} {exc}")
+        with tenant_scope(ORG_B):
+            await keyring.create(ORG_B)
+        with tenant_scope(ORG_A):
+            await keyring.create(ORG_A)
+            v1 = await keyring.active(ORG_A)
+            sealed = await keyring.encrypt(ORG_A, b"9000000001", associated_data=AD)
+            await keyring.decrypt(ORG_A, sealed, associated_data=AD)
+            await keyring.blind_index(ORG_A, BlindIndexField.MOBILE, "9000000001")
+        with tenant_scope(ORG_B):
+            try:
+                await keyring.decrypt(ORG_B, sealed, associated_data=AD)
+            except DecryptionError as exc:
+                errors.append(f"{exc!r} {exc}")
         await rotate_orgs(keyring, [ORG_A, ORG_B])
-        v2 = await keyring.active(ORG_A)
-        try:
-            await Keyring(new_master, store).active(ORG_A)
-        except KeyUnwrapError as exc:
-            errors.append(f"{exc!r} {exc}")
+        with tenant_scope(ORG_A):
+            v2 = await keyring.active(ORG_A)
+            try:
+                await Keyring(new_master, store).active(ORG_A)
+            except KeyUnwrapError as exc:
+                errors.append(f"{exc!r} {exc}")
         await rewrap_orgs(keyring, new_master, [ORG_A, ORG_B])
-        b_keys = await Keyring(new_master, store).active(ORG_B)
+        with tenant_scope(ORG_B):
+            b_keys = await Keyring(new_master, store).active(ORG_B)
         return [k.key(p).reveal() for k in (v1, v2, b_keys) for p in KeyPurpose]
 
     key_material = asyncio.run(every_operation())

@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+import asyncio
 import base64
 import secrets
-from collections.abc import Mapping
+from collections.abc import Coroutine, Mapping
 from typing import Any
 
 from onb_crypto import KeyVersionConflictError, MasterKey, OrgKeyRecord
+from onb_data import tenant_scope
 
 ORG_A = "org_alpha"
 ORG_B = "org_beta"
@@ -20,6 +22,12 @@ def encoded_master_key() -> str:
 
 def new_master_key() -> MasterKey:
     return MasterKey.from_encoded(encoded_master_key())
+
+
+def in_org[T](org_id: str, coro: Coroutine[Any, Any, T]) -> T:
+    """Run `coro` as `org_id`, the way a request authenticated for that org would (PRD §7.9)."""
+    with tenant_scope(org_id):
+        return asyncio.run(coro)
 
 
 class InMemoryOrgKeyStore:

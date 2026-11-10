@@ -10,6 +10,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import datetime
+from types import MappingProxyType
 from typing import Any, Final, Protocol
 
 from onb_data import DataStore, TenantRepository
@@ -46,6 +47,7 @@ class OrgKeyRecord:
             raise ValueError("key version must be a positive integer")
         if set(self.wrapped) != set(KeyPurpose):
             raise ValueError("an org key record needs exactly one wrapped key per purpose")
+        object.__setattr__(self, "wrapped", MappingProxyType(dict(self.wrapped)))
 
 
 class OrgKeyStore(Protocol):

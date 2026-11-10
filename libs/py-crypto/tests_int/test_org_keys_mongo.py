@@ -88,8 +88,13 @@ def test_two_orgs_keys_are_isolated_and_a_wrong_master_fails_closed(
             assert await keyring.decrypt(ORG_B, sealed, associated_data=AD) == b"9000000001"
         with tenant_scope(ORG_A), pytest.raises(DecryptionError):
             await keyring.decrypt(ORG_A, sealed, associated_data=AD)
-        # Org A's context cannot even load org B's key records.
+        # Org A's context cannot reach org B's keys: not from the cache (B's keys are cached now) ...
+        with tenant_scope(ORG_A), pytest.raises(TenantViolationError):
+            await keyring.active(ORG_B)
+        # ... nor from the database, where the repository refuses the foreign org_id filter.
         keyring.forget()
+        with tenant_scope(ORG_A), pytest.raises(TenantViolationError):
+            await RepositoryOrgKeyStore(store.tenant(ORG_KEYS_COLLECTION)).load(ORG_B)
         with tenant_scope(ORG_A), pytest.raises(TenantViolationError):
             await keyring.active(ORG_B)
         with pytest.raises(NoTenantContextError):
