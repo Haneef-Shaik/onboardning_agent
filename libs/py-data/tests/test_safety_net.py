@@ -199,6 +199,28 @@ def test_the_listener_logs_violations_without_values(caplog: pytest.LogCaptureFi
     assert "secret@example.test" not in caplog.text
 
 
+def test_the_guard_fails_on_a_violation_sent_inside_it() -> None:
+    listener = TenantCommandListener()
+    with pytest.raises(UnscopedCommandError, match=r"unscoped find on app\.hires"), listener.guard():
+        listener.started(started({"find": "hires", "filter": {}}))
+
+
+def test_the_guard_fails_on_a_violation_left_before_it() -> None:
+    listener = TenantCommandListener()
+    listener.started(started({"find": "hires", "filter": {}}))
+    entered = False
+    with pytest.raises(UnscopedCommandError), listener.guard():
+        entered = True
+    assert not entered, "a leftover violation fails the next test at setup"
+
+
+def test_the_guard_passes_a_clean_block() -> None:
+    listener = TenantCommandListener()
+    with listener.guard():
+        listener.started(started(SCOPED_COMMANDS["find"]))
+    assert not listener.violations
+
+
 def test_drain_returns_and_clears() -> None:
     listener = TenantCommandListener()
     listener.started(started({"delete": "hires", "deletes": [{"q": {}, "limit": 0}]}))

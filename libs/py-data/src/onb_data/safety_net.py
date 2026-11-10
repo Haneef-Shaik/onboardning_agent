@@ -265,6 +265,17 @@ class TenantCommandListener(monitoring.CommandListener):
             raise UnscopedCommandError(f"{len(drained)} unscoped command(s) on tenant collections:\n{lines}")
 
     @contextmanager
+    def guard(self) -> Iterator[None]:
+        """Raise for anything left over before the block, and for anything the block sent.
+
+        The integration fixture wraps every test in this, so a test fails on its own violations
+        and never inherits another test's.
+        """
+        self.check()
+        yield
+        self.check()
+
+    @contextmanager
     def allowing_unscoped(self, reason: str) -> Iterator[None]:
         """Let this thread or task send unscoped commands inside the block, e.g. a test's root
         read-back that checks isolation from outside. Needs a reason; never for application code."""

@@ -43,9 +43,8 @@ def tenant_safety_net_guard(tenant_safety_net: TenantCommandListener) -> Iterato
     A test that sends one on purpose drains it (`tenant_safety_net.drain()` or `.check()`); a test's
     deliberate root read-back wraps itself in `unscoped(reason)`.
     """
-    tenant_safety_net.check()
-    yield
-    tenant_safety_net.check()
+    with tenant_safety_net.guard():
+        yield
 
 
 @pytest.fixture
