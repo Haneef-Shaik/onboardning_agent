@@ -60,3 +60,18 @@ def test_resolution_leaves_the_config_unchanged() -> None:
 def test_an_unknown_alias_fails_naming_the_known_ones() -> None:
     with pytest.raises(LLMConfigError, match=r"unknown model alias 'huge'.*deep, fast, standard"):
         resolve_llm(CONFIG, org_override=LLMSelection(alias="huge"))
+
+
+@pytest.mark.parametrize("key", ["guardrail_id", "guardrail_version", "endpoint_url", "base_url", "script_file"])
+@pytest.mark.parametrize("source", ["manifest", "org_override"])
+def test_a_manifest_or_org_override_may_only_set_sampling_params(source: str, key: str) -> None:
+    # Provider wiring (guardrail, endpoint, credentials, scripts) is set only in llm.yaml, so an org
+    # override cannot switch Bedrock Guardrails off or point the model at another host.
+    selection = LLMSelection(alias="fast", params={key: "x"})
+    with pytest.raises(LLMConfigError, match=rf"{source}.*'{key}'.*max_tokens"):
+        resolve_llm(CONFIG, **{source: selection})
+
+
+def test_the_task_record_names_the_model_but_holds_no_params() -> None:
+    resolved = resolve_llm(CONFIG, manifest=LLMSelection(alias="fast"))
+    assert resolved.task_record() == {"connector": "fake", "model": "model-fast", "alias": "fast", "source": "manifest"}

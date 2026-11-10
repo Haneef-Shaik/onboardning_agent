@@ -79,9 +79,9 @@ logs:
 ## Call every model alias once through one connector (PRD §7.1), e.g. `make llm-health CONNECTOR=bedrock`.
 ## Loads .env when present; LLM_CONNECTOR is set to CONNECTOR so every alias goes through it.
 llm-health:
-	@test -n "$(CONNECTOR)" || { echo "usage: make llm-health CONNECTOR=<bedrock|langchain|fake|…>" >&2; exit 2; }
+	@[[ "$$CONNECTOR" =~ ^[a-z0-9_-]+$$ ]] || { echo "usage: make llm-health CONNECTOR=<bedrock|langchain|fake|…>" >&2; exit 2; }
 	set -a && { [ ! -f ./$(ENV_FILE) ] || . ./$(ENV_FILE); } && set +a && \
-	LLM_CONNECTOR='$(CONNECTOR)' uv run --frozen python -m onb_llm.health --connector '$(CONNECTOR)'
+	LLM_CONNECTOR="$$CONNECTOR" uv run --frozen python -m onb_llm.health --connector "$$CONNECTOR"
 
 $(ENV_FILE):
 	@echo "No $(ENV_FILE): copy .env.example to $(ENV_FILE) and fill in the empty values." >&2

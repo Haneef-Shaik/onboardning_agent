@@ -62,6 +62,37 @@ def test_a_guardrail_id_without_a_version_is_rejected() -> None:
         BedrockConnector().create_chat_model("placeholder-model-id", {"guardrail_id": "gr-test"})
 
 
+def test_bedrock_uses_the_region_from_params_over_the_process_env() -> None:
+    chat_model = BedrockConnector().create_chat_model("placeholder-model-id", {"region_name": "eu-west-1"})
+    assert isinstance(chat_model, ChatBedrockConverse)
+    assert chat_model.region_name == "eu-west-1"
+
+
+def test_bedrock_reports_a_build_failure_by_type_and_param_names_only(monkeypatch: pytest.MonkeyPatch) -> None:
+    def explode(**kwargs: Any) -> None:
+        raise ValueError("endpoint https://internal.example for account 123456789012")
+
+    monkeypatch.setattr("onb_llm.connectors.bedrock.ChatBedrockConverse", explode)
+    with pytest.raises(LLMConfigError) as caught:
+        BedrockConnector().create_chat_model("placeholder-model-id", {"temperature": 0})
+    message = str(caught.value)
+    assert "ValueError" in message
+    assert "temperature" in message
+    assert "123456789012" not in message
+    assert "internal.example" not in message
+
+
+def test_langchain_reports_a_build_failure_by_type_only(monkeypatch: pytest.MonkeyPatch) -> None:
+    def explode(*args: Any, **kwargs: Any) -> None:
+        raise ValueError("api_key sk-should-not-appear rejected")
+
+    monkeypatch.setattr("onb_llm.connectors.langchain.init_chat_model", explode)
+    with pytest.raises(LLMConfigError) as caught:
+        LangChainConnector().create_chat_model("someprovider:m", {})
+    assert "ValueError" in str(caught.value)
+    assert "sk-should-not-appear" not in str(caught.value)
+
+
 def test_bedrock_rejects_an_empty_model() -> None:
     with pytest.raises(LLMConfigError, match="model"):
         BedrockConnector().create_chat_model(" ", {})

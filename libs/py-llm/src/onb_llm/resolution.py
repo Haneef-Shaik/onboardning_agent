@@ -28,6 +28,26 @@ class ResolvedLLM(BaseModel):
     source: Source
     alias: str | None
 
+    def task_record(self) -> dict[str, str | None]:
+        """What to store on the task: the model and where it came from. Params stay out of the store,
+        because llm.yaml may route provider settings through them."""
+        return {"connector": self.connector, "model": self.model, "alias": self.alias, "source": self.source}
+
+
+# The only params an agent manifest or an org override may set. Provider wiring (guardrail, region,
+# endpoint, credentials, fake scripts) comes only from llm.yaml, so a tenant's override cannot switch
+# Bedrock Guardrails off or send prompts to another host.
+SELECTION_PARAMS = frozenset({"temperature", "max_tokens", "top_p", "stop"})
+
+
+def _check_selection_params(selection: LLMSelection, source: Source) -> None:
+    for key in sorted(set(selection.params) - SELECTION_PARAMS):
+        allowed = ", ".join(sorted(SELECTION_PARAMS))
+        raise LLMConfigError(
+            f"{source} sets param '{key}'; a manifest or org override may only set {allowed} "
+            "(provider settings belong in llm.yaml)"
+        )
+
 
 def resolve_llm(
     config: LLMConfig,
@@ -43,6 +63,8 @@ def resolve_llm(
         selection, source = org_override, "org_override"
     else:
         selection, source = config.default, "default"
+    if source != "default":
+        _check_selection_params(selection, source)
     return _concrete(config, selection, source)
 
 

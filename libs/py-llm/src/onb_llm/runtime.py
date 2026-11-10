@@ -10,6 +10,7 @@ from __future__ import annotations
 from collections import defaultdict
 from collections.abc import Mapping
 
+from langchain_core.callbacks import BaseCallbackHandler, BaseCallbackManager, Callbacks
 from langchain_core.language_models import BaseChatModel
 
 from onb_llm.config import LLMConfig, LLMSelection
@@ -59,8 +60,7 @@ class LLMRuntime:
         connector = self._check(resolved.connector, (resolved.source,))
         created = connector.create_chat_model(resolved.model, resolved.params)
         handler = LLMSpanHandler(resolved.connector, resolved.model)
-        existing = list(created.callbacks) if isinstance(created.callbacks, list) else []
-        return created.model_copy(update={"callbacks": [*existing, handler]})
+        return created.model_copy(update={"callbacks": _with_handler(created.callbacks, handler)})
 
     def chat_model_for(
         self, *, manifest: LLMSelection | None = None, org_override: LLMSelection | None = None
@@ -78,6 +78,15 @@ class LLMRuntime:
         if missing:
             raise ConnectorEnvironmentError(name, missing, selected_by)
         return connector
+
+
+def _with_handler(callbacks: Callbacks, handler: BaseCallbackHandler) -> Callbacks:
+    """The connector's own callbacks (a list or a manager) plus `handler`, without changing the original."""
+    if isinstance(callbacks, BaseCallbackManager):
+        manager = callbacks.copy()
+        manager.add_handler(handler, inherit=True)
+        return manager
+    return [*(callbacks or []), handler]
 
 
 def _configured_connectors(config: LLMConfig) -> dict[str, tuple[str, ...]]:

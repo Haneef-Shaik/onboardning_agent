@@ -95,4 +95,12 @@ def load_llm_config(path: Path, env: Mapping[str, str]) -> LLMConfig:
     except LLMConfigError as error:
         raise LLMConfigError(f"LLM config {path}: {error}") from error
     except ValidationError as error:
-        raise LLMConfigError(f"LLM config {path} is invalid:\n{error}") from error
+        raise LLMConfigError(f"LLM config {path} is invalid:\n{_describe(error)}") from None
+
+
+def _describe(error: ValidationError) -> str:
+    """Where and what, never the value: by now values are interpolated and may come from secrets."""
+    return "\n".join(
+        f"  {'.'.join(str(part) for part in item['loc']) or '(top level)'}: {item['msg']}"
+        for item in error.errors(include_input=False, include_url=False)
+    )

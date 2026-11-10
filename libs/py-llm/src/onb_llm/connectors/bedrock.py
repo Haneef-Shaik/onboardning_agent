@@ -30,9 +30,15 @@ class BedrockConnector:
             raise LLMConfigError("bedrock connector: the model id is empty")
         guardrail = _guardrail_config(params)
         rest = {key: value for key, value in params.items() if key not in (*_GUARDRAIL_PARAMS, "region_name")}
-        # Name the region explicitly so the model records the one the startup check saw.
+        # llm.yaml passes the region the startup check saw; the process env is only a fallback.
         region = params.get("region_name") or os.environ.get("AWS_REGION")
-        return ChatBedrockConverse(model=model, region_name=region, guardrails=guardrail, **rest)
+        try:
+            return ChatBedrockConverse(model=model, region_name=region, guardrails=guardrail, **rest)
+        except Exception as error:
+            # Type and param names only: provider messages can carry endpoints, account ids and inputs.
+            raise LLMConfigError(
+                f"bedrock connector: cannot build the model ({type(error).__name__}); params given: {sorted(params)}"
+            ) from None
 
     def healthcheck(self, model: str, params: Mapping[str, Any]) -> HealthStatus:
         return build_and_ping(lambda: self.create_chat_model(model, params), ping)

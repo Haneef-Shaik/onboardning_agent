@@ -1,0 +1,19 @@
+FAILED libs/py-llm/tests/test_config.py::test_a_validation_error_never_shows_an_interpolated_value
+FAILED libs/py-llm/tests/test_config.py::test_the_repository_config_passes_the_region_and_a_fake_script_through_params
+FAILED libs/py-llm/tests/test_fake_connector.py::test_a_copy_starts_its_own_replay_and_call_log
+FAILED libs/py-llm/tests/test_fake_connector.py::test_an_empty_script_file_means_the_default_script
+FAILED libs/py-llm/tests/test_provider_connectors.py::test_bedrock_reports_a_build_failure_by_type_and_param_names_only
+FAILED libs/py-llm/tests/test_provider_connectors.py::test_langchain_reports_a_build_failure_by_type_only
+FAILED libs/py-llm/tests/test_resolution.py::test_a_manifest_or_org_override_may_only_set_sampling_params[manifest-guardrail_id]
+FAILED libs/py-llm/tests/test_resolution.py::test_a_manifest_or_org_override_may_only_set_sampling_params[manifest-guardrail_version]
+FAILED libs/py-llm/tests/test_resolution.py::test_a_manifest_or_org_override_may_only_set_sampling_params[manifest-endpoint_url]
+FAILED libs/py-llm/tests/test_resolution.py::test_a_manifest_or_org_override_may_only_set_sampling_params[manifest-base_url]
+FAILED libs/py-llm/tests/test_resolution.py::test_a_manifest_or_org_override_may_only_set_sampling_params[manifest-script_file]
+FAILED libs/py-llm/tests/test_resolution.py::test_a_manifest_or_org_override_may_only_set_sampling_params[org_override-guardrail_id]
+FAILED libs/py-llm/tests/test_resolution.py::test_a_manifest_or_org_override_may_only_set_sampling_params[org_override-guardrail_version]
+FAILED libs/py-llm/tests/test_resolution.py::test_a_manifest_or_org_override_may_only_set_sampling_params[org_override-endpoint_url]
+FAILED libs/py-llm/tests/test_resolution.py::test_a_manifest_or_org_override_may_only_set_sampling_params[org_override-base_url]
+FAILED libs/py-llm/tests/test_resolution.py::test_a_manifest_or_org_override_may_only_set_sampling_params[org_override-script_file]
+FAILED libs/py-llm/tests/test_resolution.py::test_the_task_record_names_the_model_but_holds_no_params
+FAILED libs/py-llm/tests/test_runtime.py::test_the_connectors_own_callbacks_are_kept_next_to_the_span_handler[manager]
+18 failed, 105 passed in 4.17s

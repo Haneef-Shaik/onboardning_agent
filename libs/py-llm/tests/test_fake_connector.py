@@ -90,6 +90,20 @@ def test_usage_is_estimated_deterministically_when_the_script_gives_none() -> No
     assert reply.usage_metadata == {"input_tokens": 2, "output_tokens": 4, "total_tokens": 6}
 
 
+def test_a_copy_starts_its_own_replay_and_call_log() -> None:
+    original = FakeConnector().create_chat_model("scripted", {"script": [{"content": "a"}]})
+    assert isinstance(original, ScriptedChatModel)
+    copy = original.model_copy()
+    assert copy.invoke("hi").content == "a"
+    assert original.calls() == ()
+    assert original.invoke("hi").content == "a"
+    assert len(copy.calls()) == 1
+
+
+def test_an_empty_script_file_means_the_default_script() -> None:
+    assert FakeConnector().create_chat_model("scripted", {"script_file": ""}).invoke("ping").content == "OK"
+
+
 def test_common_sampling_params_are_accepted_and_ignored() -> None:
     chat_model = FakeConnector().create_chat_model("scripted", {"temperature": 0.3, "max_tokens": 9, "top_p": 1})
     assert chat_model.invoke("ping").content == "OK"

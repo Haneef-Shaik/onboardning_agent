@@ -52,6 +52,11 @@ class ScriptedChatModel(BaseChatModel):
     def _llm_type(self) -> str:
         return "onb-fake-scripted"
 
+    def __copy__(self) -> ScriptedChatModel:
+        """A copy replays the script from the start with its own call log and lock (pydantic's
+        `model_copy` would otherwise share the log and lock with the original)."""
+        return type(self)(model_name=self.model_name, script=self.script, callbacks=self.callbacks)
+
     def calls(self) -> tuple[ScriptedCall, ...]:
         with self._lock:
             return tuple(self._calls)

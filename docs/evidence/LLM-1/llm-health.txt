@@ -1,23 +1,28 @@
-# make llm-health, 2026-11-10T05:20:21Z, branch goal/llm-1-llm-connectors @ 185b674
+# make llm-health, 2026-11-10T05:32:03Z, branch goal/llm-1-llm-connectors @ a13015a
 # local .env: LLM_MODEL_* set to placeholders (not real ids), AWS_REGION empty
 
 $ make llm-health CONNECTOR=bedrock
 set -a && { [ ! -f ./.env ] || . ./.env; } && set +a && \
-	LLM_CONNECTOR='bedrock' uv run --frozen python -m onb_llm.health --connector 'bedrock'
+	LLM_CONNECTOR="$CONNECTOR" uv run --frozen python -m onb_llm.health --connector "$CONNECTOR"
 llm-health: LLM connector 'bedrock' is selected (by aliases.fast, default via aliases.standard, aliases.deep) but AWS_REGION is not set. Set AWS_REGION in the environment or .env (see .env.example), or select another connector.
 make: *** [llm-health] Error 2
 exit=2
 
 $ make llm-health CONNECTOR=fake
 set -a && { [ ! -f ./.env ] || . ./.env; } && set +a && \
-	LLM_CONNECTOR='fake' uv run --frozen python -m onb_llm.health --connector 'fake'
-alias=fast connector=fake model=placeholder-fast ok latency_ms=103.6
+	LLM_CONNECTOR="$CONNECTOR" uv run --frozen python -m onb_llm.health --connector "$CONNECTOR"
+alias=fast connector=fake model=placeholder-fast ok latency_ms=9.4
 alias=standard connector=fake model=placeholder-standard ok latency_ms=0.6
-alias=deep connector=fake model=placeholder-deep ok latency_ms=0.3
+alias=deep connector=fake model=placeholder-deep ok latency_ms=0.2
 3 of 3 healthy
 exit=0
 
 $ make llm-health
+usage: make llm-health CONNECTOR=<bedrock|langchain|fake|…>
+make: *** [llm-health] Error 2
+exit=2
+
+$ make llm-health CONNECTOR=x'; echo INJECTED; echo '
 usage: make llm-health CONNECTOR=<bedrock|langchain|fake|…>
 make: *** [llm-health] Error 2
 exit=2

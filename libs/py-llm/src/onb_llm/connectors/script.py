@@ -75,10 +75,11 @@ def script_from_params(params: Mapping[str, Any]) -> tuple[ScriptedTurn, ...] | 
     unknown = set(params) - SCRIPT_PARAMS - IGNORED_PARAMS
     if unknown:
         raise LLMConfigError(f"fake connector: unknown params {sorted(unknown)}; it takes `script` or `script_file`")
-    if "script" in params and "script_file" in params:
+    script_file = str(params.get("script_file") or "").strip()  # empty: llm.yaml's unset ${LLM_FAKE_SCRIPT_FILE:-}
+    if "script" in params and script_file:
         raise LLMConfigError("fake connector: give `script` or `script_file`, not both")
-    if "script_file" in params:
-        return _parse(_read(Path(str(params["script_file"]))), source=str(params["script_file"]))
+    if script_file:
+        return _parse(_read(Path(script_file)), source=script_file)
     if "script" in params:
         return _parse(params["script"], source="params.script")
     return None

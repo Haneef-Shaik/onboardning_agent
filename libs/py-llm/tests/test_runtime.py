@@ -1,13 +1,19 @@
 """Startup validation (fail fast on missing env) and chat-model creation with LLM spans."""
 
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from pathlib import Path
+from typing import Any
 
 import pytest
+from langchain_core.callbacks import BaseCallbackHandler, CallbackManager
+from langchain_core.language_models import BaseChatModel
+from langchain_core.language_models.fake_chat_models import FakeListChatModel
 from langchain_core.messages import HumanMessage
 from onb_llm import (
     ConnectorEnvironmentError,
     ConnectorNotFoundError,
+    ConnectorRegistry,
+    HealthStatus,
     LLMConfig,
     LLMRuntime,
     LLMSelection,
@@ -127,6 +133,45 @@ def test_chat_model_for_resolves_and_creates_in_one_step(telemetry: CapturedTele
     resolved, chat_model = runtime.chat_model_for(org_override=None)
     assert resolved.source == "default"
     assert chat_model.invoke("hi").content == "ok"
+
+
+class _Recorder(BaseCallbackHandler):
+    def __init__(self) -> None:
+        self.ended = 0
+
+    def on_llm_end(self, response: Any, **kwargs: Any) -> None:
+        self.ended += 1
+
+
+class _CallbackConnector:
+    """A connector whose model arrives with its own callbacks, as a list or as a manager."""
+
+    name = "withcallbacks"
+    required_env: tuple[str, ...] = ()
+
+    def __init__(self, callbacks: Any) -> None:
+        self._callbacks = callbacks
+
+    def create_chat_model(self, model: str, params: Mapping[str, Any]) -> BaseChatModel:
+        return FakeListChatModel(responses=["hi"], callbacks=self._callbacks)
+
+    def healthcheck(self, model: str, params: Mapping[str, Any]) -> HealthStatus:
+        return HealthStatus(ok=True, detail="OK")
+
+
+@pytest.mark.parametrize("as_manager", [False, True], ids=["list", "manager"])
+def test_the_connectors_own_callbacks_are_kept_next_to_the_span_handler(
+    telemetry: CapturedTelemetry, as_manager: bool
+) -> None:
+    recorder = _Recorder()
+    callbacks: Any = CallbackManager([recorder]) if as_manager else [recorder]
+    config = LLMConfig.model_validate({"default": {"connector": "withcallbacks", "model": "m"}})
+    runtime = LLMRuntime.start(config, ConnectorRegistry.of(_CallbackConnector(callbacks)), env={})
+
+    runtime.chat_model(runtime.resolve()).invoke("hello")
+
+    assert recorder.ended == 1
+    assert [s.name for s in telemetry.spans()] == ["llm.chat"]
 
 
 def test_runtime_exposes_its_config_and_registry() -> None:

@@ -28,8 +28,12 @@ class LangChainConnector:
             )
         try:
             created = init_chat_model(model, **params)
-        except (ValueError, ImportError) as error:
-            raise LLMConfigError(f"langchain connector: cannot build model {model!r}: {error}") from error
+        except Exception as error:
+            # Type only: provider messages can carry keys, endpoints and inputs.
+            raise LLMConfigError(
+                f"langchain connector: cannot build model {model!r} ({type(error).__name__}); "
+                "check the provider name and that its LangChain package is installed"
+            ) from None
         if not isinstance(created, BaseChatModel):  # only a configurable model is not one; we never ask for that
             raise LLMConfigError(f"langchain connector: {model!r} did not resolve to a single chat model")
         return created

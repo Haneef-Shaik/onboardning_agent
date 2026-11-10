@@ -116,6 +116,21 @@ def test_the_repository_config_lets_env_switch_the_connector() -> None:
     assert {s.connector for s in config.aliases.values()} == {"fake"}
 
 
+def test_a_validation_error_never_shows_an_interpolated_value(write_config: ConfigWriter) -> None:
+    path = write_config("default: { connector: fake, model: m, typo: '${SOME_SECRET}' }\n")
+    with pytest.raises(LLMConfigError) as caught:
+        load_llm_config(path, {"SOME_SECRET": "value-that-must-not-leak"})
+    assert "value-that-must-not-leak" not in str(caught.value)
+    assert "typo" in str(caught.value)
+
+
+def test_the_repository_config_passes_the_region_and_a_fake_script_through_params() -> None:
+    env = {"LLM_MODEL_FAST": "f", "LLM_MODEL_STANDARD": "s", "LLM_MODEL_DEEP": "d"}
+    config = load_llm_config(REPO_CONFIG, {**env, "AWS_REGION": "ap-south-1", "LLM_FAKE_SCRIPT_FILE": "/s.json"})
+    assert config.connectors["bedrock"].params["region_name"] == "ap-south-1"
+    assert config.connectors["fake"].params == {"script_file": "/s.json"}
+
+
 def test_the_repository_config_fails_without_model_env() -> None:
     with pytest.raises(LLMConfigError, match="LLM_MODEL_"):
         load_llm_config(REPO_CONFIG, {})

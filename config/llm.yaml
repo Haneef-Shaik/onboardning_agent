@@ -12,9 +12,16 @@ aliases:
   standard: { connector: "${LLM_CONNECTOR:-bedrock}", model: "${LLM_MODEL_STANDARD}" }
   deep:     { connector: "${LLM_CONNECTOR:-bedrock}", model: "${LLM_MODEL_DEEP}" }
 
+# Provider settings live only here: a manifest or org override may set sampling params
+# (temperature, max_tokens, top_p, stop) and nothing else.
 connectors:
   bedrock:
     params:
+      region_name: "${AWS_REGION:-}"  # the startup check requires it when bedrock is selected
       # Optional Bedrock Guardrail, additive to the platform's own guardrails (PRD §8.1).
       guardrail_id: "${BEDROCK_GUARDRAIL_ID:-}"
       guardrail_version: "${BEDROCK_GUARDRAIL_VERSION:-}"
+  fake:
+    params:
+      # A JSON script for every fake model (eval self-tests, CI); empty means each call answers "OK".
+      script_file: "${LLM_FAKE_SCRIPT_FILE:-}"
