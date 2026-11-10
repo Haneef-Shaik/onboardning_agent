@@ -128,6 +128,11 @@ RED before GREEN:
 - `red-review-fixes.txt` (17 failed)
 - `red-queue-allowance.txt` (15 failed before `queue_allowance.py` existed)
 
+## Verifier
+goal-verifier attempt 3: **pass**. Attempt 1 passed, and attempt 2 failed box 2 (py-crypto's suite was not guarded).
+
+**For integration.** Main has moved to `1e22bba` (MCP-3, PII-4), past this branch's base `707b60c`. In the verifier's trial merge, nothing conflicted, but `tools/tests/test_safety_net_suites.py` (in `make check`) then reports `apps/api/tests_int` and `apps/mcp-mongo/tests_int`. Both have `test-int` targets and talk to Mongo, but neither loads `onb_data.safety_net_pytest` nor has a fixture test. The new py-crypto Mongo tests (`test_grants_mongo.py`, `test_vault_mongo.py`) have not yet run under the guard. The check is doing its job. The fix is to rebase onto current main, wire the plugin and a fixture test into those two suites, and mark any deliberate root read-backs. Following the hold instruction, I have not rebased; it needs the orchestrator's go-ahead.
+
 ## Review findings left open
 Attempt 1 ran a code review and a security review. Every high and medium finding was fixed except the one listed first below.
 
