@@ -16,10 +16,9 @@ from typing import Any
 from urllib.parse import quote_plus
 
 import pytest
+from onb_data import DataStore, NoTenantContextError, NotFound, TenantRepository, connect, tenant_scope
 from pymongo import MongoClient
 from pymongo.errors import DuplicateKeyError
-
-from onb_data import DataStore, NotFound, NoTenantContext, TenantRepository, connect, tenant_scope
 
 Client = MongoClient[dict[str, object]]
 ORG_A = "org_alpha"
@@ -88,7 +87,7 @@ def test_every_operation_raises_without_a_context_and_changes_nothing(
     name: str, scratch: tuple[str, str], root_client: Client
 ) -> None:
     async def body(store: DataStore) -> None:
-        with pytest.raises(NoTenantContext):
+        with pytest.raises(NoTenantContextError):
             await OPERATIONS[name](store.tenant(COLLECTION))
 
     with_store(scratch, body)
@@ -132,25 +131,24 @@ def test_an_aggregate_starting_with_sort_and_group_sees_only_the_own_org(scratch
 
 
 def test_a_foreign_id_is_not_found_for_get_update_and_delete(scratch: tuple[str, str], root_client: Client) -> None:
-    async def body(store: DataStore) -> list[str]:
+    async def body(store: DataStore) -> list[BaseException]:
         repo = store.tenant(COLLECTION)
-        raised: list[str] = []
+        raised: list[BaseException] = []
         with tenant_scope(ORG_A):
-            for label, op in [
-                ("get", lambda: repo.get("b1")),
-                ("update_by_id", lambda: repo.update_by_id("b1", {"$set": {"name": "hijacked"}})),
-                ("delete_by_id", lambda: repo.delete_by_id("b1")),
-            ]:
-                try:
-                    await op()
-                except NotFound as err:
-                    assert not isinstance(err, PermissionError)
-                    raised.append(label)
+            with pytest.raises(NotFound) as by_get:
+                await repo.get("b1")
+            with pytest.raises(NotFound) as by_update:
+                await repo.update_by_id("b1", {"$set": {"name": "hijacked"}})
+            with pytest.raises(NotFound) as by_delete:
+                await repo.delete_by_id("b1")
+            raised.extend([by_get.value, by_update.value, by_delete.value])
             own = await repo.get("a1")
         assert own["name"] == "Asha"
         return raised
 
-    assert with_store(scratch, body) == ["get", "update_by_id", "delete_by_id"]
+    raised = with_store(scratch, body)
+    assert len(raised) == 3
+    assert not any(isinstance(err, PermissionError) for err in raised)
     assert root_client[scratch[1]][COLLECTION].find_one({"_id": "b1"}) == {
         "_id": "b1",
         "org_id": ORG_B,
@@ -195,8 +193,9 @@ def test_an_upsert_creates_the_document_in_the_own_org(scratch: tuple[str, str],
 
 def test_an_org_prefixed_unique_index_allows_the_same_value_in_two_orgs(scratch: tuple[str, str]) -> None:
     async def body(store: DataStore) -> None:
-        await store.ensure_index(COLLECTION, [("org_id", 1), ("email_hash", 1)], unique=True)
-        repo = store.tenant(COLLECTION)
+        # A fresh collection: the seeded hires have no email_hash, which a unique index would reject.
+        await store.ensure_index("people", [("org_id", 1), ("email_hash", 1)], unique=True)
+        repo = store.tenant("people")
         for org in (ORG_A, ORG_B):
             with tenant_scope(org):
                 await repo.insert_one({"email_hash": "same"})

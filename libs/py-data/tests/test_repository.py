@@ -11,8 +11,7 @@ from collections.abc import Awaitable, Callable, Coroutine
 from typing import Any
 
 import pytest
-
-from onb_data import NotFound, NoTenantContext, TenantRepository, TenantViolation, tenant_scope
+from onb_data import NoTenantContextError, NotFound, NotFoundError, TenantRepository, TenantViolationError, tenant_scope
 
 from .fakes import FakeCollection, FakeDatabase, make_store
 
@@ -58,9 +57,7 @@ OPERATIONS: dict[str, Op] = {
 
 def test_every_public_operation_is_covered() -> None:
     public = {
-        name
-        for name in dir(TenantRepository)
-        if not name.startswith("_") and callable(getattr(TenantRepository, name))
+        name for name in dir(TenantRepository) if not name.startswith("_") and callable(getattr(TenantRepository, name))
     }
     assert public == set(OPERATIONS)
 
@@ -69,7 +66,7 @@ def test_every_public_operation_is_covered() -> None:
 def test_every_operation_raises_without_a_tenant_context(name: str) -> None:
     collection = FakeCollection(find_one_result={"_id": "h1"})
     repo = repo_over(collection)
-    with pytest.raises(NoTenantContext):
+    with pytest.raises(NoTenantContextError):
         run(_awaited(OPERATIONS[name](repo)))
     assert collection.calls == [], "the driver was called before the context check"
 
@@ -110,7 +107,7 @@ def test_find_one_and_count_are_scoped() -> None:
 
 def test_a_filter_naming_another_org_is_refused() -> None:
     collection = FakeCollection()
-    with pytest.raises(TenantViolation, match="org_id"):
+    with pytest.raises(TenantViolationError, match="org_id"):
         scoped(ORG, lambda: repo_over(collection).find({"org_id": OTHER}))
     assert collection.calls == []
 
@@ -122,7 +119,7 @@ def test_a_filter_naming_the_own_org_is_accepted() -> None:
 
 
 def test_a_filter_with_an_operator_on_org_id_is_refused() -> None:
-    with pytest.raises(TenantViolation, match="org_id"):
+    with pytest.raises(TenantViolationError, match="org_id"):
         scoped(ORG, lambda: repo_over(FakeCollection()).find({"org_id": {"$in": [ORG, OTHER]}}))
 
 
@@ -149,6 +146,7 @@ def test_a_foreign_id_raises_not_found_not_a_permission_error() -> None:
         scoped(ORG, lambda: repo_over(collection).get("belongs_to_org_b"))
     assert not isinstance(err.value, PermissionError)
     assert not issubclass(NotFound, PermissionError)
+    assert NotFound is NotFoundError
     assert "org_b" not in str(err.value)
 
 
@@ -194,9 +192,9 @@ def test_insert_many_sets_org_id_on_every_document() -> None:
 
 def test_inserting_a_document_of_another_org_is_refused() -> None:
     collection = FakeCollection()
-    with pytest.raises(TenantViolation, match="org_id"):
+    with pytest.raises(TenantViolationError, match="org_id"):
         scoped(ORG, lambda: repo_over(collection).insert_one({"name": "x", "org_id": OTHER}))
-    with pytest.raises(TenantViolation, match="org_id"):
+    with pytest.raises(TenantViolationError, match="org_id"):
         scoped(ORG, lambda: repo_over(collection).insert_many([{"name": "y"}, {"org_id": OTHER}]))
     assert collection.calls == []
 
@@ -207,6 +205,8 @@ def test_insert_needs_a_mapping_and_insert_many_a_non_empty_list() -> None:
         scoped(ORG, lambda: repo.insert_one(["x"]))  # type: ignore[arg-type]
     with pytest.raises(ValueError, match="at least one"):
         scoped(ORG, lambda: repo.insert_many([]))
+    with pytest.raises(TypeError, match="list of documents"):
+        scoped(ORG, lambda: repo.insert_many({"name": "x"}))  # type: ignore[arg-type]
 
 
 # --- updates -------------------------------------------------------------------------------
@@ -236,7 +236,7 @@ def test_update_is_scoped_and_reports_its_outcome() -> None:
 )
 def test_an_update_that_touches_org_id_is_refused(update: dict[str, Any]) -> None:
     collection = FakeCollection()
-    with pytest.raises(TenantViolation, match="org_id"):
+    with pytest.raises(TenantViolationError, match="org_id"):
         scoped(ORG, lambda: repo_over(collection).update_one({"_id": "h1"}, update))
     assert collection.calls == []
 
@@ -325,7 +325,7 @@ def test_aggregate_of_an_empty_pipeline_is_still_scoped() -> None:
 )
 def test_aggregate_refuses_stages_that_read_or_write_other_collections(stage: dict[str, Any]) -> None:
     collection = FakeCollection()
-    with pytest.raises(TenantViolation, match=r"\$"):
+    with pytest.raises(TenantViolationError, match=r"\$"):
         scoped(ORG, lambda: repo_over(collection).aggregate([stage]))
     assert collection.calls == []
 

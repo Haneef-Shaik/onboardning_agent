@@ -5,12 +5,11 @@ from __future__ import annotations
 import asyncio
 
 import pytest
-
-from onb_data import NoTenantContext, TenantContext, current_tenant, tenant_scope
+from onb_data import NoTenantContextError, TenantContext, current_tenant, tenant_scope
 
 
 def test_there_is_no_tenant_context_by_default() -> None:
-    with pytest.raises(NoTenantContext):
+    with pytest.raises(NoTenantContextError):
         current_tenant()
 
 
@@ -18,7 +17,7 @@ def test_tenant_scope_sets_the_context_and_resets_it_on_exit() -> None:
     with tenant_scope("org_a") as ctx:
         assert ctx == TenantContext("org_a")
         assert current_tenant().org_id == "org_a"
-    with pytest.raises(NoTenantContext):
+    with pytest.raises(NoTenantContextError):
         current_tenant()
 
 
@@ -32,7 +31,7 @@ def test_nested_scope_restores_the_outer_tenant() -> None:
 def test_tenant_scope_resets_even_when_the_body_raises() -> None:
     with pytest.raises(RuntimeError), tenant_scope("org_a"):
         raise RuntimeError("boom")
-    with pytest.raises(NoTenantContext):
+    with pytest.raises(NoTenantContextError):
         current_tenant()
 
 

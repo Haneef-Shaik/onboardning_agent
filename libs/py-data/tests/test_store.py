@@ -6,15 +6,14 @@ import asyncio
 from typing import Any
 
 import pytest
-
 from onb_data import (
     GLOBAL_COLLECTIONS,
     GlobalRepository,
-    InvalidIndex,
+    InvalidIndexError,
     NotFound,
     TenantRepository,
-    TenantViolation,
-    UnknownCollection,
+    TenantViolationError,
+    UnknownCollectionError,
     connect,
     tenant_scope,
 )
@@ -34,7 +33,7 @@ def test_tenant_collections_get_a_tenant_repository() -> None:
 
 @pytest.mark.parametrize("name", sorted(GLOBAL_COLLECTIONS))
 def test_a_global_collection_is_never_handed_out_as_a_tenant_one(name: str) -> None:
-    with pytest.raises(UnknownCollection, match=name):
+    with pytest.raises(UnknownCollectionError, match=name):
         make_store().tenant(name)
 
 
@@ -46,7 +45,7 @@ def test_global_collections_get_a_global_repository(name: str) -> None:
 
 
 def test_a_tenant_collection_is_never_handed_out_unscoped() -> None:
-    with pytest.raises(UnknownCollection, match="hires"):
+    with pytest.raises(UnknownCollectionError, match="hires"):
         make_store().shared("hires")
 
 
@@ -65,7 +64,7 @@ def _ensure(db: FakeDatabase, collection: str, keys: Any, **kwargs: Any) -> str:
 
 def test_a_tenant_index_must_start_with_org_id() -> None:
     db = FakeDatabase()
-    with pytest.raises(InvalidIndex, match="org_id"):
+    with pytest.raises(InvalidIndexError, match="org_id"):
         _ensure(db, "hires", [("email_hash", 1), ("org_id", 1)], unique=True)
     assert db["hires"].calls == []
 
@@ -97,7 +96,7 @@ def test_a_global_index_needs_no_org_id() -> None:
     ids=str,
 )
 def test_malformed_index_keys_are_refused(keys: Any) -> None:
-    with pytest.raises(InvalidIndex):
+    with pytest.raises(InvalidIndexError):
         _ensure(FakeDatabase(), "hires", keys)
 
 
@@ -137,7 +136,7 @@ def test_connect_builds_a_lazy_store_without_touching_the_network() -> None:
 
 @pytest.mark.parametrize(("uri", "database"), [("", "db"), ("mongodb://x", ""), ("mongodb://x", "a.b")])
 def test_connect_refuses_a_missing_uri_or_bad_database_name(uri: str, database: str) -> None:
-    with pytest.raises(ValueError, match="uri|database"):
+    with pytest.raises(ValueError, match=r"uri|database"):
         connect(uri, database)
 
 
@@ -167,6 +166,8 @@ def test_global_writes_add_no_org_id() -> None:
     asyncio.run(repo.update_one({"_id": "t1"}, {"$set": {"v": 2}}, upsert=True))
     assert collection.last("insert_one").args[0] == {"_id": "t1"}
     assert collection.last("update_one").args[1] == {"$set": {"v": 2}}
+    with pytest.raises(TypeError, match="document"):
+        asyncio.run(repo.insert_one(["not", "a", "document"]))  # type: ignore[arg-type]
 
 
 def test_a_global_lookup_of_a_missing_id_raises_not_found() -> None:
@@ -175,5 +176,5 @@ def test_a_global_lookup_of_a_missing_id_raises_not_found() -> None:
 
 
 def test_global_pipelines_still_refuse_cross_collection_stages() -> None:
-    with tenant_scope("org_a"), pytest.raises(TenantViolation):
+    with tenant_scope("org_a"), pytest.raises(TenantViolationError):
         asyncio.run(_global(FakeCollection(name="orgs")).aggregate([{"$out": "hires"}]))

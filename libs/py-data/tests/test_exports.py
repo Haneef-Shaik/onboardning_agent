@@ -13,15 +13,14 @@ import pkgutil
 from types import ModuleType
 from typing import Any
 
+import onb_data
 import pymongo
 import pytest
+from onb_data import GlobalRepository, TenantRepository, connect
 from pymongo.asynchronous.collection import AsyncCollection
 from pymongo.asynchronous.database import AsyncDatabase
 from pymongo.collection import Collection
 from pymongo.database import Database
-
-import onb_data
-from onb_data import GlobalRepository, TenantRepository, connect
 
 from .fakes import make_store
 
