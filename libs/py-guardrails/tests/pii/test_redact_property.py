@@ -89,6 +89,7 @@ _SETTINGS = settings(max_examples=1500, deadline=None, suppress_health_check=[He
 @example("9000000002" * 3)
 @example("acc 123456789 9000000002@example.com")
 @example("account number 000000000AAAAA0000A")  # one pass exposes the glued PAN
+@example("200000000009AAAAA0000A")  # found by hypothesis: Aadhaar glued to a PAN
 def test_redact_output_contains_no_detector_hit(text: str) -> None:
     assert detect(redact(text)) == ()
 

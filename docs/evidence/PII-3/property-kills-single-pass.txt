@@ -1,0 +1,6 @@
+E           # The test always failed when commented parts were varied together.
+E           text='account number 000000000AAAAA0000A',
+E           text='200000000009AAAAA0000A',
+FAILED libs/py-guardrails/tests/pii/test_redact_property.py::test_redact_output_contains_no_detector_hit
+FAILED libs/py-guardrails/tests/pii/test_redact_property.py::test_redact_is_idempotent
+2 failed, 2 passed in 1.63s

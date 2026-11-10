@@ -1,0 +1,21 @@
+M1 Aadhaar 0/1 rule removed: killed by FAILED libs/py-guardrails/tests/pii/test_validators.py::test_aadhaar_starting_with_0_or_1_is_rejected[023456789014]
+M2 Verhoeff check removed from Aadhaar: killed by FAILED libs/py-guardrails/tests/pii/test_validators.py::test_aadhaar_rejects_bad_numbers[334249855760]
+M3 Verhoeff permutation row typo (the bug stdnum caught): killed by FAILED libs/py-guardrails/tests/pii/test_validators.py::test_verhoeff_accepts_valid_vectors[334249855769]
+M4 redact() single pass instead of fix point: killed by FAILED libs/py-guardrails/tests/pii/test_detectors.py::test_redact_repeats_until_a_value_exposed_by_redaction_is_gone
+M5 overlap priority: MOBILE moved ahead of AADHAAR: killed by FAILED libs/py-guardrails/tests/pii/test_detectors.py::test_mobile_inside_a_12_digit_aadhaar_is_reported_as_aadhaar_only
+M6 mobile digit boundary dropped: killed by FAILED libs/py-guardrails/tests/pii/test_detectors.py::test_a_12_digit_number_failing_verhoeff_is_not_aadhaar
+M7 Aadhaar candidates non-overlapping: killed by FAILED libs/py-guardrails/tests/pii/test_detectors.py::test_aadhaar_after_a_failing_group_is_still_found
+M8 Unicode digit folding disabled: killed by FAILED libs/py-guardrails/tests/pii/test_detectors.py::test_unicode_digits_cannot_hide_a_value
+M9 PAN detector case-sensitive: killed by FAILED libs/py-guardrails/tests/pii/test_detectors.py::test_each_detector_returns_a_typed_span_over_the_value[pan abcde1234f-PAN-abcde1234f]
+M10 bank-account keyword anchor removed: killed by FAILED libs/py-guardrails/tests/pii/test_corpus.py::test_corpus_has_zero_false_negatives
+M11 PAN mask shows six X (length-preserving, not PRD): killed by FAILED libs/py-crypto/tests/test_masks.py::test_each_prd_mask_example_produces_exactly_the_prd_string[pan-ABCDE1234F-ABXXXXX4F]
+M12 mobile mask keeps three trailing digits: killed by FAILED libs/py-crypto/tests/test_masks.py::test_each_prd_mask_example_produces_exactly_the_prd_string[mobile-9800000021-98XXXXXX21]
+M13 Aadhaar mask without spaces: killed by FAILED libs/py-crypto/tests/test_masks.py::test_each_prd_mask_example_produces_exactly_the_prd_string[aadhaar-999900001234-XXXX XXXX 1234]
+M14 email mask leaks two characters: killed by FAILED libs/py-crypto/tests/test_masks.py::test_each_prd_mask_example_produces_exactly_the_prd_string[email-jane.doe@domain.com-j***@domain.com]
+M15 blind index without field domain separation: killed by FAILED libs/py-crypto/tests/test_blind_index.py::test_blind_index_matches_independent_hmac_sha256[mobile-9000000001-f8182dabce93cad84f30913d97c7e52f35bb393bb38c74276bd9729383096b02]
+M16 blind index key length check removed: killed by FAILED libs/py-crypto/tests/test_blind_index.py::test_short_keys_are_rejected[]
+M17 email not lower-cased for the index: killed by FAILED libs/py-crypto/tests/test_blind_index.py::test_layouts_of_one_value_share_an_index_so_dedupe_works[email-priya.sharma@example.com-  Priya.Sharma@EXAMPLE.com ]
+M18 malformed-value error echoes the value: killed by FAILED libs/py-crypto/tests/test_masks.py::test_mask_rejects_malformed_input_without_echoing_it[mask_mobile-5800000021]
+after restore, full suite: 176 passed in 2.62s
+source restored (git diff --quiet libs): True
+mutations: 18, survived: []
