@@ -1,0 +1,119 @@
+## M1 (libs/py-data/src/onb_data/safety_net.py): box 1: every filter counts as scoped
+unit: 28 failed, 210 passed in 0.96s
+int:  3 failed, 30 passed, 1 error in 10.78s
+  unit FAILED test_a_malformed_command_is_flagged_not_crashed
+  unit FAILED test_a_scoped_command_on_a_tenant_collection_passes[replacement
+  unit FAILED test_a_scoped_command_on_a_tenant_collection_passes[update
+  unit FAILED test_allowing_unscoped_does_not_leak_to_other_threads
+  unit FAILED test_allowing_unscoped_is_explicit_and_scoped_to_the_block
+  unit FAILED test_an_unscoped_command_on_a_tenant_collection_is_flagged[aggregate
+  unit FAILED test_an_unscoped_command_on_a_tenant_collection_is_flagged[count
+  unit FAILED test_an_unscoped_command_on_a_tenant_collection_is_flagged[delete
+  unit FAILED test_an_unscoped_command_on_a_tenant_collection_is_flagged[distinct
+  unit FAILED test_an_unscoped_command_on_a_tenant_collection_is_flagged[explain
+  unit FAILED test_an_unscoped_command_on_a_tenant_collection_is_flagged[find
+  unit FAILED test_an_unscoped_command_on_a_tenant_collection_is_flagged[findAndModify
+  unit FAILED test_an_unscoped_command_on_a_tenant_collection_is_flagged[view
+  unit FAILED test_drain_returns_and_clears
+  unit FAILED test_the_guard_fails_on_a_violation_left_before_it
+  unit FAILED test_the_guard_fails_on_a_violation_sent_inside_it
+  unit FAILED test_the_listener_ignores_scoped_commands
+  unit FAILED test_the_listener_logs_violations_without_values
+  unit FAILED test_the_listener_records_an_unscoped_command_and_check_raises_it
+  int  FAILED test_a_client_made_inside_a_test_reports_to_the_listener
+  int  FAILED test_an_unscoped_find_through_a_leaked_client_trips_the_listener
+  int  FAILED test_an_unscoped_find_through_a_raw_client_trips_the_listener
+  int  FAILED test_an_upsert_creates_the_document_in_the_own_org
+caught: yes
+
+## M2 (libs/py-data/src/onb_data/safety_net.py): box 1: the listener records nothing
+unit: 8 failed, 230 passed in 0.66s
+int:  4 failed, 29 passed in 20.47s
+  unit FAILED test_a_command_the_check_cannot_parse_is_recorded_not_lost
+  unit FAILED test_allowing_unscoped_does_not_leak_to_other_threads
+  unit FAILED test_allowing_unscoped_is_explicit_and_scoped_to_the_block
+  unit FAILED test_drain_returns_and_clears
+  unit FAILED test_the_guard_fails_on_a_violation_left_before_it
+  unit FAILED test_the_guard_fails_on_a_violation_sent_inside_it
+  unit FAILED test_the_listener_logs_violations_without_values
+  unit FAILED test_the_listener_records_an_unscoped_command_and_check_raises_it
+  int  FAILED test_a_client_made_inside_a_test_reports_to_the_listener
+  int  FAILED test_an_unscoped_find_through_a_leaked_client_trips_the_listener
+  int  FAILED test_an_unscoped_find_through_a_raw_client_trips_the_listener
+  int  FAILED test_the_index_check_catches_a_tenant_index_not_led_by_org_id
+caught: yes
+
+## M3 (libs/py-data/tests_int/conftest.py): box 2: the guard fixture is not autouse
+unit: 238 passed in 7.39s
+int:  1 failed, 32 passed in 17.71s
+  int  FAILED test_every_integration_test_runs_under_the_safety_net_guard
+caught: yes
+
+## M4 (libs/py-data/tests_int/conftest.py): box 2: the listener is not registered globally
+unit: 238 passed in 1.45s
+int:  5 failed, 28 passed in 13.86s
+  int  FAILED test_a_client_made_inside_a_test_reports_to_the_listener
+  int  FAILED test_an_unscoped_find_through_a_leaked_client_trips_the_listener
+  int  FAILED test_an_unscoped_find_through_a_raw_client_trips_the_listener
+  int  FAILED test_the_index_check_catches_a_tenant_index_not_led_by_org_id
+  int  FAILED test_the_listener_is_registered_globally_before_any_client
+caught: yes
+
+## M5 (libs/py-data/src/onb_data/safety_net.py): box 2: the guard does not check after the test
+unit: 1 failed, 237 passed in 1.02s
+int:  33 passed in 10.63s
+  unit FAILED test_the_guard_fails_on_a_violation_sent_inside_it
+caught: yes
+
+## M6 (libs/py-data/src/onb_data/safety_net.py): box 3: a tenant index need not start with org_id
+unit: 2 failed, 236 passed in 0.80s
+int:  1 failed, 32 passed in 8.19s
+  unit FAILED test_an_unscoped_command_on_a_tenant_collection_is_flagged[createIndexes
+  unit FAILED test_the_id_index_is_the_only_index_not_led_by_org_id
+  int  FAILED test_the_index_check_catches_a_tenant_index_not_led_by_org_id
+caught: yes
+
+## M7 (libs/py-data/src/onb_data/safety_net.py): an org_id operator ($ne, $in, $exists) counts as scoped
+unit: 3 failed, 235 passed in 0.39s
+int:  33 passed in 6.18s
+  unit FAILED test_an_unscoped_command_on_a_tenant_collection_is_flagged[find
+caught: yes
+
+## M10 (libs/py-data/src/onb_data/safety_net.py): review fix: the update body is not checked
+unit: 9 failed, 229 passed in 2.62s
+int:  33 passed in 16.53s
+  unit FAILED test_an_unscoped_command_on_a_tenant_collection_is_flagged[findAndModify
+  unit FAILED test_an_unscoped_command_on_a_tenant_collection_is_flagged[pipeline
+  unit FAILED test_an_unscoped_command_on_a_tenant_collection_is_flagged[replacement
+  unit FAILED test_an_unscoped_command_on_a_tenant_collection_is_flagged[update
+  unit FAILED test_malformed_updates_and_views_are_flagged
+caught: yes
+
+## M11 (libs/py-data/src/onb_data/safety_net.py): review fix: database-level change streams pass
+unit: 2 failed, 236 passed in 1.00s
+int:  33 passed in 6.51s
+  unit FAILED test_a_cluster_wide_change_stream_is_flagged
+  unit FAILED test_an_unscoped_command_on_a_tenant_collection_is_flagged[db
+caught: yes
+
+## M12 (libs/py-data/src/onb_data/safety_net.py): review fix: explain is not unwrapped
+unit: 2 failed, 236 passed in 0.55s
+int:  33 passed in 5.47s
+  unit FAILED test_an_unscoped_command_on_a_tenant_collection_is_flagged[explain
+caught: yes
+
+## M8 (libs/py-data/src/onb_data/safety_net.py): cross-collection stages are not checked
+unit: 7 failed, 231 passed in 0.48s
+int:  33 passed in 6.90s
+  unit FAILED test_an_unscoped_command_on_a_tenant_collection_is_flagged[aggregate
+  unit FAILED test_an_unscoped_command_on_a_tenant_collection_is_flagged[db
+  unit FAILED test_an_unscoped_command_on_a_tenant_collection_is_flagged[lookup
+caught: yes
+
+## M9 (libs/py-data/src/onb_data/safety_net.py): allowing_unscoped never resets
+unit: 1 failed, 237 passed in 0.42s
+int:  33 passed in 6.17s
+  unit FAILED test_allowing_unscoped_is_explicit_and_scoped_to_the_block
+caught: yes
+
+worktree after all mutations: clean
