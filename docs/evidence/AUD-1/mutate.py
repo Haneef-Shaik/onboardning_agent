@@ -51,8 +51,8 @@ MUTATIONS = [
     (
         "M5 box 3: the record ignores the current span",
         f"{DATA}/audit.py",
-        '            "trace_id": self._trace_id(),',
-        '            "trace_id": None,',
+        "            trace_id=self._trace_id(),",
+        "            trace_id=None,",
     ),
     (
         "M6 box 3: an invalid span context still gives a trace id",
@@ -95,6 +95,36 @@ MUTATIONS = [
         f"{DATA}/audit.py",
         'sort=[("at", -1), ("_id", -1)]',
         'sort=[("at", 1), ("_id", 1)]',
+    ),
+    (
+        "M13 review: paging depth not capped in the data layer",
+        f"{DATA}/audit.py",
+        "    if skip > MAX_AUDIT_SKIP:",
+        "    if False:",
+    ),
+    (
+        "M14 review: paging depth not capped in the route",
+        f"{API}/audit/routes.py",
+        "    if (page - 1) * limit > MAX_AUDIT_SKIP:",
+        "    if False:",
+    ),
+    (
+        "M15 review: free-text targets accepted",
+        f"{DATA}/audit.py",
+        "    if not _TARGET.fullmatch(text):",
+        "    if False:",
+    ),
+    (
+        "M16 review: a unique index allowed on the audit log",
+        f"{DATA}/store.py",
+        "        if coll in APPEND_ONLY_COLLECTIONS and unique:",
+        "        if False:",
+    ),
+    (
+        "M17 review: a naive audit clock accepted",
+        f"{DATA}/audit.py",
+        '        "at": _aware(at, what="the audit clock"),',
+        '        "at": at,',
     ),
 ]
 

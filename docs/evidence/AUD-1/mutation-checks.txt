@@ -15,7 +15,7 @@ M4 box 1: the audit log hands out its repository
   caught: yes (1 failed)
     FAILED libs/py-data/tests/test_audit.py::test_the_audit_log_has_no_update_or_delete_path
 M5 box 3: the record ignores the current span
-  libs/py-data/src/onb_data/audit.py: '"trace_id": self._trace_id(),' -> '"trace_id": None,'
+  libs/py-data/src/onb_data/audit.py: 'trace_id=self._trace_id(),' -> 'trace_id=None,'
   caught: yes (2 failed)
     FAILED libs/py-data/tests/test_audit.py::test_a_record_carries_the_current_spans_trace_id
     FAILED libs/py-data/tests/test_audit.py::test_two_spans_give_two_trace_ids
@@ -60,7 +60,34 @@ M12 ordering: oldest first
   libs/py-data/src/onb_data/audit.py: 'sort=[("at", -1), ("_id", -1)]' -> 'sort=[("at", 1), ("_id", 1)]'
   caught: yes (1 failed)
     FAILED libs/py-data/tests/test_audit.py::test_list_sends_a_scoped_filter_newest_first_with_skip_and_limit
+M13 review: paging depth not capped in the data layer
+  libs/py-data/src/onb_data/audit.py: 'if skip > MAX_AUDIT_SKIP:' -> 'if False:'
+  caught: yes (2 failed)
+    FAILED libs/py-data/tests/test_audit.py::test_deep_pages_are_refused_before_the_driver
+    FAILED libs/py-data/tests/test_audit.py::test_the_in_memory_log_is_per_org_and_paged_like_the_real_one
+M14 review: paging depth not capped in the route
+  apps/api/src/onb_api/audit/routes.py: 'if (page - 1) * limit > MAX_AUDIT_SKIP:' -> 'if False:'
+  caught: yes (1 failed)
+    FAILED apps/api/tests/test_audit_route.py::test_bad_query_parameters_are_422[page+limit0]
+M15 review: free-text targets accepted
+  libs/py-data/src/onb_data/audit.py: 'if not _TARGET.fullmatch(text):' -> 'if False:'
+  caught: yes (7 failed)
+    FAILED libs/py-data/tests/test_audit.py::test_a_target_is_a_kind_and_an_id_with_no_free_text[hire:jane@example.com]
+    FAILED libs/py-data/tests/test_audit.py::test_a_target_is_a_kind_and_an_id_with_no_free_text[hire:h_1
+    FAILED libs/py-data/tests/test_audit.py::test_a_target_is_a_kind_and_an_id_with_no_free_text[no-kind]
+    FAILED libs/py-data/tests/test_audit.py::test_a_target_is_a_kind_and_an_id_with_no_free_text[:h_1]
+    FAILED libs/py-data/tests/test_audit.py::test_a_target_is_a_kind_and_an_id_with_no_free_text[Hire:h_1]
+    FAILED libs/py-data/tests/test_audit.py::test_a_target_is_a_kind_and_an_id_with_no_free_text[hire:]
+    ... and 1 more
+M16 review: a unique index allowed on the audit log
+  libs/py-data/src/onb_data/store.py: 'if coll in APPEND_ONLY_COLLECTIONS and unique:' -> 'if False:'
+  caught: yes (1 failed)
+    FAILED libs/py-data/tests/test_audit.py::test_a_unique_index_on_the_audit_log_is_refused
+M17 review: a naive audit clock accepted
+  libs/py-data/src/onb_data/audit.py: '"at": _aware(at, what="the audit clock"),' -> '"at": at,'
+  caught: yes (1 failed)
+    FAILED libs/py-data/tests/test_audit.py::test_a_naive_clock_is_refused
 
-12/12 mutations caught
+17/17 mutations caught
 worktree changes under libs/ and apps/ after all mutations: none
 exit=0
