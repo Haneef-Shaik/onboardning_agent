@@ -1,0 +1,223 @@
+==================================================================
+M1: box 3: remove the $match prepend from scoped_pipeline
+file: libs/py-data/src/onb_data/scoping.py
+-    return [{"$match": {ORG_FIELD: org_id}}, *check_pipeline(pipeline)]
++    return check_pipeline(pipeline)
+--- unit tests (libs/py-data/tests)
+FAILED libs/py-data/tests/test_repository.py::test_aggregate_prepends_org_match
+FAILED libs/py-data/tests/test_repository.py::test_aggregate_prepends_org_match_before_a_leading_sort
+FAILED libs/py-data/tests/test_repository.py::test_aggregate_of_an_empty_pipeline_is_still_scoped
+3 failed, 116 passed in 0.18s
+--- integration tests (libs/py-data/tests_int, compose Mongo)
+FAILED libs/py-data/tests_int/test_tenant_repository.py::test_reads_see_only_the_own_org
+FAILED libs/py-data/tests_int/test_tenant_repository.py::test_an_aggregate_starting_with_sort_and_group_sees_only_the_own_org
+2 failed, 22 passed in 3.04s
+restored: libs/py-data/src/onb_data/scoping.py (0 files differ)
+==================================================================
+M2: trap: $match appended last instead of first (after a leading $sort)
+file: libs/py-data/src/onb_data/scoping.py
+-    return [{"$match": {ORG_FIELD: org_id}}, *check_pipeline(pipeline)]
++    return [*check_pipeline(pipeline), {"$match": {ORG_FIELD: org_id}}]
+--- unit tests (libs/py-data/tests)
+FAILED libs/py-data/tests/test_repository.py::test_aggregate_prepends_org_match
+FAILED libs/py-data/tests/test_repository.py::test_aggregate_prepends_org_match_before_a_leading_sort
+2 failed, 117 passed in 0.23s
+restored: libs/py-data/src/onb_data/scoping.py (0 files differ)
+==================================================================
+M3: filters no longer get org_id
+file: libs/py-data/src/onb_data/scoping.py
+-    return {**base, ORG_FIELD: org_id}
++    return base
+--- unit tests (libs/py-data/tests)
+FAILED libs/py-data/tests/test_repository.py::test_find_adds_org_id_to_the_filter_and_leaves_the_caller_filter_alone
+FAILED libs/py-data/tests/test_repository.py::test_find_with_no_filter_is_scoped_to_the_org
+FAILED libs/py-data/tests/test_repository.py::test_find_one_and_count_are_scoped
+FAILED libs/py-data/tests/test_repository.py::test_get_looks_up_by_id_and_org
+FAILED libs/py-data/tests/test_repository.py::test_update_by_id_and_delete_by_id_raise_not_found_for_a_foreign_id
+FAILED libs/py-data/tests/test_repository.py::test_update_by_id_and_delete_by_id_succeed_for_an_own_id
+FAILED libs/py-data/tests/test_repository.py::test_update_is_scoped_and_reports_its_outcome
+FAILED libs/py-data/tests/test_repository.py::test_an_upsert_sets_org_id_on_insert
+8 failed, 111 passed in 0.23s
+--- integration tests (libs/py-data/tests_int, compose Mongo)
+FAILED libs/py-data/tests_int/test_tenant_repository.py::test_reads_see_only_the_own_org
+FAILED libs/py-data/tests_int/test_tenant_repository.py::test_a_foreign_id_is_not_found_for_get_update_and_delete
+FAILED libs/py-data/tests_int/test_tenant_repository.py::test_writes_land_in_the_own_org_only
+3 failed, 21 passed in 3.00s
+restored: libs/py-data/src/onb_data/scoping.py (0 files differ)
+==================================================================
+M4: no context falls back to a default org instead of raising
+file: libs/py-data/src/onb_data/context.py
+-        raise NoTenantContextError("no tenant context: wrap the call in tenant_scope(org_id)")
++        return TenantContext("org_default")
+--- unit tests (libs/py-data/tests)
+FAILED libs/py-data/tests/test_context.py::test_there_is_no_tenant_context_by_default
+FAILED libs/py-data/tests/test_context.py::test_tenant_scope_sets_the_context_and_resets_it_on_exit
+FAILED libs/py-data/tests/test_context.py::test_tenant_scope_resets_even_when_the_body_raises
+FAILED libs/py-data/tests/test_repository.py::test_every_operation_raises_without_a_tenant_context[aggregate]
+FAILED libs/py-data/tests/test_repository.py::test_every_operation_raises_without_a_tenant_context[count]
+FAILED libs/py-data/tests/test_repository.py::test_every_operation_raises_without_a_tenant_context[delete_by_id]
+FAILED libs/py-data/tests/test_repository.py::test_every_operation_raises_without_a_tenant_context[delete_one]
+FAILED libs/py-data/tests/test_repository.py::test_every_operation_raises_without_a_tenant_context[find]
+FAILED libs/py-data/tests/test_repository.py::test_every_operation_raises_without_a_tenant_context[find_one]
+FAILED libs/py-data/tests/test_repository.py::test_every_operation_raises_without_a_tenant_context[get]
+FAILED libs/py-data/tests/test_repository.py::test_every_operation_raises_without_a_tenant_context[insert_many]
+FAILED libs/py-data/tests/test_repository.py::test_every_operation_raises_without_a_tenant_context[insert_one]
+FAILED libs/py-data/tests/test_repository.py::test_every_operation_raises_without_a_tenant_context[update_by_id]
+FAILED libs/py-data/tests/test_repository.py::test_every_operation_raises_without_a_tenant_context[update_many]
+FAILED libs/py-data/tests/test_repository.py::test_every_operation_raises_without_a_tenant_context[update_one]
+15 failed, 104 passed in 0.11s
+--- integration tests (libs/py-data/tests_int, compose Mongo)
+FAILED libs/py-data/tests_int/test_tenant_repository.py::test_every_operation_raises_without_a_context_and_changes_nothing[aggregate]
+FAILED libs/py-data/tests_int/test_tenant_repository.py::test_every_operation_raises_without_a_context_and_changes_nothing[count]
+FAILED libs/py-data/tests_int/test_tenant_repository.py::test_every_operation_raises_without_a_context_and_changes_nothing[delete_by_id]
+FAILED libs/py-data/tests_int/test_tenant_repository.py::test_every_operation_raises_without_a_context_and_changes_nothing[delete_one]
+FAILED libs/py-data/tests_int/test_tenant_repository.py::test_every_operation_raises_without_a_context_and_changes_nothing[find]
+FAILED libs/py-data/tests_int/test_tenant_repository.py::test_every_operation_raises_without_a_context_and_changes_nothing[find_one]
+FAILED libs/py-data/tests_int/test_tenant_repository.py::test_every_operation_raises_without_a_context_and_changes_nothing[get]
+FAILED libs/py-data/tests_int/test_tenant_repository.py::test_every_operation_raises_without_a_context_and_changes_nothing[insert_many]
+FAILED libs/py-data/tests_int/test_tenant_repository.py::test_every_operation_raises_without_a_context_and_changes_nothing[insert_one]
+FAILED libs/py-data/tests_int/test_tenant_repository.py::test_every_operation_raises_without_a_context_and_changes_nothing[update_by_id]
+FAILED libs/py-data/tests_int/test_tenant_repository.py::test_every_operation_raises_without_a_context_and_changes_nothing[update_many]
+FAILED libs/py-data/tests_int/test_tenant_repository.py::test_every_operation_raises_without_a_context_and_changes_nothing[update_one]
+12 failed, 12 passed in 2.86s
+restored: libs/py-data/src/onb_data/context.py (0 files differ)
+==================================================================
+M5: NotFound becomes a permission error
+file: libs/py-data/src/onb_data/errors.py
+-class NotFoundError(DataAccessError):
++class NotFoundError(DataAccessError, PermissionError):
+--- unit tests (libs/py-data/tests)
+FAILED libs/py-data/tests/test_repository.py::test_a_foreign_id_raises_not_found_not_a_permission_error
+1 failed, 118 passed in 0.14s
+--- integration tests (libs/py-data/tests_int, compose Mongo)
+FAILED libs/py-data/tests_int/test_tenant_repository.py::test_a_foreign_id_is_not_found_for_get_update_and_delete
+1 failed, 23 passed in 2.95s
+restored: libs/py-data/src/onb_data/errors.py (0 files differ)
+==================================================================
+M6: get returns None for a foreign id instead of raising NotFound
+file: libs/py-data/src/onb_data/repository.py
+-        if found is None:
+-            raise self._not_found()
+-        return found
++        return found  # type: ignore[return-value]
+--- unit tests (libs/py-data/tests)
+FAILED libs/py-data/tests/test_repository.py::test_a_foreign_id_raises_not_found_not_a_permission_error
+FAILED libs/py-data/tests/test_store.py::test_a_global_lookup_of_a_missing_id_raises_not_found
+2 failed, 117 passed in 0.16s
+--- integration tests (libs/py-data/tests_int, compose Mongo)
+FAILED libs/py-data/tests_int/test_tenant_repository.py::test_a_foreign_id_is_not_found_for_get_update_and_delete
+1 failed, 23 passed in 2.89s
+restored: libs/py-data/src/onb_data/repository.py (0 files differ)
+==================================================================
+M7: trap: an upsert no longer sets org_id via $setOnInsert
+file: libs/py-data/src/onb_data/scoping.py
+-    if not upsert:
+-        return checked
++    return checked
+--- unit tests (libs/py-data/tests)
+FAILED libs/py-data/tests/test_repository.py::test_an_upsert_sets_org_id_on_insert
+FAILED libs/py-data/tests/test_repository.py::test_an_upsert_keeps_the_caller_set_on_insert_fields
+2 failed, 117 passed in 0.09s
+--- integration tests (libs/py-data/tests_int, compose Mongo)
+24 passed in 2.90s
+restored: libs/py-data/src/onb_data/scoping.py (0 files differ)
+==================================================================
+M8: updates may $set / $unset / $rename org_id
+file: libs/py-data/src/onb_data/scoping.py
+-        if tenant and any(_touches_org(path) for path in [*fields, *renamed_to]):
++        if False and any(_touches_org(path) for path in [*fields, *renamed_to]):
+--- unit tests (libs/py-data/tests)
+FAILED libs/py-data/tests/test_repository.py::test_an_update_that_touches_org_id_is_refused[{'$set': {'org_id': 'org_b'}}]
+FAILED libs/py-data/tests/test_repository.py::test_an_update_that_touches_org_id_is_refused[{'$set': {'org_id': 'org_a'}}]
+FAILED libs/py-data/tests/test_repository.py::test_an_update_that_touches_org_id_is_refused[{'$set': {'org_id.x': 1}}]
+FAILED libs/py-data/tests/test_repository.py::test_an_update_that_touches_org_id_is_refused[{'$unset': {'org_id': ''}}]
+FAILED libs/py-data/tests/test_repository.py::test_an_update_that_touches_org_id_is_refused[{'$rename': {'org_id': 'was_org'}}]
+FAILED libs/py-data/tests/test_repository.py::test_an_update_that_touches_org_id_is_refused[{'$rename': {'tenant': 'org_id'}}]
+FAILED libs/py-data/tests/test_repository.py::test_an_update_that_touches_org_id_is_refused[{'$setOnInsert': {'org_id': 'org_b'}}]
+FAILED libs/py-data/tests/test_repository.py::test_an_update_that_touches_org_id_is_refused[{'$inc': {'n': 1}, '$set': {'org_id': 'org_b'}}]
+8 failed, 111 passed in 0.10s
+restored: libs/py-data/src/onb_data/scoping.py (0 files differ)
+==================================================================
+M9: inserts no longer set org_id (and accept another org)
+file: libs/py-data/src/onb_data/scoping.py
+-    if ORG_FIELD in document and document[ORG_FIELD] != org_id:
+-        raise TenantViolationError("a document may not carry another org_id")
+-    return {**document, ORG_FIELD: org_id}
++    return dict(document)
+--- unit tests (libs/py-data/tests)
+FAILED libs/py-data/tests/test_repository.py::test_insert_sets_org_id_without_mutating_the_caller_document
+FAILED libs/py-data/tests/test_repository.py::test_insert_many_sets_org_id_on_every_document
+FAILED libs/py-data/tests/test_repository.py::test_inserting_a_document_of_another_org_is_refused
+3 failed, 116 passed in 0.11s
+--- integration tests (libs/py-data/tests_int, compose Mongo)
+FAILED libs/py-data/tests_int/test_tenant_repository.py::test_writes_land_in_the_own_org_only
+FAILED libs/py-data/tests_int/test_tenant_repository.py::test_an_org_prefixed_unique_index_allows_the_same_value_in_two_orgs
+2 failed, 22 passed in 2.84s
+restored: libs/py-data/src/onb_data/scoping.py (0 files differ)
+==================================================================
+M10: a filter may name another org_id
+file: libs/py-data/src/onb_data/scoping.py
+-    if ORG_FIELD in base and base[ORG_FIELD] != org_id:
+-        raise TenantViolationError("a filter may not choose org_id: it comes from the tenant context")
+--- unit tests (libs/py-data/tests)
+FAILED libs/py-data/tests/test_repository.py::test_a_filter_naming_another_org_is_refused
+FAILED libs/py-data/tests/test_repository.py::test_a_filter_with_an_operator_on_org_id_is_refused
+2 failed, 117 passed in 0.15s
+restored: libs/py-data/src/onb_data/scoping.py (0 files differ)
+==================================================================
+M11: pipelines may use $lookup / $unionWith / $out / $merge
+file: libs/py-data/src/onb_data/scoping.py
+-    forbidden = _find_cross_collection_stage(stages)
++    forbidden = None
+--- unit tests (libs/py-data/tests)
+FAILED libs/py-data/tests/test_repository.py::test_aggregate_refuses_stages_that_read_or_write_other_collections[$lookup]
+FAILED libs/py-data/tests/test_repository.py::test_aggregate_refuses_stages_that_read_or_write_other_collections[$graphLookup]
+FAILED libs/py-data/tests/test_repository.py::test_aggregate_refuses_stages_that_read_or_write_other_collections[$unionWith]
+FAILED libs/py-data/tests/test_repository.py::test_aggregate_refuses_stages_that_read_or_write_other_collections[$out]
+FAILED libs/py-data/tests/test_repository.py::test_aggregate_refuses_stages_that_read_or_write_other_collections[$merge]
+FAILED libs/py-data/tests/test_repository.py::test_aggregate_refuses_stages_that_read_or_write_other_collections[$facet]
+FAILED libs/py-data/tests/test_store.py::test_global_pipelines_still_refuse_cross_collection_stages
+7 failed, 112 passed in 0.10s
+restored: libs/py-data/src/onb_data/scoping.py (0 files differ)
+==================================================================
+M12: tenant indexes need not start with org_id
+file: libs/py-data/src/onb_data/scoping.py
+-    if tenant and fields[0] != ORG_FIELD:
++    if False:
+--- unit tests (libs/py-data/tests)
+FAILED libs/py-data/tests/test_store.py::test_a_tenant_index_must_start_with_org_id
+1 failed, 118 passed in 0.08s
+restored: libs/py-data/src/onb_data/scoping.py (0 files differ)
+==================================================================
+M13: a global collection is handed out as a tenant one
+file: libs/py-data/src/onb_data/store.py
+-        if name in GLOBAL_COLLECTIONS:
++        if False:
+--- unit tests (libs/py-data/tests)
+FAILED libs/py-data/tests/test_store.py::test_a_global_collection_is_never_handed_out_as_a_tenant_one[agent_registry]
+FAILED libs/py-data/tests/test_store.py::test_a_global_collection_is_never_handed_out_as_a_tenant_one[orgs]
+FAILED libs/py-data/tests/test_store.py::test_a_global_collection_is_never_handed_out_as_a_tenant_one[tool_catalog]
+3 failed, 116 passed in 0.12s
+restored: libs/py-data/src/onb_data/store.py (0 files differ)
+==================================================================
+M14: box 4: repository.py imports AsyncCollection at runtime (a public module attribute)
+file: libs/py-data/src/onb_data/repository.py
+-if TYPE_CHECKING:
+-    from pymongo.asynchronous.collection import AsyncCollection
++from pymongo.asynchronous.collection import AsyncCollection
+--- unit tests (libs/py-data/tests)
+FAILED libs/py-data/tests/test_exports.py::test_no_module_exposes_a_collection_database_or_client[onb_data.repository]
+1 failed, 118 passed in 0.09s
+restored: libs/py-data/src/onb_data/repository.py (0 files differ)
+==================================================================
+M15: box 4: DataStore exposes its database publicly
+file: libs/py-data/src/onb_data/store.py
+-    __slots__ = ("_client", "_database")
++    __slots__ = ("_client", "_database", "database")
++        self.database = database
+--- unit tests (libs/py-data/tests)
+FAILED libs/py-data/tests/test_exports.py::test_a_connected_store_exposes_no_collection_database_or_client
+1 failed, 118 passed in 0.14s
+restored: libs/py-data/src/onb_data/store.py (0 files differ)
+==================================================================
+worktree diff after all mutations: 0 files differ
