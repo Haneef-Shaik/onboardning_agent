@@ -1,0 +1,81 @@
+# F-4 mutation checks at 6591ae3 · 2026-11-10T04:50:22Z · ob-f-4 compose stack up for the live ones
+$ uv run --frozen python docs/evidence/F-4/mutate.py   (exit 0 = every mutation caught and every file restored)
+exit=0
+
+## M1 export stage runs before the hooks (pipeline.on_end order swapped)
+   file: libs/py-telemetry/src/onb_telemetry/pipeline.py · live stack: no
+   FAILED libs/py-telemetry/tests/test_pipeline.py::test_registered_processor_sees_every_span_before_export
+   FAILED libs/py-telemetry/tests/test_pipeline.py::test_spans_from_many_threads_all_pass_the_hook_first
+   2 failed in 0.08s
+   caught: yes · restored byte-for-byte: yes
+
+## M2 fail-open: a raising hook no longer stops export (return removed)
+   file: libs/py-telemetry/src/onb_telemetry/pipeline.py · live stack: no
+   ERROR    onb_telemetry:pipeline.py:59 span hook ExplodingHook failed; span 'child-0' dropped, not exported
+       raise RuntimeError("redaction failed")
+   RuntimeError: redaction failed
+   ERROR    onb_telemetry:pipeline.py:59 span hook ExplodingHook failed; span 'root' dropped, not exported
+       raise RuntimeError("redaction failed")
+   RuntimeError: redaction failed
+   FAILED libs/py-telemetry/tests/test_pipeline.py::test_a_failing_hook_stops_the_span_being_exported
+   1 failed in 0.07s
+   caught: yes · restored byte-for-byte: yes
+
+## M3 hooks registered on the provider after the exporter (SDK add_span_processor order)
+   file: libs/py-telemetry/src/onb_telemetry/setup.py · live stack: no
+   FAILED libs/py-telemetry/tests/test_pipeline.py::test_registered_processor_sees_every_span_before_export
+   1 failed, 1 passed in 0.06s
+   caught: yes · restored byte-for-byte: yes
+
+## M4 continue_from ignores the stored traceparent
+   file: libs/py-telemetry/src/onb_telemetry/propagation.py · live stack: no
+   FAILED libs/py-telemetry/tests/test_propagation.py::test_span_continued_from_stored_traceparent_carries_original_trace_id
+   1 failed in 0.06s
+   caught: yes · restored byte-for-byte: yes
+
+## M5 continue_from adopts the ambient context instead of a fresh root for a bad traceparent
+   file: libs/py-telemetry/src/onb_telemetry/propagation.py · live stack: no
+   FAILED libs/py-telemetry/tests/test_propagation.py::test_bad_traceparent_never_adopts_the_ambient_span[None]
+   FAILED libs/py-telemetry/tests/test_propagation.py::test_bad_traceparent_never_adopts_the_ambient_span[garbage]
+   2 failed in 0.06s
+   caught: yes · restored byte-for-byte: yes
+
+## M6 content capture on by default
+   file: libs/py-telemetry/src/onb_telemetry/settings.py · live stack: no
+   FAILED libs/py-telemetry/tests/test_settings.py::test_defaults_export_otlp_and_capture_no_content
+   1 failed in 0.01s
+   caught: yes · restored byte-for-byte: yes
+
+## M7 GenAI content switches no longer forced off
+   file: libs/py-telemetry/src/onb_telemetry/setup.py · live stack: no
+   FAILED libs/py-telemetry/tests/test_setup.py::test_content_capture_is_off_by_default_for_genai_instrumentation
+   1 failed, 1 warning in 0.17s
+   caught: yes · restored byte-for-byte: yes
+
+## M8 a foreign global provider is silently accepted
+   file: libs/py-telemetry/src/onb_telemetry/setup.py · live stack: no
+   FAILED libs/py-telemetry/tests/test_setup.py::test_init_refuses_when_another_provider_owns_the_global
+   1 failed, 1 warning in 0.13s
+   caught: yes · restored byte-for-byte: yes
+
+## M9 no auto-instrumentation (FastAPI/httpx/PyMongo)
+   file: libs/py-telemetry/src/onb_telemetry/setup.py · live stack: yes
+   FAILED libs/py-telemetry/tests/test_setup.py::test_fastapi_app_created_after_init_gets_server_spans
+   FAILED libs/py-telemetry/tests/test_setup.py::test_httpx_calls_get_client_spans
+   FAILED libs/py-telemetry/tests_int/test_jaeger_roundtrip.py::test_fastapi_span_is_returned_by_jaeger_through_the_collector
+   3 failed, 1 warning in 2.89s
+   caught: yes · restored byte-for-byte: yes
+
+## M10 OTLP exporter replaced by none (spans never leave the process)
+   file: libs/py-telemetry/src/onb_telemetry/setup.py · live stack: yes
+   FAILED libs/py-telemetry/tests/test_setup.py::test_otlp_exporter_is_batched_by_default
+   FAILED libs/py-telemetry/tests_int/test_jaeger_roundtrip.py::test_fastapi_span_is_returned_by_jaeger_through_the_collector
+   2 failed, 1 warning in 31.56s
+   caught: yes · restored byte-for-byte: yes
+
+## M11 test reset keeps PyMongo's stale command listener
+   file: libs/py-telemetry/src/onb_telemetry/testing.py · live stack: yes
+   FAILED libs/py-telemetry/tests_int/test_jaeger_roundtrip.py::test_pymongo_commands_get_spans
+   1 failed, 2 passed, 1 warning in 3.55s
+   caught: yes · restored byte-for-byte: yes
+

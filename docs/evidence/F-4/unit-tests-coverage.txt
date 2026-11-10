@@ -1,0 +1,67 @@
+# F-4 boxes 1, 3, 4: py-telemetry unit tests and coverage at 6591ae3 · 2026-11-10T04:50:49Z
+$ node_modules/.bin/nx run py-telemetry:test --skip-nx-cache --output-style=static
+# (runs: uv run --frozen pytest libs/py-telemetry/tests ... --cov=onb_telemetry --cov-fail-under=80)
+exit=0
+
+
+> nx run py-telemetry:test
+
+> uv run --frozen pytest libs/py-telemetry/tests -o cache_dir=.pytest_cache/py-telemetry --cov=onb_telemetry --cov-report=term-missing --cov-fail-under=80
+
+============================= test session starts ==============================
+platform darwin -- Python 3.12.13, pytest-9.2.0, pluggy-1.7.0
+cachedir: .pytest_cache/py-telemetry
+rootdir: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-f-4
+configfile: pyproject.toml
+plugins: cov-7.1.0, anyio-4.16.0
+collected 65 items
+
+libs/py-telemetry/tests/test_attributes.py ........                      [ 12%]
+libs/py-telemetry/tests/test_onb_telemetry.py .                          [ 13%]
+libs/py-telemetry/tests/test_pipeline.py ..........                      [ 29%]
+libs/py-telemetry/tests/test_propagation.py ...........                  [ 46%]
+libs/py-telemetry/tests/test_settings.py ..................              [ 73%]
+libs/py-telemetry/tests/test_setup.py .................                  [100%]
+
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-f-4/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+================================ tests coverage ================================
+______________ coverage: platform darwin, python 3.12.13-final-0 _______________
+
+Name                                                 Stmts   Miss  Cover   Missing
+----------------------------------------------------------------------------------
+libs/py-telemetry/src/onb_telemetry/__init__.py          6      0   100%
+libs/py-telemetry/src/onb_telemetry/attributes.py       20      0   100%
+libs/py-telemetry/src/onb_telemetry/pipeline.py         47      1    98%   32
+libs/py-telemetry/src/onb_telemetry/propagation.py      25      0   100%
+libs/py-telemetry/src/onb_telemetry/settings.py         49      0   100%
+libs/py-telemetry/src/onb_telemetry/setup.py            99      2    98%   167, 170
+libs/py-telemetry/src/onb_telemetry/testing.py          40      1    98%   32
+----------------------------------------------------------------------------------
+TOTAL                                                  286      4    99%
+Required test coverage of 80% reached. Total coverage: 98.60%
+======================== 65 passed, 1 warning in 1.79s =========================
+
+
+
+ NX   Successfully ran target test for project py-telemetry
+
+
+  Run duration:      3.1s
+  Cache:             Skipped (--skip-nx-cache)
+  Critical path:     3.1s (1 task)
+  Recoverable time:  <1ms
+
+
+# Named box tests, verbose (box 1: carries_original_trace_id; box 3: sees_every_span_before_export, many_threads, failing_hook_stops)
+$ uv run --frozen pytest libs/py-telemetry/tests -p no:cacheprovider -v -k "carries_original_trace_id or sees_every_span_before_export or many_threads_all_pass_the_hook_first or failing_hook_stops"
+exit=0
+libs/py-telemetry/tests/test_pipeline.py::test_registered_processor_sees_every_span_before_export PASSED [ 25%]
+libs/py-telemetry/tests/test_pipeline.py::test_spans_from_many_threads_all_pass_the_hook_first PASSED [ 50%]
+libs/py-telemetry/tests/test_pipeline.py::test_a_failing_hook_stops_the_span_being_exported PASSED [ 75%]
+libs/py-telemetry/tests/test_propagation.py::test_span_continued_from_stored_traceparent_carries_original_trace_id PASSED [100%]
+================= 4 passed, 61 deselected, 1 warning in 0.17s ==================
