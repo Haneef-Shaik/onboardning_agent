@@ -10,7 +10,8 @@ from __future__ import annotations
 import asyncio
 import os
 import uuid
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
+from contextlib import AbstractContextManager
 from datetime import UTC, datetime, timedelta
 from typing import Any
 from urllib.parse import quote_plus
@@ -25,6 +26,8 @@ from opentelemetry.sdk.trace import TracerProvider
 from pymongo import MongoClient
 
 Client = MongoClient[dict[str, Any]]
+# The `unscoped` fixture (T-2 safety net): `with unscoped("why"):` for a root read-back across orgs.
+Unscoped = Callable[[str], AbstractContextManager[None]]
 T0 = datetime(2026, 11, 1, 8, 0, tzinfo=UTC)
 ROWS = [
     ("org_acme", Actor.user("u_acme_hr1"), "pii.reveal", "hire:h_1/pan", AuditOutcome.SUCCESS),
@@ -81,9 +84,12 @@ def api(scratch: tuple[str, str]) -> Iterator[TestClient]:
         yield client
 
 
-def test_records_land_in_mongo_with_org_and_the_spans_trace_id(scratch: tuple[str, str], root_client: Client) -> None:
+def test_records_land_in_mongo_with_org_and_the_spans_trace_id(
+    scratch: tuple[str, str], root_client: Client, unscoped: Unscoped
+) -> None:
     trace_ids = _write(scratch)
-    stored = list(root_client[scratch[1]]["audit_log"].find({}, sort=[("at", 1)]))
+    with unscoped("root read-back of both orgs' audit records proves each landed with its own org and trace id"):
+        stored = list(root_client[scratch[1]]["audit_log"].find({}, sort=[("at", 1)]))
     assert [(d["org_id"], d["action"]) for d in stored] == [(row[0], row[2]) for row in ROWS]
     assert [d["trace_id"] for d in stored] == trace_ids
     assert len(set(trace_ids)) == len(ROWS)
