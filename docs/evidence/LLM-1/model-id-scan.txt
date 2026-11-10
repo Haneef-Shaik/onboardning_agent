@@ -1,4 +1,4 @@
-# 2026-11-10T05:38:16Z · goal/llm-1-llm-connectors @ 2c48212
+# 2026-11-10T05:43:17Z · goal/llm-1-llm-connectors @ 053b5e1
 PATTERN='(^|[^a-z0-9_])((us|eu|apac|global)\.)?(anthropic|amazon|meta|mistral|cohere|ai21|deepseek|qwen|writer)\.[a-z0-9-]+-v?[0-9]|(^|[^a-z0-9_])claude-(instant|[0-9]|opus|sonnet|haiku)[a-z0-9.-]*|(^|[^a-z0-9_])gpt-[0-9o][a-z0-9.-]*|(^|[^a-z0-9_])gemini-[0-9][a-z0-9.-]*|(^|[^a-z0-9_])llama-?[0-9][a-z0-9.-]*'
 
 $ git grep -nIiE "$PATTERN" -- . ':!config/' ':!.env.example' ':!**/tests/**' ':!**/tests_int/**'
