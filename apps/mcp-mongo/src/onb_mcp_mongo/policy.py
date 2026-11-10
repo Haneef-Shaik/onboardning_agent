@@ -24,6 +24,7 @@ __all__ = [
     "check_update_operators",
     "check_writable",
     "decode_ids",
+    "reject_id",
     "reject_org_id",
 ]
 
@@ -76,6 +77,13 @@ def check_pipeline(pipeline: Sequence[Mapping[str, Any]]) -> None:
             raise ToolRejectedError("invalid_stage", "each pipeline stage must be one $stage operator")
         if next(iter(stage)) not in ALLOWED_STAGES:
             raise ToolRejectedError("stage_not_allowed", "pipeline stage is not on the allowlist")
+
+
+def reject_id(document: Mapping[str, Any]) -> None:
+    """The server assigns `_id`. `_id` is unique across every org, so an agent-chosen one would
+    reveal whether another org already uses it (duplicate key) and could squat ids ahead of it."""
+    if "_id" in document:
+        raise ToolRejectedError("id_not_allowed", "document may not set _id: the server assigns it")
 
 
 def check_update_operators(update: Mapping[str, Any]) -> None:

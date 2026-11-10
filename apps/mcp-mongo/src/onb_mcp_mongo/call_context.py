@@ -1,8 +1,9 @@
 """The call context the MCP hub signs for every call it forwards to mcp-mongo (PRD §7.4, §7.5).
 
 The hub verifies the agent token and the manifest, then sends one short-lived HS256 JWS in the
-`X-Onb-Call-Context` header: `org_id`, `agent`, `run_id` and the agent's read and write
-collections. It is the only source of tenant scope here; tool arguments never carry it.
+`X-Onb-Call-Context` header: `org_id`, `agent`, `run_id`, the `tool` being called and the agent's
+read and write collections. A context authorises only the tool it names. It is the only source of
+tenant scope here; tool arguments never carry it.
 """
 
 from __future__ import annotations
@@ -32,16 +33,19 @@ HEADER = "x-onb-call-context"
 ISSUER = "mcp-hub"
 AUDIENCE = "mcp-mongo"
 ALGORITHM = "HS256"
-# One forwarded call, not a session: a context lives at most five minutes.
-MAX_LIFETIME_S = 300
-DEFAULT_LIFETIME_S = 60
+# One forwarded call, not a session: a context names one tool and lives at most a minute.
+MAX_LIFETIME_S = 60
+DEFAULT_LIFETIME_S = 30
+# Tolerated clock difference between the hub and this server.
+LEEWAY_S = 5
 MIN_KEY_LENGTH = 32
 
 _ID = re.compile(r"[A-Za-z0-9_-]{1,128}")
 _AGENT = re.compile(r"[A-Za-z0-9_.-]{1,128}")
+_TOOL = re.compile(r"[a-z][a-z0-9_]{0,63}")
 COLLECTION_PATTERN = r"^[A-Za-z][A-Za-z0-9_]{0,63}$"
 _COLLECTION = re.compile(COLLECTION_PATTERN)
-_REQUIRED = ["exp", "iat", "iss", "aud", "org_id", "agent", "run_id", "collections"]
+_REQUIRED = ["exp", "iat", "iss", "aud", "org_id", "agent", "run_id", "tool", "collections"]
 
 
 class CallContextError(Exception):
@@ -53,6 +57,7 @@ class CallContext:
     org_id: str
     agent: str
     run_id: str
+    tool: str
     read: frozenset[str]
     write: frozenset[str]
 
@@ -90,6 +95,7 @@ def _from_claims(claims: Mapping[str, Any]) -> CallContext:
         org_id=_text(claims, "org_id", _ID),
         agent=_text(claims, "agent", _AGENT),
         run_id=_text(claims, "run_id", _ID),
+        tool=_text(claims, "tool", _TOOL),
         read=_collections(collections.get("read")),
         write=_collections(collections.get("write")),
     )
@@ -107,6 +113,7 @@ def verify_call_context(token: str | None, key: str) -> CallContext:
             algorithms=[ALGORITHM],
             audience=AUDIENCE,
             issuer=ISSUER,
+            leeway=LEEWAY_S,
             options={"require": _REQUIRED},
         )
     except jwt.PyJWTError as exc:
@@ -132,6 +139,7 @@ def sign_call_context(ctx: CallContext, key: str, *, lifetime_s: int = DEFAULT_L
         "org_id": ctx.org_id,
         "agent": ctx.agent,
         "run_id": ctx.run_id,
+        "tool": ctx.tool,
         "collections": {"read": _sorted(ctx.read), "write": _sorted(ctx.write)},
     }
     return jwt.encode(claims, key, algorithm=ALGORITHM)

@@ -102,6 +102,7 @@ async def aggregate(
 async def insert_one(store: DataStore, ctx: CallContext, *, collection: str, document: Document) -> InsertResult:
     policy.check_writable(ctx, collection)
     policy.reject_org_id(document, "document")
+    policy.reject_id(document)
     with tenant_scope(ctx.org_id):
         inserted = await store.tenant(collection).insert_one(policy.decode_ids(document))
     return InsertResult(inserted_id=str(inserted), count=1)

@@ -25,6 +25,7 @@ def _context(**overrides: object) -> CallContext:
         "org_id": "org_a",
         "agent": "db_agent",
         "run_id": "run_1",
+        "tool": "find",
         "read": frozenset({"new_hires", "run_tasks"}),
         "write": frozenset({"run_tasks"}),
     }
@@ -46,6 +47,7 @@ def _claims(**overrides: object) -> dict[str, object]:
         "org_id": "org_a",
         "agent": "db_agent",
         "run_id": "run_1",
+        "tool": "find",
         "collections": {"read": ["new_hires"], "write": []},
     }
     claims.update(overrides)
@@ -75,13 +77,18 @@ def test_an_expired_context_is_refused() -> None:
         verify_call_context(_raw_token(_claims(iat=past - 60, exp=past)), KEY)
 
 
+def test_a_few_seconds_of_clock_skew_are_tolerated() -> None:
+    now = int(time.time())
+    assert verify_call_context(_raw_token(_claims(iat=now + 3, exp=now + 60)), KEY).org_id == "org_a"
+
+
 def test_a_context_living_longer_than_the_maximum_is_refused() -> None:
     now = int(time.time())
     with pytest.raises(CallContextError):
         verify_call_context(_raw_token(_claims(iat=now, exp=now + MAX_LIFETIME_S + 1)), KEY)
 
 
-@pytest.mark.parametrize("missing", ["exp", "iat", "iss", "aud", "org_id", "agent", "run_id", "collections"])
+@pytest.mark.parametrize("missing", ["exp", "iat", "iss", "aud", "org_id", "agent", "run_id", "tool", "collections"])
 def test_a_context_missing_a_claim_is_refused(missing: str) -> None:
     claims = _claims()
     del claims[missing]
@@ -110,6 +117,8 @@ def test_an_unsigned_context_is_refused() -> None:
         {"agent": ""},
         {"agent": 7},
         {"run_id": ""},
+        {"tool": ""},
+        {"tool": "drop$"},
         {"collections": {"read": "new_hires", "write": []}},
         {"collections": {"read": ["$cmd"], "write": []}},
         {"collections": {"read": [], "write": ["system.users"]}},

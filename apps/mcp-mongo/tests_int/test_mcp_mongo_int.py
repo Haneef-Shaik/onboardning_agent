@@ -4,6 +4,7 @@ MongoDB (MCP-1 box 1), plus the limit, org_id and span rules end to end (boxes 2
 from __future__ import annotations
 
 import asyncio
+import json
 from collections.abc import Awaitable, Callable
 from typing import Any
 
@@ -22,22 +23,28 @@ TOOLS = {"list_collections", "find", "count", "aggregate", "insert_one", "update
 CONTENT = "Zq7-int-document-content"
 
 
-def _ctx(org_id: str) -> CallContext:
+def _ctx(org_id: str, tool: str) -> CallContext:
     return CallContext(
         org_id=org_id,
         agent="db_agent",
         run_id=f"run_{org_id}",
+        tool=tool,
         read=frozenset({"new_hires"}),
         write=frozenset({"run_tasks"}),
     )
 
 
 def _session[T](server: McpServer, org_id: str, fn: Callable[[ClientSession], Awaitable[T]]) -> T:
-    headers = {HEADER: sign_call_context(_ctx(org_id), server.key)}
+    """Like the hub, sign a fresh context for each `tools/call`, naming that tool."""
+
+    async def sign(request: httpx.Request) -> None:
+        body = json.loads(request.content or b"{}")
+        if isinstance(body, dict) and body.get("method") == "tools/call":
+            request.headers[HEADER] = sign_call_context(_ctx(org_id, body["params"]["name"]), server.key)
 
     async def main() -> T:
         async with (
-            httpx.AsyncClient(headers=headers, timeout=30) as http,
+            httpx.AsyncClient(event_hooks={"request": [sign]}, timeout=30) as http,
             streamable_http_client(server.url, http_client=http) as (read, write, _),
             ClientSession(read, write) as session,
         ):
@@ -157,7 +164,32 @@ def test_update_one_cannot_reach_another_org(mcp_server: McpServer, seeded: Data
     assert seeded["run_tasks"].find_one({"_id": "task_1"}) == {"_id": "task_1", "org_id": "org_a", "state": "done"}
 
 
-# --- box 2: find limit --------------------------------------------------------------------------
+def test_an_id_from_find_updates_the_document_as_oid(mcp_server: McpServer, seeded: Database[dict[str, Any]]) -> None:
+    created = _data(_call(mcp_server, "org_a", "insert_one", {"collection": "run_tasks", "document": {"state": "a"}}))
+    found = _data(_call(mcp_server, "org_a", "find", {"collection": "run_tasks", "filter": {"state": "a"}, "limit": 1}))
+    assert found["documents"][0]["_id"] == created["inserted_id"]
+    args = {
+        "collection": "run_tasks",
+        "filter": {"_id": {"$oid": found["documents"][0]["_id"]}},
+        "update": {"$set": {"state": "b"}},
+    }
+    assert _data(_call(mcp_server, "org_a", "update_one", args)) == {"matched": 1, "modified": 1, "count": 1}
+    stored = seeded["run_tasks"].find_one({"_id": ObjectId(created["inserted_id"])})
+    assert stored is not None
+    assert stored["state"] == "b"
+
+
+def test_a_query_mongodb_refuses_is_a_denial_not_an_internal_error(mcp_server: McpServer, seeded: Any) -> None:
+    mcp_server.telemetry.clear()
+    args = {"collection": "new_hires", "filter": {"status": {"$bogus": 1}}, "limit": 1}
+    text = _error(_call(mcp_server, "org_a", "find", args))
+    assert "rejected" in text
+    assert "internal error" not in text
+    (span,) = [s for s in mcp_server.telemetry.spans() if s.name == "mcp.mongo.find"]
+    assert dict(span.attributes or {})["denial.reason"] == "query_rejected"
+
+
+# --- box 2: find limit--------------------------------------------------------------------------
 
 
 @pytest.mark.parametrize("extra", [{}, {"limit": 101}], ids=["no-limit", "limit-101"])

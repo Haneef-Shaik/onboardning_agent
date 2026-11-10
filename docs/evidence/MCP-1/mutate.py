@@ -98,7 +98,15 @@ MUTATIONS = [
         "validation errors echo the submitted values",
         (("server.py", "_validation_message(exc)) from None", "str(exc)) from None"),),
     ),
-    Mutation("M15", "org_id rejection disabled, against testcontainers Mongo (box 3, int)", (("policy.py", "    if _mentions_org(value):", "    if False:"),), INT),
+    Mutation("M17", "call context not bound to the called tool (review fix)", (("server.py", "if ctx.tool != self.name:", "if False:"),)),
+    Mutation("M18", "insert accepts an agent-chosen _id (review fix)", (("policy.py", 'if "_id" in document:', "if False:"),)),
+    Mutation("M19", "projection accepts any integer (review fix)", (("contracts.py", "    if value not in (0, 1):", "    if False:"),)),
+    Mutation(
+        "M20",
+        "malformed queries reported as internal errors (review fix)",
+        (("server.py", "except (TypeError, ValueError):", "except (KeyError,):"),),
+    ),
+    Mutation("M15","org_id rejection disabled, against testcontainers Mongo (box 3, int)", (("policy.py", "    if _mentions_org(value):", "    if False:"),), INT),
     Mutation("M16", "find limit maximum raised to 1000, against testcontainers Mongo (box 2, int)", (("contracts.py", "MAX_FIND_LIMIT = 100", "MAX_FIND_LIMIT = 1000"),), INT),
 ]
 

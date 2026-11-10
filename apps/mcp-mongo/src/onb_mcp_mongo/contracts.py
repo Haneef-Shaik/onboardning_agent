@@ -40,6 +40,18 @@ Direction = Annotated[
 ]
 
 
+def _flag(value: int) -> int:
+    if value not in (0, 1):
+        raise ValueError("projection values must be 0 or 1")
+    return value
+
+
+# Inclusion/exclusion only: a projection expression (e.g. `$function`) can run code.
+ProjectionFlag = Annotated[
+    int, Field(strict=True), AfterValidator(_flag), WithJsonSchema({"type": "integer", "enum": [0, 1]})
+]
+
+
 class _Args(ArgModelBase):
     model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=False)
 
@@ -51,7 +63,7 @@ class ListCollectionsArgs(_Args):
 class FindArgs(_Args):
     collection: Collection
     filter: Query = Field(default_factory=dict)
-    projection: dict[str, Any] | None = None
+    projection: dict[Field_, ProjectionFlag] | None = None
     sort: list[tuple[Field_, Direction]] | None = None
     skip: Annotated[int, Field(strict=True, ge=0, le=MAX_SKIP)] = 0
     limit: Annotated[int, Field(strict=True, ge=1, le=MAX_FIND_LIMIT, description="Required, 1-100")]
@@ -114,12 +126,17 @@ class ToolContract:
     read_only: bool
 
 
+_ID_RULE = 'hex strings; to match one, send {"$oid": "<hex>"} (a bare string matches only string ids).'
+
 CONTRACTS: dict[str, ToolContract] = {
     "list_collections": ToolContract(
         ListCollectionsArgs, CollectionsResult, "The collections this agent may use.", read_only=True
     ),
     "find": ToolContract(
-        FindArgs, DocumentsResult, "Find documents in the caller's org. `limit` (1-100) is required.", read_only=True
+        FindArgs,
+        DocumentsResult,
+        "Find documents in the caller's org. `limit` (1-100) is required. ObjectIds are returned as " + _ID_RULE,
+        read_only=True,
     ),
     "count": ToolContract(CountArgs, CountResult, "Count documents in the caller's org.", read_only=True),
     "aggregate": ToolContract(
@@ -133,6 +150,9 @@ CONTRACTS: dict[str, ToolContract] = {
         InsertOneArgs, InsertResult, "Insert one document; the server sets org_id.", read_only=False
     ),
     "update_one": ToolContract(
-        UpdateOneArgs, UpdateResult, "Update one document in the caller's org with update operators.", read_only=False
+        UpdateOneArgs,
+        UpdateResult,
+        "Update one document in the caller's org with update operators. ObjectIds are returned as " + _ID_RULE,
+        read_only=False,
     ),
 }

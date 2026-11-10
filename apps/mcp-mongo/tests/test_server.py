@@ -3,6 +3,8 @@ repositories, policy, contracts and server are real."""
 
 from __future__ import annotations
 
+import asyncio
+import dataclasses
 from typing import Any
 
 import pytest
@@ -10,9 +12,10 @@ from bson import ObjectId
 from mcp import ClientSession
 from mcp.types import CallToolResult
 from onb_mcp_mongo.call_context import CallContext, sign_call_context
+from onb_telemetry.testing import CapturedTelemetry
 
 from .fakes import FakeDatabase
-from .harness import CTX_A, KEY, call
+from .harness import CTX_A, KEY, call, in_session, run
 
 TOOLS = {"list_collections", "find", "count", "aggregate", "insert_one", "update_one"}
 
@@ -155,17 +158,26 @@ def test_an_agent_supplied_org_id_is_rejected(db: FakeDatabase, tool: str, args:
     assert db.calls() == []
 
 
-@pytest.mark.parametrize("tool", ["find", "count", "insert_one", "list_collections"])
+VALID_ARGS: dict[str, dict[str, Any]] = {
+    "list_collections": {},
+    "find": {"collection": "new_hires", "limit": 1},
+    "count": {"collection": "new_hires"},
+    "aggregate": {"collection": "new_hires", "pipeline": [{"$match": {}}]},
+    "insert_one": {"collection": "run_tasks", "document": {"title": "x"}},
+    "update_one": {"collection": "run_tasks", "filter": {"_id": 1}, "update": {"$set": {"a": 1}}},
+}
+
+
+@pytest.mark.parametrize("tool", sorted(VALID_ARGS))
 def test_org_id_as_a_tool_argument_is_rejected(db: FakeDatabase, tool: str) -> None:
-    args: dict[str, Any] = {"collection": "run_tasks", "org_id": "org_b", "limit": 1, "document": {}}
-    if tool == "count":
-        args = {"collection": "run_tasks", "org_id": "org_b"}
-    if tool == "insert_one":
-        args = {"collection": "run_tasks", "org_id": "org_b", "document": {}}
-    if tool == "list_collections":
-        args = {"org_id": "org_b"}
-    _error_text(call(db, _tool(tool, args)))
+    text = _error_text(call(db, _tool(tool, {**VALID_ARGS[tool], "org_id": "org_b"})))
+    assert "org_id (extra_forbidden)" in text
     assert db.calls() == []
+
+
+@pytest.mark.parametrize("tool", sorted(VALID_ARGS))
+def test_the_same_args_without_org_id_succeed(db: FakeDatabase, tool: str) -> None:
+    assert not call(db, _tool(tool, VALID_ARGS[tool])).isError
 
 
 # --- writes -------------------------------------------------------------------------------------
@@ -223,14 +235,79 @@ def test_a_call_without_a_valid_hub_context_is_refused(db: FakeDatabase, header:
     assert db.calls() == []
 
 
+CTX_B = CallContext(
+    org_id="org_b", agent="db_agent", run_id="run_2", tool="count", read=frozenset({"new_hires"}), write=frozenset()
+)
+
+
 def test_the_org_comes_from_the_context_of_each_call(db: FakeDatabase) -> None:
     _seed(db)
-    ctx_b = CallContext(
-        org_id="org_b", agent="db_agent", run_id="run_2", read=frozenset({"new_hires"}), write=frozenset()
-    )
-    result = call(db, _tool("count", {"collection": "new_hires"}), header=sign_call_context(ctx_b, KEY))
+    result = call(db, _tool("count", {"collection": "new_hires"}), ctx=CTX_B)
     assert result.structuredContent == {"count": 1}
     assert db["new_hires"].calls[-1] == ("count_documents", {"org_id": "org_b"})
+
+
+def test_a_context_for_another_tool_is_refused(db: FakeDatabase) -> None:
+    find_ctx = sign_call_context(dataclasses.replace(CTX_A, tool="find"), KEY)
+    args = {"collection": "run_tasks", "document": {"title": "x"}}
+    assert "another tool" in _error_text(call(db, _tool("insert_one", args), header=find_ctx))
+    assert db.calls() == []
+
+
+def test_concurrent_calls_keep_their_own_orgs(db: FakeDatabase) -> None:
+    _seed(db)
+
+    async def count(session: ClientSession) -> CallToolResult:
+        return await session.call_tool("count", {"collection": "new_hires"})
+
+    async def both() -> list[CallToolResult]:
+        return list(await asyncio.gather(*(in_session(db, count, ctx=c) for c in (CTX_A, CTX_B, CTX_A, CTX_B))))
+
+    counts = [r.structuredContent for r in run(both())]
+    assert counts == [{"count": 2}, {"count": 1}, {"count": 2}, {"count": 1}]
+
+
+def test_a_global_collection_in_the_context_is_still_refused(db: FakeDatabase) -> None:
+    ctx = dataclasses.replace(CTX_A, read=frozenset({"orgs"}))
+    text = _error_text(call(db, _tool("find", {"collection": "orgs", "limit": 1}), ctx=ctx))
+    assert "collection" in text
+    assert db.calls() == []
+
+
+# --- argument shapes ----------------------------------------------------------------------------
+
+
+def test_a_json_string_is_not_taken_for_an_object(db: FakeDatabase) -> None:
+    args = {"collection": "new_hires", "filter": '{"status": "open"}', "limit": 1}
+    assert "filter (dict_type)" in _error_text(call(db, _tool("find", args)))
+    assert db.calls() == []
+
+
+@pytest.mark.parametrize(
+    "projection",
+    [{"a": {"$function": {"body": "x", "args": [], "lang": "js"}}}, {"a": True}, {"a": 2}, {"a": -1}],
+)
+def test_a_projection_is_only_zeros_and_ones(db: FakeDatabase, projection: dict[str, Any]) -> None:
+    args = {"collection": "new_hires", "projection": projection, "limit": 1}
+    assert "projection" in _error_text(call(db, _tool("find", args)))
+    assert db.calls() == []
+
+
+def test_insert_with_an_agent_chosen_id_is_rejected(db: FakeDatabase) -> None:
+    args = {"collection": "run_tasks", "document": {"_id": {"$oid": str(ObjectId())}, "title": "x"}}
+    assert "_id" in _error_text(call(db, _tool("insert_one", args)))
+    assert db.calls() == []
+
+
+def test_a_malformed_update_operator_is_denied_not_an_internal_error(
+    db: FakeDatabase, telemetry: CapturedTelemetry
+) -> None:
+    args = {"collection": "run_tasks", "filter": {"_id": 1}, "update": {"$set": 5}}
+    text = _error_text(call(db, _tool("update_one", args)))
+    assert "internal error" not in text
+    (span,) = [s for s in telemetry.spans() if s.name == "mcp.mongo.update_one"]
+    assert dict(span.attributes or {})["outcome"] == "denied"
+    assert dict(span.attributes or {})["denial.reason"] == "invalid_query"
 
 
 def test_an_unexpected_failure_hides_its_message(db: FakeDatabase, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -244,8 +321,10 @@ def test_an_unexpected_failure_hides_its_message(db: FakeDatabase, monkeypatch: 
 
 
 def test_an_invalid_argument_error_names_the_field_but_not_the_value(db: FakeDatabase) -> None:
-    args = {"collection": "new_hires", "limit": "ptk_secret_limit", "org_id": "ptk_secret_org"}
+    args = {"collection": "new_hires", "limit": "ptk_secret_limit", "org_id": "ptk_secret_org", "ptk_key": 1}
     text = _error_text(call(db, _tool("find", args)))
     assert "limit" in text
     assert "org_id" in text
+    assert "<extra>" in text
     assert "ptk_secret" not in text
+    assert "ptk_key" not in text

@@ -23,6 +23,7 @@ CTX = CallContext(
     org_id="org_a",
     agent="db_agent",
     run_id="run_1",
+    tool="find",
     read=frozenset({"new_hires"}),
     write=frozenset({"run_tasks"}),
 )
