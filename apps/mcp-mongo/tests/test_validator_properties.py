@@ -6,7 +6,7 @@ from __future__ import annotations
 import unicodedata
 from typing import Any
 
-from hypothesis import HealthCheck, assume, event, given, settings
+from hypothesis import HealthCheck, assume, event, example, given, settings
 from hypothesis import strategies as st
 from onb_mcp_mongo.policy import ALLOWED_STAGES, ToolRejectedError
 from onb_mcp_mongo.validator import (
@@ -310,6 +310,9 @@ def test_a_mutated_pipeline_is_accepted_only_without_a_forbidden_operator(pipeli
 
 @SETTINGS
 @given(QUERIES, UPDATES)
+# Pinned: a look-alike in a plain path position, where only the NFKC check stands in the way.
+@example({"status": "open"}, {"$set": {"\uff04where": 1}})
+@example({"status": "open"}, {"$set": {"a.\ufe69function": 1}})
 def test_a_mutated_update_is_accepted_only_without_a_forbidden_operator_pii_or_org(
     filter_: dict[str, Any], update: dict[str, Any]
 ) -> None:

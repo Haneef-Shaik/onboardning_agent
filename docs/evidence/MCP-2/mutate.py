@@ -117,6 +117,27 @@ MUTATIONS = [
         "a driver drop call added to the tools module (box 4)",
         (("tools.py", "    return CollectionsResult(collections=sorted(ctx.readable))", "    store.drop(ctx)\n    return CollectionsResult(collections=sorted(ctx.readable))"),),
     ),
+    # --- attempt 2: the source scan exempts MCP-3's admin module db_users.py; the narrowing must hold
+    Mutation(
+        "V28",
+        "a .command( call added to tool code (box 4, narrowed scan)",
+        (("tools.py", "    return CollectionsResult(collections=sorted(ctx.readable))", "    store.db.command('dropDatabase')\n    return CollectionsResult(collections=sorted(ctx.readable))"),),
+    ),
+    Mutation(
+        "V29",
+        "tool code imports the admin module (box 4: admin code reachable from a tool)",
+        (("tools.py", "from . import policy\n", "from . import db_users, policy\n"),),
+    ),
+    Mutation(
+        "V30",
+        "a module deep in the tool closure loads the admin module dynamically (box 4)",
+        ((RULES, "import unicodedata\n", 'import unicodedata\nimport importlib\nimportlib.import_module("onb_mcp_mongo.db_users")\n'),),
+    ),
+    Mutation(
+        "V31",
+        "a .drop( call added to a module outside the tool closure that is not admin code (box 4)",
+        (("settings.py", "from .call_context import MIN_KEY_LENGTH\n", "from .call_context import MIN_KEY_LENGTH\n\n\ndef _drop(collection):\n    collection.drop()\n"),),
+    ),
 ]
 
 
