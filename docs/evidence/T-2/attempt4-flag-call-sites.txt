@@ -61,6 +61,16 @@
   1  find run_tasks: product=-  test=libs/py-evals/tests_int/test_fixture_mongo.py:36
   1  find templates: product=-  test=libs/py-evals/tests_int/test_fixture_mongo.py:36
   1  find users: product=-  test=libs/py-evals/tests_int/test_fixture_mongo.py:36
+##### apps/api/tests_int   (attempt 5: AUD-1's new test_mongo_audit.py, 1 flag; found by the mutation run)
+  1  find audit_log: product=-  test=apps/api/tests_int/test_mongo_audit.py:86
+# api audit :86               root read-back of both orgs' audit records (org + trace id per record)
+#
+# Attempt 5 re-trace of all 7 Mongo suites after marking: api, mcp-mongo, py-eventbus, py-crypto,
+# py-telemetry, py-evals print no call sites. py-data prints only its own deliberate negative tests,
+# which send an unscoped command on purpose and assert + drain it, so the suite passes. They are
+# test_safety_net*.py (their frames are hidden by the tracer's safety_net filename filter), the
+# operator QueueRepository.find on dead_letters (queue.py:152, asserted flagged), and the bad index
+# planted by test_tenant_indexes.py:54 (asserted flagged).
 # py-evals fixture :34..36    root read of the whole seeded fixture database (every org) to scan for raw PII
 # py-evals selftest :56       root read-back by _id of the eval_runs record, to check its org_id
 # The eval harness's own seeding (load_fixture through tenant repositories and the vault) and its

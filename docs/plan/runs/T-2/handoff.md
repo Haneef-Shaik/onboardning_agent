@@ -10,6 +10,8 @@
 
   Both are in named `unscoped` blocks. The product calls (`load_fixture`, `vault.is_bound`, the selftest CLI) stay outside. The eval harness's own seeding and its `eval_runs` write passed the net. No assertion changed.
 - Mutant P6 covers py-evals.
+- **One more site, found by the mutation run.** The first attempt-5 mutation run showed `apps/api`'s `test_records_land_in_mongo_with_org_and_the_spans_trace_id` failing even under an unrelated mutant. On the unmutated tree it erred every time. The cause was AUD-1's new `apps/api/tests_int/test_mongo_audit.py:86`, a root read-back of both orgs' audit records, which I had not traced; I had traced only py-evals. It is test code, now in a named block with its assertion unchanged (`9d3691d`).
+- I then re-traced all 7 Mongo suites on the rebased tree. Six print no call sites. py-data prints only its own deliberate negative tests, which send, assert and drain an unscoped command. The mutation run was repeated on the fixed tree.
 - Gates: `make check`, `make test-int`, `make contracts-check` and `make evals-selftest`.
 
 **Attempt 4 (orchestrator request, after goal-verifier attempt 3 passed on base 707b60c).**
