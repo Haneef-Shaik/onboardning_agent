@@ -1,0 +1,66 @@
+M1 box 1: store.tenant() hands out audit_log with its update/delete path
+  libs/py-data/src/onb_data/store.py: 'if name in APPEND_ONLY_COLLECTIONS:\n            raise UnknownCollectionError(f"{name} is append-only' -> 'if False:\n            raise UnknownCollectionError(f"{name} is append-only'
+  caught: yes (1 failed)
+    FAILED libs/py-data/tests/test_audit.py::test_the_audit_collection_is_never_handed_out_with_a_write_path[tenant]
+M2 box 1: the append-only repository gains a delete
+  libs/py-data/src/onb_data/append_only.py: 'async def count(' -> 'async def delete_one(self, query: Mapping[str, Any]) -> Any:\n        return await self._collection.delete_one(query)\n\n    async def count('
+  caught: yes (1 failed)
+    FAILED libs/py-data/tests/test_audit.py::test_the_append_only_repository_has_no_update_or_delete_path
+M3 box 1: the audit log gains an update
+  libs/py-data/src/onb_data/audit.py: 'async def ensure_indexes(self) -> None:' -> 'async def update(self, record_id: str, reason: str) -> None:\n        raise NotImplementedError\n\n    async def ensure_indexes(self) -> None:'
+  caught: yes (1 failed)
+    FAILED libs/py-data/tests/test_audit.py::test_the_audit_log_has_no_update_or_delete_path
+M4 box 1: the audit log hands out its repository
+  libs/py-data/src/onb_data/audit.py: '__slots__ = ("_clock", "_repo", "_store", "_trace_id")' -> '__slots__ = ("_clock", "_repo", "_store", "_trace_id")\n\n    @property\n    def repository(self) -> object:\n        return self._repo'
+  caught: yes (1 failed)
+    FAILED libs/py-data/tests/test_audit.py::test_the_audit_log_has_no_update_or_delete_path
+M5 box 3: the record ignores the current span
+  libs/py-data/src/onb_data/audit.py: '"trace_id": self._trace_id(),' -> '"trace_id": None,'
+  caught: yes (2 failed)
+    FAILED libs/py-data/tests/test_audit.py::test_a_record_carries_the_current_spans_trace_id
+    FAILED libs/py-data/tests/test_audit.py::test_two_spans_give_two_trace_ids
+M6 box 3: an invalid span context still gives a trace id
+  libs/py-data/src/onb_data/audit.py: 'return f"{context.trace_id:032x}" if context.is_valid else None' -> 'return f"{context.trace_id:032x}"'
+  caught: yes (3 failed)
+    FAILED libs/py-data/tests/test_audit.py::test_one_audit_call_writes_one_org_scoped_record
+    FAILED libs/py-data/tests/test_audit.py::test_a_record_outside_any_span_has_no_trace_id
+    FAILED libs/py-data/tests/test_audit.py::test_current_trace_id_reads_the_active_span
+M7 box 2: HR is let into GET /audit
+  apps/api/src/onb_api/audit/routes.py: 'HrAdmin = Annotated[Principal, Depends(require_role(Role.HR_ADMIN))]' -> 'HrAdmin = Annotated[Principal, Depends(require_role(Role.HR_ADMIN, Role.HR))]'
+  caught: yes (3 failed)
+    FAILED apps/api/tests/test_audit_route.py::test_hr_and_manager_get_403_on_get_audit[HR]
+    FAILED apps/api/tests/test_audit_route.py::test_a_refused_caller_never_reaches_the_audit_log[HR]
+    FAILED apps/api/tests/test_role_matrix.py::test_role_matrix[GET
+M8 box 2: every role is let into GET /audit
+  apps/api/src/onb_api/audit/routes.py: 'HrAdmin = Annotated[Principal, Depends(require_role(Role.HR_ADMIN))]' -> 'HrAdmin = Annotated[Principal, Depends(require_role(Role.HR_ADMIN, Role.HR, Role.MANAGER))]'
+  caught: yes (6 failed)
+    FAILED apps/api/tests/test_audit_route.py::test_hr_and_manager_get_403_on_get_audit[HR]
+    FAILED apps/api/tests/test_audit_route.py::test_hr_and_manager_get_403_on_get_audit[MANAGER]
+    FAILED apps/api/tests/test_audit_route.py::test_a_refused_caller_never_reaches_the_audit_log[HR]
+    FAILED apps/api/tests/test_audit_route.py::test_a_refused_caller_never_reaches_the_audit_log[MANAGER]
+    FAILED apps/api/tests/test_role_matrix.py::test_role_matrix[GET
+    FAILED apps/api/tests/test_role_matrix.py::test_role_matrix[GET
+M9 org scope: reads not scoped to the org
+  libs/py-data/src/onb_data/append_only.py: 'scoped = scoping.scoped_filter(query, current_tenant().org_id)\n        cursor =' -> 'scoped = dict(query or {})\n        cursor ='
+  caught: yes (3 failed)
+    FAILED libs/py-data/tests/test_audit.py::test_list_sends_a_scoped_filter_newest_first_with_skip_and_limit
+    FAILED libs/py-data/tests/test_audit.py::test_an_empty_query_filters_on_the_org_only
+    FAILED libs/py-data/tests/test_audit.py::test_list_without_a_tenant_context_raises
+M10 org scope: the record is written without the org
+  libs/py-data/src/onb_data/append_only.py: 'prepared = scoping.scoped_document(document, current_tenant().org_id)' -> 'prepared = dict(document)'
+  caught: yes (3 failed)
+    FAILED libs/py-data/tests/test_audit.py::test_one_audit_call_writes_one_org_scoped_record
+    FAILED libs/py-data/tests/test_audit.py::test_audit_without_a_tenant_context_raises_and_writes_nothing
+    FAILED libs/py-data/tests/test_audit.py::test_a_record_cannot_name_another_org
+M11 filters: since after until accepted
+  apps/api/src/onb_api/audit/routes.py: 'if since is not None and until is not None and since > until:' -> 'if False:'
+  caught: yes (1 failed)
+    FAILED apps/api/tests/test_audit_route.py::test_bad_query_parameters_are_422[since+until]
+M12 ordering: oldest first
+  libs/py-data/src/onb_data/audit.py: 'sort=[("at", -1), ("_id", -1)]' -> 'sort=[("at", 1), ("_id", 1)]'
+  caught: yes (1 failed)
+    FAILED libs/py-data/tests/test_audit.py::test_list_sends_a_scoped_filter_newest_first_with_skip_and_limit
+
+12/12 mutations caught
+worktree changes under libs/ and apps/ after all mutations: none
+exit=0
