@@ -47,8 +47,9 @@ def _with(path: tuple[str, ...], value: Any) -> dict[str, Any]:
 def test_the_prd_shaped_manifest_is_accepted() -> None:
     manifest = parse_manifest(_valid())
     assert isinstance(manifest, AgentManifest)
-    assert manifest.mcp[MONGO_SERVER].collections is not None
-    assert manifest.mcp[MONGO_SERVER].collections.write == ("run_tasks", "documents_meta")
+    collections = manifest.mcp[MONGO_SERVER].collections
+    assert collections is not None
+    assert collections.write == ("run_tasks", "documents_meta")
 
 
 VAULT_NAMES = ["pii_vault", "pii_vault_aadhaar", "org_keys", "pii_access_log", "PII_VAULT", "pii_vault_v2"]
@@ -72,7 +73,7 @@ def test_a_manifest_listing_a_vault_collection_to_write_is_rejected(collection: 
 
 
 @pytest.mark.parametrize(
-    "path,value",
+    ("path", "value"),
     [
         (("requires_approval",), ["update_one:pii_vault"]),
         (("memory_scopes",), ["pii_access_log:read"]),
@@ -98,7 +99,7 @@ def test_the_forbidden_names_are_the_vault_the_keys_and_the_access_log() -> None
 
 
 @pytest.mark.parametrize(
-    "path,value,message",
+    ("path", "value", "message"),
     [
         (("name",), "DB Agent", "name"),
         (("llm",), {"alias": "standard", "model": "x"}, "alias"),
@@ -144,7 +145,7 @@ def test_requires_approval_may_name_a_granted_tool_on_any_server() -> None:
 def test_the_manifest_is_frozen_and_dumps_back_to_the_same_data() -> None:
     manifest = parse_manifest(_valid())
     with pytest.raises(ValueError, match="frozen"):
-        manifest.name = "other"  # type: ignore[misc]  # proving the model refuses mutation
+        manifest.name = "other"
     assert parse_manifest(manifest.document()) == manifest
 
 

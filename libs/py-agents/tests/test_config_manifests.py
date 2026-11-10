@@ -122,7 +122,7 @@ def test_an_empty_or_missing_directory_is_refused(tmp_path: Path) -> None:
 
 
 @pytest.mark.parametrize(
-    "data,message",
+    ("data", "message"),
     [
         (["x"], "mapping"),
         ({"actions": []}, "actions"),
