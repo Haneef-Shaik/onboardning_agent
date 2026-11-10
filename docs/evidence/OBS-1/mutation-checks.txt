@@ -1,24 +1,35 @@
 M1 init installs no scrubber (setup.py) -> killed by test_span_with_pii_in_attributes_and_events_exports_with_markers_only
 M2 scrubber runs before the hooks, not after (pipeline.py) -> killed by test_scrubbing_runs_after_every_hook_so_a_hook_cannot_reintroduce_pii
-M3 attribute values not scrubbed (span_scrub.py) -> killed by test_span_with_pii_in_attributes_and_events_exports_with_markers_only
-M4 attribute keys not scrubbed (span_scrub.py) -> killed by test_pii_in_every_other_span_field_is_scrubbed
+M3 attribute values not scrubbed (scrub_values.py) -> killed by test_span_with_pii_in_attributes_and_events_exports_with_markers_only
+M4 attribute keys not scrubbed (scrub_values.py) -> killed by test_pii_in_every_other_span_field_is_scrubbed
 M5 event attributes not scrubbed (span_scrub.py) -> killed by test_span_with_pii_in_attributes_and_events_exports_with_markers_only
 M6 event names not scrubbed (span_scrub.py) -> killed by test_span_with_pii_in_attributes_and_events_exports_with_markers_only
 M7 span name not scrubbed (span_scrub.py) -> killed by test_pii_in_every_other_span_field_is_scrubbed
 M8 link attributes not scrubbed (span_scrub.py) -> killed by test_pii_in_every_other_span_field_is_scrubbed
 M9 status description not scrubbed (span_scrub.py) -> killed by test_pii_in_every_other_span_field_is_scrubbed
-M10 numbers never scrubbed (span_scrub.py) -> killed by test_pii_in_every_other_span_field_is_scrubbed
-M11 mixed sequences not made homogeneous (span_scrub.py) -> killed by test_pii_in_every_other_span_field_is_scrubbed
+M10 numbers never scrubbed (scrub_values.py) -> killed by test_pii_in_every_other_span_field_is_scrubbed
+M11 mixed sequences not made homogeneous (scrub_values.py) -> killed by test_pii_in_every_other_span_field_is_scrubbed
 M12 a failing hook exports the span unscrubbed (pipeline.py) -> killed by test_a_failing_scrubber_drops_the_span_rather_than_export_it_raw
-M13 log message not redacted (log_scrub.py) -> killed by test_a_log_record_carrying_the_same_values_is_scrubbed
-M14 log extras not redacted (log_scrub.py) -> killed by test_a_log_record_carrying_the_same_values_is_scrubbed
-M15 exception object kept on the record (log_scrub.py) -> killed by test_a_log_record_carrying_the_same_values_is_scrubbed
-M16 exception text not redacted (log_scrub.py) -> killed by test_a_log_record_carrying_the_same_values_is_scrubbed
-M17 stack text not redacted (log_scrub.py) -> killed by test_a_log_record_carrying_the_same_values_is_scrubbed
-M18 makeRecord not patched (log_scrub.py) -> killed by test_log_scrubbing_is_in_place_for_records_made_through_the_factory
-M19 failed scrub emits the raw record (log_scrub.py) -> killed by test_a_failing_log_scrubber_withholds_the_record_without_breaking_the_caller
-M20 failing filter lets the record through (log_scrub.py) -> killed by test_a_failing_log_filter_drops_the_record
-M21 filter not added to root handlers (log_scrub.py) -> killed by test_init_telemetry_adds_the_log_filter_to_the_root_handlers_and_shutdown_removes_it
-M22 uninstall does not restore makeRecord (log_scrub.py) -> killed by test_init_telemetry_adds_the_log_filter_to_the_root_handlers_and_shutdown_removes_it
-M23 init installs no log redaction (setup.py) -> killed by test_init_telemetry_installs_log_scrubbing_by_default
-23/23 mutations killed; source restored clean: True; after restore: 97 passed, 1 warning in 1.43s
+M13 instrumentation scope not scrubbed (span_scrub.py) -> killed by test_resource_and_scope_attributes_are_scrubbed
+M14 resource not scrubbed (setup.py) -> killed by test_resource_and_scope_attributes_are_scrubbed
+M15 dropped-attribute count lost (span_scrub.py) -> killed by test_dropped_attribute_counts_survive_scrubbing
+M16 account-like key gives no context (scrub_values.py) -> killed by test_a_bare_account_number_under_an_account_key_is_scrubbed[bank_account]
+M17 trace-id exemption for any key (scrub_values.py) -> killed by test_a_mobile_under_a_trace_id_key_is_still_scrubbed
+M18 nested mappings not scrubbed (scrub_values.py) -> killed by test_non_string_extra_fields_are_scrubbed_and_harmless_ones_kept
+M19 other objects (bytes) not scrubbed (scrub_values.py) -> killed by test_non_string_extra_fields_are_scrubbed_and_harmless_ones_kept
+M20 log message not redacted (log_scrub.py) -> killed by test_a_value_split_between_template_and_argument_is_still_scrubbed
+M21 a value split across template and argument passes (log_scrub.py) -> killed by test_a_value_split_between_template_and_argument_is_still_scrubbed
+M22 args cleared (breaks uvicorn's access formatter) (log_scrub.py) -> killed by test_a_log_record_carrying_the_same_values_is_scrubbed
+M23 log extras not scrubbed (log_scrub.py) -> killed by test_a_log_record_carrying_the_same_values_is_scrubbed
+M24 exception object kept on the record (log_scrub.py) -> killed by test_a_log_record_carrying_the_same_values_is_scrubbed
+M25 exception text not redacted (log_scrub.py) -> killed by test_a_log_record_carrying_the_same_values_is_scrubbed
+M26 stack text not redacted (log_scrub.py) -> killed by test_a_log_record_carrying_the_same_values_is_scrubbed
+M27 makeRecord not patched (log_scrub.py) -> killed by test_log_scrubbing_outlives_shutdown_and_only_the_test_reset_removes_it
+M28 failed scrub emits the raw record (log_scrub.py) -> killed by test_a_failing_log_scrubber_withholds_the_record_without_breaking_the_caller
+M29 withheld record loses custom fields (log_scrub.py) -> killed by test_a_failing_log_scrubber_withholds_the_record_without_breaking_the_caller
+M30 failing filter lets the record through (log_scrub.py) -> killed by test_a_failing_log_filter_drops_the_record
+M31 filter not added to root handlers (log_scrub.py) -> killed by test_log_scrubbing_outlives_shutdown_and_only_the_test_reset_removes_it
+M32 the test reset does not restore makeRecord (log_scrub.py) -> killed by test_log_scrubbing_outlives_shutdown_and_only_the_test_reset_removes_it
+M33 init installs no log redaction (setup.py) -> killed by test_init_telemetry_installs_log_scrubbing_by_default
+M34 shutdown switches log scrubbing off (setup.py) -> killed by test_log_scrubbing_outlives_shutdown_and_only_the_test_reset_removes_it
+34/34 mutations killed; source restored clean: True; after restore: 115 passed, 1 warning in 4.43s
