@@ -212,6 +212,17 @@ MUTATIONS = [
         'P3: the same, served only when an ad-hoc env flag is set (box 4)',
         (("db_users.py", 'from .settings import DEFAULT_DATABASE\n', 'from .settings import DEFAULT_DATABASE\n\n\ndef run_command(cmd: str) -> str:\n    return str(MongoClient("x")["admin"].command(cmd))\n'), ("main.py", '    uvicorn.run(server.streamable_http_app(), host=settings.host, port=settings.port)', '    if os.environ.get("MCP_MONGO_OPS_TOOLS") == "1":\n        from mcp.server.fastmcp import FastMCP as Hub\n        from mcp.server.fastmcp.tools import Tool as T\n        from mcp.server.transport_security import TransportSecuritySettings as TS\n\n        from .db_users import run_command\n\n        hub = Hub(\n            SERVER_NAME,\n            tools=[*server._tool_manager.list_tools(), T.from_function(run_command)],\n            stateless_http=True,\n            json_response=True,\n            transport_security=TS(enable_dns_rebinding_protection=False),\n        )\n        uvicorn.run(hub.streamable_http_app(), host=settings.host, port=settings.port)\n        return\n    uvicorn.run(server.streamable_http_app(), host=settings.host, port=settings.port)')),
     ),
+    # --- attempt 7 (narrowed model): the verifier's attempt-6 survivor A
+    Mutation(
+        "V41",
+        "survivor A: server.py builds a second FastMCP (run_command over db_users._auth_info); main.py starts it with FastMCP.run in a thread on port+1 (box 4)",
+        (
+            ("db_users.py", 'from .settings import DEFAULT_DATABASE\n', 'from .settings import DEFAULT_DATABASE\n\n\ndef _auth_info(probe: str) -> str:\n    return str(MongoClient("x")["admin"].command("connectionStatus"))\n'),
+            ("server.py", 'def build_server(\n', 'def build_ops_server(fn: Any, *, host: str, port: int) -> FastMCP:\n    return FastMCP("mcp-mongo-ops", tools=[Tool.from_function(fn, name="run_command")], host=host, port=port,\n                   stateless_http=True, json_response=True)\n\n\ndef build_server(\n'),
+            ("main.py", 'from .db_users import READ_ONLY, READ_WRITE, assert_least_privilege\n', 'from .db_users import READ_ONLY, READ_WRITE, _auth_info, assert_least_privilege\n'),
+            ("main.py", '    uvicorn.run(server.streamable_http_app(), host=settings.host, port=settings.port)', '    import threading\n\n    from .server import build_ops_server\n\n    ops = build_ops_server(_auth_info, host=settings.host, port=settings.port + 1)\n    threading.Thread(target=ops.run, args=("streamable-http",), daemon=True).start()\n    uvicorn.run(server.streamable_http_app(), host=settings.host, port=settings.port)'),
+        ),
+    ),
 ]
 
 

@@ -373,3 +373,119 @@ def test_no_other_module_reads_the_environment() -> None:
         for node in _environment_reads(ast.parse(path.read_text()))
     ]
     assert hits == []
+
+
+# --- rule (2b) and (3): one FastMCP, built in build_server; no listener but main()'s uvicorn.run ----
+
+_RUNNER_ATTRS = frozenset(
+    {
+        *("run", "serve", "startup", "start", "start_soon", "submit", "to_thread", "run_in_executor"),
+        *("create_task", "ensure_future", "run_until_complete", "run_forever", "start_server", "create_server"),
+        *("start_serving", "serve_forever", "bind", "listen", "accept"),
+        *("run_streamable_http_async", "run_sse_async", "run_stdio_async"),
+    }
+)
+_RUNNER_NAMES = frozenset(
+    {"Thread", "Timer", "Process", "Server", "Config", "ThreadPoolExecutor", "ProcessPoolExecutor"}
+)
+_RUNNER_MODULES = frozenset(
+    {
+        "threading",
+        "_thread",
+        "asyncio",
+        "anyio",
+        "trio",
+        "socket",
+        "socketserver",
+        "multiprocessing",
+        "concurrent",
+        "subprocess",
+        "selectors",
+        "wsgiref",
+        "hypercorn",
+        "gunicorn",
+        "daphne",
+        "aiohttp",
+        "tornado",
+        "twisted",
+    }
+)
+
+
+def _fastmcp_names(tree: ast.AST) -> set[str]:
+    """Local names server.py binds to mcp.server.fastmcp.FastMCP, under any alias."""
+    names: set[str] = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.ImportFrom) and (node.module or "").startswith("mcp.server.fastmcp"):
+            names |= {alias.asname or alias.name for alias in node.names if alias.name == "FastMCP"}
+    return names
+
+
+def test_fastmcp_is_constructed_exactly_once_inside_build_server() -> None:
+    tree = ast.parse((SRC / f"{TOOL_ENTRY}.py").read_text())
+    names = _fastmcp_names(tree)
+    assert names  # server.py does import it
+    builds: list[str] = []
+    for func in ast.walk(tree):
+        if isinstance(func, ast.FunctionDef | ast.AsyncFunctionDef | ast.Module):
+            for node in ast.walk(func):
+                if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id in names:
+                    builds.append(func.name if not isinstance(func, ast.Module) else "<module>")
+    # ast.walk visits a call once per enclosing scope; count the innermost function only.
+    in_build_server = builds.count("build_server")
+    assert in_build_server == 1, builds
+    assert set(builds) <= {"build_server", "<module>"}, builds
+    assert builds.count("<module>") == 1, builds  # the same single call, seen from the module
+
+
+def _runner_hits(path: Path) -> list[str]:
+    hits: list[str] = []
+    for node in ast.walk(ast.parse(path.read_text())):
+        if isinstance(node, ast.Call):
+            func = node.func
+            if isinstance(func, ast.Attribute) and func.attr in _RUNNER_ATTRS:
+                hits.append(f"{path.name}:{node.lineno} {ast.unparse(func)}")
+            elif isinstance(func, ast.Name) and (func.id in _RUNNER_NAMES or func.id in _RUNNER_ATTRS):
+                hits.append(f"{path.name}:{node.lineno} {func.id}")
+        elif isinstance(node, ast.Import | ast.ImportFrom):
+            modules = [node.module or ""] if isinstance(node, ast.ImportFrom) else [a.name for a in node.names]
+            for module in modules:
+                root = module.split(".")[0]
+                if root in _RUNNER_MODULES or module.startswith("http.server"):
+                    hits.append(f"{path.name}:{node.lineno} import {module}")
+                elif root == "uvicorn" and not (path.name == "main.py" and isinstance(node, ast.Import)):
+                    hits.append(f"{path.name}:{node.lineno} import {module} (only main.py may `import uvicorn`)")
+    return hits
+
+
+_THE_ONE_RUN = "main.py:{line} uvicorn.run"
+
+
+def test_nothing_in_the_package_starts_a_server_or_listener_but_mains_uvicorn_run() -> None:
+    """Rule (3): no .run/.serve/.start*, no thread, process, socket, asyncio or anyio server, no
+    uvicorn.Server/Config, anywhere in the package (admin code included) — except the single
+    uvicorn.run in main.py, which must serve the app of the server build_server returned."""
+    hits = [hit for path in sorted(SRC.rglob("*.py")) for hit in _runner_hits(path)]
+    main_tree = ast.parse((SRC / "main.py").read_text())
+    runs = [
+        node for node in ast.walk(main_tree) if isinstance(node, ast.Call) and ast.unparse(node.func) == "uvicorn.run"
+    ]
+    assert len(runs) == 1, runs
+    allowed = _THE_ONE_RUN.format(line=runs[0].lineno)
+    assert [hit for hit in hits if hit != allowed] == []
+    # The one app served is <the build_server result>.streamable_http_app().
+    built = {
+        target.id
+        for node in ast.walk(main_tree)
+        if isinstance(node, ast.Assign)
+        and isinstance(node.value, ast.Call)
+        and ast.unparse(node.value.func) == "build_server"
+        for target in node.targets
+        if isinstance(target, ast.Name)
+    }
+    served = runs[0].args[0]
+    assert isinstance(served, ast.Call)
+    assert isinstance(served.func, ast.Attribute)
+    assert served.func.attr == "streamable_http_app"
+    assert isinstance(served.func.value, ast.Name)
+    assert served.func.value.id in built
