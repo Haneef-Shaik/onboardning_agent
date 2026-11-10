@@ -1,0 +1,28 @@
+M1 injection pattern 'ignore_instructions' removed -> KILLED by FAILED libs/py-guardrails/tests/injection/test_injection_corpus.py::test_corpus_covers_at_least_twenty_known_patterns
+M2 injection normalisation skips the skeleton (zero-width/homoglyphs) -> KILLED by FAILED libs/py-guardrails/tests/injection/test_injection_corpus.py::test_every_known_pattern_in_the_corpus_is_detected
+M3 spaced-out letters not joined -> KILLED by FAILED libs/py-guardrails/tests/injection/test_injection_corpus.py::test_every_known_pattern_in_the_corpus_is_detected
+M4 injection finding does not block -> KILLED by FAILED libs/py-guardrails/tests/test_external.py::test_the_local_detector_still_blocks_when_bedrock_would_pass
+M5 tool results not treated as untrusted -> KILLED by FAILED libs/py-guardrails/tests/test_guarded.py::test_an_injection_in_a_tool_result_is_blocked
+M6 input PII redaction off for untrusted text -> KILLED by FAILED libs/py-guardrails/tests/test_external.py::test_bedrock_sees_only_redacted_text_and_passes_are_recorded
+M7 input PII redaction off for system/other text -> KILLED by FAILED libs/py-guardrails/tests/test_guarded.py::test_aadhaar_and_pan_in_free_text_reach_the_fake_llm_only_as_markers
+M8 untrusted text not delimited -> KILLED by FAILED libs/py-guardrails/tests/test_guarded.py::test_untrusted_messages_are_delimited_and_the_system_prompt_carries_the_notice
+M9 delimiter tag inside text not escaped -> KILLED by FAILED libs/py-guardrails/tests/test_parts.py::test_a_closing_tag_inside_untrusted_text_is_escaped
+M10 output PII scan off for tool-call args -> KILLED by FAILED libs/py-guardrails/tests/test_guarded.py::test_pii_in_the_reply_and_in_tool_call_arguments_is_redacted
+M11 output PII scan off for content -> KILLED by FAILED libs/py-guardrails/tests/test_guarded.py::test_pii_in_a_tool_result_and_in_history_is_redacted_too
+M12 no repair: fail on the first invalid reply -> KILLED by FAILED libs/py-guardrails/tests/test_guarded.py::test_invalid_structured_output_gets_exactly_one_repair_then_fails_visibly
+M13 a second repair attempt -> KILLED by FAILED libs/py-guardrails/tests/test_guarded.py::test_invalid_structured_output_gets_exactly_one_repair_then_fails_visibly
+M14 invalid output after repair returned silently -> KILLED by FAILED libs/py-guardrails/tests/test_guarded.py::test_invalid_structured_output_gets_exactly_one_repair_then_fails_visibly
+M15 step limit off-by-one (> instead of >= before a call) -> KILLED by FAILED libs/py-guardrails/tests/test_guarded.py::test_an_exceeded_step_budget_stops_the_agent_loop
+M16 budget not checked before the call -> KILLED by FAILED libs/py-guardrails/tests/test_guarded.py::test_an_exceeded_step_budget_stops_the_agent_loop
+M17 budget not checked after the call -> KILLED by FAILED libs/py-guardrails/tests/test_guarded.py::test_an_exceeded_token_budget_stops_after_the_call_that_crossed_it
+M18 charge not propagated to the run budget -> KILLED by FAILED libs/py-guardrails/tests/test_guarded.py::test_the_run_token_budget_is_shared_by_its_tasks
+M19 model call not bounded by the time left -> KILLED by FAILED libs/py-guardrails/tests/test_parts.py::test_a_model_call_that_outlives_the_time_budget_is_cut_off
+M20 decision not audited -> KILLED by FAILED libs/py-guardrails/tests/test_external.py::test_bedrock_sees_only_redacted_text_and_passes_are_recorded
+M21 no guardrail.outcome span event -> KILLED by FAILED libs/py-guardrails/tests/test_guarded.py::test_every_decision_is_a_span_event_and_an_audit_record
+M22 blocked decision audited as success -> KILLED by FAILED libs/py-guardrails/tests/test_external.py::test_an_intervention_on_the_input_blocks_before_the_model
+M23 external guard error fails open -> KILLED by FAILED libs/py-guardrails/tests/test_external.py::test_an_unreachable_guard_fails_closed
+M24 external intervention ignored -> KILLED by FAILED libs/py-guardrails/tests/test_external.py::test_an_intervention_on_the_input_blocks_before_the_model
+M25 external guard sees unredacted text -> KILLED by FAILED libs/py-guardrails/tests/test_external.py::test_bedrock_sees_only_redacted_text_and_passes_are_recorded
+M26 trusted messages delimited like chat -> KILLED by FAILED libs/py-guardrails/tests/test_guarded.py::test_untrusted_messages_are_delimited_and_the_system_prompt_carries_the_notice
+tree clean after restore: True
+26/26 mutations killed

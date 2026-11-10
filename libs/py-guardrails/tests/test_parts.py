@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import time
 from typing import Any
 
 import pytest
@@ -96,8 +97,10 @@ def test_a_model_call_that_outlives_the_time_budget_is_cut_off(telemetry: Captur
 
     audit = InMemoryAuditLog()
     guard = guarded(RunnableLambda(slow), audit, limits=BudgetLimits(max_seconds=0.2))
+    started = time.monotonic()
     with pytest.raises(BudgetExceededError, match="seconds"):
         run(guard.ainvoke([HumanMessage("hi")]))
+    assert time.monotonic() - started < 2  # cut off at the limit, not when the slow call finally returns
     assert next(row for row in audited(audit) if row[1] == "denied")[0] == "guardrail.budget"
     assert guard.budget.usage.steps == 1
 
