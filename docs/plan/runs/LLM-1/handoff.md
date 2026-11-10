@@ -1,4 +1,4 @@
-# Handoff — LLM-1 · Plug LLM providers in through a connector registry        attempt 1 · goal/llm-1-llm-connectors · evidence captured at f3675d6 (see `git log -1` for the handoff commit)
+# Handoff — LLM-1 · Plug LLM providers in through a connector registry        attempt 2 · goal/llm-1-llm-connectors · tests and make check at 70f774e; model-id scan at the handoff commit (see the scan file header)
 
 **Outcome claimed.** `libs/py-llm` (`onb_llm`) resolves a LangChain `BaseChatModel` for any agent from
 `config/llm.yaml` plus env. Resolution runs agent manifest → org override → global default. Connectors
@@ -40,7 +40,7 @@ in code.
 ## Gates
 | Gate | Command | Result |
 |------|---------|--------|
-| Check | `make check` | `make check: all passed`, `exit=0`. Lint, typecheck and test ran for 17 projects. py-llm coverage `TOTAL 584 7 99%` (`docs/evidence/LLM-1/make-check.txt`, `unit-tests-coverage.txt`, at f3675d6) |
+| Check | `make check` | `make check: all passed`, `exit=0`. Lint, typecheck and test ran for 17 projects. py-llm coverage `TOTAL 584 7 99%` (`docs/evidence/LLM-1/make-check.txt` with `NX_SKIP_NX_CACHE=true`, so `nx run py-llm:test` really ran; `unit-tests-coverage.txt`; both at 70f774e) |
 
 Not run: `make test-int`. The diff does not touch `apps/*`, `py-data`, `py-crypto`, `py-eventbus` or `infra/`, and py-llm has no integration target. No real model was called. The other gates (test-xt, contracts-check, evals-selftest, test-pii, e2e) don't apply to this diff, and some don't exist yet.
 
@@ -81,3 +81,10 @@ None written; these are small and recorded here and in the code:
 - `ChatBedrockConverse` takes the guardrail as `guardrails=` (alias of `guardrail_config`), and it reports `region_name=None` unless the region is passed in.
 - `pydantic.model_copy` shares private attributes, so a copied fake model shared its call log with the original. `ScriptedChatModel.__copy__` now starts fresh.
 - The rtk shell hook truncates captured command output, so evidence files were captured through `rtk proxy`.
+- **Attempt 1 failed (verifier).** `pytest -v` printed the guard's sample model ids (parametrize ids) into
+  `docs/evidence/LLM-1/unit-tests-coverage.txt`. The scan covers that file, so the guard failed. My
+  `make check` had reused an Nx-cached py-llm result and missed it. Fixed in 70f774e with neutral
+  ids; the evidence was regenerated, and `make check` was re-run with `NX_SKIP_NX_CACHE=true`. The
+  model-id scan was re-run at the final handoff commit.
+- **Mutation evidence.** `mutation-checks.txt` was captured at 2c48212 plus the mutate.py fix. Since
+  then only test ids and evidence changed, and no source file.
