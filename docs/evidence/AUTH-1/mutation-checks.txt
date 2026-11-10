@@ -1,0 +1,99 @@
+M1 token: claims no longer required
+  apps/api/src/onb_api/auth/tokens.py: 'options={"require": list(_REQUIRED_CLAIMS)},' -> 'options={},'
+  caught: yes (5 failed)
+    FAILED apps/api/tests/test_tokens.py::test_a_token_missing_a_claim_is_refused[sub]
+    FAILED apps/api/tests/test_tokens.py::test_a_token_missing_a_claim_is_refused[org_id]
+    FAILED apps/api/tests/test_tokens.py::test_a_token_missing_a_claim_is_refused[role]
+    FAILED apps/api/tests/test_tokens.py::test_a_token_missing_a_claim_is_refused[exp]
+    FAILED apps/api/tests/test_tokens.py::test_a_token_missing_a_claim_is_refused[iat]
+M2 token: expiry not checked
+  apps/api/src/onb_api/auth/tokens.py: 'options={"require": list(_REQUIRED_CLAIMS)},' -> 'options={"require": list(_REQUIRED_CLAIMS), "verify_exp": False},'
+  caught: yes (3 failed)
+    FAILED apps/api/tests/test_login.py::test_expired_token_returns_401
+    FAILED apps/api/tests/test_login.py::test_the_401_answer_carries_no_token_detail
+    FAILED apps/api/tests/test_tokens.py::test_an_expired_token_is_refused
+M3 token: signature not checked
+  apps/api/src/onb_api/auth/tokens.py: 'options={"require": list(_REQUIRED_CLAIMS)},' -> 'options={"require": list(_REQUIRED_CLAIMS), "verify_signature": False},'
+  caught: yes (10 failed)
+    FAILED apps/api/tests/test_login.py::test_expired_token_returns_401
+    FAILED apps/api/tests/test_login.py::test_tampered_token_returns_401
+    FAILED apps/api/tests/test_login.py::test_token_signed_with_another_secret_returns_401
+    FAILED apps/api/tests/test_login.py::test_the_401_answer_carries_no_token_detail
+    FAILED apps/api/tests/test_tokens.py::test_an_expired_token_is_refused
+    FAILED apps/api/tests/test_tokens.py::test_a_token_signed_with_another_secret_is_refused
+    ... and 4 more
+M4 dependency: missing token let through as a fixed principal
+  apps/api/src/onb_api/auth/dependencies.py: 'if credentials is None:\n        raise unauthenticated()' -> 'if credentials is None:\n        with tenant_scope("org_acme"):\n            yield Principal(user_id="u_acme_hr1", org_id="org_acme", role=Role.HR_ADMIN)\n        return'
+  caught: yes (9 failed)
+    FAILED apps/api/tests/test_login.py::test_missing_token_returns_401
+    FAILED apps/api/tests/test_login.py::test_a_malformed_authorization_header_returns_401[]
+    FAILED apps/api/tests/test_login.py::test_a_malformed_authorization_header_returns_401[Bearer]
+    FAILED apps/api/tests/test_login.py::test_a_malformed_authorization_header_returns_401[Bearer
+    FAILED apps/api/tests/test_login.py::test_a_malformed_authorization_header_returns_401[Basic
+    FAILED apps/api/tests/test_login.py::test_a_malformed_authorization_header_returns_401[Token
+    ... and 3 more
+M5 dependency: route not run in the token's tenant scope
+  apps/api/src/onb_api/auth/dependencies.py: 'with tenant_scope(principal.org_id):\n        yield principal' -> 'yield principal'
+  caught: yes (12 failed)
+    FAILED apps/api/tests/test_login.py::test_me_with_a_valid_token_returns_the_user
+    FAILED apps/api/tests/test_login.py::test_a_token_from_login_opens_me
+    FAILED apps/api/tests/test_org_from_token.py::test_an_org_id_in_the_query_is_ignored[org_id=org_globex]
+    FAILED apps/api/tests/test_org_from_token.py::test_an_org_id_in_the_query_is_ignored[orgId=org_globex]
+    FAILED apps/api/tests/test_org_from_token.py::test_an_org_id_in_the_query_is_ignored[tenant=org_globex]
+    FAILED apps/api/tests/test_org_from_token.py::test_an_org_id_in_a_header_is_ignored[X-Org-Id]
+    ... and 6 more
+M6 require_role: role not checked
+  apps/api/src/onb_api/auth/dependencies.py: 'if principal.role not in allowed:' -> 'if False:'
+  caught: yes (5 failed)
+    FAILED apps/api/tests/test_role_matrix.py::test_require_role_gives_200_to_listed_roles_and_403_to_others[/probe/admin-HR]
+    FAILED apps/api/tests/test_role_matrix.py::test_require_role_gives_200_to_listed_roles_and_403_to_others[/probe/admin-MANAGER]
+    FAILED apps/api/tests/test_role_matrix.py::test_require_role_gives_200_to_listed_roles_and_403_to_others[/probe/hr-MANAGER]
+    FAILED apps/api/tests/test_role_matrix.py::test_require_role_gives_200_to_listed_roles_and_403_to_others[/probe/manager-HR_ADMIN]
+    FAILED apps/api/tests/test_role_matrix.py::test_require_role_gives_200_to_listed_roles_and_403_to_others[/probe/manager-HR]
+M7 manager scope: filter not narrowed
+  apps/api/src/onb_api/auth/scope.py: 'return {"manager_id": principal.user_id} if principal.role is Role.MANAGER else {}' -> 'return {}'
+  caught: yes (1 failed)
+    FAILED apps/api/tests/test_manager_scope.py::test_a_manager_filter_narrows_to_their_reports
+M8 manager scope: single record not guarded
+  apps/api/src/onb_api/auth/scope.py: 'if principal.role is Role.MANAGER and record.get("manager_id") != principal.user_id:' -> 'if False:'
+  caught: yes (3 failed)
+    FAILED apps/api/tests/test_manager_scope.py::test_another_managers_report_is_not_found_not_forbidden[record0]
+    FAILED apps/api/tests/test_manager_scope.py::test_another_managers_report_is_not_found_not_forbidden[record1]
+    FAILED apps/api/tests/test_manager_scope.py::test_another_managers_report_is_not_found_not_forbidden[record2]
+M9 settings: JWT_SECRET falls back to a default
+  apps/api/src/onb_api/auth/settings.py: 'secret = require_env(source, "JWT_SECRET")' -> 'secret = source.get("JWT_SECRET") or "fallback-secret-fallback-secret-xx"'
+  caught: yes (5 failed)
+    FAILED apps/api/tests/test_auth_settings.py::test_settings_fail_without_jwt_secret[env0]
+    FAILED apps/api/tests/test_auth_settings.py::test_settings_fail_without_jwt_secret[env1]
+    FAILED apps/api/tests/test_auth_settings.py::test_settings_fail_without_jwt_secret[env2]
+    FAILED apps/api/tests/test_auth_settings.py::test_create_app_fails_without_jwt_secret
+    FAILED apps/api/tests/test_auth_settings.py::test_startup_fails_without_jwt_secret
+M10 login: password not checked
+  apps/api/src/onb_api/auth/routes.py: 'if user is None or not password_ok:' -> 'if user is None:'
+  caught: yes (3 failed)
+    FAILED apps/api/tests/test_login.py::test_login_with_a_wrong_password_returns_401
+    FAILED apps/api/tests/test_login.py::test_login_with_an_unknown_email_answers_exactly_like_a_wrong_password
+    FAILED apps/api/tests/test_login.py::test_login_with_a_password_longer_than_bcrypt_reads_returns_401
+M11 login body: unknown fields (org_id) ignored
+  libs/py-contracts/src/onb_contracts/auth.py: 'class LoginRequest(RequestModel):' -> 'class LoginRequest(RequestModel):\n    model_config = ConfigDict(frozen=True, extra="ignore")'
+  caught: yes (7 failed)
+    FAILED apps/api/tests/test_org_from_token.py::test_a_login_body_with_org_id_is_rejected
+    FAILED apps/api/tests/test_org_from_token.py::test_a_login_body_with_any_tenant_key_is_rejected[org_id]
+    FAILED apps/api/tests/test_org_from_token.py::test_a_login_body_with_any_tenant_key_is_rejected[orgId]
+    FAILED apps/api/tests/test_org_from_token.py::test_a_login_body_with_any_tenant_key_is_rejected[tenant]
+    FAILED apps/api/tests/test_org_from_token.py::test_a_login_body_with_any_tenant_key_is_rejected[org]
+    FAILED apps/api/tests/test_routes.py::test_every_request_model_rejects_unknown_fields
+    ... and 1 more
+M12 a new route without a token guard or a role-matrix row
+  apps/api/src/onb_api/app.py: 'app.include_router(auth_routes.router)' -> 'app.include_router(auth_routes.router)\n    app.add_api_route("/unguarded", lambda: None)'
+  caught: yes (3 failed)
+    FAILED apps/api/tests/test_role_matrix.py::test_every_route_is_public_or_in_the_role_matrix
+    FAILED apps/api/tests/test_role_matrix.py::test_every_guarded_route_takes_the_org_from_the_token
+    FAILED apps/api/tests/test_routes.py::test_every_route_declares_an_envelope_response_model
+M13 data errors: a foreign id answers 403 instead of 404
+  apps/api/src/onb_api/errors.py: 'NotFoundError: ErrorCode.NOT_FOUND,' -> 'NotFoundError: ErrorCode.FORBIDDEN,'
+  caught: yes (1 failed)
+    FAILED apps/api/tests/test_data_errors.py::test_a_data_error_becomes_its_envelope_answer[NotFoundError-404-NOT_FOUND]
+
+13/13 mutations caught
+exit=0
