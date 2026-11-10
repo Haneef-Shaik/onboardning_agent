@@ -12,7 +12,7 @@ export NX_TUI := false
 COMPOSE := docker compose
 ENV_FILE := .env
 
-.PHONY: bootstrap check plan-check env-check tooling-test lint typecheck test test-int fmt up down logs
+.PHONY: bootstrap check plan-check env-check tooling-test contracts contracts-check lint typecheck test test-int fmt up down logs
 
 ## Install the pinned toolchains: one uv virtualenv at the root, and node_modules.
 bootstrap:
@@ -33,10 +33,18 @@ env-check:
 	python3 scripts/check_env_example.py
 
 tooling-test:
-	uv run --frozen ruff check tools scripts/check_env_example.py
-	uv run --frozen ruff format --check tools scripts/check_env_example.py
-	uv run --frozen mypy tools scripts/check_env_example.py
+	uv run --frozen ruff check tools scripts/check_env_example.py scripts/contracts.py
+	uv run --frozen ruff format --check tools scripts/check_env_example.py scripts/contracts.py
+	uv run --frozen mypy tools scripts/check_env_example.py scripts/contracts.py
 	uv run --frozen pytest tools/tests scripts/plan/test_plan.py -q
+
+## API contracts (PRD §11): the OpenAPI document and the TS client generated from it.
+## `contracts` regenerates both; `contracts-check` fails when either is stale against the API.
+contracts:
+	uv run --frozen python scripts/contracts.py generate
+
+contracts-check:
+	uv run --frozen python scripts/contracts.py check
 
 lint:
 	$(NX) run-many -t lint --output-style=static
