@@ -74,6 +74,9 @@ def test_an_unhandled_error_marks_the_server_span_as_failed_without_the_message(
 
 def test_main_initialises_telemetry_as_the_api_service(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("OTEL_TRACES_EXPORTER", "none")
+    # main.py also needs the Mongo settings (AUTH-1); the client is lazy, so nothing connects.
+    monkeypatch.setenv("MONGO_URI", "mongodb://127.0.0.1:1/?serverSelectionTimeoutMS=1")
+    monkeypatch.setenv("MONGO_DATABASE", "onb")
     reset_telemetry_globals()
     sys.modules.pop("onb_api.main", None)
     try:

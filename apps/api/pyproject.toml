@@ -6,12 +6,16 @@ requires-python = ">=3.12,<3.13"
 dependencies = [
   "fastapi>=0.115,<1",
   "uvicorn>=0.32,<1",
+  "bcrypt>=4.2,<6",
+  "pyjwt>=2.9,<3",
   "onb-contracts",
+  "onb-data",
   "onb-telemetry",
 ]
 
 [tool.uv.sources]
 onb-contracts = { workspace = true }
+onb-data = { workspace = true }
 onb-telemetry = { workspace = true }
 
 [build-system]

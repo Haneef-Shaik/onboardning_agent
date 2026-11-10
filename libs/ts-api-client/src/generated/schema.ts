@@ -4,6 +4,23 @@
  */
 
 export interface paths {
+    "/auth/login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Login */
+        post: operations["login"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/health": {
         parameters: {
             query?: never;
@@ -13,6 +30,23 @@ export interface paths {
         };
         /** Health */
         get: operations["getHealth"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Me */
+        get: operations["getMe"];
         put?: never;
         post?: never;
         delete?: never;
@@ -86,6 +120,37 @@ export interface components {
             /** Success */
             success: boolean;
         };
+        /** LoginRequest */
+        LoginRequest: {
+            /** Email */
+            email: string;
+            /** Password */
+            password: string;
+        };
+        /** Me */
+        Me: {
+            /** Email */
+            email: string;
+            /** Name */
+            name: string;
+            /** Org Id */
+            org_id: string;
+            role: components["schemas"]["Role"];
+            /** User Id */
+            user_id: string;
+        };
+        /**
+         * MeEnvelope
+         * @description The signed-in user.
+         */
+        MeEnvelope: {
+            data: components["schemas"]["Me"] | null;
+            error: components["schemas"]["ErrorBody"] | null;
+            /** @default {} */
+            meta: components["schemas"]["Meta"];
+            /** Success */
+            success: boolean;
+        };
         /** Meta */
         Meta: {
             page: components["schemas"]["PageMeta"] | null;
@@ -101,6 +166,39 @@ export interface components {
             /** Total */
             total: number;
         };
+        /**
+         * Role
+         * @enum {string}
+         */
+        Role: "HR_ADMIN" | "HR" | "MANAGER";
+        /** Token */
+        Token: {
+            /** Access Token */
+            access_token: string;
+            /**
+             * Expires At
+             * @description Unix time (seconds) when the token stops being accepted
+             */
+            expires_at: number;
+            /**
+             * Token Type
+             * @default bearer
+             * @constant
+             */
+            token_type: "bearer";
+        };
+        /**
+         * TokenEnvelope
+         * @description A signed access token.
+         */
+        TokenEnvelope: {
+            data: components["schemas"]["Token"] | null;
+            error: components["schemas"]["ErrorBody"] | null;
+            /** @default {} */
+            meta: components["schemas"]["Meta"];
+            /** Success */
+            success: boolean;
+        };
     };
     responses: never;
     parameters: never;
@@ -110,6 +208,39 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    login: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LoginRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TokenEnvelope"];
+                };
+            };
+            /** @description Error, in the envelope */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
     getHealth: {
         parameters: {
             query?: never;
@@ -126,6 +257,35 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HealthEnvelope"];
+                };
+            };
+            /** @description Error, in the envelope */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    getMe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MeEnvelope"];
                 };
             };
             /** @description Error, in the envelope */

@@ -167,7 +167,7 @@ class TenantRepository(_Repository):
 
 
 class GlobalRepository(_Repository):
-    """One of the global collections (`orgs`, `agent_registry`, `tool_catalog`): no org scope."""
+    """One of the global collections (`store.GLOBAL_COLLECTIONS`): no org scope."""
 
     __slots__ = ()
 

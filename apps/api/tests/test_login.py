@@ -1,0 +1,142 @@
+"""`POST /auth/login` and `GET /me`; every authentication failure is 401 (AUTH-1 box 1, PRD §7.8)."""
+
+from datetime import UTC, datetime, timedelta
+
+import jwt
+import pytest
+from fastapi.testclient import TestClient
+from onb_api import create_app
+from onb_api.auth.tokens import read_token
+from onb_contracts.auth import BEARER, Role
+
+from .auth_fakes import PASSWORD, TEST_SETTINGS, InMemoryUserStore, bearer, email_of, token_for
+
+ACME_HR = ("u_acme_hr1", "org_acme", Role.HR)
+
+
+def _login(client: TestClient, email: str, password: str) -> object:
+    return client.post("/auth/login", json={"email": email, "password": password})
+
+
+def _assert_401(response: object) -> None:
+    assert getattr(response, "status_code", None) == 401
+    body = response.json()  # type: ignore[attr-defined]
+    assert body["success"] is False
+    assert body["data"] is None
+    assert body["error"]["code"] == "UNAUTHENTICATED"
+    assert response.headers["www-authenticate"] == "Bearer"  # type: ignore[attr-defined]
+
+
+# --- login ------------------------------------------------------------------------------------
+
+
+def test_login_with_the_right_password_returns_a_token_for_the_users_org_and_role(client: TestClient) -> None:
+    response = client.post("/auth/login", json={"email": email_of("u_acme_hr1"), "password": PASSWORD})
+    assert response.status_code == 200
+    token = response.json()["data"]
+    assert token["token_type"] == BEARER
+    principal = read_token(token["access_token"], TEST_SETTINGS)
+    assert (principal.user_id, principal.org_id, principal.role) == ACME_HR
+
+
+def test_login_matches_the_email_ignoring_case_and_spaces(client: TestClient) -> None:
+    response = client.post("/auth/login", json={"email": "  U_ACME_HR1@Example.COM ", "password": PASSWORD})
+    assert response.status_code == 200
+
+
+def test_login_with_a_wrong_password_returns_401(client: TestClient) -> None:
+    response = client.post("/auth/login", json={"email": email_of("u_acme_hr1"), "password": PASSWORD + "x"})
+    _assert_401(response)
+    assert response.json()["error"]["message"] == "Authentication required"
+
+
+def test_login_with_an_unknown_email_answers_exactly_like_a_wrong_password(client: TestClient) -> None:
+    wrong_password = client.post("/auth/login", json={"email": email_of("u_acme_hr1"), "password": "nope"})
+    unknown = client.post("/auth/login", json={"email": "nobody@example.com", "password": "nope"})
+    _assert_401(unknown)
+    strip = {"meta"}
+    assert {k: v for k, v in unknown.json().items() if k not in strip} == {
+        k: v for k, v in wrong_password.json().items() if k not in strip
+    }
+
+
+def test_login_with_a_password_longer_than_bcrypt_reads_returns_401(client: TestClient) -> None:
+    response = client.post("/auth/login", json={"email": email_of("u_acme_hr1"), "password": PASSWORD + "x" * 80})
+    _assert_401(response)
+
+
+def test_login_for_a_user_whose_record_is_gone_returns_401(client: TestClient, users: InMemoryUserStore) -> None:
+    users.remove_user_record("org_acme", "u_acme_hr1")
+    _assert_401(client.post("/auth/login", json={"email": email_of("u_acme_hr1"), "password": PASSWORD}))
+
+
+def test_login_without_a_user_store_is_service_unavailable() -> None:
+    with TestClient(create_app(auth=TEST_SETTINGS)) as client:
+        response = client.post("/auth/login", json={"email": email_of("u_acme_hr1"), "password": PASSWORD})
+    assert response.status_code == 503
+    assert response.json()["error"]["code"] == "SERVICE_UNAVAILABLE"
+
+
+# --- /me and the token check ---------------------------------------------------------------------
+
+
+def test_me_with_a_valid_token_returns_the_user(client: TestClient) -> None:
+    response = client.get("/me", headers=bearer(token_for(*ACME_HR)))
+    assert response.status_code == 200
+    assert response.json()["data"] == {
+        "user_id": "u_acme_hr1",
+        "org_id": "org_acme",
+        "role": "HR",
+        "name": "Sameer Khan",
+        "email": email_of("u_acme_hr1"),
+    }
+
+
+def test_a_token_from_login_opens_me(client: TestClient) -> None:
+    login = client.post("/auth/login", json={"email": email_of("u_globex_mgr1"), "password": PASSWORD})
+    token = login.json()["data"]["access_token"]
+    me = client.get("/me", headers=bearer(token)).json()["data"]
+    assert (me["user_id"], me["org_id"], me["role"]) == ("u_globex_mgr1", "org_globex", "MANAGER")
+
+
+def test_missing_token_returns_401(client: TestClient) -> None:
+    _assert_401(client.get("/me"))
+
+
+def test_expired_token_returns_401(client: TestClient) -> None:
+    issued = datetime.now(UTC) - TEST_SETTINGS.token_ttl - timedelta(seconds=1)
+    _assert_401(client.get("/me", headers=bearer(token_for(*ACME_HR, now=issued))))
+
+
+def test_tampered_token_returns_401(client: TestClient) -> None:
+    header, payload, signature = token_for(*ACME_HR).split(".")
+    flipped = ("A" if signature[0] != "A" else "B") + signature[1:]
+    _assert_401(client.get("/me", headers=bearer(f"{header}.{payload}.{flipped}")))
+
+
+def test_token_signed_with_another_secret_returns_401(client: TestClient) -> None:
+    claims = {"sub": "u_acme_hradmin", "org_id": "org_acme", "role": "HR_ADMIN", "iat": 0, "exp": 4_000_000_000}
+    forged = jwt.encode(claims, "an-attacker-chosen-secret-that-is-long-enough!!", algorithm="HS256")
+    _assert_401(client.get("/me", headers=bearer(forged)))
+
+
+@pytest.mark.parametrize(
+    "authorization",
+    ["", "Bearer", "Bearer ", "Basic dXNlcjpwYXNz", "Token abc", "bearer-ish abc", "Bearer not.a.jwt"],
+)
+def test_a_malformed_authorization_header_returns_401(client: TestClient, authorization: str) -> None:
+    _assert_401(client.get("/me", headers={"Authorization": authorization}))
+
+
+def test_a_valid_token_for_a_user_whose_record_is_gone_returns_401(
+    client: TestClient, users: InMemoryUserStore
+) -> None:
+    users.remove_user_record("org_acme", "u_acme_hr1")
+    _assert_401(client.get("/me", headers=bearer(token_for(*ACME_HR))))
+
+
+def test_the_401_answer_carries_no_token_detail(client: TestClient) -> None:
+    issued = datetime.now(UTC) - TEST_SETTINGS.token_ttl - timedelta(seconds=1)
+    body = client.get("/me", headers=bearer(token_for(*ACME_HR, now=issued))).json()
+    assert body["error"]["message"] == "Authentication required"
+    assert "details" not in body["error"] or not body["error"]["details"]

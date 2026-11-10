@@ -5,6 +5,8 @@
   code's fixed message. Its `detail` is never shown.
 - Validation errors list the failing fields and issues, never the submitted values (`validation`).
 - An `HTTPException` with a status under 400 (304, a redirect) passes through without the envelope.
+- Data-layer errors (PRD §7.9): no tenant context is 401, a missing or foreign id is 404 (never
+  403, so nothing leaks about other orgs), naming another org is 400. Their text is never shown.
 - Anything else is `INTERNAL_ERROR` with a fixed message. The server log and the span get the
   exception type and route only: messages and tracebacks can carry personal data (PRD §5.5).
 """
@@ -19,6 +21,7 @@ from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, Response
 from onb_contracts import ERROR_STATUS, ErrorCode, ErrorDetail, code_for_status, fail
+from onb_data import NoTenantContextError, NotFoundError, TenantViolationError
 from opentelemetry import trace
 from opentelemetry.trace import Status, StatusCode
 from starlette.exceptions import HTTPException as StarletteHTTPException
@@ -91,6 +94,21 @@ async def _http_error(_: Request, exc: Exception) -> Response:
     return error_response(code_for_status(exc.status_code), status=exc.status_code, headers=headers)
 
 
+_DATA_ERRORS: Mapping[type[Exception], ErrorCode] = {
+    NoTenantContextError: ErrorCode.UNAUTHENTICATED,
+    NotFoundError: ErrorCode.NOT_FOUND,
+    TenantViolationError: ErrorCode.BAD_REQUEST,
+}
+
+
+async def _data_error(_: Request, exc: Exception) -> JSONResponse:
+    code = next((c for kind, c in _DATA_ERRORS.items() if isinstance(exc, kind)), None)
+    if code is None:  # registered for the _DATA_ERRORS types only
+        raise exc
+    headers = {"WWW-Authenticate": "Bearer"} if code is ErrorCode.UNAUTHENTICATED else None
+    return error_response(code, headers=headers)
+
+
 async def _validation_error(request: Request, exc: Exception) -> JSONResponse:
     if not isinstance(exc, RequestValidationError):  # registered for RequestValidationError only
         raise exc
@@ -161,4 +179,6 @@ def install_error_handling(app: FastAPI) -> None:
     app.add_exception_handler(AppError, _app_error)
     app.add_exception_handler(StarletteHTTPException, _http_error)
     app.add_exception_handler(RequestValidationError, _validation_error)
+    for kind in _DATA_ERRORS:
+        app.add_exception_handler(kind, _data_error)
     app.add_middleware(UnhandledErrorMiddleware)

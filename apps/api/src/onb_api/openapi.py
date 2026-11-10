@@ -13,10 +13,12 @@ from collections.abc import Sequence
 from pathlib import Path
 
 from onb_api.app import create_app
+from onb_api.auth.settings import AuthSettings
 
 
 def export_openapi() -> str:
-    spec = create_app().openapi()
+    # The document does not depend on the secret; a throw-away one lets the export run without config.
+    spec = create_app(auth=AuthSettings.ephemeral()).openapi()
     return json.dumps(spec, indent=2, sort_keys=True, ensure_ascii=False) + "\n"
 
 

@@ -23,7 +23,13 @@ from .fakes import FakeClient, FakeCollection, FakeDatabase, make_store
 
 
 def test_the_global_collections_are_exactly_the_short_list() -> None:
-    assert frozenset({"orgs", "agent_registry", "tool_catalog"}) == GLOBAL_COLLECTIONS
+    # user_logins: the login directory (AUTH-1, ADR 0004); it holds only {_id: email hash, org_id, user_id}.
+    assert frozenset({"orgs", "agent_registry", "tool_catalog", "user_logins"}) == GLOBAL_COLLECTIONS
+
+
+def test_users_stay_a_tenant_collection() -> None:
+    assert "users" not in GLOBAL_COLLECTIONS
+    assert isinstance(make_store().tenant("users"), TenantRepository)
 
 
 def test_tenant_collections_get_a_tenant_repository() -> None:
