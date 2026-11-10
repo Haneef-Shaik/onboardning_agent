@@ -1,0 +1,20 @@
+# LLM model selection (PRD §7.1). Model ids and credentials never go in code: they come from the
+# environment (see .env.example). `${VAR}` is required; `${VAR:-default}` falls back when VAR is
+# unset or blank.
+#
+# Resolution for an agent: its manifest's `llm:` → the org's override → `default` below.
+# `LLM_CONNECTOR` switches every alias to another connector, e.g. `fake` in CI and eval self-tests.
+
+default: { alias: standard }
+
+aliases:
+  fast:     { connector: "${LLM_CONNECTOR:-bedrock}", model: "${LLM_MODEL_FAST}" }
+  standard: { connector: "${LLM_CONNECTOR:-bedrock}", model: "${LLM_MODEL_STANDARD}" }
+  deep:     { connector: "${LLM_CONNECTOR:-bedrock}", model: "${LLM_MODEL_DEEP}" }
+
+connectors:
+  bedrock:
+    params:
+      # Optional Bedrock Guardrail, additive to the platform's own guardrails (PRD §8.1).
+      guardrail_id: "${BEDROCK_GUARDRAIL_ID:-}"
+      guardrail_version: "${BEDROCK_GUARDRAIL_VERSION:-}"

@@ -3,7 +3,21 @@ name = "onb-llm"
 version = "0.1.0"
 description = "LLM connector registry"
 requires-python = ">=3.12,<3.13"
-dependencies = []
+dependencies = [
+  "langchain>=1.0,<2",
+  "langchain-aws>=1.0,<2",
+  "langchain-core>=1.0,<2",
+  "onb-telemetry",
+  "opentelemetry-api>=1.45,<2",
+  "pydantic>=2.9,<3",
+  "pyyaml>=6",
+]
+
+# Built-in connectors are found the same way as any other connector package (PRD §7.1).
+[project.entry-points."onboarding.llm_connectors"]
+bedrock = "onb_llm.connectors.bedrock:BedrockConnector"
+langchain = "onb_llm.connectors.langchain:LangChainConnector"
+fake = "onb_llm.connectors.fake:FakeConnector"
 
 [build-system]
 requires = ["hatchling>=1.25"]
@@ -11,3 +25,6 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/onb_llm"]
+
+[tool.uv.sources]
+onb-telemetry = { workspace = true }
