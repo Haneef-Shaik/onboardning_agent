@@ -145,3 +145,9 @@ def test_gitignore_covers(path: str) -> None:
 def test_gitignore_keeps(path: str) -> None:
     result = subprocess.run(["git", "check-ignore", "--no-index", path], cwd=ROOT, capture_output=True, check=False)
     assert result.returncode == 1, f"{path} must not be ignored"
+
+
+def test_nx_cache_lives_in_the_workspace() -> None:
+    """A fresh clone must run every task cold, not read a machine-global cache (~/.nx)."""
+    nx = json.loads((ROOT / "nx.json").read_text(encoding="utf-8"))
+    assert nx.get("cacheDirectory") == ".nx/cache"
