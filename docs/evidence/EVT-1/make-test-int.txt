@@ -1,0 +1,153 @@
+# make test-int at cf5d372, 2026-11-10T05:41:10Z, compose project ob-evt-1
+infra/mongo/gen-keyfile.sh
+gen-keyfile: keeping existing infra/mongo/keyfile
+docker compose up -d --wait --build
+ Image onb/otel-collector:0.165.0 Building 
+#1 [internal] load local bake definitions
+#1 reading from stdin 647B done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 578B done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/alpine:3.24.4@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf
+#3 DONE 0.0s
+
+#4 [internal] load metadata for docker.io/otel/opentelemetry-collector-contrib:0.165.0@sha256:e40d61f10c9a617cca1ffd1be4d7e2b3a4b0f0001798ff07e58cabe82e618cea
+#4 DONE 0.0s
+
+#5 [internal] load .dockerignore
+#5 transferring context: 2B done
+#5 DONE 0.0s
+
+#6 [stage-1 1/3] FROM docker.io/library/alpine:3.24.4@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf
+#6 resolve docker.io/library/alpine:3.24.4@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf 0.0s done
+#6 DONE 0.0s
+
+#7 [upstream 1/1] FROM docker.io/otel/opentelemetry-collector-contrib:0.165.0@sha256:e40d61f10c9a617cca1ffd1be4d7e2b3a4b0f0001798ff07e58cabe82e618cea
+#7 resolve docker.io/otel/opentelemetry-collector-contrib:0.165.0@sha256:e40d61f10c9a617cca1ffd1be4d7e2b3a4b0f0001798ff07e58cabe82e618cea 0.0s done
+#7 DONE 0.0s
+
+#8 [stage-1 2/3] RUN adduser -D -H -u 10001 otel
+#8 CACHED
+
+#9 [stage-1 3/3] COPY --from=upstream /otelcol-contrib /otelcol-contrib
+#9 CACHED
+
+#10 exporting to image
+#10 exporting layers done
+#10 exporting manifest sha256:7db85497abf298e7d6b7cd084321da031e9ea9a3679889a699706929bd925b2f done
+#10 exporting config sha256:e27fddd4cfe817b716596058ef8b58a633b6f17b1cbf1ac339609d20556494c9 done
+#10 exporting attestation manifest sha256:2574ebcc52142587fbb9285d6ab3908dcdec634bdecd159379ef4b62add7fb06 done
+#10 exporting manifest list sha256:10850399ffa7e3f205a68f3a5116ef8841894320f9493f36109b2ea0a430ad58 done
+#10 naming to docker.io/onb/otel-collector:0.165.0 done
+#10 unpacking to docker.io/onb/otel-collector:0.165.0 done
+#10 DONE 0.0s
+
+#11 resolving provenance for metadata file
+#11 DONE 0.0s
+ Image onb/otel-collector:0.165.0 Built 
+ Container ob-evt-1-caddy-1 Running 
+ Container ob-evt-1-mongo-1 Running 
+ Container ob-evt-1-otel-collector-1 Running 
+ Container ob-evt-1-jaeger-1 Running 
+ Container ob-evt-1-jaeger-1 Waiting 
+ Container ob-evt-1-jaeger-1 Waiting 
+ Container ob-evt-1-jaeger-1 Healthy 
+ Container ob-evt-1-jaeger-1 Healthy 
+ Container ob-evt-1-otel-collector-1 Waiting 
+ Container ob-evt-1-jaeger-1 Waiting 
+ Container ob-evt-1-caddy-1 Waiting 
+ Container ob-evt-1-mongo-1 Waiting 
+ Container ob-evt-1-mongo-1 Healthy 
+ Container ob-evt-1-caddy-1 Healthy 
+ Container ob-evt-1-jaeger-1 Healthy 
+ Container ob-evt-1-otel-collector-1 Healthy 
+set -a && . ./.env && set +a && \
+	uv run --frozen pytest tools/tests_int -q -o cache_dir=.pytest_cache/tools-int && \
+	node_modules/.bin/nx run-many -t test-int --output-style=static
+............                                                             [100%]
+12 passed in 2.74s
+
+ NX   Running target test-int for 3 projects:
+
+- py-telemetry
+- py-eventbus
+- py-data
+
+
+
+> nx run py-data:test-int
+
+[2m> [22muv run --frozen pytest libs/py-data/tests_int -o cache_dir=.pytest_cache/py-data-int
+
+[1m============================= test session starts ==============================[0m
+platform darwin -- Python 3.12.13, pytest-9.2.0, pluggy-1.7.0
+cachedir: .pytest_cache/py-data-int
+rootdir: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-evt-1
+configfile: pyproject.toml
+plugins: hypothesis-6.170.15, cov-7.1.0, anyio-4.16.0
+collected 28 items
+
+libs/py-data/tests_int/test_compose_mongo_transaction.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m            [ 14%][0m
+libs/py-data/tests_int/test_tenant_repository.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m    [ 85%][0m
+libs/py-data/tests_int/test_transactions_and_queue.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m               [100%][0m
+
+[32m============================== [32m[1m28 passed[0m[32m in 3.53s[0m[32m ==============================[0m
+
+> nx run py-telemetry:test-int
+
+[2m> [22muv run --frozen pytest libs/py-telemetry/tests_int -o cache_dir=.pytest_cache/py-telemetry-int -rA -s
+
+[1m============================= test session starts ==============================[0m
+platform darwin -- Python 3.12.13, pytest-9.2.0, pluggy-1.7.0
+cachedir: .pytest_cache/py-telemetry-int
+rootdir: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-evt-1
+configfile: pyproject.toml
+plugins: hypothesis-6.170.15, cov-7.1.0, anyio-4.16.0
+collected 3 items
+
+libs/py-telemetry/tests_int/test_jaeger_roundtrip.py 
+Jaeger returned trace 5c93c8e7a9abd166ded31a208bbd4015 for service f4-probe-606e7615: [('f4-probe-606e7615', 'onb_telemetry', 'f4.resumed-after-wait'), ('f4-probe-606e7615', 'opentelemetry.instrumentation.fastapi', 'GET /ping'), ('f4-probe-606e7615', 'opentelemetry.instrumentation.fastapi', 'GET /ping http send')]
+[32m.[0m[32m.[0m[32m.[0m
+
+[33m=============================== warnings summary ===============================[0m
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-evt-1/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+==================================== PASSES ====================================
+[36m[1m=========================== short test summary info ============================[0m
+[32mPASSED[0m libs/py-telemetry/tests_int/test_jaeger_roundtrip.py::[1mtest_fastapi_span_is_returned_by_jaeger_through_the_collector[0m
+[32mPASSED[0m libs/py-telemetry/tests_int/test_jaeger_roundtrip.py::[1mtest_jaeger_lists_the_probe_service[0m
+[32mPASSED[0m libs/py-telemetry/tests_int/test_jaeger_roundtrip.py::[1mtest_pymongo_commands_get_spans[0m
+[33m========================= [32m3 passed[0m, [33m[1m1 warning[0m[33m in 3.72s[0m[33m =========================[0m
+
+> nx run py-eventbus:test-int
+
+[2m> [22muv run --frozen pytest libs/py-eventbus/tests_int -o cache_dir=.pytest_cache/py-eventbus-int
+
+[1m============================= test session starts ==============================[0m
+platform darwin -- Python 3.12.13, pytest-9.2.0, pluggy-1.7.0
+cachedir: .pytest_cache/py-eventbus-int
+rootdir: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-evt-1
+configfile: pyproject.toml
+plugins: hypothesis-6.170.15, cov-7.1.0, anyio-4.16.0
+collected 17 items
+
+libs/py-eventbus/tests_int/test_bus_against_mongo.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m   [100%][0m
+
+[32m============================= [32m[1m17 passed[0m[32m in 11.10s[0m[32m ==============================[0m
+
+
+
+ NX   Successfully ran target test-int for 3 projects
+
+
+  Run duration:      11.6s
+  Cache:             Skipped (--skip-nx-cache)
+  Critical path:     11.6s (1 task)
+  Recoverable time:  <1ms
+exit=0

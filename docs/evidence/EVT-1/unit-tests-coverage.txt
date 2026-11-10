@@ -1,0 +1,97 @@
+# py-eventbus and py-data unit coverage at cf5d372, 2026-11-10T05:41:10Z
+
+> nx run py-eventbus:test
+
+[2m> [22muv run --frozen pytest libs/py-eventbus/tests -o cache_dir=.pytest_cache/py-eventbus --cov=onb_eventbus --cov-report=term-missing --cov-fail-under=80
+
+[1m============================= test session starts ==============================[0m
+platform darwin -- Python 3.12.13, pytest-9.2.0, pluggy-1.7.0
+cachedir: .pytest_cache/py-eventbus
+rootdir: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-evt-1
+configfile: pyproject.toml
+plugins: hypothesis-6.170.15, cov-7.1.0, anyio-4.16.0
+collected 77 items
+
+libs/py-eventbus/tests/test_publish.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m               [ 24%][0m
+libs/py-eventbus/tests/test_settings_and_interface.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m [ 48%]
+[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                                                               [ 61%][0m
+libs/py-eventbus/tests/test_tracing.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                             [ 67%][0m
+libs/py-eventbus/tests/test_worker.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m          [100%][0m
+
+================================ tests coverage ================================
+______________ coverage: platform darwin, python 3.12.13-final-0 _______________
+
+Name                                             Stmts   Miss  Cover   Missing
+------------------------------------------------------------------------------
+libs/py-eventbus/src/onb_eventbus/__init__.py        7      0   100%
+libs/py-eventbus/src/onb_eventbus/bus.py           105      8    92%   40, 45, 140-146, 193
+libs/py-eventbus/src/onb_eventbus/documents.py      36      0   100%
+libs/py-eventbus/src/onb_eventbus/interface.py      20      0   100%
+libs/py-eventbus/src/onb_eventbus/models.py         47      0   100%
+libs/py-eventbus/src/onb_eventbus/settings.py       34      0   100%
+libs/py-eventbus/src/onb_eventbus/worker.py        160      7    96%   62, 67, 200, 206, 258, 262-263
+------------------------------------------------------------------------------
+TOTAL                                              409     15    96%
+[32mRequired test coverage of 80% reached. Total coverage: 96.33%
+[0m[32m============================== [32m[1m77 passed[0m[32m in 0.72s[0m[32m ==============================[0m
+
+
+
+ NX   Successfully ran target test for project py-eventbus
+
+
+  Run duration:      1.4s
+  Cache:             Skipped (--skip-nx-cache)
+  Critical path:     1.3s (1 task)
+  Recoverable time:  <1ms
+py-eventbus exit=0
+
+> nx run py-data:test
+
+[2m> [22muv run --frozen pytest libs/py-data/tests -o cache_dir=.pytest_cache/py-data --cov=onb_data --cov-report=term-missing --cov-fail-under=80
+
+[1m============================= test session starts ==============================[0m
+platform darwin -- Python 3.12.13, pytest-9.2.0, pluggy-1.7.0
+cachedir: .pytest_cache/py-data
+rootdir: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-evt-1
+configfile: pyproject.toml
+plugins: hypothesis-6.170.15, cov-7.1.0, anyio-4.16.0
+collected 192 items
+
+libs/py-data/tests/test_context.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                        [  7%][0m
+libs/py-data/tests/test_exports.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                         [ 14%][0m
+libs/py-data/tests/test_onb_data.py [32m.[0m[32m                                    [ 14%][0m
+libs/py-data/tests/test_repository.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m [ 32%]
+[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                           [ 56%][0m
+libs/py-data/tests/test_store.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m  [ 76%][0m
+libs/py-data/tests/test_transactions_and_queue.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m [ 87%]
+[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                                                 [100%][0m
+
+================================ tests coverage ================================
+______________ coverage: platform darwin, python 3.12.13-final-0 _______________
+
+Name                                      Stmts   Miss  Cover   Missing
+-----------------------------------------------------------------------
+libs/py-data/src/onb_data/__init__.py         8      0   100%
+libs/py-data/src/onb_data/context.py         28      0   100%
+libs/py-data/src/onb_data/errors.py          10      0   100%
+libs/py-data/src/onb_data/queue.py           72      1    99%   70
+libs/py-data/src/onb_data/repository.py     104      0   100%
+libs/py-data/src/onb_data/scoping.py        115      0   100%
+libs/py-data/src/onb_data/session.py         29      0   100%
+libs/py-data/src/onb_data/store.py           75      1    99%   108
+-----------------------------------------------------------------------
+TOTAL                                       441      2    99%
+[32mRequired test coverage of 80% reached. Total coverage: 99.55%
+[0m[32m============================= [32m[1m192 passed[0m[32m in 0.50s[0m[32m ==============================[0m
+
+
+
+ NX   Successfully ran target test for project py-data
+
+
+  Run duration:      1.3s
+  Cache:             Skipped (--skip-nx-cache)
+  Critical path:     1.2s (1 task)
+  Recoverable time:  <1ms
+py-data exit=0

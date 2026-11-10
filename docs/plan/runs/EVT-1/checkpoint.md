@@ -12,8 +12,11 @@ Branch `goal/evt-1-event-bus`. Stack: `COMPOSE_PROJECT_NAME=ob-evt-1`, Caddy 188
 3. Integration tests for boxes 1–5 and the consumer cross-tenant case against compose Mongo;
    `py-eventbus:test-int` target. (3fab1fd)
 
+4. Mutation checks (18/18 caught), ADR 0002, code + security review fixes (cf5d372), gates green
+   (`make check`, `make test-int`), evidence in `docs/evidence/EVT-1/`, handoff written.
+
 ## Next
-Mutation checks → evidence in `docs/evidence/EVT-1/` → reviews → gates → handoff → verifier.
+goal-verifier (attempt 1) → board `in review` → `make down`. Orchestrator integrates; don't rebase/merge.
 
 ## Surprises
 - The OTel ProxyTracer caches the real tracer: a module-level `get_tracer` breaks after the test
