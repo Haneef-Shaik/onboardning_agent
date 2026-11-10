@@ -1,4 +1,4 @@
-# Handoff — T-2 · Catch any unscoped query at runtime        attempt 5 · goal/t-2-query-safety-net · see `git log -1` (evidence captured at b761c69 + evidence commits)
+# Handoff — T-2 · Catch any unscoped query at runtime        attempt 5 · goal/t-2-query-safety-net · see `git log -1` (evidence captured at 63e4928 + evidence commits)
 
 **Attempt 5 (orchestrator request; the final rebase, T-2 has merge priority).**
 - Rebased onto main `e892d97` (EVAL-1, UI-1, AUD-1).
@@ -12,7 +12,8 @@
 - Mutant P6 covers py-evals.
 - **One more site, found by the mutation run.** The first attempt-5 mutation run showed `apps/api`'s `test_records_land_in_mongo_with_org_and_the_spans_trace_id` failing even under an unrelated mutant. On the unmutated tree it erred every time. The cause was AUD-1's new `apps/api/tests_int/test_mongo_audit.py:86`, a root read-back of both orgs' audit records, which I had not traced; I had traced only py-evals. It is test code, now in a named block with its assertion unchanged (`9d3691d`).
 - I then re-traced all 7 Mongo suites on the rebased tree. Six print no call sites. py-data prints only its own deliberate negative tests, which send, assert and drain an unscoped command. The mutation run was repeated on the fixed tree.
-- Gates: `make check`, `make test-int`, `make contracts-check` and `make evals-selftest`.
+- **A race in the test tunnels, found by `make test-int`.** The race came from main. py-data, py-crypto and py-evals share one tunnel label, so with nx running them in parallel a session's "stale tunnel" cleanup could remove another session's live tunnel. 2 of 3 runs failed with `AutoReconnect`. Fixed narrowly in `libs/py-data/tests_int/conftest.py` (`63e4928`): tunnels carry their owner pid, and cleanup removes only tunnels whose owner process is gone. No test or guard was changed.
+- Gates: `make check`, `make test-int`, `make contracts-check` and `make evals-selftest` all exit 0 at `63e4928`.
 
 **Attempt 4 (orchestrator request, after goal-verifier attempt 3 passed on base 707b60c).**
 - Rebased onto main `1e22bba` (MCP-3, PII-4, AUTH-1 and C-1 work). 16 commits, no conflicts.
@@ -106,14 +107,15 @@ checked as usual and stays flagged when unscoped. That includes `QueueRepository
 | — | — | — | `plan.py show T-2` lists no ledger rows for T-2 | no |
 
 ## Gates
-All run at 7d6d922 on compose project `ob-t-2`, after rebasing onto main `1e22bba` (attempt 4).
+All run at 63e4928 on compose project `ob-t-2`, after the final rebase onto main `e892d97` (attempt 5).
 
 | Gate | Command | Result |
 |------|---------|--------|
-| Check | `make check` | exit 0. `plan ok`; tooling tests pass, including the 5 in `test_safety_net_suites.py`, which now see 6 Mongo suites; `Successfully ran target lint/typecheck/test for 17 projects`; py-guardrails `210 passed` (`docs/evidence/T-2/make-check.txt`). |
-| Check, py-data alone | `nx run-many -t lint typecheck test -p py-data` | exit 0. `361 passed`, `TOTAL 801 6 99%`. `safety_net.py` and `queue_allowance.py` are at 100%; `safety_net_pytest.py`'s fixture bodies run in the subprocess sessions. |
-| Integration | `make test-int` | exit 0. Stack `12 passed`; py-telemetry `5`; api `10` (8 + 2 guard); py-data `49`; mcp-mongo `79` (77 + 2 guard); py-crypto `12` (PII-1 and PII-4 tests + 2 guard); py-eventbus `19`; `Successfully ran target test-int for 6 projects` (`docs/evidence/T-2/make-test-int.txt`). |
+| Check | `make check` | exit 0. `plan ok`; tooling tests pass, including `test_safety_net_suites.py`, which now sees 7 Mongo suites; `Successfully ran target lint/typecheck/test for 17 projects` (`docs/evidence/T-2/make-check.txt`). |
+| Check, py-data alone | `nx run-many -t lint typecheck test -p py-data` | exit 0. `TOTAL 1040 9 99%`. `safety_net.py` and `queue_allowance.py` are at 100%. The missed lines are in other goals' py-data code. |
+| Integration | `make test-int` | exit 0. Stack `12`; py-crypto `12`; py-telemetry `5`; py-data `49`; py-eventbus `19`; mcp-mongo `79`; api `20` (including AUD-1's audit tests and 2 guard tests); py-evals `4`; `Successfully ran target test-int for 7 projects` (`docs/evidence/T-2/make-test-int.txt`). The first attempt-5 runs failed 2 of 3 times with `AutoReconnect`. py-crypto and py-evals reuse py-data's tunnel fixture with the same label, and a later session's stale-tunnel cleanup removed a live session's tunnel. That race came from main and was not product code. Fixed in `63e4928`: each tunnel carries its owner pid, and only tunnels whose owner is gone are removed. After the fix, 4 of 4 runs exit 0, and a planted dead-owner tunnel is still removed (`docs/evidence/T-2/tunnel-cleanup-check.txt`). |
 | Contracts | `make contracts-check` | exit 0. `contracts-check: openapi.json and the TS client are up to date` (`docs/evidence/T-2/make-contracts-check.txt`). This diff changes no API model or route. |
+| Eval self-test | `make evals-selftest` | exit 0. `27 cases x 3, all cases passed: True, gates: PASS, controls caught 8/8`, `1 passed`, under the safety net (`docs/evidence/T-2/make-evals-selftest.txt`). |
 
 ## Inherited and used
 | From | Claim | Held? |
@@ -124,7 +126,7 @@ All run at 7d6d922 on compose project `ob-t-2`, after rebasing onto main `1e22bb
 | PII-3 | The redaction fix on main | yes. py-guardrails is green in `make check`. |
 
 ## Mutation checks
-`docs/evidence/T-2/mutation-checks.txt`, made by `docs/evidence/T-2/mutate.py`, re-run in full on the attempt-4 tree. Each mutant runs 8 suites: py-data unit, and the py-data, py-eventbus, py-crypto, py-telemetry, api and mcp-mongo integration suites, plus `tools/tests/test_safety_net_suites.py`. **All 27 mutants were caught**, and the last line reads `worktree after all mutations: clean`. P4 and P5 (attempt 4) make the api or mcp-mongo conftest drop the plugin. Each fails that suite's fixture test and the tools check.
+`docs/evidence/T-2/mutation-checks.txt`, made by `docs/evidence/T-2/mutate.py`, re-run in full on the attempt-5 tree at `3740320`. Each mutant runs 9 suites: py-data unit, and the py-data, py-eventbus, py-crypto, py-telemetry, api, mcp-mongo and py-evals integration suites, plus `tools/tests/test_safety_net_suites.py`. **All 28 mutants were caught**, and the last line reads `worktree after all mutations: clean`. P6 (attempt 5) makes py-evals' conftest drop the plugin; it fails that suite's fixture test and the tools check. The later tunnel fix (`63e4928`) changes only the test tunnel's cleanup, not any guard a mutant targets.
 
 Attempt 3, suite wiring:
 - P1: py-crypto's conftest drops the plugin. `test_every_py_crypto_integration_test_runs_under_the_safety_net_guard` and `tools … test_every_mongo_integration_suite_runs_under_the_safety_net` FAILED.

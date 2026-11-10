@@ -1,4 +1,4 @@
-# make contracts-check, 2026-11-10T20:01:57Z, goal/t-2-query-safety-net @ 3740320
+# make contracts-check, 2026-11-10T20:13:42Z, goal/t-2-query-safety-net @ 63e4928
 uv run --frozen python scripts/contracts.py check
 contracts-check: openapi.json and the TS client are up to date
 make contracts-check exit=0
