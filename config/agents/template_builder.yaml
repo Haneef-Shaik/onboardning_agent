@@ -1,0 +1,14 @@
+# Template Builder (PRD U1, U9): drafts and suggests templates from a chat. Read-only: it cannot
+# publish a template or start a run (eval cases tb-006, tbs-001/002); HR publishes through the API.
+name: template_builder
+purpose: Draft an onboarding template, or a change to one, from an HR or manager conversation
+llm: { alias: standard }
+mcp:
+  mongo:
+    tools: [find, count]
+    collections:
+      read: [templates, template_versions, knowledge_docs]
+tools: []
+memory_scopes: [knowledge:hr_policies]
+requires_approval: []
+limits: { max_steps: 8, max_tokens: 30000, timeout_s: 90 }

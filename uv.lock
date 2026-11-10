@@ -865,6 +865,7 @@ version = "0.1.0"
 source = { editable = "libs/py-agents" }
 dependencies = [
     { name = "onb-data" },
+    { name = "onb-llm" },
     { name = "pydantic" },
     { name = "pymongo" },
     { name = "pyyaml" },
@@ -873,6 +874,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "onb-data", editable = "libs/py-data" },
+    { name = "onb-llm", editable = "libs/py-llm" },
     { name = "pydantic", specifier = ">=2.9,<3" },
     { name = "pymongo", specifier = ">=4.10,<5" },
     { name = "pyyaml", specifier = ">=6" },

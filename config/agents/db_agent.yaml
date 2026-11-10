@@ -1,0 +1,15 @@
+# DB agent (PRD §7.3): reads and updates the records of one run. It may write run tasks and
+# document metadata, never the hire record (eval case db-005).
+name: db_agent
+purpose: Read and update onboarding records for a single run
+llm: { alias: standard }
+mcp:
+  mongo:
+    tools: [find, aggregate, count, update_one]
+    collections:
+      read: [new_hires, onboarding_runs, run_tasks, documents_meta]
+      write: [run_tasks, documents_meta]
+tools: [date_calc]
+memory_scopes: [run_state:read, knowledge:hr_policies]
+requires_approval: []
+limits: { max_steps: 8, max_tokens: 20000, timeout_s: 60 }

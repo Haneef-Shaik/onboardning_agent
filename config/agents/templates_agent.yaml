@@ -1,0 +1,16 @@
+# Templates agent (PRD FR-N1): renders a message and sends it through the notification tool. The
+# recipient is a PII token; the notification sink resolves it with a grant (§7.10), never the agent.
+name: templates_agent
+purpose: Render a message template for a task and send it through a notification channel
+llm: { alias: fast }
+mcp:
+  mongo:
+    tools: [find]
+    collections:
+      read: [run_tasks, templates]
+  notify:
+    tools: [notify_send]
+tools: [render]
+memory_scopes: [run_state:read]
+requires_approval: []
+limits: { max_steps: 4, max_tokens: 10000, timeout_s: 45 }

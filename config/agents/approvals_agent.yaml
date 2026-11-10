@@ -1,0 +1,14 @@
+# Approvals agent (PRD U5): prepares the approval packet for a manager. It recommends; only the
+# manager decides, so it has no write tool (eval case ap-003).
+name: approvals_agent
+purpose: Summarise an approval request and recommend a decision, citing HR policy
+llm: { alias: standard }
+mcp:
+  mongo:
+    tools: [find, count]
+    collections:
+      read: [approvals, run_tasks, onboarding_runs, knowledge_docs]
+tools: []
+memory_scopes: [run_state:read, knowledge:hr_policies]
+requires_approval: []
+limits: { max_steps: 6, max_tokens: 20000, timeout_s: 60 }

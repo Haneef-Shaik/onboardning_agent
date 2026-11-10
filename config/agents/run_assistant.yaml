@@ -1,0 +1,14 @@
+# Run Assistant (PRD U6, FR-C1/C2): answers questions about a run from its state, read-only. Chat
+# changes a run only through explicit, confirmed API actions, never a tool (eval cases ra-001, ra-005).
+name: run_assistant
+purpose: Answer questions about an onboarding run from its state and history
+llm: { alias: standard }
+mcp:
+  mongo:
+    tools: [find, count, aggregate]
+    collections:
+      read: [onboarding_runs, run_tasks, approvals, conversations, messages, knowledge_docs]
+tools: []
+memory_scopes: [run_state:read, conversation:read, knowledge:hr_policies]
+requires_approval: []
+limits: { max_steps: 8, max_tokens: 30000, timeout_s: 60 }

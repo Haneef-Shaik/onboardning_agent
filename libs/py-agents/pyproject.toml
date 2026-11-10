@@ -5,6 +5,7 @@ description = "Agent graphs and the agent registry"
 requires-python = ">=3.12,<3.13"
 dependencies = [
   "onb-data",
+  "onb-llm",
   "pydantic>=2.9,<3",
   "pymongo>=4.10,<5",
   "pyyaml>=6",
@@ -19,3 +20,4 @@ packages = ["src/onb_agents"]
 
 [tool.uv.sources]
 onb-data = { workspace = true }
+onb-llm = { workspace = true }

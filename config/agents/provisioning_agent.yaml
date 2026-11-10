@@ -1,0 +1,16 @@
+# Provisioning agent: creates accounts and orders equipment through the integration mocks
+# (PRD §2, MOCK-1). The template's approval task runs before it, so it needs no approval of its own.
+name: provisioning_agent
+purpose: Provision accounts and equipment for a new hire through the integration tools
+llm: { alias: fast }
+mcp:
+  mongo:
+    tools: [find]
+    collections:
+      read: [run_tasks]
+  mocks:
+    tools: [create_bitbucket_account, provision_laptop]
+tools: []
+memory_scopes: [run_state:read]
+requires_approval: []
+limits: { max_steps: 6, max_tokens: 10000, timeout_s: 60 }

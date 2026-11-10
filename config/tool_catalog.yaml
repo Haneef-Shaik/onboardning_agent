@@ -1,0 +1,11 @@
+# Which agent carries out each template action (PRD §7.3, §9 `tool_catalog`). The same list as
+# `evals/fixtures/seed_v1.json` `action_catalog`; a test keeps them equal. Synced with the manifests
+# by `python -m onb_agents.registry sync --actor <user id>`.
+actions:
+  - { action: request_documents, agent: db_agent }
+  - { action: approval, agent: approvals_agent, task_type: approval }
+  - { action: create_bitbucket_account, agent: provisioning_agent }
+  - { action: provision_laptop, agent: provisioning_agent }
+  - { action: assign_training, agent: db_agent }
+  - { action: schedule_orientation, agent: db_agent }
+  - { action: render_and_send, agent: templates_agent }
