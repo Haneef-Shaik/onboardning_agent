@@ -9,7 +9,7 @@ from typing import Literal
 
 import pytest
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage, ToolMessage
-from onb_data import Actor, AuditOutcome
+from onb_data import Actor, AuditEntry, AuditOutcome, AuditQuery
 from onb_data.testing import InMemoryAuditLog
 from onb_guardrails import (
     EVENT_NAME,
@@ -333,8 +333,7 @@ def test_every_decision_is_a_span_event_and_an_audit_record(telemetry: CapturedT
     assert all(span.attributes and span.attributes.get("agent.name") for span in telemetry.spans() if span.events)
 
 
-async def _all_records(audit: InMemoryAuditLog) -> list:  # type: ignore[type-arg]
-    from onb_data import AuditQuery
+async def _all_records(audit: InMemoryAuditLog) -> list[AuditEntry]:
 
     return list((await audit.list(AuditQuery(), page=1, limit=200)).entries)
 

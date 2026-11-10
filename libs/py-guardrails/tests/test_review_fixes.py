@@ -212,8 +212,8 @@ def test_a_reply_that_is_not_an_ai_message_still_uses_a_step(telemetry: Captured
 
 @pytest.mark.parametrize("usage", [{"input_tokens": 1, "output_tokens": 1, "total_tokens": -5000}, {}])
 def test_bad_or_missing_usage_falls_back_to_an_estimate(telemetry: CapturedTelemetry, usage: dict[str, int]) -> None:
-    reply = AIMessage(content="y" * 400)
-    reply.usage_metadata = usage or None  # type: ignore[assignment]
+    # model_copy skips validation, so a provider's malformed usage reaches the guard as it would in the wild.
+    reply = AIMessage(content="y" * 400).model_copy(update={"usage_metadata": usage or None})
     guard = guarded(RunnableLambda(lambda _: reply), InMemoryAuditLog())
     run(guard.ainvoke([HumanMessage("x")]))
     assert guard.budget.usage.tokens >= 100

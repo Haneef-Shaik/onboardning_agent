@@ -1,4 +1,4 @@
-# Handoff — GR-1 · Guard every LLM input, output and budget        attempt 1 · goal/gr-1-guardrails-lib · code at bf542ce (see `git log -1` for the handoff commit)
+# Handoff — GR-1 · Guard every LLM input, output and budget        attempt 2 · goal/gr-1-guardrails-lib · see `git log -1`
 
 **Outcome claimed.** `libs/py-guardrails` (`onb_guardrails`) now has a connector-agnostic guard,
 `GuardedChatModel`. It wraps any LangChain chat model, including one with tools bound. It checks
@@ -42,7 +42,7 @@ Each decision is written as an audit record (through `onb_data.Auditor`, fail cl
 ## Gates
 | Gate | Command | Result |
 |------|---------|--------|
-| Check | `make check` (at bf542ce) | `make check: all passed`. Lint, typecheck and test ran for 17 projects. py-guardrails ran 307 tests at **100.00%** coverage (`TOTAL 717 0 100%`). Evidence: `docs/evidence/GR-1/make-check.txt`. |
+| Check | `make check` (attempt 2, after removing the two test `type: ignore`s) | `make check: all passed`. Lint, typecheck and test ran for 17 projects. py-guardrails ran 307 tests at **100.00%** coverage (`TOTAL 717 0 100%`). Evidence: `docs/evidence/GR-1/make-check.txt`. |
 | Eval self-test | `make evals-selftest` (compose project `ob-gr-1`, `LLM_CONNECTOR=fake`) | `27 cases x 3, all cases passed: True, gates: PASS, controls caught 8/8`, `result: PASS`, `1 passed`. Evidence: `docs/evidence/GR-1/evals-selftest.txt`. |
 | Integration / test-xt / contracts | not run | The diff touches no `apps/*`, `py-data`, `py-crypto`, `py-eventbus` or `infra/` code, no route or MCP tool, and no contract. `uv.lock` gains only py-guardrails' dependency edges. |
 | Eval full | not run | Needs OW-1 (Bedrock). This session is limited to the fake connector. |
@@ -72,6 +72,16 @@ Each decision is written as an audit record (through `onb_data.Auditor`, fail cl
 The ReDoS fix is not in the mutation script, because the old patterns run for minutes. Its RED evidence: on the pre-fix source the 200 KB cases did not finish in 600 s (`red-review-fixes.txt`).
 
 RED before GREEN: `red-injection.txt` and `red-guarded.txt` (collection errors before implementation), and `red-review-fixes.txt` (21 of 22 regression tests fail on the attempt-1 source, plus the ReDoS timeout).
+
+## Attempt 2
+Verifier attempt 1 passed every box and gate. It failed on the quality bar (MASTER-PLAN §9.3): two
+unexplained `# type: ignore` comments in tests. Both are now removed:
+- In `test_guarded.py`, `_all_records` returns `list[AuditEntry]`.
+- `test_review_fixes.py` builds the malformed-usage reply with `model_copy(update=...)`, which skips
+  validation.
+
+`grep -rn "type: ignore\|noqa"` over the GR-1 test and source files finds nothing.
+`make check: all passed`; py-guardrails `TOTAL 717 0 100%`.
 
 ## Review findings left open
 The `code-reviewer` and `security-reviewer` passes (run as general-purpose agents on `git diff main...HEAD`) found 2 high and 1 high respectively, plus mediums and lows. All highs and mediums are fixed in b7fd8f0. Left open:
