@@ -53,6 +53,7 @@ from onb_crypto.masks import (
     mask_pan,
 )
 from onb_crypto.rotation import rewrap_orgs, rotate_orgs, verify_orgs
+from onb_crypto.sink import GrantAudit, GrantAuditRecord, SinkResolver, SinkToken, ensure_grant_indexes
 from onb_crypto.sink_policy import NEVER_SINKABLE, SinkPolicy, SinkPolicyError, load_sink_policy
 from onb_crypto.tokens import PTK_PREFIX, TOKEN_LENGTH, is_token, new_token
 from onb_crypto.vault import CONSENT_COLLECTION, PURGED, AadhaarConsent, Vault, VaultRepository, VaultStore
@@ -89,6 +90,8 @@ __all__ = [
     "CryptoError",
     "DecryptionError",
     "Grant",
+    "GrantAudit",
+    "GrantAuditRecord",
     "GrantIssuer",
     "GrantKeyError",
     "GrantRejected",
@@ -113,6 +116,8 @@ __all__ = [
     "SecretKey",
     "SinkPolicy",
     "SinkPolicyError",
+    "SinkResolver",
+    "SinkToken",
     "SubjectType",
     "SupersededTokenError",
     "TokenBindingError",
@@ -130,6 +135,7 @@ __all__ = [
     "WrappedKey",
     "associated_data",
     "blind_index",
+    "ensure_grant_indexes",
     "ensure_org_keys_index",
     "ensure_vault_indexes",
     "is_token",

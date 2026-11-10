@@ -17,6 +17,7 @@ from .fakes import ORG_A, ORG_B, InMemoryOrgKeyStore, in_org, new_master_key
 _UNIQUE: dict[str, tuple[tuple[str, ...], ...]] = {
     "pii_vault": (("token",), ("subject.id", "field", "version")),
     "pii_vault_aadhaar": (("token",), ("subject.id", "field", "version")),
+    "pii_grant_jti": (("jti",),),
 }
 
 
@@ -42,6 +43,7 @@ class FakeVaultRepository:
         self.name = name
         self.documents: list[dict[str, Any]] = []
         self.fail_next_update = False
+        self.fail_next_insert = False
 
     def _scoped(self, query: Mapping[str, Any] | None) -> dict[str, Any]:
         org = current_tenant().org_id
@@ -78,6 +80,12 @@ class FakeVaultRepository:
                     raise DuplicateKeyError(f"E11000 duplicate key {keys}")
         self.documents = [*self.documents, stored]
         return stored["_id"]
+
+    async def insert_many(self, documents: Sequence[Mapping[str, Any]]) -> list[Any]:
+        if self.fail_next_insert:
+            self.fail_next_insert = False
+            raise RuntimeError("the database refused the write")
+        return [await self.insert_one(document) for document in documents]
 
     async def update_one(self, query: Mapping[str, Any] | None, update: Mapping[str, Any], **_: Any) -> UpdateOutcome:
         if self.fail_next_update:
