@@ -1,6 +1,5 @@
 ============================= test session starts ==============================
 platform darwin -- Python 3.12.13, pytest-9.2.0, pluggy-1.7.0 -- /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-pii-3/.venv/bin/python
-cachedir: .pytest_cache
 hypothesis profile 'default'
 rootdir: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-pii-3
 configfile: pyproject.toml
@@ -14,4 +13,4 @@ libs/py-guardrails/tests/pii/test_corpus.py::test_corpus_false_positive_rate_is_
 PII corpus: 82 cases (50 positive, 32 negative); false negatives 0; false positives 2/32 = 6.2% ['neg-hard-ifsc-shaped-word', 'neg-hard-order-10-digits']
 PASSED
 
-============================== 4 passed in 0.07s ===============================
+============================== 4 passed in 0.11s ===============================
