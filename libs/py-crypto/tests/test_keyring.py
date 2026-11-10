@@ -76,13 +76,13 @@ def test_org_a_key_material_cannot_open_org_b_ciphertext_even_with_org_b_binding
 
 def test_org_b_aadhaar_data_is_not_readable_by_org_a_or_with_the_data_key() -> None:
     keyring, _ = two_org_keyring()
-    sealed = in_org(ORG_B, keyring.encrypt(ORG_B, b"234123412346", associated_data=AD, purpose=KeyPurpose.AADHAAR))
+    sealed = in_org(ORG_B, keyring.encrypt(ORG_B, b"999900000125", associated_data=AD, purpose=KeyPurpose.AADHAAR))
     with pytest.raises(DecryptionError):
         in_org(ORG_A, keyring.decrypt(ORG_A, sealed, associated_data=AD, purpose=KeyPurpose.AADHAAR))
     with pytest.raises(DecryptionError):
         in_org(ORG_B, keyring.decrypt(ORG_B, sealed, associated_data=AD, purpose=KeyPurpose.DATA))
     assert (
-        in_org(ORG_B, keyring.decrypt(ORG_B, sealed, associated_data=AD, purpose=KeyPurpose.AADHAAR)) == b"234123412346"
+        in_org(ORG_B, keyring.decrypt(ORG_B, sealed, associated_data=AD, purpose=KeyPurpose.AADHAAR)) == b"999900000125"
     )
 
 

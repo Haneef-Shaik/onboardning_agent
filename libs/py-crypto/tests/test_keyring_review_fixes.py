@@ -197,7 +197,7 @@ def test_keyring_blind_index_uses_the_aadhaar_index_key_only_for_aadhaar() -> No
     keyring, _ = two_org_keyring()
     keys = in_org(ORG_A, keyring.active(ORG_A))
     index, aadhaar_index = keys.key(KeyPurpose.INDEX).reveal(), keys.key(KeyPurpose.AADHAAR_INDEX).reveal()
-    aadhaar = "2341 2341 2346"
+    aadhaar = "9999 0000 0125"
     assert in_org(ORG_A, keyring.blind_index(ORG_A, BlindIndexField.AADHAAR, aadhaar)) == blind_index(
         aadhaar_index, BlindIndexField.AADHAAR, aadhaar
     )
