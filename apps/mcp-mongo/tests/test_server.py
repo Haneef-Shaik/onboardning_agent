@@ -307,7 +307,8 @@ def test_a_malformed_update_operator_is_denied_not_an_internal_error(
     assert "internal error" not in text
     (span,) = [s for s in telemetry.spans() if s.name == "mcp.mongo.update_one"]
     assert dict(span.attributes or {})["outcome"] == "denied"
-    assert dict(span.attributes or {})["denial.reason"] == "invalid_query"
+    # MCP-2: the validator now refuses a non-document operator value before the data layer sees it.
+    assert dict(span.attributes or {})["denial.reason"] == "invalid_update"
 
 
 def test_an_unexpected_failure_hides_its_message(db: FakeDatabase, monkeypatch: pytest.MonkeyPatch) -> None:

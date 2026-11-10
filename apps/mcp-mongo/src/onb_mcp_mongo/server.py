@@ -25,7 +25,7 @@ from opentelemetry.trace import Span, Status, StatusCode
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from pymongo.errors import OperationFailure
 
-from . import tools
+from . import tools, validator
 from .call_context import COLLECTION_PATTERN, HEADER, CallContext, CallContextError, check_key, verify_call_context
 from .contracts import CONTRACTS
 from .policy import ToolRejectedError
@@ -118,8 +118,9 @@ class TracedTool(Tool):
         ctx = self._context(span, context)
         try:
             # Validated here, not through FastMCP, so JSON strings are never parsed into objects.
-            args = self.fn_metadata.arg_model.model_validate(arguments)
-            result = await self.handler(self.store, ctx, **args.model_dump_one_level())
+            args = self.fn_metadata.arg_model.model_validate(arguments).model_dump_one_level()
+            validator.check_call(self.name, args)  # MCP-2: operators, stages, pii.*, org_id, depth
+            result = await self.handler(self.store, ctx, **args)
             converted = self.fn_metadata.convert_result(result) if convert_result else result
         except ValidationError as exc:
             raise _deny(span, "invalid_arguments", _validation_message(exc)) from None
