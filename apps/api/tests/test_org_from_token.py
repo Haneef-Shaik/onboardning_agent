@@ -1,6 +1,7 @@
 """The org comes only from the signed token; an `org_id` sent anywhere else is rejected or ignored
 (AUTH-1 box 2, PRD §7.9 Identity)."""
 
+import asyncio
 from typing import Annotated
 
 import pytest
@@ -9,11 +10,10 @@ from fastapi.testclient import TestClient
 from onb_api.auth.dependencies import authenticated
 from onb_api.auth.tokens import Principal
 from onb_api.responses import respond
+from onb_api.testing import PASSWORD, TEST_SETTINGS, bearer, email_of, token_for
 from onb_contracts import Envelope
 from onb_contracts.auth import Role
 from onb_data import current_tenant
-
-from .auth_fakes import PASSWORD, bearer, email_of, token_for
 
 ACME_HR = token_for("u_acme_hr1", "org_acme", Role.HR)
 
@@ -68,19 +68,36 @@ def test_the_route_runs_inside_the_tokens_tenant_scope(app: FastAPI, client: Tes
     assert data == {"scope": "org_globex", "token": "org_globex", "query": "org_acme"}
 
 
-def test_the_tenant_scope_ends_with_the_request(app: FastAPI, client: TestClient) -> None:
+def test_the_tenant_scope_opens_with_the_token_and_closes_after_the_route() -> None:
+    """Drive the dependency in one task: no scope before, the token's org inside, none after.
+
+    (Through TestClient each request runs in a copied context, so a scope that is never reset would
+    still look clean to the next request; this test sees the reset itself.)
+    """
+    from contextlib import asynccontextmanager
+
+    from fastapi.security import HTTPAuthorizationCredentials
     from onb_data import NoTenantContextError
+    from starlette.requests import Request
 
-    seen: list[str] = []
+    async def scenario() -> list[str]:
+        app = FastAPI()
+        app.state.auth = TEST_SETTINGS
+        request = Request({"type": "http", "app": app, "headers": []})
+        creds = HTTPAuthorizationCredentials(scheme="Bearer", credentials=ACME_HR)
+        seen: list[str] = []
 
-    async def unscoped() -> Envelope[None]:
-        try:
-            seen.append(current_tenant().org_id)
-        except NoTenantContextError:
-            seen.append("none")
-        return respond(None)
+        def record() -> None:
+            try:
+                seen.append(current_tenant().org_id)
+            except NoTenantContextError:
+                seen.append("none")
 
-    app.add_api_route("/test/unscoped", unscoped, include_in_schema=False)
-    client.get("/me", headers=bearer(ACME_HR))
-    client.get("/test/unscoped")
-    assert seen == ["none"]
+        record()
+        async with asynccontextmanager(authenticated)(request, creds) as principal:
+            record()
+            seen.append(principal.org_id)
+        record()
+        return seen
+
+    assert asyncio.run(scenario()) == ["none", "org_acme", "org_acme", "none"]

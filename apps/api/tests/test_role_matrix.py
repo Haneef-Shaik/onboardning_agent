@@ -16,10 +16,9 @@ from onb_api import create_app
 from onb_api.auth.dependencies import authenticated, require_role
 from onb_api.auth.tokens import Principal
 from onb_api.responses import respond
+from onb_api.testing import bearer, token_for
 from onb_contracts import Envelope
 from onb_contracts.auth import Role
-
-from .auth_fakes import bearer, token_for
 
 # One acme user per role (seed_v1 ids).
 ACTORS = {

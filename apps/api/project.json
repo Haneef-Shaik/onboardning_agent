@@ -24,7 +24,11 @@
       "executor": "@nxlv/python:run-commands",
       "cache": true,
       "options": {
-        "command": "uv run --frozen mypy --cache-dir .mypy_cache/api apps/api/src apps/api/tests apps/api/tests_int",
+        "commands": [
+          "uv run --frozen mypy --cache-dir .mypy_cache/api apps/api/src apps/api/tests",
+          "uv run --frozen mypy --cache-dir .mypy_cache/api-int apps/api/src apps/api/tests_int"
+        ],
+        "parallel": false,
         "cwd": "."
       }
     },

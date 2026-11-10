@@ -101,11 +101,17 @@ _DATA_ERRORS: Mapping[type[Exception], ErrorCode] = {
 }
 
 
-async def _data_error(_: Request, exc: Exception) -> JSONResponse:
+async def _data_error(request: Request, exc: Exception) -> JSONResponse:
     code = next((c for kind, c in _DATA_ERRORS.items() if isinstance(exc, kind)), None)
     if code is None:  # registered for the _DATA_ERRORS types only
         raise exc
-    headers = {"WWW-Authenticate": "Bearer"} if code is ErrorCode.UNAUTHENTICATED else None
+    headers = None
+    if code is ErrorCode.UNAUTHENTICATED:
+        # Routes answer 401 through the token dependency first; reaching here means a route used
+        # tenant data without it, which is a server bug worth a log line.
+        route = getattr(request.scope.get("route"), "path", None) or "<unmatched>"
+        _log.warning("tenant data used without a tenant context in %s %s", request.method, route)
+        headers = {"WWW-Authenticate": "Bearer"}
     return error_response(code, headers=headers)
 
 

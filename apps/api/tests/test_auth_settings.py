@@ -1,6 +1,7 @@
 """`JWT_SECRET` comes from the environment, and the API refuses to start without it (AUTH-1 box 4)."""
 
 import os
+import secrets
 import subprocess
 import sys
 from datetime import timedelta
@@ -86,10 +87,11 @@ def test_startup_fails_without_jwt_secret() -> None:
 
 
 def test_startup_fails_with_a_short_jwt_secret() -> None:
-    result = _start_api({**MONGO_ENV, "JWT_SECRET": "short"})
+    sentinel = secrets.token_hex(8)  # 16 characters: too short, and distinctive enough to search for
+    result = _start_api({**MONGO_ENV, "JWT_SECRET": sentinel})
     assert result.returncode != 0
     assert "JWT_SECRET must be at least" in result.stderr
-    assert "short" not in result.stderr.replace("JWT_SECRET must be at least", "")
+    assert sentinel not in result.stderr
 
 
 def test_startup_fails_without_the_mongo_settings() -> None:

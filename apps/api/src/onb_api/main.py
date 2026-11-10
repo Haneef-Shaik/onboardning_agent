@@ -17,6 +17,9 @@ from onb_api.auth.settings import AuthSettings, require_env
 from onb_api.health import SERVICE_NAME
 
 auth = AuthSettings.from_env()
-store = connect(require_env(os.environ, "MONGO_URI"), require_env(os.environ, "MONGO_DATABASE"))
+mongo_uri = require_env(os.environ, "MONGO_URI")
+mongo_database = require_env(os.environ, "MONGO_DATABASE")
+# Telemetry before the Mongo client: PyMongo applies the tracing listener only to clients made after it.
 telemetry = init_telemetry(SERVICE_NAME)
+store = connect(mongo_uri, mongo_database)
 app = create_app(auth=auth, users=MongoUserStore(store))

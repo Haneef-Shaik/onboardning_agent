@@ -17,12 +17,27 @@ from onb_data import TenantContext
 
 from onb_api.auth.settings import AuthSettings
 
-__all__ = ["ALGORITHM", "MAX_TOKEN_LENGTH", "InvalidTokenError", "Principal", "issue_token", "read_token"]
+__all__ = [
+    "ALGORITHM",
+    "AUDIENCE",
+    "ISSUER",
+    "LEEWAY_SECONDS",
+    "MAX_TOKEN_LENGTH",
+    "InvalidTokenError",
+    "Principal",
+    "issue_token",
+    "read_token",
+]
 
 ALGORITHM = "HS256"
+# Bind tokens to this API, so another token signed with the same secret is not an access token here.
+ISSUER = "onb-api"
+AUDIENCE = "onb-api"
+# Clock skew allowed between API instances, on `exp` and `iat`.
+LEEWAY_SECONDS = 5
 # Real tokens are ~250 characters; refusing big ones bounds the work an anonymous caller can cause.
 MAX_TOKEN_LENGTH = 2048
-_REQUIRED_CLAIMS = ("sub", "org_id", "role", "iat", "exp")
+_REQUIRED_CLAIMS = ("sub", "org_id", "role", "iat", "exp", "iss", "aud")
 
 
 class InvalidTokenError(Exception):
@@ -46,6 +61,8 @@ def issue_token(principal: Principal, settings: AuthSettings, *, now: datetime) 
         "role": principal.role.value,
         "iat": int(now.timestamp()),
         "exp": expires_at,
+        "iss": ISSUER,
+        "aud": AUDIENCE,
     }
     return Token(access_token=jwt.encode(claims, settings.jwt_secret, algorithm=ALGORITHM), expires_at=expires_at)
 
@@ -59,10 +76,23 @@ def read_token(token: str, settings: AuthSettings) -> Principal:
             settings.jwt_secret,
             algorithms=[ALGORITHM],
             options={"require": list(_REQUIRED_CLAIMS)},
+            issuer=ISSUER,
+            audience=AUDIENCE,
+            leeway=LEEWAY_SECONDS,
         )
     except jwt.PyJWTError:
         raise InvalidTokenError("token not valid") from None
+    _check_lifetime(claims, settings)
     return _principal(claims)
+
+
+def _check_lifetime(claims: dict[str, Any], settings: AuthSettings) -> None:
+    """A token may not live longer than the configured lifetime, whoever signed it."""
+    iat, exp = claims["iat"], claims["exp"]
+    if not isinstance(iat, int | float) or not isinstance(exp, int | float):
+        raise InvalidTokenError("token times not valid")
+    if exp - iat > settings.token_ttl.total_seconds():
+        raise InvalidTokenError("token lifetime too long")
 
 
 def _principal(claims: dict[str, Any]) -> Principal:

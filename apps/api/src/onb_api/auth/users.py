@@ -55,6 +55,9 @@ class UserRecord:
 
 
 class UserStore(Protocol):
+    async def ensure_indexes(self) -> None:
+        """Create the store's indexes (idempotent); run at startup."""
+
     async def find_login(self, email: str) -> LoginEntry | None:
         """The directory entry for this email, from any org; `None` if there is none."""
 

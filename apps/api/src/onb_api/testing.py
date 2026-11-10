@@ -1,4 +1,8 @@
-"""An in-memory `UserStore` with the seed users of both orgs, and token helpers for tests.
+"""Test support: an in-memory `UserStore` with the seed users of both orgs, and token helpers.
+
+Test-only, like `onb_telemetry.testing`: production code never imports it. It lives in the package
+so test suites can import it without making their `tests/` directories packages (two packages named
+`tests` collide when several projects' tests run in one pytest call).
 
 It keeps the store's contract: the login directory is global, user records are read in the current
 tenant scope only (a user of another org is "not found"), and an email is unique across orgs.
@@ -11,12 +15,13 @@ import secrets
 from dataclasses import replace
 from datetime import UTC, datetime
 
+from onb_contracts.auth import Role
+from onb_data import current_tenant, tenant_scope
+
 from onb_api.auth.passwords import hash_password
 from onb_api.auth.settings import AuthSettings
 from onb_api.auth.tokens import Principal, issue_token
 from onb_api.auth.users import EmailTakenError, LoginEntry, NewUser, UserRecord, login_key
-from onb_contracts.auth import Role
-from onb_data import current_tenant, tenant_scope
 
 TEST_SETTINGS = AuthSettings(jwt_secret=secrets.token_urlsafe(48), bcrypt_rounds=4)
 PASSWORD = secrets.token_urlsafe(12)
@@ -40,6 +45,10 @@ class InMemoryUserStore:
         self._logins: dict[str, LoginEntry] = {}
         self._users: dict[tuple[str, str], UserRecord] = {}
         self.login_lookups = 0
+        self.indexes_ensured = 0
+
+    async def ensure_indexes(self) -> None:
+        self.indexes_ensured += 1
 
     async def find_login(self, email: str) -> LoginEntry | None:
         self.login_lookups += 1

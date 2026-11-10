@@ -2,7 +2,9 @@
 
 bcrypt reads only the first 72 bytes of a password, so longer ones are refused when hashing (two
 passwords sharing a 72-byte prefix must not both work) and never verify. Verifying against "no
-user" still runs one bcrypt check, so an unknown email takes as long as a wrong password.
+user" still runs one bcrypt check at the configured cost, so an unknown email takes as long as a
+wrong password. Both functions block for the bcrypt cost: call them from a thread (`run_in_threadpool`)
+in async code, never on the event loop.
 """
 
 from __future__ import annotations
@@ -12,10 +14,9 @@ import secrets
 
 import bcrypt
 
-__all__ = ["MAX_PASSWORD_BYTES", "hash_password", "verify_password"]
+__all__ = ["MAX_PASSWORD_BYTES", "hash_password", "verify_password", "warm_up"]
 
 MAX_PASSWORD_BYTES = 72
-_DUMMY_ROUNDS = 12
 
 
 def hash_password(password: str, *, rounds: int) -> str:
@@ -27,10 +28,11 @@ def hash_password(password: str, *, rounds: int) -> str:
     return bcrypt.hashpw(raw, bcrypt.gensalt(rounds=rounds)).decode()
 
 
-def verify_password(password: str, hashed: str | None) -> bool:
+def verify_password(password: str, hashed: str | None, *, rounds: int) -> bool:
+    """`rounds` is the configured cost, used for the stand-in check when there is no usable hash."""
     raw = password.encode()
     if hashed is None or len(raw) > MAX_PASSWORD_BYTES:
-        _spend_one_check(raw[:MAX_PASSWORD_BYTES])
+        bcrypt.checkpw(raw[:MAX_PASSWORD_BYTES], _dummy_hash(rounds))
         return False
     try:
         return bcrypt.checkpw(raw, hashed.encode())
@@ -39,9 +41,10 @@ def verify_password(password: str, hashed: str | None) -> bool:
 
 
 @functools.cache
-def _dummy_hash() -> bytes:
-    return bcrypt.hashpw(secrets.token_bytes(16), bcrypt.gensalt(rounds=_DUMMY_ROUNDS))
+def _dummy_hash(rounds: int) -> bytes:
+    return bcrypt.hashpw(secrets.token_bytes(16), bcrypt.gensalt(rounds=rounds))
 
 
-def _spend_one_check(raw: bytes) -> None:
-    bcrypt.checkpw(raw, _dummy_hash())
+def warm_up(rounds: int) -> None:
+    """Make the stand-in hash at startup, so the first unknown-email login is not slower."""
+    _dummy_hash(rounds)

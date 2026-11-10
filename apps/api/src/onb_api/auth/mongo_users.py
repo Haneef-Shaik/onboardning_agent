@@ -2,12 +2,18 @@
 
 Every read and write goes through the data layer's repositories (PRD §7.9 Data access). The
 directory's `_id` is unique, so it also makes an email unique across orgs. A user is added
-directory-first; if the user insert then fails, the directory entry is removed again.
+directory-first; if the user insert then fails, the directory entry is removed again (shielded from
+cancellation), and the original error is the one raised. Until EVT-1 brings transactions, an insert
+that succeeded on the server but raised here (a timeout) can leave a user record without a directory
+entry: that user cannot log in until re-added.
 """
 
 from __future__ import annotations
 
+import asyncio
+import logging
 import secrets
+from collections.abc import Coroutine
 from typing import Any
 
 from onb_contracts.auth import Role
@@ -17,6 +23,8 @@ from pymongo.errors import DuplicateKeyError
 from onb_api.auth.users import EmailTakenError, LoginEntry, NewUser, UserRecord, login_key, normalise_email
 
 __all__ = ["LOGINS", "USERS", "MongoUserStore"]
+
+_log = logging.getLogger("onb_api.auth.users")
 
 LOGINS = "user_logins"
 USERS = "users"
@@ -61,9 +69,17 @@ class MongoUserStore:
         try:
             await self._store.tenant(USERS).insert_one(doc)
         except BaseException:
-            await logins.delete_by_id(key)
+            await _undo_login(logins.delete_by_id(key))
             raise
         return _record({**doc, "org_id": org_id})
+
+
+async def _undo_login(delete: Coroutine[Any, Any, None]) -> None:
+    """Remove the new directory entry; a failure here is logged by type, never raised over the original."""
+    try:
+        await asyncio.shield(delete)
+    except Exception as exc:
+        _log.error("could not remove a login directory entry after a failed user insert: %s", type(exc).__name__)
 
 
 def _record(doc: dict[str, Any]) -> UserRecord:

@@ -2,7 +2,11 @@
 
 Login finds the user's org in the login directory, reads the user inside that org's scope and checks
 the bcrypt hash. An unknown email, a missing record and a wrong password all give the same 401, and
-an unknown email still costs one bcrypt check. No refresh tokens (PRD §7.8).
+an unknown email still costs one bcrypt check (run in a thread, off the event loop). No refresh
+tokens (PRD §7.8).
+
+`/me` reports the stored role. Access checks use the token's role: a role change or a removed user
+takes effect when the token expires (at most `JWT_TTL_MINUTES`); there is no revocation in the MVP.
 """
 
 from __future__ import annotations
@@ -14,6 +18,7 @@ from fastapi import APIRouter, Depends
 from onb_contracts import Envelope
 from onb_contracts.auth import LoginRequest, Me, MeEnvelope, Token, TokenEnvelope
 from onb_data import tenant_scope
+from starlette.concurrency import run_in_threadpool
 
 from onb_api.auth.dependencies import CurrentPrincipal, auth_settings, unauthenticated, user_store
 from onb_api.auth.passwords import verify_password
@@ -42,7 +47,8 @@ async def login(
     users: Annotated[UserStore, Depends(user_store)],
 ) -> Envelope[Token]:
     user = await _user_for_login(users, body.email)
-    password_ok = verify_password(body.password, user.password_hash if user is not None else None)
+    stored_hash = user.password_hash if user is not None else None
+    password_ok = await run_in_threadpool(verify_password, body.password, stored_hash, rounds=settings.bcrypt_rounds)
     if user is None or not password_ok:
         raise unauthenticated()
     principal = Principal(user_id=user.user_id, org_id=user.org_id, role=user.role)
@@ -54,4 +60,4 @@ async def me(principal: CurrentPrincipal, users: Annotated[UserStore, Depends(us
     user = await users.get_user(principal.user_id)
     if user is None:
         raise unauthenticated()
-    return respond(Me(user_id=user.user_id, org_id=user.org_id, role=principal.role, name=user.name, email=user.email))
+    return respond(Me(user_id=user.user_id, org_id=user.org_id, role=user.role, name=user.name, email=user.email))

@@ -6,10 +6,9 @@ import jwt
 import pytest
 from fastapi.testclient import TestClient
 from onb_api import create_app
-from onb_api.auth.tokens import read_token
+from onb_api.auth.tokens import LEEWAY_SECONDS, read_token
+from onb_api.testing import PASSWORD, TEST_SETTINGS, InMemoryUserStore, bearer, email_of, token_for
 from onb_contracts.auth import BEARER, Role
-
-from .auth_fakes import PASSWORD, TEST_SETTINGS, InMemoryUserStore, bearer, email_of, token_for
 
 ACME_HR = ("u_acme_hr1", "org_acme", Role.HR)
 
@@ -92,6 +91,22 @@ def test_me_with_a_valid_token_returns_the_user(client: TestClient) -> None:
     }
 
 
+def test_me_reports_the_stored_role_not_the_tokens(client: TestClient, users: InMemoryUserStore) -> None:
+    """No revocation in the MVP: the token still works until it expires, but /me shows the current role."""
+    token = token_for(*ACME_HR)
+    users.set_role("org_acme", "u_acme_hr1", Role.MANAGER)
+    response = client.get("/me", headers=bearer(token))
+    assert response.status_code == 200
+    assert response.json()["data"]["role"] == "MANAGER"
+
+
+def test_startup_makes_the_user_store_indexes(users: InMemoryUserStore) -> None:
+    before = users.indexes_ensured
+    with TestClient(create_app(auth=TEST_SETTINGS, users=users)):
+        pass
+    assert users.indexes_ensured == before + 1
+
+
 def test_a_token_from_login_opens_me(client: TestClient) -> None:
     login = client.post("/auth/login", json={"email": email_of("u_globex_mgr1"), "password": PASSWORD})
     token = login.json()["data"]["access_token"]
@@ -104,7 +119,7 @@ def test_missing_token_returns_401(client: TestClient) -> None:
 
 
 def test_expired_token_returns_401(client: TestClient) -> None:
-    issued = datetime.now(UTC) - TEST_SETTINGS.token_ttl - timedelta(seconds=1)
+    issued = datetime.now(UTC) - TEST_SETTINGS.token_ttl - timedelta(seconds=LEEWAY_SECONDS + 1)
     _assert_401(client.get("/me", headers=bearer(token_for(*ACME_HR, now=issued))))
 
 
@@ -115,7 +130,9 @@ def test_tampered_token_returns_401(client: TestClient) -> None:
 
 
 def test_token_signed_with_another_secret_returns_401(client: TestClient) -> None:
-    claims = {"sub": "u_acme_hradmin", "org_id": "org_acme", "role": "HR_ADMIN", "iat": 0, "exp": 4_000_000_000}
+    now = int(datetime.now(UTC).timestamp())
+    claims = {"sub": "u_acme_hradmin", "org_id": "org_acme", "role": "HR_ADMIN", "iat": now, "exp": now + 60}
+    claims |= {"iss": "onb-api", "aud": "onb-api"}
     forged = jwt.encode(claims, "an-attacker-chosen-secret-that-is-long-enough!!", algorithm="HS256")
     _assert_401(client.get("/me", headers=bearer(forged)))
 
@@ -136,7 +153,7 @@ def test_a_valid_token_for_a_user_whose_record_is_gone_returns_401(
 
 
 def test_the_401_answer_carries_no_token_detail(client: TestClient) -> None:
-    issued = datetime.now(UTC) - TEST_SETTINGS.token_ttl - timedelta(seconds=1)
+    issued = datetime.now(UTC) - TEST_SETTINGS.token_ttl - timedelta(seconds=LEEWAY_SECONDS + 1)
     body = client.get("/me", headers=bearer(token_for(*ACME_HR, now=issued))).json()
     assert body["error"]["message"] == "Authentication required"
     assert "details" not in body["error"] or not body["error"]["details"]

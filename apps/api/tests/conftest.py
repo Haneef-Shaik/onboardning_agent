@@ -13,9 +13,8 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from onb_api import create_app
+from onb_api.testing import TEST_SETTINGS, InMemoryUserStore, seeded_store
 from onb_telemetry.testing import reset_telemetry_globals
-
-from .auth_fakes import TEST_SETTINGS, InMemoryUserStore, seeded_store
 
 __all__ = ["app", "client", "jwt_secret_in_env", "users"]
 

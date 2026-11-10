@@ -96,6 +96,24 @@ MUTATIONS = [
         "    NotFoundError: ErrorCode.NOT_FOUND,",
         "    NotFoundError: ErrorCode.FORBIDDEN,",
     ),
+    (
+        "M14 token: lifetime longer than configured accepted",
+        f"{API}/auth/tokens.py",
+        "    if exp - iat > settings.token_ttl.total_seconds():",
+        "    if False:",
+    ),
+    (
+        "M15 token: audience not checked",
+        f"{API}/auth/tokens.py",
+        "            audience=AUDIENCE,\n",
+        "            audience=None,\n",
+    ),
+    (
+        "M16 dependency: tenant scope opened but never closed",
+        f"{API}/auth/dependencies.py",
+        "    with tenant_scope(principal.org_id):\n        yield principal\n",
+        "    tenant_scope(principal.org_id).__enter__()\n    yield principal\n",
+    ),
 ]
 
 FAILED = re.compile(r"^FAILED (\S+)", re.MULTILINE)

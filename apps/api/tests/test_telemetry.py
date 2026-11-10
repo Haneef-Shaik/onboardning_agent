@@ -82,8 +82,11 @@ def test_main_initialises_telemetry_as_the_api_service(monkeypatch: pytest.Monke
     try:
         main = importlib.import_module("onb_api.main")
         assert active_telemetry().service_name == "api"
-        with TestClient(main.app) as client:
-            assert client.get("/health").json()["meta"]["trace_id"] is not None
+        # Telemetry started before the Mongo client was made, so the client carries the tracer.
+        listeners = [type(listener).__name__ for listener in main.store._client.options.event_listeners]
+        assert "CommandTracer" in listeners
+        # No `with`: the lifespan would make indexes on a Mongo that is not there.
+        assert TestClient(main.app).get("/health").json()["meta"]["trace_id"] is not None
     finally:
         sys.modules.pop("onb_api.main", None)
         reset_telemetry_globals()

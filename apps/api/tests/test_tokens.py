@@ -8,7 +8,16 @@ from typing import Any
 import jwt
 import pytest
 from onb_api.auth.settings import AuthSettings
-from onb_api.auth.tokens import MAX_TOKEN_LENGTH, InvalidTokenError, Principal, issue_token, read_token
+from onb_api.auth.tokens import (
+    AUDIENCE,
+    ISSUER,
+    LEEWAY_SECONDS,
+    MAX_TOKEN_LENGTH,
+    InvalidTokenError,
+    Principal,
+    issue_token,
+    read_token,
+)
 from onb_contracts.auth import Role
 
 SETTINGS = AuthSettings(jwt_secret="k" * 64, bcrypt_rounds=4)
@@ -31,6 +40,8 @@ def _valid_claims(**overrides: Any) -> dict[str, Any]:
         "role": "HR",
         "iat": int(now.timestamp()),
         "exp": int((now + timedelta(minutes=5)).timestamp()),
+        "iss": ISSUER,
+        "aud": AUDIENCE,
     }
     claims.update(overrides)
     return {k: v for k, v in claims.items() if v is not None}
@@ -41,20 +52,47 @@ def test_an_issued_token_reads_back_as_the_same_principal() -> None:
     assert read_token(token.access_token, SETTINGS) == PRINCIPAL
 
 
-def test_an_issued_token_carries_exactly_sub_org_role_iat_exp_signed_hs256() -> None:
+def test_an_issued_token_carries_exactly_sub_org_role_iat_exp_iss_aud_signed_hs256() -> None:
     now = _now()
     token = issue_token(PRINCIPAL, SETTINGS, now=now)
     header = jwt.get_unverified_header(token.access_token)
-    claims = jwt.decode(token.access_token, SETTINGS.jwt_secret, algorithms=["HS256"])
+    claims = jwt.decode(token.access_token, SETTINGS.jwt_secret, algorithms=["HS256"], audience=AUDIENCE)
     assert header["alg"] == "HS256"
-    assert set(claims) == {"sub", "org_id", "role", "iat", "exp"}
+    assert set(claims) == {"sub", "org_id", "role", "iat", "exp", "iss", "aud"}
+    assert (claims["iss"], claims["aud"]) == ("onb-api", "onb-api")
     assert claims["exp"] == token.expires_at == int((now + SETTINGS.token_ttl).timestamp())
 
 
 def test_an_expired_token_is_refused() -> None:
-    token = issue_token(PRINCIPAL, SETTINGS, now=_now() - SETTINGS.token_ttl - timedelta(seconds=1))
+    token = issue_token(PRINCIPAL, SETTINGS, now=_now() - SETTINGS.token_ttl - timedelta(seconds=LEEWAY_SECONDS + 1))
     with pytest.raises(InvalidTokenError):
         read_token(token.access_token, SETTINGS)
+
+
+def test_a_token_within_the_clock_skew_leeway_is_accepted() -> None:
+    token = issue_token(PRINCIPAL, SETTINGS, now=_now() - SETTINGS.token_ttl + timedelta(seconds=1))
+    assert read_token(token.access_token, SETTINGS) == PRINCIPAL
+
+
+def test_a_token_issued_in_the_future_is_refused() -> None:
+    later = _now() + timedelta(minutes=10)
+    with pytest.raises(InvalidTokenError):
+        read_token(
+            _sign(_valid_claims(iat=int(later.timestamp()), exp=int((later + timedelta(minutes=5)).timestamp()))),
+            SETTINGS,
+        )
+
+
+def test_a_token_living_longer_than_the_configured_lifetime_is_refused() -> None:
+    long_exp = int((_now() + SETTINGS.token_ttl + timedelta(minutes=1)).timestamp())
+    with pytest.raises(InvalidTokenError):
+        read_token(_sign(_valid_claims(exp=long_exp)), SETTINGS)
+
+
+@pytest.mark.parametrize("claim", [{"iss": "someone-else"}, {"aud": "onb-mcp-hub"}, {"aud": ["other"]}])
+def test_a_token_for_another_issuer_or_audience_is_refused(claim: dict[str, Any]) -> None:
+    with pytest.raises(InvalidTokenError):
+        read_token(_sign(_valid_claims(**claim)), SETTINGS)
 
 
 def test_a_token_signed_with_another_secret_is_refused() -> None:
@@ -81,7 +119,7 @@ def test_an_unsigned_token_is_refused() -> None:
         read_token(unsigned, SETTINGS)
 
 
-@pytest.mark.parametrize("missing", ["sub", "org_id", "role", "exp", "iat"])
+@pytest.mark.parametrize("missing", ["sub", "org_id", "role", "exp", "iat", "iss", "aud"])
 def test_a_token_missing_a_claim_is_refused(missing: str) -> None:
     with pytest.raises(InvalidTokenError):
         read_token(_sign(_valid_claims(**{missing: None})), SETTINGS)
