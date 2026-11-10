@@ -1,0 +1,1234 @@
+FFFFFFFFFFFFFFFFFFFFFFFFFF....FFFFFFFFFFFFFFFFFFFFFF..........FFFFFFFFFF [ 91%]
+F......                                                                  [100%]
+=================================== FAILURES ===================================
+__ test_every_corpus_payload_is_denied_over_mcp_before_the_driver[where-top] ___
+
+db = FakeDatabase(collections={'new_hires': FakeCollection(name='new_hires', docs=[], calls=[('find', {'filter': {'$where': "this.org_id != 'org_a'", 'org_id': 'org_a'}, 'projection': None, 'sort': None, 'skip': 0, 'limit': 10})])})
+telemetry = CapturedTelemetry(handle=TelemetryHandle(service_name='test-service', provider=<opentelemetry.sdk.trace.TracerProvider...SET)>))), exporter=<opentelemetry.sdk.trace.export.in_memory_span_exporter.InMemorySpanExporter object at 0x10ea8a570>)
+pid = 'where-top', tool = 'find'
+args = {'collection': 'new_hires', 'filter': {'$where': "this.org_id != 'org_a'"}, 'limit': 10}
+reason = 'forbidden_operator'
+
+    @pytest.mark.parametrize(("pid", "tool", "args", "reason"), CORPUS, ids=[p[0] for p in CORPUS])
+    def test_every_corpus_payload_is_denied_over_mcp_before_the_driver(
+        db: FakeDatabase, telemetry: CapturedTelemetry, pid: str, tool: str, args: dict[str, Any], reason: str
+    ) -> None:
+        result = call(db, _tool(tool, args))
+>       assert result.isError
+E       assert False
+E        +  where False = CallToolResult(meta=None, content=[TextContent(type='text', text='{\n  "documents": [],\n  "count": 0\n}', annotations=None, meta=None)], structuredContent={'documents': [], 'count': 0}, isError=False).isError
+
+apps/mcp-mongo/tests/test_server_validator.py:36: AssertionError
+_ test_every_corpus_payload_is_denied_over_mcp_before_the_driver[where-in-or] __
+
+db = FakeDatabase(collections={'new_hires': FakeCollection(name='new_hires', docs=[], calls=[('find', {'filter': {'$or': [{...': 'function () { return true; }'}], 'org_id': 'org_a'}, 'projection': None, 'sort': None, 'skip': 0, 'limit': 10})])})
+telemetry = CapturedTelemetry(handle=TelemetryHandle(service_name='test-service', provider=<opentelemetry.sdk.trace.TracerProvider...SET)>))), exporter=<opentelemetry.sdk.trace.export.in_memory_span_exporter.InMemorySpanExporter object at 0x10d52b9b0>)
+pid = 'where-in-or', tool = 'find'
+args = {'collection': 'new_hires', 'filter': {'$or': [{'status': 'open'}, {'$where': 'function () { return true; }'}]}, 'limit': 10}
+reason = 'forbidden_operator'
+
+    @pytest.mark.parametrize(("pid", "tool", "args", "reason"), CORPUS, ids=[p[0] for p in CORPUS])
+    def test_every_corpus_payload_is_denied_over_mcp_before_the_driver(
+        db: FakeDatabase, telemetry: CapturedTelemetry, pid: str, tool: str, args: dict[str, Any], reason: str
+    ) -> None:
+        result = call(db, _tool(tool, args))
+>       assert result.isError
+E       assert False
+E        +  where False = CallToolResult(meta=None, content=[TextContent(type='text', text='{\n  "documents": [],\n  "count": 0\n}', annotations=None, meta=None)], structuredContent={'documents': [], 'count': 0}, isError=False).isError
+
+apps/mcp-mongo/tests/test_server_validator.py:36: AssertionError
+_ test_every_corpus_payload_is_denied_over_mcp_before_the_driver[where-in-count] _
+
+db = FakeDatabase(collections={'new_hires': FakeCollection(name='new_hires', docs=[], calls=[('count_documents', {'$where': 'sleep(5000) || true', 'org_id': 'org_a'})])})
+telemetry = CapturedTelemetry(handle=TelemetryHandle(service_name='test-service', provider=<opentelemetry.sdk.trace.TracerProvider...SET)>))), exporter=<opentelemetry.sdk.trace.export.in_memory_span_exporter.InMemorySpanExporter object at 0x10eb4c3b0>)
+pid = 'where-in-count', tool = 'count'
+args = {'collection': 'new_hires', 'filter': {'$where': 'sleep(5000) || true'}}
+reason = 'forbidden_operator'
+
+    @pytest.mark.parametrize(("pid", "tool", "args", "reason"), CORPUS, ids=[p[0] for p in CORPUS])
+    def test_every_corpus_payload_is_denied_over_mcp_before_the_driver(
+        db: FakeDatabase, telemetry: CapturedTelemetry, pid: str, tool: str, args: dict[str, Any], reason: str
+    ) -> None:
+        result = call(db, _tool(tool, args))
+>       assert result.isError
+E       assert False
+E        +  where False = CallToolResult(meta=None, content=[TextContent(type='text', text='{\n  "count": 0\n}', annotations=None, meta=None)], structuredContent={'count': 0}, isError=False).isError
+
+apps/mcp-mongo/tests/test_server_validator.py:36: AssertionError
+_ test_every_corpus_payload_is_denied_over_mcp_before_the_driver[where-in-match] _
+
+db = FakeDatabase(collections={'new_hires': FakeCollection(name='new_hires', docs=[], calls=[('aggregate', [{'$match': {'org_id': 'org_a'}}, {'$match': {'$where': 'function () { return true; }'}}, {'$limit': 100}])])})
+telemetry = CapturedTelemetry(handle=TelemetryHandle(service_name='test-service', provider=<opentelemetry.sdk.trace.TracerProvider...SET)>))), exporter=<opentelemetry.sdk.trace.export.in_memory_span_exporter.InMemorySpanExporter object at 0x10ebee8a0>)
+pid = 'where-in-match', tool = 'aggregate'
+args = {'collection': 'new_hires', 'pipeline': [{'$match': {'$where': 'function () { return true; }'}}]}
+reason = 'forbidden_operator'
+
+    @pytest.mark.parametrize(("pid", "tool", "args", "reason"), CORPUS, ids=[p[0] for p in CORPUS])
+    def test_every_corpus_payload_is_denied_over_mcp_before_the_driver(
+        db: FakeDatabase, telemetry: CapturedTelemetry, pid: str, tool: str, args: dict[str, Any], reason: str
+    ) -> None:
+        result = call(db, _tool(tool, args))
+>       assert result.isError
+E       assert False
+E        +  where False = CallToolResult(meta=None, content=[TextContent(type='text', text='{\n  "documents": [],\n  "count": 0\n}', annotations=None, meta=None)], structuredContent={'documents': [], 'count': 0}, isError=False).isError
+
+apps/mcp-mongo/tests/test_server_validator.py:36: AssertionError
+_ test_every_corpus_payload_is_denied_over_mcp_before_the_driver[where-in-update-filter] _
+
+db = FakeDatabase(collections={'run_tasks': FakeCollection(name='run_tasks', docs=[], calls=[('update_one', {'filter': {'$where': 'function () { return true; }', 'org_id': 'org_a'}, 'update': {'$set': {'a': 1}}})])})
+telemetry = CapturedTelemetry(handle=TelemetryHandle(service_name='test-service', provider=<opentelemetry.sdk.trace.TracerProvider...SET)>))), exporter=<opentelemetry.sdk.trace.export.in_memory_span_exporter.InMemorySpanExporter object at 0x10ebefe60>)
+pid = 'where-in-update-filter', tool = 'update_one'
+args = {'collection': 'run_tasks', 'filter': {'$where': 'function () { return true; }'}, 'update': {'$set': {'a': 1}}}
+reason = 'forbidden_operator'
+
+    @pytest.mark.parametrize(("pid", "tool", "args", "reason"), CORPUS, ids=[p[0] for p in CORPUS])
+    def test_every_corpus_payload_is_denied_over_mcp_before_the_driver(
+        db: FakeDatabase, telemetry: CapturedTelemetry, pid: str, tool: str, args: dict[str, Any], reason: str
+    ) -> None:
+        result = call(db, _tool(tool, args))
+>       assert result.isError
+E       assert False
+E        +  where False = CallToolResult(meta=None, content=[TextContent(type='text', text='{\n  "matched": 0,\n  "modified": 0,\n  "count": 0\n}', annotations=None, meta=None)], structuredContent={'matched': 0, 'modified': 0, 'count': 0}, isError=False).isError
+
+apps/mcp-mongo/tests/test_server_validator.py:36: AssertionError
+_ test_every_corpus_payload_is_denied_over_mcp_before_the_driver[where-under-elemMatch] _
+
+db = FakeDatabase(collections={'new_hires': FakeCollection(name='new_hires', docs=[], calls=[('find', {'filter': {'tags': {...': 'function () { return true; }'}}, 'org_id': 'org_a'}, 'projection': None, 'sort': None, 'skip': 0, 'limit': 10})])})
+telemetry = CapturedTelemetry(handle=TelemetryHandle(service_name='test-service', provider=<opentelemetry.sdk.trace.TracerProvider...SET)>))), exporter=<opentelemetry.sdk.trace.export.in_memory_span_exporter.InMemorySpanExporter object at 0x10ebefaa0>)
+pid = 'where-under-elemMatch', tool = 'find'
+args = {'collection': 'new_hires', 'filter': {'tags': {'$elemMatch': {'$where': 'function () { return true; }'}}}, 'limit': 10}
+reason = 'forbidden_operator'
+
+    @pytest.mark.parametrize(("pid", "tool", "args", "reason"), CORPUS, ids=[p[0] for p in CORPUS])
+    def test_every_corpus_payload_is_denied_over_mcp_before_the_driver(
+        db: FakeDatabase, telemetry: CapturedTelemetry, pid: str, tool: str, args: dict[str, Any], reason: str
+    ) -> None:
+        result = call(db, _tool(tool, args))
+>       assert result.isError
+E       assert False
+E        +  where False = CallToolResult(meta=None, content=[TextContent(type='text', text='{\n  "documents": [],\n  "count": 0\n}', annotations=None, meta=None)], structuredContent={'documents': [], 'count': 0}, isError=False).isError
+
+apps/mcp-mongo/tests/test_server_validator.py:36: AssertionError
+_ test_every_corpus_payload_is_denied_over_mcp_before_the_driver[where-under-not] _
+
+db = FakeDatabase(collections={'new_hires': FakeCollection(name='new_hires', docs=[], calls=[('find', {'filter': {'a': {'$n...': 'function () { return true; }'}}, 'org_id': 'org_a'}, 'projection': None, 'sort': None, 'skip': 0, 'limit': 10})])})
+telemetry = CapturedTelemetry(handle=TelemetryHandle(service_name='test-service', provider=<opentelemetry.sdk.trace.TracerProvider...SET)>))), exporter=<opentelemetry.sdk.trace.export.in_memory_span_exporter.InMemorySpanExporter object at 0x10eb94050>)
+pid = 'where-under-not', tool = 'find'
+args = {'collection': 'new_hires', 'filter': {'a': {'$not': {'$where': 'function () { return true; }'}}}, 'limit': 10}
+reason = 'forbidden_operator'
+
+    @pytest.mark.parametrize(("pid", "tool", "args", "reason"), CORPUS, ids=[p[0] for p in CORPUS])
+    def test_every_corpus_payload_is_denied_over_mcp_before_the_driver(
+        db: FakeDatabase, telemetry: CapturedTelemetry, pid: str, tool: str, args: dict[str, Any], reason: str
+    ) -> None:
+        result = call(db, _tool(tool, args))
+>       assert result.isError
+E       assert False
+E        +  where False = CallToolResult(meta=None, content=[TextContent(type='text', text='{\n  "documents": [],\n  "count": 0\n}', annotations=None, meta=None)], structuredContent={'documents': [], 'count': 0}, isError=False).isError
+
+apps/mcp-mongo/tests/test_server_validator.py:36: AssertionError
+_ test_every_corpus_payload_is_denied_over_mcp_before_the_driver[where-in-pull] _
+
+db = FakeDatabase(collections={'run_tasks': FakeCollection(name='run_tasks', docs=[], calls=[('update_one', {'filter': {'state': 'todo', 'org_id': 'org_a'}, 'update': {'$pull': {'tags': {'$where': 'function () { return true; }'}}}})])})
+telemetry = CapturedTelemetry(handle=TelemetryHandle(service_name='test-service', provider=<opentelemetry.sdk.trace.TracerProvider...SET)>))), exporter=<opentelemetry.sdk.trace.export.in_memory_span_exporter.InMemorySpanExporter object at 0x10eb94290>)
+pid = 'where-in-pull', tool = 'update_one'
+args = {'collection': 'run_tasks', 'filter': {'state': 'todo'}, 'update': {'$pull': {'tags': {'$where': 'function () { return true; }'}}}}
+reason = 'forbidden_operator'
+
+    @pytest.mark.parametrize(("pid", "tool", "args", "reason"), CORPUS, ids=[p[0] for p in CORPUS])
+    def test_every_corpus_payload_is_denied_over_mcp_before_the_driver(
+        db: FakeDatabase, telemetry: CapturedTelemetry, pid: str, tool: str, args: dict[str, Any], reason: str
+    ) -> None:
+        result = call(db, _tool(tool, args))
+>       assert result.isError
+E       assert False
+E        +  where False = CallToolResult(meta=None, content=[TextContent(type='text', text='{\n  "matched": 0,\n  "modified": 0,\n  "count": 0\n}', annotations=None, meta=None)], structuredContent={'matched': 0, 'modified': 0, 'count': 0}, isError=False).isError
+
+apps/mcp-mongo/tests/test_server_validator.py:36: AssertionError
+_ test_every_corpus_payload_is_denied_over_mcp_before_the_driver[expr-function] _
+
+db = FakeDatabase(collections={'new_hires': FakeCollection(name='new_hires', docs=[], calls=[('find', {'filter': {'$expr': ...rue; }', 'args': [], 'lang': 'js'}}, 'org_id': 'org_a'}, 'projection': None, 'sort': None, 'skip': 0, 'limit': 10})])})
+telemetry = CapturedTelemetry(handle=TelemetryHandle(service_name='test-service', provider=<opentelemetry.sdk.trace.TracerProvider...SET)>))), exporter=<opentelemetry.sdk.trace.export.in_memory_span_exporter.InMemorySpanExporter object at 0x10eb969f0>)
+pid = 'expr-function', tool = 'find'
+args = {'collection': 'new_hires', 'filter': {'$expr': {'$function': {'body': 'function () { return true; }', 'args': [], 'lang': 'js'}}}, 'limit': 10}
+reason = 'forbidden_operator'
+
+    @pytest.mark.parametrize(("pid", "tool", "args", "reason"), CORPUS, ids=[p[0] for p in CORPUS])
+    def test_every_corpus_payload_is_denied_over_mcp_before_the_driver(
+        db: FakeDatabase, telemetry: CapturedTelemetry, pid: str, tool: str, args: dict[str, Any], reason: str
+    ) -> None:
+        result = call(db, _tool(tool, args))
+>       assert result.isError
+E       assert False
+E        +  where False = CallToolResult(meta=None, content=[TextContent(type='text', text='{\n  "documents": [],\n  "count": 0\n}', annotations=None, meta=None)], structuredContent={'documents': [], 'count': 0}, isError=False).isError
+
+apps/mcp-mongo/tests/test_server_validator.py:36: AssertionError
+_ test_every_corpus_payload_is_denied_over_mcp_before_the_driver[expr-function-nested] _
+
+db = FakeDatabase(collections={'new_hires': FakeCollection(name='new_hires', docs=[], calls=[('count_documents', {'$expr': {'$and': [{'$eq': ['$a', 1]}, {'$function': {'body': 'function () { return true; }'}}]}, 'org_id': 'org_a'})])})
+telemetry = CapturedTelemetry(handle=TelemetryHandle(service_name='test-service', provider=<opentelemetry.sdk.trace.TracerProvider...SET)>))), exporter=<opentelemetry.sdk.trace.export.in_memory_span_exporter.InMemorySpanExporter object at 0x10eb4c4a0>)
+pid = 'expr-function-nested', tool = 'count'
+args = {'collection': 'new_hires', 'filter': {'$expr': {'$and': [{'$eq': ['$a', 1]}, {'$function': {'body': 'function () { return true; }'}}]}}}
+reason = 'forbidden_operator'
+
+    @pytest.mark.parametrize(("pid", "tool", "args", "reason"), CORPUS, ids=[p[0] for p in CORPUS])
+    def test_every_corpus_payload_is_denied_over_mcp_before_the_driver(
+        db: FakeDatabase, telemetry: CapturedTelemetry, pid: str, tool: str, args: dict[str, Any], reason: str
+    ) -> None:
+        result = call(db, _tool(tool, args))
+>       assert result.isError
+E       assert False
+E        +  where False = CallToolResult(meta=None, content=[TextContent(type='text', text='{\n  "count": 0\n}', annotations=None, meta=None)], structuredContent={'count': 0}, isError=False).isError
+
+apps/mcp-mongo/tests/test_server_validator.py:36: AssertionError
+_ test_every_corpus_payload_is_denied_over_mcp_before_the_driver[expr-function-in-match] _
+
+db = FakeDatabase(collections={'new_hires': FakeCollection(name='new_hires', docs=[], calls=[('aggregate', [{'$match': {'or...'$gt': [{'$function': {'body': 'function () { return true; }', 'args': [], 'lang': 'js'}}, 0]}}}, {'$limit': 100}])])})
+telemetry = CapturedTelemetry(handle=TelemetryHandle(service_name='test-service', provider=<opentelemetry.sdk.trace.TracerProvider...SET)>))), exporter=<opentelemetry.sdk.trace.export.in_memory_span_exporter.InMemorySpanExporter object at 0x10eb4f470>)
+pid = 'expr-function-in-match', tool = 'aggregate'
+args = {'collection': 'new_hires', 'pipeline': [{'$match': {'$expr': {'$gt': [{...}, 0]}}}]}
+reason = 'forbidden_operator'
+
+    @pytest.mark.parametrize(("pid", "tool", "args", "reason"), CORPUS, ids=[p[0] for p in CORPUS])
+    def test_every_corpus_payload_is_denied_over_mcp_before_the_driver(
+        db: FakeDatabase, telemetry: CapturedTelemetry, pid: str, tool: str, args: dict[str, Any], reason: str
+    ) -> None:
+        result = call(db, _tool(tool, args))
+>       assert result.isError
+E       assert False
+E        +  where False = CallToolResult(meta=None, content=[TextContent(type='text', text='{\n  "documents": [],\n  "count": 0\n}', annotations=None, meta=None)], structuredContent={'documents': [], 'count': 0}, isError=False).isError
+
+apps/mcp-mongo/tests/test_server_validator.py:36: AssertionError
+_ test_every_corpus_payload_is_denied_over_mcp_before_the_driver[function-in-addFields] _
+
+db = FakeDatabase(collections={'new_hires': FakeCollection(name='new_hires', docs=[], calls=[('aggregate', [{'$match': {'or...elds': {'x': {'$function': {'body': 'function () { return true; }', 'args': [], 'lang': 'js'}}}}, {'$limit': 100}])])})
+telemetry = CapturedTelemetry(handle=TelemetryHandle(service_name='test-service', provider=<opentelemetry.sdk.trace.TracerProvider...SET)>))), exporter=<opentelemetry.sdk.trace.export.in_memory_span_exporter.InMemorySpanExporter object at 0x10eb6caa0>)
+pid = 'function-in-addFields', tool = 'aggregate'
+args = {'collection': 'new_hires', 'pipeline': [{'$addFields': {'x': {'$function': {'body': 'function () { return true; }', 'args': [], 'lang': 'js'}}}}]}
+reason = 'forbidden_operator'
+
+    @pytest.mark.parametrize(("pid", "tool", "args", "reason"), CORPUS, ids=[p[0] for p in CORPUS])
+    def test_every_corpus_payload_is_denied_over_mcp_before_the_driver(
+        db: FakeDatabase, telemetry: CapturedTelemetry, pid: str, tool: str, args: dict[str, Any], reason: str
+    ) -> None:
+        result = call(db, _tool(tool, args))
+>       assert result.isError
+E       assert False
+E        +  where False = CallToolResult(meta=None, content=[TextContent(type='text', text='{\n  "documents": [],\n  "count": 0\n}', annotations=None, meta=None)], structuredContent={'documents': [], 'count': 0}, isError=False).isError
+
+apps/mcp-mongo/tests/test_server_validator.py:36: AssertionError
+_ test_every_corpus_payload_is_denied_over_mcp_before_the_driver[function-in-project] _
+
+db = FakeDatabase(collections={'new_hires': FakeCollection(name='new_hires', docs=[], calls=[('aggregate', [{'$match': {'or...ject': {'x': {'$function': {'body': 'function () { return true; }', 'args': [], 'lang': 'js'}}}}, {'$limit': 100}])])})
+telemetry = CapturedTelemetry(handle=TelemetryHandle(service_name='test-service', provider=<opentelemetry.sdk.trace.TracerProvider...SET)>))), exporter=<opentelemetry.sdk.trace.export.in_memory_span_exporter.InMemorySpanExporter object at 0x10eb97e90>)
+pid = 'function-in-project', tool = 'aggregate'
+args = {'collection': 'new_hires', 'pipeline': [{'$project': {'x': {'$function': {'body': 'function () { return true; }', 'args': [], 'lang': 'js'}}}}]}
+reason = 'forbidden_operator'
+
+    @pytest.mark.parametrize(("pid", "tool", "args", "reason"), CORPUS, ids=[p[0] for p in CORPUS])
+    def test_every_corpus_payload_is_denied_over_mcp_before_the_driver(
+        db: FakeDatabase, telemetry: CapturedTelemetry, pid: str, tool: str, args: dict[str, Any], reason: str
+    ) -> None:
+        result = call(db, _tool(tool, args))
+>       assert result.isError
+E       assert False
+E        +  where False = CallToolResult(meta=None, content=[TextContent(type='text', text='{\n  "documents": [],\n  "count": 0\n}', annotations=None, meta=None)], structuredContent={'documents': [], 'count': 0}, isError=False).isError
+
+apps/mcp-mongo/tests/test_server_validator.py:36: AssertionError
+_ test_every_corpus_payload_is_denied_over_mcp_before_the_driver[function-in-group-id] _
+
+db = FakeDatabase(collections={'new_hires': FakeCollection(name='new_hires', docs=[], calls=[('aggregate', [{'$match': {'or...up': {'_id': {'$function': {'body': 'function () { return true; }', 'args': [], 'lang': 'js'}}}}, {'$limit': 100}])])})
+telemetry = CapturedTelemetry(handle=TelemetryHandle(service_name='test-service', provider=<opentelemetry.sdk.trace.TracerProvider...SET)>))), exporter=<opentelemetry.sdk.trace.export.in_memory_span_exporter.InMemorySpanExporter object at 0x10eb6e000>)
+pid = 'function-in-group-id', tool = 'aggregate'
+args = {'collection': 'new_hires', 'pipeline': [{'$group': {'_id': {'$function': {'body': 'function () { return true; }', 'args': [], 'lang': 'js'}}}}]}
+reason = 'forbidden_operator'
+
+    @pytest.mark.parametrize(("pid", "tool", "args", "reason"), CORPUS, ids=[p[0] for p in CORPUS])
+    def test_every_corpus_payload_is_denied_over_mcp_before_the_driver(
+        db: FakeDatabase, telemetry: CapturedTelemetry, pid: str, tool: str, args: dict[str, Any], reason: str
+    ) -> None:
+        result = call(db, _tool(tool, args))
+>       assert result.isError
+E       assert False
+E        +  where False = CallToolResult(meta=None, content=[TextContent(type='text', text='{\n  "documents": [],\n  "count": 0\n}', annotations=None, meta=None)], structuredContent={'documents': [], 'count': 0}, isError=False).isError
+
+apps/mcp-mongo/tests/test_server_validator.py:36: AssertionError
+_ test_every_corpus_payload_is_denied_over_mcp_before_the_driver[accumulator-in-group] _
+
+db = FakeDatabase(collections={'new_hires': FakeCollection(name='new_hires', docs=[], calls=[('aggregate', [{'$match': {'or...: 'function () { return true; }', 'accumulate': 'function () { return true; }', 'lang': 'js'}}}}, {'$limit': 100}])])})
+telemetry = CapturedTelemetry(handle=TelemetryHandle(service_name='test-service', provider=<opentelemetry.sdk.trace.TracerProvider...SET)>))), exporter=<opentelemetry.sdk.trace.export.in_memory_span_exporter.InMemorySpanExporter object at 0x10cf9f980>)
+pid = 'accumulator-in-group', tool = 'aggregate'
+args = {'collection': 'new_hires', 'pipeline': [{'$group': {'_id': None, 'x': {'$accumulator': {'init': 'function () { return true; }', 'accumulate': 'function () { return true; }', 'lang': 'js'}}}}]}
+reason = 'forbidden_operator'
+
+    @pytest.mark.parametrize(("pid", "tool", "args", "reason"), CORPUS, ids=[p[0] for p in CORPUS])
+    def test_every_corpus_payload_is_denied_over_mcp_before_the_driver(
+        db: FakeDatabase, telemetry: CapturedTelemetry, pid: str, tool: str, args: dict[str, Any], reason: str
+    ) -> None:
+        result = call(db, _tool(tool, args))
+>       assert result.isError
+E       assert False
+E        +  where False = CallToolResult(meta=None, content=[TextContent(type='text', text='{\n  "documents": [],\n  "count": 0\n}', annotations=None, meta=None)], structuredContent={'documents': [], 'count': 0}, isError=False).isError
+
+apps/mcp-mongo/tests/test_server_validator.py:36: AssertionError
+_ test_every_corpus_payload_is_denied_over_mcp_before_the_driver[accumulator-in-expr] _
+
+db = FakeDatabase(collections={'new_hires': FakeCollection(name='new_hires', docs=[], calls=[('find', {'filter': {'$expr': ...': 'function () { return true; }'}}, 'org_id': 'org_a'}, 'projection': None, 'sort': None, 'skip': 0, 'limit': 10})])})
+telemetry = CapturedTelemetry(handle=TelemetryHandle(service_name='test-service', provider=<opentelemetry.sdk.trace.TracerProvider...SET)>))), exporter=<opentelemetry.sdk.trace.export.in_memory_span_exporter.InMemorySpanExporter object at 0x10cf9ff80>)
+pid = 'accumulator-in-expr', tool = 'find'
+args = {'collection': 'new_hires', 'filter': {'$expr': {'$accumulator': {'init': 'function () { return true; }'}}}, 'limit': 10}
+reason = 'forbidden_operator'
+
+    @pytest.mark.parametrize(("pid", "tool", "args", "reason"), CORPUS, ids=[p[0] for p in CORPUS])
+    def test_every_corpus_payload_is_denied_over_mcp_before_the_driver(
+        db: FakeDatabase, telemetry: CapturedTelemetry, pid: str, tool: str, args: dict[str, Any], reason: str
+    ) -> None:
+        result = call(db, _tool(tool, args))
+>       assert result.isError
+E       assert False
+E        +  where False = CallToolResult(meta=None, content=[TextContent(type='text', text='{\n  "documents": [],\n  "count": 0\n}', annotations=None, meta=None)], structuredContent={'documents': [], 'count': 0}, isError=False).isError
+
+apps/mcp-mongo/tests/test_server_validator.py:36: AssertionError
+_ test_every_corpus_payload_is_denied_over_mcp_before_the_driver[function-in-sum] _
+
+db = FakeDatabase(collections={'new_hires': FakeCollection(name='new_hires', docs=[], calls=[('aggregate', [{'$match': {'org_id': 'org_a'}}, {'$group': {'_id': None, 'n': {'$sum': {'$function': {}}}}}, {'$limit': 100}])])})
+telemetry = CapturedTelemetry(handle=TelemetryHandle(service_name='test-service', provider=<opentelemetry.sdk.trace.TracerProvider...SET)>))), exporter=<opentelemetry.sdk.trace.export.in_memory_span_exporter.InMemorySpanExporter object at 0x10eafa660>)
+pid = 'function-in-sum', tool = 'aggregate'
+args = {'collection': 'new_hires', 'pipeline': [{'$group': {'_id': None, 'n': {'$sum': {'$function': {}}}}}]}
+reason = 'forbidden_operator'
+
+    @pytest.mark.parametrize(("pid", "tool", "args", "reason"), CORPUS, ids=[p[0] for p in CORPUS])
+    def test_every_corpus_payload_is_denied_over_mcp_before_the_driver(
+        db: FakeDatabase, telemetry: CapturedTelemetry, pid: str, tool: str, args: dict[str, Any], reason: str
+    ) -> None:
+        result = call(db, _tool(tool, args))
+>       assert result.isError
+E       assert False
+E        +  where False = CallToolResult(meta=None, content=[TextContent(type='text', text='{\n  "documents": [],\n  "count": 0\n}', annotations=None, meta=None)], structuredContent={'documents': [], 'count': 0}, isError=False).isError
+
+apps/mcp-mongo/tests/test_server_validator.py:36: AssertionError
+____ test_every_corpus_payload_is_denied_over_mcp_before_the_driver[lookup] ____
+
+db = FakeDatabase(collections={})
+telemetry = CapturedTelemetry(handle=TelemetryHandle(service_name='test-service', provider=<opentelemetry.sdk.trace.TracerProvider...SET)>))), exporter=<opentelemetry.sdk.trace.export.in_memory_span_exporter.InMemorySpanExporter object at 0x10ebef5f0>)
+pid = 'lookup', tool = 'aggregate'
+args = {'collection': 'new_hires', 'pipeline': [{'$lookup': {'from': 'pii_vault', 'localField': 'a', 'foreignField': 'b', 'as': 'v'}}]}
+reason = 'forbidden_operator'
+
+    @pytest.mark.parametrize(("pid", "tool", "args", "reason"), CORPUS, ids=[p[0] for p in CORPUS])
+    def test_every_corpus_payload_is_denied_over_mcp_before_the_driver(
+        db: FakeDatabase, telemetry: CapturedTelemetry, pid: str, tool: str, args: dict[str, Any], reason: str
+    ) -> None:
+        result = call(db, _tool(tool, args))
+        assert result.isError
+        assert db.calls() == []
+        attrs = _denial(telemetry, tool)
+        assert attrs["outcome"] == "denied"
+>       assert attrs["denial.reason"] == reason
+E       AssertionError: assert 'stage_not_allowed' == 'forbidden_operator'
+E         
+E         - forbidden_operator
+E         + stage_not_allowed
+
+apps/mcp-mongo/tests/test_server_validator.py:40: AssertionError
+_ test_every_corpus_payload_is_denied_over_mcp_before_the_driver[lookup-after-match] _
+
+db = FakeDatabase(collections={})
+telemetry = CapturedTelemetry(handle=TelemetryHandle(service_name='test-service', provider=<opentelemetry.sdk.trace.TracerProvider...SET)>))), exporter=<opentelemetry.sdk.trace.export.in_memory_span_exporter.InMemorySpanExporter object at 0x10cf9f5f0>)
+pid = 'lookup-after-match', tool = 'aggregate'
+args = {'collection': 'new_hires', 'pipeline': [{'$match': {}}, {'$lookup': {'from': 'orgs', 'pipeline': [], 'as': 'o'}}]}
+reason = 'forbidden_operator'
+
+    @pytest.mark.parametrize(("pid", "tool", "args", "reason"), CORPUS, ids=[p[0] for p in CORPUS])
+    def test_every_corpus_payload_is_denied_over_mcp_before_the_driver(
+        db: FakeDatabase, telemetry: CapturedTelemetry, pid: str, tool: str, args: dict[str, Any], reason: str
+    ) -> None:
+        result = call(db, _tool(tool, args))
+        assert result.isError
+        assert db.calls() == []
+        attrs = _denial(telemetry, tool)
+        assert attrs["outcome"] == "denied"
+>       assert attrs["denial.reason"] == reason
+E       AssertionError: assert 'stage_not_allowed' == 'forbidden_operator'
+E         
+E         - forbidden_operator
+E         + stage_not_allowed
+
+apps/mcp-mongo/tests/test_server_validator.py:40: AssertionError
+_ test_every_corpus_payload_is_denied_over_mcp_before_the_driver[graphLookup] __
+
+db = FakeDatabase(collections={})
+telemetry = CapturedTelemetry(handle=TelemetryHandle(service_name='test-service', provider=<opentelemetry.sdk.trace.TracerProvider...SET)>))), exporter=<opentelemetry.sdk.trace.export.in_memory_span_exporter.InMemorySpanExporter object at 0x10cf9ed20>)
+pid = 'graphLookup', tool = 'aggregate'
+args = {'collection': 'new_hires', 'pipeline': [{'$graphLookup': {'from': 'new_hires', 'startWith': '$a', 'connectFromField': 'a', 'connectToField': 'b', ...}}]}
+reason = 'forbidden_operator'
+
+    @pytest.mark.parametrize(("pid", "tool", "args", "reason"), CORPUS, ids=[p[0] for p in CORPUS])
+    def test_every_corpus_payload_is_denied_over_mcp_before_the_driver(
+        db: FakeDatabase, telemetry: CapturedTelemetry, pid: str, tool: str, args: dict[str, Any], reason: str
+    ) -> None:
+        result = call(db, _tool(tool, args))
+        assert result.isError
+        assert db.calls() == []
+        attrs = _denial(telemetry, tool)
+        assert attrs["outcome"] == "denied"
+>       assert attrs["denial.reason"] == reason
+E       AssertionError: assert 'stage_not_allowed' == 'forbidden_operator'
+E         
+E         - forbidden_operator
+E         + stage_not_allowed
+
+apps/mcp-mongo/tests/test_server_validator.py:40: AssertionError
+_____ test_every_corpus_payload_is_denied_over_mcp_before_the_driver[out] ______
+
+db = FakeDatabase(collections={})
+telemetry = CapturedTelemetry(handle=TelemetryHandle(service_name='test-service', provider=<opentelemetry.sdk.trace.TracerProvider...SET)>))), exporter=<opentelemetry.sdk.trace.export.in_memory_span_exporter.InMemorySpanExporter object at 0x10eb6e5a0>)
+pid = 'out', tool = 'aggregate'
+args = {'collection': 'new_hires', 'pipeline': [{'$match': {}}, {'$out': 'stolen'}]}
+reason = 'forbidden_operator'
+
+    @pytest.mark.parametrize(("pid", "tool", "args", "reason"), CORPUS, ids=[p[0] for p in CORPUS])
+    def test_every_corpus_payload_is_denied_over_mcp_before_the_driver(
+        db: FakeDatabase, telemetry: CapturedTelemetry, pid: str, tool: str, args: dict[str, Any], reason: str
+    ) -> None:
+        result = call(db, _tool(tool, args))
+        assert result.isError
+        assert db.calls() == []
+        attrs = _denial(telemetry, tool)
+        assert attrs["outcome"] == "denied"
+>       assert attrs["denial.reason"] == reason
+E       AssertionError: assert 'stage_not_allowed' == 'forbidden_operator'
+E         
+E         - forbidden_operator
+E         + stage_not_allowed
+
+apps/mcp-mongo/tests/test_server_validator.py:40: AssertionError
+____ test_every_corpus_payload_is_denied_over_mcp_before_the_driver[out-db] ____
+
+db = FakeDatabase(collections={})
+telemetry = CapturedTelemetry(handle=TelemetryHandle(service_name='test-service', provider=<opentelemetry.sdk.trace.TracerProvider...SET)>))), exporter=<opentelemetry.sdk.trace.export.in_memory_span_exporter.InMemorySpanExporter object at 0x10eb6e7e0>)
+pid = 'out-db', tool = 'aggregate'
+args = {'collection': 'new_hires', 'pipeline': [{'$out': {'db': 'admin', 'coll': 'x'}}]}
+reason = 'forbidden_operator'
+
+    @pytest.mark.parametrize(("pid", "tool", "args", "reason"), CORPUS, ids=[p[0] for p in CORPUS])
+    def test_every_corpus_payload_is_denied_over_mcp_before_the_driver(
+        db: FakeDatabase, telemetry: CapturedTelemetry, pid: str, tool: str, args: dict[str, Any], reason: str
+    ) -> None:
+        result = call(db, _tool(tool, args))
+        assert result.isError
+        assert db.calls() == []
+        attrs = _denial(telemetry, tool)
+        assert attrs["outcome"] == "denied"
+>       assert attrs["denial.reason"] == reason
+E       AssertionError: assert 'stage_not_allowed' == 'forbidden_operator'
+E         
+E         - forbidden_operator
+E         + stage_not_allowed
+
+apps/mcp-mongo/tests/test_server_validator.py:40: AssertionError
+____ test_every_corpus_payload_is_denied_over_mcp_before_the_driver[merge] _____
+
+db = FakeDatabase(collections={})
+telemetry = CapturedTelemetry(handle=TelemetryHandle(service_name='test-service', provider=<opentelemetry.sdk.trace.TracerProvider...SET)>))), exporter=<opentelemetry.sdk.trace.export.in_memory_span_exporter.InMemorySpanExporter object at 0x10eb6e690>)
+pid = 'merge', tool = 'aggregate'
+args = {'collection': 'new_hires', 'pipeline': [{'$merge': {'into': 'run_tasks'}}]}
+reason = 'forbidden_operator'
+
+    @pytest.mark.parametrize(("pid", "tool", "args", "reason"), CORPUS, ids=[p[0] for p in CORPUS])
+    def test_every_corpus_payload_is_denied_over_mcp_before_the_driver(
+        db: FakeDatabase, telemetry: CapturedTelemetry, pid: str, tool: str, args: dict[str, Any], reason: str
+    ) -> None:
+        result = call(db, _tool(tool, args))
+        assert result.isError
+        assert db.calls() == []
+        attrs = _denial(telemetry, tool)
+        assert attrs["outcome"] == "denied"
+>       assert attrs["denial.reason"] == reason
+E       AssertionError: assert 'stage_not_allowed' == 'forbidden_operator'
+E         
+E         - forbidden_operator
+E         + stage_not_allowed
+
+apps/mcp-mongo/tests/test_server_validator.py:40: AssertionError
+__ test_every_corpus_payload_is_denied_over_mcp_before_the_driver[unionWith] ___
+
+db = FakeDatabase(collections={})
+telemetry = CapturedTelemetry(handle=TelemetryHandle(service_name='test-service', provider=<opentelemetry.sdk.trace.TracerProvider...SET)>))), exporter=<opentelemetry.sdk.trace.export.in_memory_span_exporter.InMemorySpanExporter object at 0x10ebef7d0>)
+pid = 'unionWith', tool = 'aggregate'
+args = {'collection': 'new_hires', 'pipeline': [{'$unionWith': {'coll': 'new_hires', 'pipeline': []}}]}
+reason = 'forbidden_operator'
+
+    @pytest.mark.parametrize(("pid", "tool", "args", "reason"), CORPUS, ids=[p[0] for p in CORPUS])
+    def test_every_corpus_payload_is_denied_over_mcp_before_the_driver(
+        db: FakeDatabase, telemetry: CapturedTelemetry, pid: str, tool: str, args: dict[str, Any], reason: str
+    ) -> None:
+        result = call(db, _tool(tool, args))
+        assert result.isError
+        assert db.calls() == []
+        attrs = _denial(telemetry, tool)
+        assert attrs["outcome"] == "denied"
+>       assert attrs["denial.reason"] == reason
+E       AssertionError: assert 'stage_not_allowed' == 'forbidden_operator'
+E         
+E         - forbidden_operator
+E         + stage_not_allowed
+
+apps/mcp-mongo/tests/test_server_validator.py:40: AssertionError
+_ test_every_corpus_payload_is_denied_over_mcp_before_the_driver[unionWith-string] _
+
+db = FakeDatabase(collections={})
+telemetry = CapturedTelemetry(handle=TelemetryHandle(service_name='test-service', provider=<opentelemetry.sdk.trace.TracerProvider...SET)>))), exporter=<opentelemetry.sdk.trace.export.in_memory_span_exporter.InMemorySpanExporter object at 0x10eaf9bb0>)
+pid = 'unionWith-string', tool = 'aggregate'
+args = {'collection': 'new_hires', 'pipeline': [{'$unionWith': 'pii_vault'}]}
+reason = 'forbidden_operator'
+
+    @pytest.mark.parametrize(("pid", "tool", "args", "reason"), CORPUS, ids=[p[0] for p in CORPUS])
+    def test_every_corpus_payload_is_denied_over_mcp_before_the_driver(
+        db: FakeDatabase, telemetry: CapturedTelemetry, pid: str, tool: str, args: dict[str, Any], reason: str
+    ) -> None:
+        result = call(db, _tool(tool, args))
+        assert result.isError
+        assert db.calls() == []
+        attrs = _denial(telemetry, tool)
+        assert attrs["outcome"] == "denied"
+>       assert attrs["denial.reason"] == reason
+E       AssertionError: assert 'stage_not_allowed' == 'forbidden_operator'
+E         
+E         - forbidden_operator
+E         + stage_not_allowed
+
+apps/mcp-mongo/tests/test_server_validator.py:40: AssertionError
+_ test_every_corpus_payload_is_denied_over_mcp_before_the_driver[lookup-as-query-key] _
+
+db = FakeDatabase(collections={'new_hires': FakeCollection(name='new_hires', docs=[], calls=[('find', {'filter': {'$lookup': {'from': 'pii_vault'}, 'org_id': 'org_a'}, 'projection': None, 'sort': None, 'skip': 0, 'limit': 10})])})
+telemetry = CapturedTelemetry(handle=TelemetryHandle(service_name='test-service', provider=<opentelemetry.sdk.trace.TracerProvider...SET)>))), exporter=<opentelemetry.sdk.trace.export.in_memory_span_exporter.InMemorySpanExporter object at 0x10eb6d580>)
+pid = 'lookup-as-query-key', tool = 'find'
+args = {'collection': 'new_hires', 'filter': {'$lookup': {'from': 'pii_vault'}}, 'limit': 10}
+reason = 'forbidden_operator'
+
+    @pytest.mark.parametrize(("pid", "tool", "args", "reason"), CORPUS, ids=[p[0] for p in CORPUS])
+    def test_every_corpus_payload_is_denied_over_mcp_before_the_driver(
+        db: FakeDatabase, telemetry: CapturedTelemetry, pid: str, tool: str, args: dict[str, Any], reason: str
+    ) -> None:
+        result = call(db, _tool(tool, args))
+>       assert result.isError
+E       assert False
+E        +  where False = CallToolResult(meta=None, content=[TextContent(type='text', text='{\n  "documents": [],\n  "count": 0\n}', annotations=None, meta=None)], structuredContent={'documents': [], 'count': 0}, isError=False).isError
+
+apps/mcp-mongo/tests/test_server_validator.py:36: AssertionError
+____ test_every_corpus_payload_is_denied_over_mcp_before_the_driver[regex] _____
+
+db = FakeDatabase(collections={'new_hires': FakeCollection(name='new_hires', docs=[], calls=[('find', {'filter': {'name': {'$regex': '^(a+)+$'}, 'org_id': 'org_a'}, 'projection': None, 'sort': None, 'skip': 0, 'limit': 10})])})
+telemetry = CapturedTelemetry(handle=TelemetryHandle(service_name='test-service', provider=<opentelemetry.sdk.trace.TracerProvider...SET)>))), exporter=<opentelemetry.sdk.trace.export.in_memory_span_exporter.InMemorySpanExporter object at 0x10eafbbf0>)
+pid = 'regex', tool = 'find'
+args = {'collection': 'new_hires', 'filter': {'name': {'$regex': '^(a+)+$'}}, 'limit': 10}
+reason = 'operator_not_allowed'
+
+    @pytest.mark.parametrize(("pid", "tool", "args", "reason"), CORPUS, ids=[p[0] for p in CORPUS])
+    def test_every_corpus_payload_is_denied_over_mcp_before_the_driver(
+        db: FakeDatabase, telemetry: CapturedTelemetry, pid: str, tool: str, args: dict[str, Any], reason: str
+    ) -> None:
+        result = call(db, _tool(tool, args))
+>       assert result.isError
+E       assert False
+E        +  where False = CallToolResult(meta=None, content=[TextContent(type='text', text='{\n  "documents": [],\n  "count": 0\n}', annotations=None, meta=None)], structuredContent={'documents': [], 'count': 0}, isError=False).isError
+
+apps/mcp-mongo/tests/test_server_validator.py:36: AssertionError
+__ test_every_corpus_payload_is_denied_over_mcp_before_the_driver[jsonSchema] __
+
+db = FakeDatabase(collections={'new_hires': FakeCollection(name='new_hires', docs=[], calls=[('find', {'filter': {'$jsonSchema': {}, 'org_id': 'org_a'}, 'projection': None, 'sort': None, 'skip': 0, 'limit': 10})])})
+telemetry = CapturedTelemetry(handle=TelemetryHandle(service_name='test-service', provider=<opentelemetry.sdk.trace.TracerProvider...SET)>))), exporter=<opentelemetry.sdk.trace.export.in_memory_span_exporter.InMemorySpanExporter object at 0x10eb96cc0>)
+pid = 'jsonSchema', tool = 'find'
+args = {'collection': 'new_hires', 'filter': {'$jsonSchema': {}}, 'limit': 10}
+reason = 'operator_not_allowed'
+
+    @pytest.mark.parametrize(("pid", "tool", "args", "reason"), CORPUS, ids=[p[0] for p in CORPUS])
+    def test_every_corpus_payload_is_denied_over_mcp_before_the_driver(
+        db: FakeDatabase, telemetry: CapturedTelemetry, pid: str, tool: str, args: dict[str, Any], reason: str
+    ) -> None:
+        result = call(db, _tool(tool, args))
+>       assert result.isError
+E       assert False
+E        +  where False = CallToolResult(meta=None, content=[TextContent(type='text', text='{\n  "documents": [],\n  "count": 0\n}', annotations=None, meta=None)], structuredContent={'documents': [], 'count': 0}, isError=False).isError
+
+apps/mcp-mongo/tests/test_server_validator.py:36: AssertionError
+_____ test_every_corpus_payload_is_denied_over_mcp_before_the_driver[text] _____
+
+db = FakeDatabase(collections={'new_hires': FakeCollection(name='new_hires', docs=[], calls=[('find', {'filter': {'$text': {'$search': 'x'}, 'org_id': 'org_a'}, 'projection': None, 'sort': None, 'skip': 0, 'limit': 10})])})
+telemetry = CapturedTelemetry(handle=TelemetryHandle(service_name='test-service', provider=<opentelemetry.sdk.trace.TracerProvider...SET)>))), exporter=<opentelemetry.sdk.trace.export.in_memory_span_exporter.InMemorySpanExporter object at 0x10eb4c6b0>)
+pid = 'text', tool = 'find'
+args = {'collection': 'new_hires', 'filter': {'$text': {'$search': 'x'}}, 'limit': 10}
+reason = 'operator_not_allowed'
+
+    @pytest.mark.parametrize(("pid", "tool", "args", "reason"), CORPUS, ids=[p[0] for p in CORPUS])
+    def test_every_corpus_payload_is_denied_over_mcp_before_the_driver(
+        db: FakeDatabase, telemetry: CapturedTelemetry, pid: str, tool: str, args: dict[str, Any], reason: str
+    ) -> None:
+        result = call(db, _tool(tool, args))
+>       assert result.isError
+E       assert False
+E        +  where False = CallToolResult(meta=None, content=[TextContent(type='text', text='{\n  "documents": [],\n  "count": 0\n}', annotations=None, meta=None)], structuredContent={'documents': [], 'count': 0}, isError=False).isError
+
+apps/mcp-mongo/tests/test_server_validator.py:36: AssertionError
+___ test_every_corpus_payload_is_denied_over_mcp_before_the_driver[comment] ____
+
+db = FakeDatabase(collections={'new_hires': FakeCollection(name='new_hires', docs=[], calls=[('find', {'filter': {'a': 1, '$comment': 'x', 'org_id': 'org_a'}, 'projection': None, 'sort': None, 'skip': 0, 'limit': 10})])})
+telemetry = CapturedTelemetry(handle=TelemetryHandle(service_name='test-service', provider=<opentelemetry.sdk.trace.TracerProvider...SET)>))), exporter=<opentelemetry.sdk.trace.export.in_memory_span_exporter.InMemorySpanExporter object at 0x10eaea2d0>)
+pid = 'comment', tool = 'find'
+args = {'collection': 'new_hires', 'filter': {'a': 1, '$comment': 'x'}, 'limit': 10}
+reason = 'operator_not_allowed'
+
+    @pytest.mark.parametrize(("pid", "tool", "args", "reason"), CORPUS, ids=[p[0] for p in CORPUS])
+    def test_every_corpus_payload_is_denied_over_mcp_before_the_driver(
+        db: FakeDatabase, telemetry: CapturedTelemetry, pid: str, tool: str, args: dict[str, Any], reason: str
+    ) -> None:
+        result = call(db, _tool(tool, args))
+>       assert result.isError
+E       assert False
+E        +  where False = CallToolResult(meta=None, content=[TextContent(type='text', text='{\n  "documents": [],\n  "count": 0\n}', annotations=None, meta=None)], structuredContent={'documents': [], 'count': 0}, isError=False).isError
+
+apps/mcp-mongo/tests/test_server_validator.py:36: AssertionError
+__ test_every_corpus_payload_is_denied_over_mcp_before_the_driver[code-ejson] __
+
+db = FakeDatabase(collections={'new_hires': FakeCollection(name='new_hires', docs=[], calls=[('find', {'filter': {'a': {'$code': 'function () { return true; }'}, 'org_id': 'org_a'}, 'projection': None, 'sort': None, 'skip': 0, 'limit': 10})])})
+telemetry = CapturedTelemetry(handle=TelemetryHandle(service_name='test-service', provider=<opentelemetry.sdk.trace.TracerProvider...SET)>))), exporter=<opentelemetry.sdk.trace.export.in_memory_span_exporter.InMemorySpanExporter object at 0x10eb4c6b0>)
+pid = 'code-ejson', tool = 'find'
+args = {'collection': 'new_hires', 'filter': {'a': {'$code': 'function () { return true; }'}}, 'limit': 10}
+reason = 'operator_not_allowed'
+
+    @pytest.mark.parametrize(("pid", "tool", "args", "reason"), CORPUS, ids=[p[0] for p in CORPUS])
+    def test_every_corpus_payload_is_denied_over_mcp_before_the_driver(
+        db: FakeDatabase, telemetry: CapturedTelemetry, pid: str, tool: str, args: dict[str, Any], reason: str
+    ) -> None:
+        result = call(db, _tool(tool, args))
+>       assert result.isError
+E       assert False
+E        +  where False = CallToolResult(meta=None, content=[TextContent(type='text', text='{\n  "documents": [],\n  "count": 0\n}', annotations=None, meta=None)], structuredContent={'documents': [], 'count': 0}, isError=False).isError
+
+apps/mcp-mongo/tests/test_server_validator.py:36: AssertionError
+_ test_every_corpus_payload_is_denied_over_mcp_before_the_driver[setOnInsert] __
+
+db = FakeDatabase(collections={'run_tasks': FakeCollection(name='run_tasks', docs=[], calls=[('update_one', {'filter': {'state': 'todo', 'org_id': 'org_a'}, 'update': {'$setOnInsert': {'a': 1}}})])})
+telemetry = CapturedTelemetry(handle=TelemetryHandle(service_name='test-service', provider=<opentelemetry.sdk.trace.TracerProvider...SET)>))), exporter=<opentelemetry.sdk.trace.export.in_memory_span_exporter.InMemorySpanExporter object at 0x10ebeeed0>)
+pid = 'setOnInsert', tool = 'update_one'
+args = {'collection': 'run_tasks', 'filter': {'state': 'todo'}, 'update': {'$setOnInsert': {'a': 1}}}
+reason = 'operator_not_allowed'
+
+    @pytest.mark.parametrize(("pid", "tool", "args", "reason"), CORPUS, ids=[p[0] for p in CORPUS])
+    def test_every_corpus_payload_is_denied_over_mcp_before_the_driver(
+        db: FakeDatabase, telemetry: CapturedTelemetry, pid: str, tool: str, args: dict[str, Any], reason: str
+    ) -> None:
+        result = call(db, _tool(tool, args))
+>       assert result.isError
+E       assert False
+E        +  where False = CallToolResult(meta=None, content=[TextContent(type='text', text='{\n  "matched": 0,\n  "modified": 0,\n  "count": 0\n}', annotations=None, meta=None)], structuredContent={'matched': 0, 'modified': 0, 'count': 0}, isError=False).isError
+
+apps/mcp-mongo/tests/test_server_validator.py:36: AssertionError
+__ test_every_corpus_payload_is_denied_over_mcp_before_the_driver[bit-update] __
+
+db = FakeDatabase(collections={'run_tasks': FakeCollection(name='run_tasks', docs=[], calls=[('update_one', {'filter': {'state': 'todo', 'org_id': 'org_a'}, 'update': {'$bit': {'a': {'and': 1}}}})])})
+telemetry = CapturedTelemetry(handle=TelemetryHandle(service_name='test-service', provider=<opentelemetry.sdk.trace.TracerProvider...SET)>))), exporter=<opentelemetry.sdk.trace.export.in_memory_span_exporter.InMemorySpanExporter object at 0x10ec03ad0>)
+pid = 'bit-update', tool = 'update_one'
+args = {'collection': 'run_tasks', 'filter': {'state': 'todo'}, 'update': {'$bit': {'a': {'and': 1}}}}
+reason = 'operator_not_allowed'
+
+    @pytest.mark.parametrize(("pid", "tool", "args", "reason"), CORPUS, ids=[p[0] for p in CORPUS])
+    def test_every_corpus_payload_is_denied_over_mcp_before_the_driver(
+        db: FakeDatabase, telemetry: CapturedTelemetry, pid: str, tool: str, args: dict[str, Any], reason: str
+    ) -> None:
+        result = call(db, _tool(tool, args))
+>       assert result.isError
+E       assert False
+E        +  where False = CallToolResult(meta=None, content=[TextContent(type='text', text='{\n  "matched": 0,\n  "modified": 0,\n  "count": 0\n}', annotations=None, meta=None)], structuredContent={'matched': 0, 'modified': 0, 'count': 0}, isError=False).isError
+
+apps/mcp-mongo/tests/test_server_validator.py:36: AssertionError
+_ test_every_corpus_payload_is_denied_over_mcp_before_the_driver[operator-in-insert] _
+
+db = FakeDatabase(collections={'run_tasks': FakeCollection(name='run_tasks', docs=[{'_id': ObjectId('6af2b7f8dc19c91600c750...org_id': 'org_a'}], calls=[('insert_one', {'title': {'$where': 'function () { return true; }'}, 'org_id': 'org_a'})])})
+telemetry = CapturedTelemetry(handle=TelemetryHandle(service_name='test-service', provider=<opentelemetry.sdk.trace.TracerProvider...SET)>))), exporter=<opentelemetry.sdk.trace.export.in_memory_span_exporter.InMemorySpanExporter object at 0x10eb4c590>)
+pid = 'operator-in-insert', tool = 'insert_one'
+args = {'collection': 'run_tasks', 'document': {'title': {'$where': 'function () { return true; }'}}}
+reason = 'forbidden_operator'
+
+    @pytest.mark.parametrize(("pid", "tool", "args", "reason"), CORPUS, ids=[p[0] for p in CORPUS])
+    def test_every_corpus_payload_is_denied_over_mcp_before_the_driver(
+        db: FakeDatabase, telemetry: CapturedTelemetry, pid: str, tool: str, args: dict[str, Any], reason: str
+    ) -> None:
+        result = call(db, _tool(tool, args))
+>       assert result.isError
+E       assert False
+E        +  where False = CallToolResult(meta=None, content=[TextContent(type='text', text='{\n  "inserted_id": "6af2b7f8dc19c91600c7500f",\n  "...nnotations=None, meta=None)], structuredContent={'inserted_id': '6af2b7f8dc19c91600c7500f', 'count': 1}, isError=False).isError
+
+apps/mcp-mongo/tests/test_server_validator.py:36: AssertionError
+_ test_every_corpus_payload_is_denied_over_mcp_before_the_driver[unknown-in-insert] _
+
+db = FakeDatabase(collections={'run_tasks': FakeCollection(name='run_tasks', docs=[{'_id': ObjectId('6af2b7f8dc19c91600c75010'), 'title': {'$gt': 1}, 'org_id': 'org_a'}], calls=[('insert_one', {'title': {'$gt': 1}, 'org_id': 'org_a'})])})
+telemetry = CapturedTelemetry(handle=TelemetryHandle(service_name='test-service', provider=<opentelemetry.sdk.trace.TracerProvider...SET)>))), exporter=<opentelemetry.sdk.trace.export.in_memory_span_exporter.InMemorySpanExporter object at 0x10eb94140>)
+pid = 'unknown-in-insert', tool = 'insert_one'
+args = {'collection': 'run_tasks', 'document': {'title': {'$gt': 1}}}
+reason = 'operator_not_allowed'
+
+    @pytest.mark.parametrize(("pid", "tool", "args", "reason"), CORPUS, ids=[p[0] for p in CORPUS])
+    def test_every_corpus_payload_is_denied_over_mcp_before_the_driver(
+        db: FakeDatabase, telemetry: CapturedTelemetry, pid: str, tool: str, args: dict[str, Any], reason: str
+    ) -> None:
+        result = call(db, _tool(tool, args))
+>       assert result.isError
+E       assert False
+E        +  where False = CallToolResult(meta=None, content=[TextContent(type='text', text='{\n  "inserted_id": "6af2b7f8dc19c91600c75010",\n  "...nnotations=None, meta=None)], structuredContent={'inserted_id': '6af2b7f8dc19c91600c75010', 'count': 1}, isError=False).isError
+
+apps/mcp-mongo/tests/test_server_validator.py:36: AssertionError
+_ test_every_corpus_payload_is_denied_over_mcp_before_the_driver[operator-in-set-value] _
+
+db = FakeDatabase(collections={'run_tasks': FakeCollection(name='run_tasks', docs=[], calls=[('update_one', {'filter': {'state': 'todo', 'org_id': 'org_a'}, 'update': {'$set': {'a': {'$function': {}}}}})])})
+telemetry = CapturedTelemetry(handle=TelemetryHandle(service_name='test-service', provider=<opentelemetry.sdk.trace.TracerProvider...SET)>))), exporter=<opentelemetry.sdk.trace.export.in_memory_span_exporter.InMemorySpanExporter object at 0x10ecbf710>)
+pid = 'operator-in-set-value', tool = 'update_one'
+args = {'collection': 'run_tasks', 'filter': {'state': 'todo'}, 'update': {'$set': {'a': {'$function': {}}}}}
+reason = 'forbidden_operator'
+
+    @pytest.mark.parametrize(("pid", "tool", "args", "reason"), CORPUS, ids=[p[0] for p in CORPUS])
+    def test_every_corpus_payload_is_denied_over_mcp_before_the_driver(
+        db: FakeDatabase, telemetry: CapturedTelemetry, pid: str, tool: str, args: dict[str, Any], reason: str
+    ) -> None:
+        result = call(db, _tool(tool, args))
+>       assert result.isError
+E       assert False
+E        +  where False = CallToolResult(meta=None, content=[TextContent(type='text', text='{\n  "matched": 0,\n  "modified": 0,\n  "count": 0\n}', annotations=None, meta=None)], structuredContent={'matched': 0, 'modified': 0, 'count': 0}, isError=False).isError
+
+apps/mcp-mongo/tests/test_server_validator.py:36: AssertionError
+_ test_every_corpus_payload_is_denied_over_mcp_before_the_driver[dotted-dollar-segment] _
+
+db = FakeDatabase(collections={'new_hires': FakeCollection(name='new_hires', docs=[], calls=[('find', {'filter': {'a.$where': 'function () { return true; }', 'org_id': 'org_a'}, 'projection': None, 'sort': None, 'skip': 0, 'limit': 10})])})
+telemetry = CapturedTelemetry(handle=TelemetryHandle(service_name='test-service', provider=<opentelemetry.sdk.trace.TracerProvider...SET)>))), exporter=<opentelemetry.sdk.trace.export.in_memory_span_exporter.InMemorySpanExporter object at 0x10ec021e0>)
+pid = 'dotted-dollar-segment', tool = 'find'
+args = {'collection': 'new_hires', 'filter': {'a.$where': 'function () { return true; }'}, 'limit': 10}
+reason = 'forbidden_operator'
+
+    @pytest.mark.parametrize(("pid", "tool", "args", "reason"), CORPUS, ids=[p[0] for p in CORPUS])
+    def test_every_corpus_payload_is_denied_over_mcp_before_the_driver(
+        db: FakeDatabase, telemetry: CapturedTelemetry, pid: str, tool: str, args: dict[str, Any], reason: str
+    ) -> None:
+        result = call(db, _tool(tool, args))
+>       assert result.isError
+E       assert False
+E        +  where False = CallToolResult(meta=None, content=[TextContent(type='text', text='{\n  "documents": [],\n  "count": 0\n}', annotations=None, meta=None)], structuredContent={'documents': [], 'count': 0}, isError=False).isError
+
+apps/mcp-mongo/tests/test_server_validator.py:36: AssertionError
+_ test_every_corpus_payload_is_denied_over_mcp_before_the_driver[dotted-empty-segment] _
+
+db = FakeDatabase(collections={'new_hires': FakeCollection(name='new_hires', docs=[], calls=[('find', {'filter': {'a..b': 1, 'org_id': 'org_a'}, 'projection': None, 'sort': None, 'skip': 0, 'limit': 10})])})
+telemetry = CapturedTelemetry(handle=TelemetryHandle(service_name='test-service', provider=<opentelemetry.sdk.trace.TracerProvider...SET)>))), exporter=<opentelemetry.sdk.trace.export.in_memory_span_exporter.InMemorySpanExporter object at 0x10eb4c260>)
+pid = 'dotted-empty-segment', tool = 'find'
+args = {'collection': 'new_hires', 'filter': {'a..b': 1}, 'limit': 10}
+reason = 'invalid_field_name'
+
+    @pytest.mark.parametrize(("pid", "tool", "args", "reason"), CORPUS, ids=[p[0] for p in CORPUS])
+    def test_every_corpus_payload_is_denied_over_mcp_before_the_driver(
+        db: FakeDatabase, telemetry: CapturedTelemetry, pid: str, tool: str, args: dict[str, Any], reason: str
+    ) -> None:
+        result = call(db, _tool(tool, args))
+>       assert result.isError
+E       assert False
+E        +  where False = CallToolResult(meta=None, content=[TextContent(type='text', text='{\n  "documents": [],\n  "count": 0\n}', annotations=None, meta=None)], structuredContent={'documents': [], 'count': 0}, isError=False).isError
+
+apps/mcp-mongo/tests/test_server_validator.py:36: AssertionError
+_ test_every_corpus_payload_is_denied_over_mcp_before_the_driver[leading-dot] __
+
+db = FakeDatabase(collections={'run_tasks': FakeCollection(name='run_tasks', docs=[], calls=[('update_one', {'filter': {'state': 'todo', 'org_id': 'org_a'}, 'update': {'$set': {'.a': 1}}})])})
+telemetry = CapturedTelemetry(handle=TelemetryHandle(service_name='test-service', provider=<opentelemetry.sdk.trace.TracerProvider...SET)>))), exporter=<opentelemetry.sdk.trace.export.in_memory_span_exporter.InMemorySpanExporter object at 0x10eaebb00>)
+pid = 'leading-dot', tool = 'update_one'
+args = {'collection': 'run_tasks', 'filter': {'state': 'todo'}, 'update': {'$set': {'.a': 1}}}
+reason = 'invalid_field_name'
+
+    @pytest.mark.parametrize(("pid", "tool", "args", "reason"), CORPUS, ids=[p[0] for p in CORPUS])
+    def test_every_corpus_payload_is_denied_over_mcp_before_the_driver(
+        db: FakeDatabase, telemetry: CapturedTelemetry, pid: str, tool: str, args: dict[str, Any], reason: str
+    ) -> None:
+        result = call(db, _tool(tool, args))
+>       assert result.isError
+E       assert False
+E        +  where False = CallToolResult(meta=None, content=[TextContent(type='text', text='{\n  "matched": 0,\n  "modified": 0,\n  "count": 0\n}', annotations=None, meta=None)], structuredContent={'matched': 0, 'modified': 0, 'count': 0}, isError=False).isError
+
+apps/mcp-mongo/tests/test_server_validator.py:36: AssertionError
+_ test_every_corpus_payload_is_denied_over_mcp_before_the_driver[projection-operator] _
+
+db = FakeDatabase(collections={'new_hires': FakeCollection(name='new_hires', docs=[], calls=[('find', {'filter': {'org_id': 'org_a'}, 'projection': {'$where': 1}, 'sort': None, 'skip': 0, 'limit': 10})])})
+telemetry = CapturedTelemetry(handle=TelemetryHandle(service_name='test-service', provider=<opentelemetry.sdk.trace.TracerProvider...SET)>))), exporter=<opentelemetry.sdk.trace.export.in_memory_span_exporter.InMemorySpanExporter object at 0x10eaea8a0>)
+pid = 'projection-operator', tool = 'find'
+args = {'collection': 'new_hires', 'filter': {}, 'limit': 10, 'projection': {'$where': 1}}
+reason = 'forbidden_operator'
+
+    @pytest.mark.parametrize(("pid", "tool", "args", "reason"), CORPUS, ids=[p[0] for p in CORPUS])
+    def test_every_corpus_payload_is_denied_over_mcp_before_the_driver(
+        db: FakeDatabase, telemetry: CapturedTelemetry, pid: str, tool: str, args: dict[str, Any], reason: str
+    ) -> None:
+        result = call(db, _tool(tool, args))
+>       assert result.isError
+E       assert False
+E        +  where False = CallToolResult(meta=None, content=[TextContent(type='text', text='{\n  "documents": [],\n  "count": 0\n}', annotations=None, meta=None)], structuredContent={'documents': [], 'count': 0}, isError=False).isError
+
+apps/mcp-mongo/tests/test_server_validator.py:36: AssertionError
+_ test_every_corpus_payload_is_denied_over_mcp_before_the_driver[sort-operator-key] _
+
+db = FakeDatabase(collections={'new_hires': FakeCollection(name='new_hires', docs=[], calls=[('find', {'filter': {'org_id': 'org_a'}, 'projection': None, 'sort': [('$natural', 1)], 'skip': 0, 'limit': 10})])})
+telemetry = CapturedTelemetry(handle=TelemetryHandle(service_name='test-service', provider=<opentelemetry.sdk.trace.TracerProvider...SET)>))), exporter=<opentelemetry.sdk.trace.export.in_memory_span_exporter.InMemorySpanExporter object at 0x10eb6fb30>)
+pid = 'sort-operator-key', tool = 'find'
+args = {'collection': 'new_hires', 'filter': {}, 'limit': 10, 'sort': [['$natural', 1]]}
+reason = 'invalid_field_name'
+
+    @pytest.mark.parametrize(("pid", "tool", "args", "reason"), CORPUS, ids=[p[0] for p in CORPUS])
+    def test_every_corpus_payload_is_denied_over_mcp_before_the_driver(
+        db: FakeDatabase, telemetry: CapturedTelemetry, pid: str, tool: str, args: dict[str, Any], reason: str
+    ) -> None:
+        result = call(db, _tool(tool, args))
+>       assert result.isError
+E       assert False
+E        +  where False = CallToolResult(meta=None, content=[TextContent(type='text', text='{\n  "documents": [],\n  "count": 0\n}', annotations=None, meta=None)], structuredContent={'documents': [], 'count': 0}, isError=False).isError
+
+apps/mcp-mongo/tests/test_server_validator.py:36: AssertionError
+_ test_every_corpus_payload_is_denied_over_mcp_before_the_driver[nul-in-name] __
+
+db = FakeDatabase(collections={'new_hires': FakeCollection(name='new_hires', docs=[], calls=[('find', {'filter': {'a\x00b': 1, 'org_id': 'org_a'}, 'projection': None, 'sort': None, 'skip': 0, 'limit': 10})])})
+telemetry = CapturedTelemetry(handle=TelemetryHandle(service_name='test-service', provider=<opentelemetry.sdk.trace.TracerProvider...SET)>))), exporter=<opentelemetry.sdk.trace.export.in_memory_span_exporter.InMemorySpanExporter object at 0x10ec02240>)
+pid = 'nul-in-name', tool = 'find'
+args = {'collection': 'new_hires', 'filter': {'a\x00b': 1}, 'limit': 10}
+reason = 'invalid_field_name'
+
+    @pytest.mark.parametrize(("pid", "tool", "args", "reason"), CORPUS, ids=[p[0] for p in CORPUS])
+    def test_every_corpus_payload_is_denied_over_mcp_before_the_driver(
+        db: FakeDatabase, telemetry: CapturedTelemetry, pid: str, tool: str, args: dict[str, Any], reason: str
+    ) -> None:
+        result = call(db, _tool(tool, args))
+>       assert result.isError
+E       assert False
+E        +  where False = CallToolResult(meta=None, content=[TextContent(type='text', text='{\n  "documents": [],\n  "count": 0\n}', annotations=None, meta=None)], structuredContent={'documents': [], 'count': 0}, isError=False).isError
+
+apps/mcp-mongo/tests/test_server_validator.py:36: AssertionError
+_ test_every_corpus_payload_is_denied_over_mcp_before_the_driver[fullwidth-dollar] _
+
+db = FakeDatabase(collections={'new_hires': FakeCollection(name='new_hires', docs=[], calls=[('find', {'filter': {'＄where': 'function () { return true; }', 'org_id': 'org_a'}, 'projection': None, 'sort': None, 'skip': 0, 'limit': 10})])})
+telemetry = CapturedTelemetry(handle=TelemetryHandle(service_name='test-service', provider=<opentelemetry.sdk.trace.TracerProvider...SET)>))), exporter=<opentelemetry.sdk.trace.export.in_memory_span_exporter.InMemorySpanExporter object at 0x10ecbd460>)
+pid = 'fullwidth-dollar', tool = 'find'
+args = {'collection': 'new_hires', 'filter': {'＄where': 'function () { return true; }'}, 'limit': 10}
+reason = 'non_canonical_name'
+
+    @pytest.mark.parametrize(("pid", "tool", "args", "reason"), CORPUS, ids=[p[0] for p in CORPUS])
+    def test_every_corpus_payload_is_denied_over_mcp_before_the_driver(
+        db: FakeDatabase, telemetry: CapturedTelemetry, pid: str, tool: str, args: dict[str, Any], reason: str
+    ) -> None:
+        result = call(db, _tool(tool, args))
+>       assert result.isError
+E       assert False
+E        +  where False = CallToolResult(meta=None, content=[TextContent(type='text', text='{\n  "documents": [],\n  "count": 0\n}', annotations=None, meta=None)], structuredContent={'documents': [], 'count': 0}, isError=False).isError
+
+apps/mcp-mongo/tests/test_server_validator.py:36: AssertionError
+_ test_every_corpus_payload_is_denied_over_mcp_before_the_driver[small-dollar] _
+
+db = FakeDatabase(collections={'new_hires': FakeCollection(name='new_hires', docs=[], calls=[('find', {'filter': {'﹩where': 'function () { return true; }', 'org_id': 'org_a'}, 'projection': None, 'sort': None, 'skip': 0, 'limit': 10})])})
+telemetry = CapturedTelemetry(handle=TelemetryHandle(service_name='test-service', provider=<opentelemetry.sdk.trace.TracerProvider...SET)>))), exporter=<opentelemetry.sdk.trace.export.in_memory_span_exporter.InMemorySpanExporter object at 0x10ea1b890>)
+pid = 'small-dollar', tool = 'find'
+args = {'collection': 'new_hires', 'filter': {'﹩where': 'function () { return true; }'}, 'limit': 10}
+reason = 'non_canonical_name'
+
+    @pytest.mark.parametrize(("pid", "tool", "args", "reason"), CORPUS, ids=[p[0] for p in CORPUS])
+    def test_every_corpus_payload_is_denied_over_mcp_before_the_driver(
+        db: FakeDatabase, telemetry: CapturedTelemetry, pid: str, tool: str, args: dict[str, Any], reason: str
+    ) -> None:
+        result = call(db, _tool(tool, args))
+>       assert result.isError
+E       assert False
+E        +  where False = CallToolResult(meta=None, content=[TextContent(type='text', text='{\n  "documents": [],\n  "count": 0\n}', annotations=None, meta=None)], structuredContent={'documents': [], 'count': 0}, isError=False).isError
+
+apps/mcp-mongo/tests/test_server_validator.py:36: AssertionError
+_ test_every_corpus_payload_is_denied_over_mcp_before_the_driver[cyrillic-e-where] _
+
+db = FakeDatabase(collections={'new_hires': FakeCollection(name='new_hires', docs=[], calls=[('find', {'filter': {'$whеre': 'function () { return true; }', 'org_id': 'org_a'}, 'projection': None, 'sort': None, 'skip': 0, 'limit': 10})])})
+telemetry = CapturedTelemetry(handle=TelemetryHandle(service_name='test-service', provider=<opentelemetry.sdk.trace.TracerProvider...SET)>))), exporter=<opentelemetry.sdk.trace.export.in_memory_span_exporter.InMemorySpanExporter object at 0x10ec02630>)
+pid = 'cyrillic-e-where', tool = 'find'
+args = {'collection': 'new_hires', 'filter': {'$whеre': 'function () { return true; }'}, 'limit': 10}
+reason = 'operator_not_allowed'
+
+    @pytest.mark.parametrize(("pid", "tool", "args", "reason"), CORPUS, ids=[p[0] for p in CORPUS])
+    def test_every_corpus_payload_is_denied_over_mcp_before_the_driver(
+        db: FakeDatabase, telemetry: CapturedTelemetry, pid: str, tool: str, args: dict[str, Any], reason: str
+    ) -> None:
+        result = call(db, _tool(tool, args))
+>       assert result.isError
+E       assert False
+E        +  where False = CallToolResult(meta=None, content=[TextContent(type='text', text='{\n  "documents": [],\n  "count": 0\n}', annotations=None, meta=None)], structuredContent={'documents': [], 'count': 0}, isError=False).isError
+
+apps/mcp-mongo/tests/test_server_validator.py:36: AssertionError
+_ test_every_corpus_payload_is_denied_over_mcp_before_the_driver[zero-width-in-op] _
+
+db = FakeDatabase(collections={'new_hires': FakeCollection(name='new_hires', docs=[], calls=[('find', {'filter': {'$wh\u200bere': 'function () { return true; }', 'org_id': 'org_a'}, 'projection': None, 'sort': None, 'skip': 0, 'limit': 10})])})
+telemetry = CapturedTelemetry(handle=TelemetryHandle(service_name='test-service', provider=<opentelemetry.sdk.trace.TracerProvider...SET)>))), exporter=<opentelemetry.sdk.trace.export.in_memory_span_exporter.InMemorySpanExporter object at 0x10eb6ddf0>)
+pid = 'zero-width-in-op', tool = 'find'
+args = {'collection': 'new_hires', 'filter': {'$wh\u200bere': 'function () { return true; }'}, 'limit': 10}
+reason = 'invalid_field_name'
+
+    @pytest.mark.parametrize(("pid", "tool", "args", "reason"), CORPUS, ids=[p[0] for p in CORPUS])
+    def test_every_corpus_payload_is_denied_over_mcp_before_the_driver(
+        db: FakeDatabase, telemetry: CapturedTelemetry, pid: str, tool: str, args: dict[str, Any], reason: str
+    ) -> None:
+        result = call(db, _tool(tool, args))
+>       assert result.isError
+E       assert False
+E        +  where False = CallToolResult(meta=None, content=[TextContent(type='text', text='{\n  "documents": [],\n  "count": 0\n}', annotations=None, meta=None)], structuredContent={'documents': [], 'count': 0}, isError=False).isError
+
+apps/mcp-mongo/tests/test_server_validator.py:36: AssertionError
+_ test_every_corpus_payload_is_denied_over_mcp_before_the_driver[fullwidth-org-id] _
+
+db = FakeDatabase(collections={'new_hires': FakeCollection(name='new_hires', docs=[], calls=[('find', {'filter': {'ｏrg_id': 'org_b', 'org_id': 'org_a'}, 'projection': None, 'sort': None, 'skip': 0, 'limit': 10})])})
+telemetry = CapturedTelemetry(handle=TelemetryHandle(service_name='test-service', provider=<opentelemetry.sdk.trace.TracerProvider...SET)>))), exporter=<opentelemetry.sdk.trace.export.in_memory_span_exporter.InMemorySpanExporter object at 0x10ebee3f0>)
+pid = 'fullwidth-org-id', tool = 'find'
+args = {'collection': 'new_hires', 'filter': {'ｏrg_id': 'org_b'}, 'limit': 10}
+reason = 'non_canonical_name'
+
+    @pytest.mark.parametrize(("pid", "tool", "args", "reason"), CORPUS, ids=[p[0] for p in CORPUS])
+    def test_every_corpus_payload_is_denied_over_mcp_before_the_driver(
+        db: FakeDatabase, telemetry: CapturedTelemetry, pid: str, tool: str, args: dict[str, Any], reason: str
+    ) -> None:
+        result = call(db, _tool(tool, args))
+>       assert result.isError
+E       assert False
+E        +  where False = CallToolResult(meta=None, content=[TextContent(type='text', text='{\n  "documents": [],\n  "count": 0\n}', annotations=None, meta=None)], structuredContent={'documents': [], 'count': 0}, isError=False).isError
+
+apps/mcp-mongo/tests/test_server_validator.py:36: AssertionError
+_ test_every_corpus_payload_is_denied_over_mcp_before_the_driver[rtl-override] _
+
+db = FakeDatabase(collections={'run_tasks': FakeCollection(name='run_tasks', docs=[], calls=[('update_one', {'filter': {'state': 'todo', 'org_id': 'org_a'}, 'update': {'$set': {'a\u202eb': 1}}})])})
+telemetry = CapturedTelemetry(handle=TelemetryHandle(service_name='test-service', provider=<opentelemetry.sdk.trace.TracerProvider...SET)>))), exporter=<opentelemetry.sdk.trace.export.in_memory_span_exporter.InMemorySpanExporter object at 0x10ecbda90>)
+pid = 'rtl-override', tool = 'update_one'
+args = {'collection': 'run_tasks', 'filter': {'state': 'todo'}, 'update': {'$set': {'a\u202eb': 1}}}
+reason = 'invalid_field_name'
+
+    @pytest.mark.parametrize(("pid", "tool", "args", "reason"), CORPUS, ids=[p[0] for p in CORPUS])
+    def test_every_corpus_payload_is_denied_over_mcp_before_the_driver(
+        db: FakeDatabase, telemetry: CapturedTelemetry, pid: str, tool: str, args: dict[str, Any], reason: str
+    ) -> None:
+        result = call(db, _tool(tool, args))
+>       assert result.isError
+E       assert False
+E        +  where False = CallToolResult(meta=None, content=[TextContent(type='text', text='{\n  "matched": 0,\n  "modified": 0,\n  "count": 0\n}', annotations=None, meta=None)], structuredContent={'matched': 0, 'modified': 0, 'count': 0}, isError=False).isError
+
+apps/mcp-mongo/tests/test_server_validator.py:36: AssertionError
+_ test_every_corpus_payload_is_denied_over_mcp_before_the_driver[pii-set-mobile] _
+
+db = FakeDatabase(collections={'run_tasks': FakeCollection(name='run_tasks', docs=[], calls=[('update_one', {'filter': {'state': 'todo', 'org_id': 'org_a'}, 'update': {'$set': {'pii.mobile': 'ptk_x'}}})])})
+telemetry = CapturedTelemetry(handle=TelemetryHandle(service_name='test-service', provider=<opentelemetry.sdk.trace.TracerProvider...SET)>))), exporter=<opentelemetry.sdk.trace.export.in_memory_span_exporter.InMemorySpanExporter object at 0x10eb976e0>)
+pid = 'pii-set-mobile', tool = 'update_one'
+args = {'collection': 'run_tasks', 'filter': {'state': 'todo'}, 'update': {'$set': {'pii.mobile': 'ptk_x'}}}
+reason = 'pii_read_only'
+
+    @pytest.mark.parametrize(("pid", "tool", "args", "reason"), CORPUS, ids=[p[0] for p in CORPUS])
+    def test_every_corpus_payload_is_denied_over_mcp_before_the_driver(
+        db: FakeDatabase, telemetry: CapturedTelemetry, pid: str, tool: str, args: dict[str, Any], reason: str
+    ) -> None:
+        result = call(db, _tool(tool, args))
+>       assert result.isError
+E       assert False
+E        +  where False = CallToolResult(meta=None, content=[TextContent(type='text', text='{\n  "matched": 0,\n  "modified": 0,\n  "count": 0\n}', annotations=None, meta=None)], structuredContent={'matched': 0, 'modified': 0, 'count': 0}, isError=False).isError
+
+apps/mcp-mongo/tests/test_server_validator.py:36: AssertionError
+_ test_every_corpus_payload_is_denied_over_mcp_before_the_driver[pii-set-whole] _
+
+db = FakeDatabase(collections={'run_tasks': FakeCollection(name='run_tasks', docs=[], calls=[('update_one', {'filter': {'state': 'todo', 'org_id': 'org_a'}, 'update': {'$set': {'pii': {'mobile': 'ptk_x'}}}})])})
+telemetry = CapturedTelemetry(handle=TelemetryHandle(service_name='test-service', provider=<opentelemetry.sdk.trace.TracerProvider...SET)>))), exporter=<opentelemetry.sdk.trace.export.in_memory_span_exporter.InMemorySpanExporter object at 0x10eb6c800>)
+pid = 'pii-set-whole', tool = 'update_one'
+args = {'collection': 'run_tasks', 'filter': {'state': 'todo'}, 'update': {'$set': {'pii': {'mobile': 'ptk_x'}}}}
+reason = 'pii_read_only'
+
+    @pytest.mark.parametrize(("pid", "tool", "args", "reason"), CORPUS, ids=[p[0] for p in CORPUS])
+    def test_every_corpus_payload_is_denied_over_mcp_before_the_driver(
+        db: FakeDatabase, telemetry: CapturedTelemetry, pid: str, tool: str, args: dict[str, Any], reason: str
+    ) -> None:
+        result = call(db, _tool(tool, args))
+>       assert result.isError
+E       assert False
+E        +  where False = CallToolResult(meta=None, content=[TextContent(type='text', text='{\n  "matched": 0,\n  "modified": 0,\n  "count": 0\n}', annotations=None, meta=None)], structuredContent={'matched': 0, 'modified': 0, 'count': 0}, isError=False).isError
+
+apps/mcp-mongo/tests/test_server_validator.py:36: AssertionError
+__ test_every_corpus_payload_is_denied_over_mcp_before_the_driver[pii-unset] ___
+
+db = FakeDatabase(collections={'run_tasks': FakeCollection(name='run_tasks', docs=[], calls=[('update_one', {'filter': {'state': 'todo', 'org_id': 'org_a'}, 'update': {'$unset': {'pii.mobile': ''}}})])})
+telemetry = CapturedTelemetry(handle=TelemetryHandle(service_name='test-service', provider=<opentelemetry.sdk.trace.TracerProvider...SET)>))), exporter=<opentelemetry.sdk.trace.export.in_memory_span_exporter.InMemorySpanExporter object at 0x10ecbd550>)
+pid = 'pii-unset', tool = 'update_one'
+args = {'collection': 'run_tasks', 'filter': {'state': 'todo'}, 'update': {'$unset': {'pii.mobile': ''}}}
+reason = 'pii_read_only'
+
+    @pytest.mark.parametrize(("pid", "tool", "args", "reason"), CORPUS, ids=[p[0] for p in CORPUS])
+    def test_every_corpus_payload_is_denied_over_mcp_before_the_driver(
+        db: FakeDatabase, telemetry: CapturedTelemetry, pid: str, tool: str, args: dict[str, Any], reason: str
+    ) -> None:
+        result = call(db, _tool(tool, args))
+>       assert result.isError
+E       assert False
+E        +  where False = CallToolResult(meta=None, content=[TextContent(type='text', text='{\n  "matched": 0,\n  "modified": 0,\n  "count": 0\n}', annotations=None, meta=None)], structuredContent={'matched': 0, 'modified': 0, 'count': 0}, isError=False).isError
+
+apps/mcp-mongo/tests/test_server_validator.py:36: AssertionError
+_ test_every_corpus_payload_is_denied_over_mcp_before_the_driver[pii-rename-from] _
+
+db = FakeDatabase(collections={'run_tasks': FakeCollection(name='run_tasks', docs=[], calls=[('update_one', {'filter': {'state': 'todo', 'org_id': 'org_a'}, 'update': {'$rename': {'pii.mobile': 'm'}}})])})
+telemetry = CapturedTelemetry(handle=TelemetryHandle(service_name='test-service', provider=<opentelemetry.sdk.trace.TracerProvider...SET)>))), exporter=<opentelemetry.sdk.trace.export.in_memory_span_exporter.InMemorySpanExporter object at 0x10ea69250>)
+pid = 'pii-rename-from', tool = 'update_one'
+args = {'collection': 'run_tasks', 'filter': {'state': 'todo'}, 'update': {'$rename': {'pii.mobile': 'm'}}}
+reason = 'pii_read_only'
+
+    @pytest.mark.parametrize(("pid", "tool", "args", "reason"), CORPUS, ids=[p[0] for p in CORPUS])
+    def test_every_corpus_payload_is_denied_over_mcp_before_the_driver(
+        db: FakeDatabase, telemetry: CapturedTelemetry, pid: str, tool: str, args: dict[str, Any], reason: str
+    ) -> None:
+        result = call(db, _tool(tool, args))
+>       assert result.isError
+E       assert False
+E        +  where False = CallToolResult(meta=None, content=[TextContent(type='text', text='{\n  "matched": 0,\n  "modified": 0,\n  "count": 0\n}', annotations=None, meta=None)], structuredContent={'matched': 0, 'modified': 0, 'count': 0}, isError=False).isError
+
+apps/mcp-mongo/tests/test_server_validator.py:36: AssertionError
+_ test_every_corpus_payload_is_denied_over_mcp_before_the_driver[pii-rename-to] _
+
+db = FakeDatabase(collections={'run_tasks': FakeCollection(name='run_tasks', docs=[], calls=[('update_one', {'filter': {'state': 'todo', 'org_id': 'org_a'}, 'update': {'$rename': {'m': 'pii.mobile'}}})])})
+telemetry = CapturedTelemetry(handle=TelemetryHandle(service_name='test-service', provider=<opentelemetry.sdk.trace.TracerProvider...SET)>))), exporter=<opentelemetry.sdk.trace.export.in_memory_span_exporter.InMemorySpanExporter object at 0x10ecbc3b0>)
+pid = 'pii-rename-to', tool = 'update_one'
+args = {'collection': 'run_tasks', 'filter': {'state': 'todo'}, 'update': {'$rename': {'m': 'pii.mobile'}}}
+reason = 'pii_read_only'
+
+    @pytest.mark.parametrize(("pid", "tool", "args", "reason"), CORPUS, ids=[p[0] for p in CORPUS])
+    def test_every_corpus_payload_is_denied_over_mcp_before_the_driver(
+        db: FakeDatabase, telemetry: CapturedTelemetry, pid: str, tool: str, args: dict[str, Any], reason: str
+    ) -> None:
+        result = call(db, _tool(tool, args))
+>       assert result.isError
+E       assert False
+E        +  where False = CallToolResult(meta=None, content=[TextContent(type='text', text='{\n  "matched": 0,\n  "modified": 0,\n  "count": 0\n}', annotations=None, meta=None)], structuredContent={'matched': 0, 'modified': 0, 'count': 0}, isError=False).isError
+
+apps/mcp-mongo/tests/test_server_validator.py:36: AssertionError
+___ test_every_corpus_payload_is_denied_over_mcp_before_the_driver[pii-push] ___
+
+db = FakeDatabase(collections={'run_tasks': FakeCollection(name='run_tasks', docs=[], calls=[('update_one', {'filter': {'state': 'todo', 'org_id': 'org_a'}, 'update': {'$push': {'pii.emails': 'ptk_y'}}})])})
+telemetry = CapturedTelemetry(handle=TelemetryHandle(service_name='test-service', provider=<opentelemetry.sdk.trace.TracerProvider...SET)>))), exporter=<opentelemetry.sdk.trace.export.in_memory_span_exporter.InMemorySpanExporter object at 0x10ecbddf0>)
+pid = 'pii-push', tool = 'update_one'
+args = {'collection': 'run_tasks', 'filter': {'state': 'todo'}, 'update': {'$push': {'pii.emails': 'ptk_y'}}}
+reason = 'pii_read_only'
+
+    @pytest.mark.parametrize(("pid", "tool", "args", "reason"), CORPUS, ids=[p[0] for p in CORPUS])
+    def test_every_corpus_payload_is_denied_over_mcp_before_the_driver(
+        db: FakeDatabase, telemetry: CapturedTelemetry, pid: str, tool: str, args: dict[str, Any], reason: str
+    ) -> None:
+        result = call(db, _tool(tool, args))
+>       assert result.isError
+E       assert False
+E        +  where False = CallToolResult(meta=None, content=[TextContent(type='text', text='{\n  "matched": 0,\n  "modified": 0,\n  "count": 0\n}', annotations=None, meta=None)], structuredContent={'matched': 0, 'modified': 0, 'count': 0}, isError=False).isError
+
+apps/mcp-mongo/tests/test_server_validator.py:36: AssertionError
+__ test_every_corpus_payload_is_denied_over_mcp_before_the_driver[pii-insert] __
+
+db = FakeDatabase(collections={'run_tasks': FakeCollection(name='run_tasks', docs=[{'_id': ObjectId('6af2b7f8dc19c91600c750...': 'ptk_z'}, 'org_id': 'org_a'}], calls=[('insert_one', {'title': 'x', 'pii': {'pan': 'ptk_z'}, 'org_id': 'org_a'})])})
+telemetry = CapturedTelemetry(handle=TelemetryHandle(service_name='test-service', provider=<opentelemetry.sdk.trace.TracerProvider...SET)>))), exporter=<opentelemetry.sdk.trace.export.in_memory_span_exporter.InMemorySpanExporter object at 0x10ea681d0>)
+pid = 'pii-insert', tool = 'insert_one'
+args = {'collection': 'run_tasks', 'document': {'title': 'x', 'pii': {'pan': 'ptk_z'}}}
+reason = 'pii_read_only'
+
+    @pytest.mark.parametrize(("pid", "tool", "args", "reason"), CORPUS, ids=[p[0] for p in CORPUS])
+    def test_every_corpus_payload_is_denied_over_mcp_before_the_driver(
+        db: FakeDatabase, telemetry: CapturedTelemetry, pid: str, tool: str, args: dict[str, Any], reason: str
+    ) -> None:
+        result = call(db, _tool(tool, args))
+>       assert result.isError
+E       assert False
+E        +  where False = CallToolResult(meta=None, content=[TextContent(type='text', text='{\n  "inserted_id": "6af2b7f8dc19c91600c75011",\n  "...nnotations=None, meta=None)], structuredContent={'inserted_id': '6af2b7f8dc19c91600c75011', 'count': 1}, isError=False).isError
+
+apps/mcp-mongo/tests/test_server_validator.py:36: AssertionError
+_ test_every_corpus_payload_is_denied_over_mcp_before_the_driver[pii-insert-dotted] _
+
+db = FakeDatabase(collections={'run_tasks': FakeCollection(name='run_tasks', docs=[{'_id': ObjectId('6af2b7f8dc19c91600c75012'), 'pii.pan': 'ptk_z', 'org_id': 'org_a'}], calls=[('insert_one', {'pii.pan': 'ptk_z', 'org_id': 'org_a'})])})
+telemetry = CapturedTelemetry(handle=TelemetryHandle(service_name='test-service', provider=<opentelemetry.sdk.trace.TracerProvider...SET)>))), exporter=<opentelemetry.sdk.trace.export.in_memory_span_exporter.InMemorySpanExporter object at 0x10ed2f2c0>)
+pid = 'pii-insert-dotted', tool = 'insert_one'
+args = {'collection': 'run_tasks', 'document': {'pii.pan': 'ptk_z'}}
+reason = 'pii_read_only'
+
+    @pytest.mark.parametrize(("pid", "tool", "args", "reason"), CORPUS, ids=[p[0] for p in CORPUS])
+    def test_every_corpus_payload_is_denied_over_mcp_before_the_driver(
+        db: FakeDatabase, telemetry: CapturedTelemetry, pid: str, tool: str, args: dict[str, Any], reason: str
+    ) -> None:
+        result = call(db, _tool(tool, args))
+>       assert result.isError
+E       assert False
+E        +  where False = CallToolResult(meta=None, content=[TextContent(type='text', text='{\n  "inserted_id": "6af2b7f8dc19c91600c75012",\n  "...nnotations=None, meta=None)], structuredContent={'inserted_id': '6af2b7f8dc19c91600c75012', 'count': 1}, isError=False).isError
+
+apps/mcp-mongo/tests/test_server_validator.py:36: AssertionError
+_ test_every_corpus_payload_is_denied_over_mcp_before_the_driver[deep-nesting] _
+  + Exception Group Traceback (most recent call last):
+  |   File "/Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-mcp-2/apps/mcp-mongo/tests/test_server_validator.py", line 35, in test_every_corpus_payload_is_denied_over_mcp_before_the_driver
+  |     result = call(db, _tool(tool, args))
+  |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |   File "/Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-mcp-2/apps/mcp-mongo/tests/harness.py", line 89, in call
+  |     return run(in_session(database, fn, header=header, ctx=ctx))
+  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |   File "/Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-mcp-2/apps/mcp-mongo/tests/harness.py", line 35, in run
+  |     return asyncio.run(coro)
+  |            ^^^^^^^^^^^^^^^^^
+  |   File "/Users/Adya/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/asyncio/runners.py", line 195, in run
+  |     return runner.run(main)
+  |            ^^^^^^^^^^^^^^^^
+  |   File "/Users/Adya/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/asyncio/runners.py", line 118, in run
+  |     return self._loop.run_until_complete(task)
+  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |   File "/Users/Adya/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/asyncio/base_events.py", line 691, in run_until_complete
+  |     return future.result()
+  |            ^^^^^^^^^^^^^^^
+  |   File "/Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-mcp-2/apps/mcp-mongo/tests/harness.py", line 76, in in_session
+  |     async with mcp_session(database, header=header, ctx=ctx) as session:
+  |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |   File "/Users/Adya/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/contextlib.py", line 231, in __aexit__
+  |     await self.gen.athrow(value)
+  |   File "/Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-mcp-2/apps/mcp-mongo/tests/harness.py", line 58, in mcp_session
+  |     async with server.session_manager.run():
+  |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |   File "/Users/Adya/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/contextlib.py", line 231, in __aexit__
+  |     await self.gen.athrow(value)
+  |   File "/Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-mcp-2/.venv/lib/python3.12/site-packages/mcp/server/streamable_http_manager.py", line 161, in run
+  |     async with anyio.create_task_group() as tg:
+  |                ^^^^^^^^^^^^^^^^^^^^^^^^^
+  |   File "/Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-mcp-2/.venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 871, in __aexit__
+  |     raise BaseExceptionGroup(
+  | ExceptionGroup: unhandled errors in a TaskGroup (1 sub-exception)
+  +-+---------------- 1 ----------------
+    | Exception Group Traceback (most recent call last):
+    |   File "/Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-mcp-2/.venv/lib/python3.12/site-packages/mcp/server/streamable_http_manager.py", line 166, in run
+    |     yield  # Let the application run
+    |     ^^^^^
+    |   File "/Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-mcp-2/apps/mcp-mongo/tests/harness.py", line 62, in mcp_session
+    |     streamable_http_client("http://mcp-mongo/mcp", http_client=http) as (read, write, _),
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/Users/Adya/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/contextlib.py", line 231, in __aexit__
+    |     await self.gen.athrow(value)
+    |   File "/Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-mcp-2/.venv/lib/python3.12/site-packages/mcp/client/streamable_http.py", line 672, in streamable_http_client
+    |     async with anyio.create_task_group() as tg:
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-mcp-2/.venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 871, in __aexit__
+    |     raise BaseExceptionGroup(
+    | ExceptionGroup: unhandled errors in a TaskGroup (1 sub-exception)
+    +-+---------------- 1 ----------------
+      | Exception Group Traceback (most recent call last):
+      |   File "/Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-mcp-2/.venv/lib/python3.12/site-packages/mcp/client/streamable_http.py", line 695, in streamable_http_client
+      |     yield (
+      |   File "/Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-mcp-2/apps/mcp-mongo/tests/harness.py", line 63, in mcp_session
+      |     ClientSession(read, write) as session,
+      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+      |   File "/Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-mcp-2/.venv/lib/python3.12/site-packages/mcp/shared/session.py", line 238, in __aexit__
+      |     return await self._task_group.__aexit__(exc_type, exc_val, exc_tb)
+      |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+      |   File "/Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-mcp-2/.venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 871, in __aexit__
+      |     raise BaseExceptionGroup(
+      | ExceptionGroup: unhandled errors in a TaskGroup (1 sub-exception)
+      +-+---------------- 1 ----------------
+        | Traceback (most recent call last):
+        |   File "/Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-mcp-2/apps/mcp-mongo/tests/test_server_validator.py", line 20, in fn
+        |     return await session.call_tool(name, args)
+        |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        |   File "/Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-mcp-2/.venv/lib/python3.12/site-packages/mcp/client/session.py", line 401, in call_tool
+        |     result = await self.send_request(
+        |              ^^^^^^^^^^^^^^^^^^^^^^^^
+        |   File "/Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-mcp-2/.venv/lib/python3.12/site-packages/mcp/shared/session.py", line 263, in send_request
+        |     request_data = request.model_dump(by_alias=True, mode="json", exclude_none=True)
+        |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        |   File "/Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-mcp-2/.venv/lib/python3.12/site-packages/pydantic/main.py", line 520, in model_dump
+        |     return self.__pydantic_serializer__.to_python(
+        |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        | ValueError: Maximum serialization depth exceeded
+        +------------------------------------
+_____ test_every_corpus_payload_is_denied_over_mcp_before_the_driver[wide] _____
+
+db = FakeDatabase(collections={'new_hires': FakeCollection(name='new_hires', docs=[], calls=[('find', {'filter': {'$or': [{...19997}, {'a': 19998}, {'a': 19999}], 'org_id': 'org_a'}, 'projection': None, 'sort': None, 'skip': 0, 'limit': 10})])})
+telemetry = CapturedTelemetry(handle=TelemetryHandle(service_name='test-service', provider=<opentelemetry.sdk.trace.TracerProvider...SET)>))), exporter=<opentelemetry.sdk.trace.export.in_memory_span_exporter.InMemorySpanExporter object at 0x10ed2d370>)
+pid = 'wide', tool = 'find'
+args = {'collection': 'new_hires', 'filter': {'$or': [{'a': 0}, {'a': 1}, {'a': 2}, {'a': 3}, {'a': 4}, {'a': 5}, ...]}, 'limit': 10}
+reason = 'too_large'
+
+    @pytest.mark.parametrize(("pid", "tool", "args", "reason"), CORPUS, ids=[p[0] for p in CORPUS])
+    def test_every_corpus_payload_is_denied_over_mcp_before_the_driver(
+        db: FakeDatabase, telemetry: CapturedTelemetry, pid: str, tool: str, args: dict[str, Any], reason: str
+    ) -> None:
+        result = call(db, _tool(tool, args))
+>       assert result.isError
+E       assert False
+E        +  where False = CallToolResult(meta=None, content=[TextContent(type='text', text='{\n  "documents": [],\n  "count": 0\n}', annotations=None, meta=None)], structuredContent={'documents': [], 'count': 0}, isError=False).isError
+
+apps/mcp-mongo/tests/test_server_validator.py:36: AssertionError
+____________ test_an_update_touching_pii_mobile_is_denied_over_mcp _____________
+
+db = FakeDatabase(collections={'run_tasks': FakeCollection(name='run_tasks', docs=[{'_id': 1, 'org_id': 'org_a', 'state': '...'}], calls=[('update_one', {'filter': {'_id': 1, 'org_id': 'org_a'}, 'update': {'$set': {'pii.mobile': 'ptk_m2'}}})])})
+telemetry = CapturedTelemetry(handle=TelemetryHandle(service_name='test-service', provider=<opentelemetry.sdk.trace.TracerProvider...SET)>))), exporter=<opentelemetry.sdk.trace.export.in_memory_span_exporter.InMemorySpanExporter object at 0x10ecbd9a0>)
+
+    def test_an_update_touching_pii_mobile_is_denied_over_mcp(db: FakeDatabase, telemetry: CapturedTelemetry) -> None:
+        db[W].docs.append({"_id": 1, "org_id": "org_a", "state": "todo", "pii": {"mobile": "ptk_m1"}})
+        args = {"collection": W, "filter": {"_id": 1}, "update": {"$set": {"pii.mobile": "ptk_m2"}}}
+        result = call(db, _tool("update_one", args))
+        text = " ".join(getattr(block, "text", "") for block in result.content)
+>       assert result.isError
+E       assert False
+E        +  where False = CallToolResult(meta=None, content=[TextContent(type='text', text='{\n  "matched": 1,\n  "modified": 1,\n  "count": 1\n}', annotations=None, meta=None)], structuredContent={'matched': 1, 'modified': 1, 'count': 1}, isError=False).isError
+
+apps/mcp-mongo/tests/test_server_validator.py:48: AssertionError
+=========================== short test summary info ============================
+FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[where-top]
+FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[where-in-or]
+FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[where-in-count]
+FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[where-in-match]
+FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[where-in-update-filter]
+FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[where-under-elemMatch]
+FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[where-under-not]
+FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[where-in-pull]
+FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[expr-function]
+FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[expr-function-nested]
+FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[expr-function-in-match]
+FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[function-in-addFields]
+FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[function-in-project]
+FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[function-in-group-id]
+FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[accumulator-in-group]
+FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[accumulator-in-expr]
+FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[function-in-sum]
+FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[lookup]
+FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[lookup-after-match]
+FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[graphLookup]
+FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[out]
+FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[out-db]
+FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[merge]
+FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[unionWith]
+FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[unionWith-string]
+FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[lookup-as-query-key]
+FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[regex]
+FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[jsonSchema]
+FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[text]
+FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[comment]
+FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[code-ejson]
+FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[setOnInsert]
+FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[bit-update]
+FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[operator-in-insert]
+FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[unknown-in-insert]
+FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[operator-in-set-value]
+FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[dotted-dollar-segment]
+FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[dotted-empty-segment]
+FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[leading-dot]
+FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[projection-operator]
+FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[sort-operator-key]
+FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[nul-in-name]
+FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[fullwidth-dollar]
+FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[small-dollar]
+FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[cyrillic-e-where]
+FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[zero-width-in-op]
+FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[fullwidth-org-id]
+FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[rtl-override]
+FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[pii-set-mobile]
+FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[pii-set-whole]
+FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[pii-unset]
+FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[pii-rename-from]
+FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[pii-rename-to]
+FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[pii-push]
+FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[pii-insert]
+FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[pii-insert-dotted]
+FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[deep-nesting]
+FAILED apps/mcp-mongo/tests/test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[wide]
+FAILED apps/mcp-mongo/tests/test_server_validator.py::test_an_update_touching_pii_mobile_is_denied_over_mcp
+59 failed, 20 passed in 2.25s

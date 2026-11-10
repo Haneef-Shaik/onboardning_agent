@@ -1,0 +1,21 @@
+
+==================================== ERRORS ====================================
+___________ ERROR collecting apps/mcp-mongo/tests/test_validator.py ____________
+ImportError while importing test module '/Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-mcp-2/apps/mcp-mongo/tests/test_validator.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+apps/mcp-mongo/tests/test_validator.py:11: in <module>
+    from onb_mcp_mongo.validator import (
+E   ModuleNotFoundError: No module named 'onb_mcp_mongo.validator'
+______ ERROR collecting apps/mcp-mongo/tests/test_validator_properties.py ______
+ImportError while importing test module '/Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-mcp-2/apps/mcp-mongo/tests/test_validator_properties.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+apps/mcp-mongo/tests/test_validator_properties.py:12: in <module>
+    from onb_mcp_mongo.validator import (
+E   ModuleNotFoundError: No module named 'onb_mcp_mongo.validator'
+=========================== short test summary info ============================
+ERROR apps/mcp-mongo/tests/test_validator.py
+ERROR apps/mcp-mongo/tests/test_validator_properties.py
+!!!!!!!!!!!!!!!!!!! Interrupted: 2 errors during collection !!!!!!!!!!!!!!!!!!!!
+2 errors in 1.88s
