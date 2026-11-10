@@ -96,6 +96,82 @@ def test_a_worker_can_never_move_a_job_to_another_org(update: dict[str, Any]) ->
     assert jobs.calls == []
 
 
+@pytest.mark.parametrize(
+    "query",
+    [
+        {"org_id": "org_b"},
+        {"payload.hire_id": "h1"},
+        {"_id": "j1"},
+        {"$or": [{"status": "pending"}, {"org_id": "org_b"}]},
+        {"$where": "true"},
+        {"status": {"$in": ["pending"]}, "$and": [{"run_id": "r1"}]},
+    ],
+    ids=str,
+)
+def test_claim_filters_only_on_queue_state_never_on_an_org_or_job_content(query: dict[str, Any]) -> None:
+    """A claim cannot be aimed at another org's jobs or used to search job contents (security review)."""
+    jobs = FakeCollection(name="jobs")
+    repo = make_store(FakeDatabase({"jobs": jobs})).queue("jobs")
+    with pytest.raises(TenantViolationError, match="claim"):
+        asyncio.run(repo.claim(query, {"$set": {"status": "running"}}))
+    assert jobs.calls == []
+
+
+@pytest.mark.parametrize(
+    "update",
+    [
+        {"$set": {"payload": {"x": 1}}},
+        {"$set": {"consumer": "other.consumer"}},
+        {"$set": {"payload.hire_id": "h2"}},
+        {"$inc": {"max_attempts": 10}},
+        {"$push": {"history": 1}},
+        {"$rename": {"status": "payload"}},
+    ],
+    ids=str,
+)
+def test_worker_writes_touch_only_queue_state_never_job_content(update: dict[str, Any]) -> None:
+    """A worker may move a job through its states; it may not rewrite what the job does."""
+    jobs = FakeCollection(name="jobs")
+    repo = make_store(FakeDatabase({"jobs": jobs})).queue("jobs")
+    with pytest.raises(TenantViolationError, match="queue state"):
+        asyncio.run(repo.claim({}, update))
+    with pytest.raises(TenantViolationError, match="queue state"):
+        asyncio.run(repo.update_leased("j1", "tok", update))
+    assert jobs.calls == []
+
+
+def test_the_worker_state_writes_the_bus_needs_are_accepted() -> None:
+    jobs = FakeCollection(name="jobs")
+    repo = make_store(FakeDatabase({"jobs": jobs})).queue("jobs")
+    claim_query = {
+        "consumer": {"$in": ["c"]},
+        "attempts": {"$type": "number"},
+        "$or": [{"status": "pending", "available_at": {"$lte": 1}}, {"status": "running", "locked_until": {"$lte": 1}}],
+    }
+    update = {
+        "$set": {"status": "running", "lease_token": "t", "lease_owner": "w", "locked_until": 2},
+        "$inc": {"attempts": 1},
+    }
+    asyncio.run(repo.claim(claim_query, update))
+    asyncio.run(repo.update_leased("j1", "t", {"$set": {"status": "done"}, "$unset": {"lease_token": ""}}))
+    assert [call.method for call in jobs.calls] == ["find_one_and_update", "update_one"]
+
+
+@pytest.mark.parametrize("operation", ["insert_one", "find"])
+def test_jobs_cannot_be_written_or_searched_through_the_queue(operation: str) -> None:
+    """Jobs are written only by producers through `tenant("jobs")`, which sets `org_id` (security review)."""
+    jobs = FakeCollection(name="jobs")
+    repo = make_store(FakeDatabase({"jobs": jobs})).queue("jobs")
+    attempt = (
+        repo.insert_one({"_id": "forged", "org_id": "org_b", "consumer": "c"})
+        if operation == "insert_one"
+        else repo.find({"org_id": "org_b"}, limit=10)
+    )
+    with pytest.raises(TenantViolationError, match="dead_letters"):
+        asyncio.run(attempt)
+    assert jobs.calls == []
+
+
 def test_leased_updates_and_deletes_match_the_id_and_the_lease_token() -> None:
     jobs = FakeCollection(name="jobs", matched_count=1, deleted_count=0)
     repo = make_store(FakeDatabase({"jobs": jobs})).queue("jobs")
@@ -213,6 +289,26 @@ def test_an_error_in_the_callback_propagates_and_clears_the_session() -> None:
 
     asyncio.run(main())
     assert client.sessions[0].aborted == 1
+
+
+def test_a_task_started_inside_a_transaction_cannot_use_its_session() -> None:
+    """A session is not safe for concurrent use; a child task gets an error, not a shared session."""
+    db, client = FakeDatabase(), FakeClient()
+    store = make_store(db, client)
+    seen: list[bool] = []
+
+    async def body() -> None:
+        async def child() -> None:
+            seen.append(in_transaction())
+            with tenant_scope(ORG):
+                await store.tenant("runs").insert_one({"_id": "r1"})
+
+        with pytest.raises(TransactionError, match="task"):
+            await asyncio.create_task(child())
+
+    asyncio.run(store.run_transaction(body))
+    assert seen == [False]
+    assert db["runs"].calls == []
 
 
 def test_transactions_do_not_nest() -> None:

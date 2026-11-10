@@ -143,6 +143,24 @@ def test_a_failure_while_writing_the_jobs_rolls_back_the_change_and_the_event() 
     assert (db["runs"].docs, db["events"].docs, db["jobs"].docs) == ([], [], [])
 
 
+def test_a_transient_conflict_reruns_the_whole_write_and_leaves_one_change_and_one_event() -> None:
+    """The driver re-runs the callback after a write conflict; the retry must not double anything."""
+    bus, db, _ = make_bus()
+    db.transient_commit_failures = 1
+    runs: list[str] = []
+
+    async def change() -> None:
+        runs.append("ran")
+        await bus.store.tenant("runs").insert_one({"_id": "r1"})
+
+    result = _publish(bus, ORG_A, change=change)
+    assert not result.duplicate
+    assert runs == ["ran", "ran"]
+    assert [d["_id"] for d in db["runs"].docs] == ["r1"]
+    assert len(db["events"].docs) == 1
+    assert len(db["jobs"].docs) == 1
+
+
 def test_publish_takes_the_org_from_the_context_only() -> None:
     bus, _, _ = make_bus()
 

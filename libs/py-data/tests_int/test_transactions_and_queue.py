@@ -71,7 +71,7 @@ def test_a_raising_callback_rolls_back_every_repository_write(
 
                 async def write_then_fail() -> None:
                     await store.tenant("runs").insert_one({"_id": "r1"})
-                    await store.queue("jobs").insert_one({"_id": "j1", "org_id": ORG})
+                    await store.queue("dead_letters").insert_one({"_id": "j1", "org_id": ORG})
                     raise RuntimeError("rollback")
 
                 with pytest.raises(RuntimeError, match="rollback"):
@@ -81,7 +81,7 @@ def test_a_raising_callback_rolls_back_every_repository_write(
 
     asyncio.run(main())
     assert db.runs.count_documents({}) == 0
-    assert db.jobs.count_documents({}) == 0
+    assert db.dead_letters.count_documents({}) == 0
 
 
 def test_concurrent_claims_on_one_document_succeed_once(scratch: tuple[str, Database[dict[str, object]]]) -> None:

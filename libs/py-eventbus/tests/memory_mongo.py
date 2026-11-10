@@ -17,7 +17,7 @@ from typing import TYPE_CHECKING, Any, cast
 
 from onb_data import DataStore
 from pymongo import ReturnDocument
-from pymongo.errors import DuplicateKeyError
+from pymongo.errors import DuplicateKeyError, OperationFailure, PyMongoError
 
 if TYPE_CHECKING:
     from pymongo import AsyncMongoClient
@@ -48,6 +48,8 @@ def _matches_condition(present: bool, value: Any, condition: Any) -> bool:
                 ok = present is bool(operand)
             elif op == "$ne":
                 ok = not present or value != operand
+            elif op == "$type" and operand == "number":
+                ok = present and isinstance(value, int | float) and not isinstance(value, bool)
             else:
                 raise NotImplementedError(op)
             if not ok:
@@ -201,6 +203,8 @@ class MemoryDatabase:
     indexes: list[tuple[str, list[tuple[str, Any]], bool]] = field(default_factory=list)
     # Called before every write; a test can make it raise to simulate a failure mid-transaction.
     write_hook: Callable[[], Awaitable[None]] | None = None
+    # Commits that fail with a TransientTransactionError before one succeeds (as a write conflict would).
+    transient_commit_failures: int = 0
     _ids: int = 0
 
     def __getitem__(self, name: str) -> MemoryCollection:
@@ -240,15 +244,24 @@ class MemorySession:
         return None
 
     async def with_transaction(self, callback: Callable[[MemorySession], Awaitable[Any]]) -> Any:
-        snap = self.db.snapshot()
-        try:
-            result = await callback(self)
-        except BaseException:
-            self.db.restore(snap)
-            self.aborts += 1
-            raise
-        self.commits += 1
-        return result
+        """Like the driver: roll back on error, and re-run the whole callback after a transient one."""
+        while True:
+            snap = self.db.snapshot()
+            try:
+                result = await callback(self)
+                if self.db.transient_commit_failures > 0:
+                    self.db.transient_commit_failures -= 1
+                    error = OperationFailure("WriteConflict")
+                    error._add_error_label("TransientTransactionError")
+                    raise error
+            except BaseException as exc:
+                self.db.restore(snap)
+                self.aborts += 1
+                if isinstance(exc, PyMongoError) and exc.has_error_label("TransientTransactionError"):
+                    continue
+                raise
+            self.commits += 1
+            return result
 
 
 @dataclass

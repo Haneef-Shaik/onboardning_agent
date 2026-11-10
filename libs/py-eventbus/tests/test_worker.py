@@ -376,6 +376,88 @@ def test_a_failure_after_the_lease_was_lost_is_not_recorded() -> None:
     assert db["dead_letters"].docs == []
 
 
+def test_a_handler_that_raises_cancelled_error_itself_is_a_failure_not_a_shutdown() -> None:
+    """Review finding: a CancelledError from inside the handler must not stop the worker loop."""
+    bus, db, _ = make_bus()
+
+    async def cancelled_inside(job: JobContext) -> None:
+        raise asyncio.CancelledError
+
+    async def main() -> tuple[Any, str]:
+        job_id = await _publish(bus)
+        return await bus.worker({CONSUMER: cancelled_inside}).run_once(), job_id
+
+    processed, job_id = asyncio.run(main())
+    assert processed.outcome is WorkOutcome.RETRIED
+    assert _job(db, job_id)["last_error"] == "CancelledError"
+
+
+def test_a_heartbeat_that_keeps_failing_gives_up_the_job_once_the_lease_could_have_lapsed() -> None:
+    """Review finding: during a database outage the lease runs out; the handler must stop then."""
+    bus, db, clock = make_bus()
+    cancelled: list[str] = []
+
+    async def outage() -> None:
+        raise ConnectionError("no primary")
+
+    async def long_running(job: JobContext) -> None:
+        db.write_hook = outage
+        try:
+            for _ in range(50):
+                clock.advance(FAST.lease_seconds / 4)
+                await asyncio.sleep(FAST.heartbeat_seconds * 2)
+        except asyncio.CancelledError:
+            cancelled.append(job.job_id)
+            raise
+
+    async def main() -> Any:
+        await _publish(bus)
+        return await bus.worker({CONSUMER: long_running}).run_once()
+
+    processed = asyncio.run(main())
+    db.write_hook = None
+    assert processed.outcome is WorkOutcome.LEASE_LOST
+    assert cancelled == [processed.job_id]
+
+
+def test_a_job_with_a_corrupt_attempt_count_never_blocks_the_queue() -> None:
+    """Review finding: `$inc` on a non-number fails server-side, so such a job must never be claimed."""
+    bus, db, _ = make_bus()
+
+    async def main() -> Any:
+        await db["jobs"].insert_one(_raw_job(ORG_A, attempts=None))
+        good = await _publish(bus)
+        return good, await bus.worker({CONSUMER: _ok}).run_once(), await bus.worker({CONSUMER: _ok}).run_once()
+
+    good, first, second = asyncio.run(main())
+    assert first.job_id == good
+    assert second is None
+    assert _job(db, "raw-1")["status"] == JobStatus.PENDING
+
+
+def test_a_worker_cancelled_mid_job_stops_and_leaves_the_job_held() -> None:
+    """A shutdown propagates out of run_once and writes nothing: the lease lapses for another worker."""
+    bus, db, _ = make_bus()
+
+    async def main() -> str:
+        job_id = await _publish(bus)
+        started = asyncio.Event()
+
+        async def handler(job: JobContext) -> None:
+            started.set()
+            await asyncio.sleep(0)
+
+        task = asyncio.create_task(bus.worker({CONSUMER: handler}).run_once())
+        await started.wait()
+        task.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await task
+        return job_id
+
+    job_id = asyncio.run(main())
+    assert _job(db, job_id)["status"] == JobStatus.RUNNING
+
+
 # --- box 5: a job without an org is dead-lettered --------------------------------------------
 
 

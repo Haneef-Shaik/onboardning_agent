@@ -69,6 +69,12 @@ def _malformed(job: Mapping[str, Any]) -> bool:
     return run_id is not None and not isinstance(run_id, str)
 
 
+def _shutting_down() -> bool:
+    """True when someone asked the current task (the worker) to stop."""
+    current = asyncio.current_task()
+    return current is not None and current.cancelling() > 0
+
+
 def _error_name(exc: BaseException) -> str:
     """Only the exception type is stored or traced: a message may carry personal data (PRD §5.5)."""
     return type(exc).__name__
@@ -173,11 +179,14 @@ class MongoWorker(Worker):
         error: str | None = None
         try:
             await handler_task
-        except asyncio.CancelledError:
-            current = asyncio.current_task()
-            if lease_lost.is_set() and current is not None and current.cancelling() == 0:
+        except asyncio.CancelledError as exc:
+            if _shutting_down():
+                raise  # this worker is stopping or crashed: leave the job for its lease to lapse
+            if lease_lost.is_set():
                 return WorkOutcome.LEASE_LOST
-            raise  # this worker is shutting down or crashed: leave the job for its lease to lapse
+            # The handler raised CancelledError itself (e.g. it awaited something cancelled): a failure.
+            error = _error_name(exc)
+            span.set_status(Status(StatusCode.ERROR, error))
         except Exception as exc:
             error = _error_name(exc)
             span.set_status(Status(StatusCode.ERROR, error))
@@ -186,6 +195,9 @@ class MongoWorker(Worker):
             handler_task.cancel()
             with contextlib.suppress(asyncio.CancelledError):
                 await heartbeat
+        if _shutting_down():
+            # A stop request that arrived while the heartbeat was being stopped: don't swallow it.
+            raise asyncio.CancelledError
         if error is not None:
             return await self._failed(job, lease_token, error)
         now = self._clock()
@@ -196,15 +208,22 @@ class MongoWorker(Worker):
     async def _heartbeat(
         self, job_id: Any, lease_token: str, handler_task: asyncio.Task[None], lease_lost: asyncio.Event
     ) -> None:
+        held_until = self._clock() + self._lease
         while True:
             await asyncio.sleep(self._settings.heartbeat_seconds)
+            now = self._clock()
             try:
                 held = await self._jobs.update_leased(
-                    job_id, lease_token, documents.heartbeat_update(now=self._clock(), lease=self._lease)
+                    job_id, lease_token, documents.heartbeat_update(now=now, lease=self._lease)
                 )
-            except Exception as exc:  # the lease may still hold; try again at the next beat
+            except Exception as exc:
                 _log.warning("worker %s: heartbeat failed (%s)", self.worker_id, _error_name(exc))
-                continue
+                # Until the last renewal runs out the lease still holds; after that another worker may
+                # already have the job, so this one must stop.
+                held = now < held_until
+            else:
+                if held:
+                    held_until = now + self._lease
             if not held:
                 _log.warning("worker %s: lease on job %s lost; stopping its handler", self.worker_id, job_id)
                 lease_lost.set()

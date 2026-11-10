@@ -41,6 +41,7 @@ def test_default_settings_are_valid() -> None:
         {"lease_seconds": 0},
         {"heartbeat_seconds": 0},
         {"lease_seconds": 5, "heartbeat_seconds": 5},
+        {"lease_seconds": 30, "heartbeat_seconds": 29},
         {"max_attempts": 0},
         {"max_attempts": True},
         {"backoff_base_seconds": -1},

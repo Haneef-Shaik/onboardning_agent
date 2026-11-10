@@ -10,6 +10,7 @@ from __future__ import annotations
 import asyncio
 from typing import Any
 
+import pytest
 from onb_data import tenant_scope
 from onb_eventbus import JobContext
 from onb_telemetry.testing import CapturedTelemetry
@@ -89,6 +90,25 @@ def test_a_failed_handler_marks_its_span_as_an_error(telemetry: CapturedTelemetr
     span = _by_name(telemetry)[f"consume {CONSUMER}"]
     assert span.status.status_code is StatusCode.ERROR
     assert "run_id" not in dict(span.attributes or {})
+
+
+def test_a_failed_publish_traces_the_error_type_but_never_its_message(telemetry: CapturedTelemetry) -> None:
+    """Security review: a driver error message can quote a document's values (e.g. a duplicate email)."""
+    bus, _, _ = make_bus()
+
+    async def change() -> None:
+        raise ValueError("E11000 duplicate key { email: 'secret@example.com' }")
+
+    async def main() -> None:
+        with tenant_scope(ORG_A):
+            await bus.publish(EVENT, {}, idempotency_key="k1", change=change)
+
+    with pytest.raises(ValueError, match="E11000"):
+        asyncio.run(main())
+    span = _by_name(telemetry)[f"publish {EVENT}"]
+    assert span.status.status_code is StatusCode.ERROR
+    assert span.status.description == "ValueError"
+    assert "secret@example.com" not in span.to_json()
 
 
 def test_a_job_without_a_stored_trace_starts_a_new_one(telemetry: CapturedTelemetry) -> None:

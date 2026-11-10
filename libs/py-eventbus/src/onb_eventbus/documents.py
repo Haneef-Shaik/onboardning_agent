@@ -98,6 +98,10 @@ def claim_query(consumers: Iterable[str], now: datetime) -> Document:
     """
     return {
         "consumer": {"$in": sorted(consumers)},
+        # A job with a corrupt counter would make the claim's `$inc` fail on the server every cycle and
+        # block the queue behind it; such a job is left alone (and visible to operators) instead.
+        "attempts": {"$type": "number"},
+        "max_attempts": {"$type": "number"},
         "$or": [
             {"status": JobStatus.PENDING.value, "available_at": {"$lte": now}},
             {"status": JobStatus.RUNNING.value, "locked_until": {"$lte": now}},

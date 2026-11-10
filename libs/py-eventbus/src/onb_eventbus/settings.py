@@ -34,8 +34,10 @@ class QueueSettings:
         for name in ("lease_seconds", "heartbeat_seconds", "backoff_base_seconds", "backoff_max_seconds"):
             _positive(name, getattr(self, name))
         _positive("poll_seconds", self.poll_seconds)
-        if self.heartbeat_seconds >= self.lease_seconds:
-            raise ValueError("heartbeat_seconds must be shorter than lease_seconds")
+        if self.heartbeat_seconds > self.lease_seconds / 2:
+            raise ValueError(
+                "heartbeat_seconds must be at most half of lease_seconds, so one missed beat is survivable"
+            )
         if isinstance(self.max_attempts, bool) or not isinstance(self.max_attempts, int) or self.max_attempts < 1:
             raise ValueError("max_attempts must be an integer of at least 1")
         if self.backoff_base_seconds > self.backoff_max_seconds:

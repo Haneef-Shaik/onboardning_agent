@@ -18,7 +18,7 @@ from typing import Any
 from onb_data import DataStore, current_tenant
 from onb_telemetry import inject_traceparent, span_attributes
 from opentelemetry import trace
-from opentelemetry.trace import SpanKind
+from opentelemetry.trace import SpanKind, Status, StatusCode
 from pymongo.errors import DuplicateKeyError
 
 from . import documents
@@ -121,20 +121,32 @@ class MongoEventBus(EventBus):
             "messaging.destination.name": event_type,
         }
         tracer = trace.get_tracer(_TRACER_NAME)  # per call: follows the provider in use now
-        with tracer.start_as_current_span(f"publish {event_type}", kind=SpanKind.PRODUCER, attributes=attributes):
+        # The SDK would record the exception message on the span; a driver message can quote document
+        # values (a duplicate email, say), so only the error type is traced (PRD §5.5, §7.7).
+        with tracer.start_as_current_span(
+            f"publish {event_type}",
+            kind=SpanKind.PRODUCER,
+            attributes=attributes,
+            record_exception=False,
+            set_status_on_exception=False,
+        ) as span:
             traceparent = inject_traceparent()
             try:
                 return await self._store.run_transaction(
                     lambda: self._write(event_type, payload, idempotency_key, run_id, traceparent, change)
                 )
-            except DuplicateKeyError:
+            except DuplicateKeyError as exc:
                 # A concurrent publish with the same key committed first.
                 existing = await self._store.tenant("events").find_one(
                     {"idempotency_key": idempotency_key}, projection={"_id": 1}
                 )
                 if existing is None:
+                    span.set_status(Status(StatusCode.ERROR, type(exc).__name__))
                     raise
                 return PublishResult(event_id=existing["_id"], duplicate=True)
+            except BaseException as exc:
+                span.set_status(Status(StatusCode.ERROR, type(exc).__name__))
+                raise
 
     async def _write(
         self,

@@ -330,6 +330,54 @@ def test_concurrent_publishes_with_one_key_write_one_event(scratch: Scratch) -> 
     assert scratch.db.jobs.count_documents({}) == 1
 
 
+def test_concurrent_publishes_with_one_key_apply_the_domain_change_once(scratch: Scratch) -> None:
+    """Review finding: retried or racing transactions must not leave the change twice."""
+
+    async def race(bus: MongoEventBus) -> list[PublishResult]:
+        async def change() -> None:
+            await bus.store.tenant("onboarding_runs").update_one(
+                {"_id": "run-1"}, {"$inc": {"starts": 1}, "$set": {"state": "started"}}, upsert=True
+            )
+
+        return list(await asyncio.gather(*(publish(bus, ORG_A, "same-key", change=change) for _ in range(10))))
+
+    results = run_with_bus(scratch, race)
+    assert [r.duplicate for r in results].count(False) == 1
+    assert scratch.db.onboarding_runs.find_one({"_id": "run-1"}) == {
+        "_id": "run-1",
+        "org_id": ORG_A,
+        "starts": 1,
+        "state": "started",
+    }
+    assert scratch.db.events.count_documents({}) == 1
+
+
+def test_a_job_with_a_corrupt_attempt_count_does_not_block_the_queue(scratch: Scratch) -> None:
+    """Review finding: `$inc` on a non-number fails on the server, so such a job is never claimed."""
+    scratch.db.jobs.insert_one(
+        {
+            "_id": "corrupt",
+            "org_id": ORG_A,
+            "consumer": CONSUMER,
+            "status": JobStatus.PENDING.value,
+            "attempts": None,
+            "max_attempts": 3,
+            "available_at": datetime(2000, 1, 1, tzinfo=UTC),
+        }
+    )
+
+    async def body(bus: MongoEventBus) -> tuple[Any, Any, str]:
+        good = (await publish(bus, ORG_A, "r1")).job_ids[0]
+        worker = bus.worker({CONSUMER: _ok})
+        return await worker.run_once(), await worker.run_once(), good
+
+    first, second, good = run_with_bus(scratch, body)
+    assert first is not None
+    assert first.job_id == good
+    assert second is None
+    assert scratch.db.jobs.find_one({"_id": "corrupt"}, {"status": 1}) == {"_id": "corrupt", "status": "pending"}
+
+
 def test_the_key_is_unique_per_org_not_globally(scratch: Scratch) -> None:
     async def both(bus: MongoEventBus) -> tuple[PublishResult, PublishResult]:
         return await publish(bus, ORG_A, "k1"), await publish(bus, ORG_B, "k1")

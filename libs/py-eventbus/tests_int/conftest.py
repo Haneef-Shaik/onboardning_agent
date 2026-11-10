@@ -11,7 +11,7 @@ import os
 import subprocess
 import uuid
 from collections.abc import Iterator
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from urllib.parse import quote_plus
 
@@ -78,7 +78,7 @@ def root_client(mongo_uri: str) -> Iterator[Client]:
 
 @dataclass(frozen=True)
 class Scratch:
-    uri: str
+    uri: str = field(repr=False)  # carries the root password: never in a repr or assertion message
     name: str
     db: Database[dict[str, object]]
 

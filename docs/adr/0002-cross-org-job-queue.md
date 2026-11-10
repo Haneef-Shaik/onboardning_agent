@@ -13,9 +13,13 @@
    `onb_data.QUEUE_COLLECTIONS = {"jobs", "dead_letters"}`. Producers write jobs through
    `store.tenant("jobs")`, so `org_id` comes from the context. Workers use `store.queue(name)`, a
    `QueueRepository` with only: `claim` (one atomic `find_one_and_update`), `update_leased` /
-   `delete_leased` (match `{_id, lease_token}`), `insert_one` (dead letters, written as given) and a
-   `find` that requires a limit. It has no unscoped update-many, delete-many or aggregate, and its
-   updates may never set, unset or rename `org_id`.
+   `delete_leased` (match `{_id, lease_token}`), and, on `dead_letters` only, `insert_one` (written
+   as given) and a `find` that requires a limit. It has no unscoped update-many, delete-many or
+   aggregate. A claim may filter on queue state only (`consumer`, `status`, `available_at`,
+   `locked_until`, `attempts`, `max_attempts`, combined with `$or`/`$and`), so it cannot be aimed at
+   one org or search payloads. Worker writes may change queue state only (`status`, lease fields,
+   `available_at`, `last_error`, timestamps; `$inc` on `attempts`), never `org_id`, `consumer` or
+   `payload`. Jobs cannot be inserted or searched through it.
 2. **The org is set from the job, before any consumer code runs.** The worker validates `org_id`
    with the same rule as `TenantContext`, dead-letters the job if it is missing or invalid, and
    otherwise runs the handler inside `tenant_scope(job.org_id)`. Everything the handler does goes
