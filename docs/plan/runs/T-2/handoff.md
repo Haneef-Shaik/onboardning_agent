@@ -145,6 +145,10 @@ RED before GREEN:
 - `red-queue-allowance.txt` (15 failed before `queue_allowance.py` existed)
 
 ## Verifier
+goal-verifier attempt 4: **pass** on base `1e22bba`. It reproduced the 103 flag call sites independently, all test code, and found no weakened assertion.
+
+**For integration (attempt 4).** Main has moved to `e892d97` (EVAL-1, UI-1, AUD-1). The verifier's trial merge **conflicts** in `apps/mcp-mongo/tests_int/test_db_users_int.py`, and after it `tools/tests/test_safety_net_suites.py` flags `libs/py-evals/tests_int` (no plugin, no fixture test). That is not a trivial rebase. It needs the conflict resolved, the plugin and a fixture test wired into py-evals, its root reads traced and marked, and the three gates re-run.
+
 goal-verifier attempt 3: **pass**. Attempt 1 passed, and attempt 2 failed box 2 (py-crypto's suite was not guarded).
 
 **For integration.** Main has moved to `1e22bba` (MCP-3, PII-4), past this branch's base `707b60c`. In the verifier's trial merge, nothing conflicted, but `tools/tests/test_safety_net_suites.py` (in `make check`) then reports `apps/api/tests_int` and `apps/mcp-mongo/tests_int`. Both have `test-int` targets and talk to Mongo, but neither loads `onb_data.safety_net_pytest` nor has a fixture test. The new py-crypto Mongo tests (`test_grants_mongo.py`, `test_vault_mongo.py`) have not yet run under the guard. The check is doing its job. The fix is to rebase onto current main, wire the plugin and a fixture test into those two suites, and mark any deliberate root read-backs. Following the hold instruction, I have not rebased; it needs the orchestrator's go-ahead.
