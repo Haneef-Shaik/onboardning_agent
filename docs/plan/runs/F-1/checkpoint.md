@@ -4,7 +4,7 @@
 projects; root uv workspace; Makefile; workspace-local Nx cache; per-project tool caches; evidence
 for all five boxes and nine mutation checks in `docs/evidence/F-1/`.
 
-**Next:** code review of `git diff main...HEAD`, handoff, goal-verifier, close.
+**Next:** goal-verifier (attempt 1), then close.
 
 **Surprises:**
 - Nx 24 caches in `~/.nx/<hash>` by default, so a "fresh clone" ran 100% from cache. Fixed with

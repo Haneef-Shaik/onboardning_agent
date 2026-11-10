@@ -26,7 +26,7 @@ libs/py-crypto/src/onb_crypto/__init__.py       9      6    33%   9-14
 -------------------------------------------------------------------------
 TOTAL                                           9      6    33%
 FAIL Required test coverage of 80% not reached. Total coverage: 33.33%
-============================== 1 passed in 0.02s ===============================
+============================== 1 passed in 0.03s ===============================
 
 
 
@@ -38,9 +38,9 @@ Failed tasks:
 
 Hint: run the command with --verbose for more details.
 
-  Run duration:      343ms
+  Run duration:      310ms
   Cache:             Skipped (--skip-nx-cache)
-  Critical path:     342ms (1 task)
+  Critical path:     308ms (1 task)
   Recoverable time:  <1ms
 exit=1
 
@@ -79,8 +79,8 @@ node_modules/.bin/nx run-many -t test --output-style=static
 
  Test Files  1 passed (1)
       Tests  1 passed (1)
-   Start at  09:28:02
-   Duration  66ms (transform 58%, import 26%, worker 8%, tests 7%)
+   Start at  09:32:29
+   Duration  67ms (transform 57%, import 27%, worker 9%, tests 6%)
 
 
 > nx run ts-api-client:test  [existing outputs match the cache, left as is]
@@ -93,8 +93,8 @@ node_modules/.bin/nx run-many -t test --output-style=static
 
  Test Files  1 passed (1)
       Tests  1 passed (1)
-   Start at  09:28:02
-   Duration  66ms (transform 58%, import 26%, worker 9%, tests 7%)
+   Start at  09:32:29
+   Duration  67ms (transform 58%, import 26%, worker 8%, tests 7%)
 
 
 > nx run py-guardrails:test  [existing outputs match the cache, left as is]
@@ -119,6 +119,56 @@ Name                                                Stmts   Miss  Cover   Missin
 libs/py-guardrails/src/onb_guardrails/__init__.py       2      0   100%
 ---------------------------------------------------------------------------------
 TOTAL                                                   2      0   100%
+Required test coverage of 80% reached. Total coverage: 100.00%
+============================== 1 passed in 0.02s ===============================
+
+> nx run py-contracts:test  [existing outputs match the cache, left as is]
+
+> uv run --frozen pytest libs/py-contracts/tests -o cache_dir=.pytest_cache/py-contracts --cov=onb_contracts --cov-report=term-missing --cov-fail-under=80
+
+============================= test session starts ==============================
+platform darwin -- Python 3.12.13, pytest-9.2.0, pluggy-1.7.0
+cachedir: .pytest_cache/py-contracts
+rootdir: /Users/Adya/.claude/jobs/8ea1ac6c/tmp/fresh
+configfile: pyproject.toml
+plugins: cov-7.1.0
+collected 1 item
+
+libs/py-contracts/tests/test_onb_contracts.py .                          [100%]
+
+================================ tests coverage ================================
+______________ coverage: platform darwin, python 3.12.13-final-0 _______________
+
+Name                                              Stmts   Miss  Cover   Missing
+-------------------------------------------------------------------------------
+libs/py-contracts/src/onb_contracts/__init__.py       2      0   100%
+-------------------------------------------------------------------------------
+TOTAL                                                 2      0   100%
+Required test coverage of 80% reached. Total coverage: 100.00%
+============================== 1 passed in 0.02s ===============================
+
+> nx run py-telemetry:test  [existing outputs match the cache, left as is]
+
+> uv run --frozen pytest libs/py-telemetry/tests -o cache_dir=.pytest_cache/py-telemetry --cov=onb_telemetry --cov-report=term-missing --cov-fail-under=80
+
+============================= test session starts ==============================
+platform darwin -- Python 3.12.13, pytest-9.2.0, pluggy-1.7.0
+cachedir: .pytest_cache/py-telemetry
+rootdir: /Users/Adya/.claude/jobs/8ea1ac6c/tmp/fresh
+configfile: pyproject.toml
+plugins: cov-7.1.0
+collected 1 item
+
+libs/py-telemetry/tests/test_onb_telemetry.py .                          [100%]
+
+================================ tests coverage ================================
+______________ coverage: platform darwin, python 3.12.13-final-0 _______________
+
+Name                                              Stmts   Miss  Cover   Missing
+-------------------------------------------------------------------------------
+libs/py-telemetry/src/onb_telemetry/__init__.py       2      0   100%
+-------------------------------------------------------------------------------
+TOTAL                                                 2      0   100%
 Required test coverage of 80% reached. Total coverage: 100.00%
 ============================== 1 passed in 0.02s ===============================
 
@@ -197,53 +247,28 @@ TOTAL                                     2      0   100%
 Required test coverage of 80% reached. Total coverage: 100.00%
 ============================== 1 passed in 0.02s ===============================
 
-> nx run py-telemetry:test  [existing outputs match the cache, left as is]
+> nx run py-eventbus:test  [existing outputs match the cache, left as is]
 
-> uv run --frozen pytest libs/py-telemetry/tests -o cache_dir=.pytest_cache/py-telemetry --cov=onb_telemetry --cov-report=term-missing --cov-fail-under=80
+> uv run --frozen pytest libs/py-eventbus/tests -o cache_dir=.pytest_cache/py-eventbus --cov=onb_eventbus --cov-report=term-missing --cov-fail-under=80
 
 ============================= test session starts ==============================
 platform darwin -- Python 3.12.13, pytest-9.2.0, pluggy-1.7.0
-cachedir: .pytest_cache/py-telemetry
+cachedir: .pytest_cache/py-eventbus
 rootdir: /Users/Adya/.claude/jobs/8ea1ac6c/tmp/fresh
 configfile: pyproject.toml
 plugins: cov-7.1.0
 collected 1 item
 
-libs/py-telemetry/tests/test_onb_telemetry.py .                          [100%]
+libs/py-eventbus/tests/test_onb_eventbus.py .                            [100%]
 
 ================================ tests coverage ================================
 ______________ coverage: platform darwin, python 3.12.13-final-0 _______________
 
-Name                                              Stmts   Miss  Cover   Missing
--------------------------------------------------------------------------------
-libs/py-telemetry/src/onb_telemetry/__init__.py       2      0   100%
--------------------------------------------------------------------------------
-TOTAL                                                 2      0   100%
-Required test coverage of 80% reached. Total coverage: 100.00%
-============================== 1 passed in 0.02s ===============================
-
-> nx run py-contracts:test  [existing outputs match the cache, left as is]
-
-> uv run --frozen pytest libs/py-contracts/tests -o cache_dir=.pytest_cache/py-contracts --cov=onb_contracts --cov-report=term-missing --cov-fail-under=80
-
-============================= test session starts ==============================
-platform darwin -- Python 3.12.13, pytest-9.2.0, pluggy-1.7.0
-cachedir: .pytest_cache/py-contracts
-rootdir: /Users/Adya/.claude/jobs/8ea1ac6c/tmp/fresh
-configfile: pyproject.toml
-plugins: cov-7.1.0
-collected 1 item
-
-libs/py-contracts/tests/test_onb_contracts.py .                          [100%]
-
-================================ tests coverage ================================
-______________ coverage: platform darwin, python 3.12.13-final-0 _______________
-
-Name                                              Stmts   Miss  Cover   Missing
--------------------------------------------------------------------------------
-libs/py-contracts/src/onb_contracts/__init__.py       2      0   100%
--------------------------------------------------------------------------------
-TOTAL                                                 2      0   100%
+Name                                            Stmts   Miss  Cover   Missing
+-----------------------------------------------------------------------------
+libs/py-eventbus/src/onb_eventbus/__init__.py       2      0   100%
+-----------------------------------------------------------------------------
+TOTAL                                               2      0   100%
 Required test coverage of 80% reached. Total coverage: 100.00%
 ============================== 1 passed in 0.02s ===============================
 
@@ -272,30 +297,21 @@ TOTAL                                           2      0   100%
 Required test coverage of 80% reached. Total coverage: 100.00%
 ============================== 1 passed in 0.02s ===============================
 
-> nx run py-eventbus:test  [existing outputs match the cache, left as is]
+> nx run mcp-mocks:test  [existing outputs match the cache, left as is]
 
-> uv run --frozen pytest libs/py-eventbus/tests -o cache_dir=.pytest_cache/py-eventbus --cov=onb_eventbus --cov-report=term-missing --cov-fail-under=80
+> uv run --frozen pytest apps/mcp-mocks/tests -o cache_dir=.pytest_cache/mcp-mocks
 
 ============================= test session starts ==============================
 platform darwin -- Python 3.12.13, pytest-9.2.0, pluggy-1.7.0
-cachedir: .pytest_cache/py-eventbus
+cachedir: .pytest_cache/mcp-mocks
 rootdir: /Users/Adya/.claude/jobs/8ea1ac6c/tmp/fresh
 configfile: pyproject.toml
 plugins: cov-7.1.0
 collected 1 item
 
-libs/py-eventbus/tests/test_onb_eventbus.py .                            [100%]
+apps/mcp-mocks/tests/test_onb_mcp_mocks.py .                             [100%]
 
-================================ tests coverage ================================
-______________ coverage: platform darwin, python 3.12.13-final-0 _______________
-
-Name                                            Stmts   Miss  Cover   Missing
------------------------------------------------------------------------------
-libs/py-eventbus/src/onb_eventbus/__init__.py       2      0   100%
------------------------------------------------------------------------------
-TOTAL                                               2      0   100%
-Required test coverage of 80% reached. Total coverage: 100.00%
-============================== 1 passed in 0.02s ===============================
+============================== 1 passed in 0.01s ===============================
 
 > nx run mcp-mongo:test  [existing outputs match the cache, left as is]
 
@@ -313,19 +329,33 @@ apps/mcp-mongo/tests/test_onb_mcp_mongo.py .                             [100%]
 
 ============================== 1 passed in 0.01s ===============================
 
-> nx run mcp-mocks:test  [existing outputs match the cache, left as is]
+> nx run web:test  [existing outputs match the cache, left as is]
 
-> uv run --frozen pytest apps/mcp-mocks/tests -o cache_dir=.pytest_cache/mcp-mocks
+> vitest run --config apps/web/vitest.config.ts
+
+
+ RUN  v5.1.0 /Users/Adya/.claude/jobs/8ea1ac6c/tmp/fresh/apps/web
+
+
+ Test Files  1 passed (1)
+      Tests  1 passed (1)
+   Start at  09:32:31
+   Duration  77ms (transform 44%, import 40%, tests 11%, worker 4%)
+
+
+> nx run api:test  [existing outputs match the cache, left as is]
+
+> uv run --frozen pytest apps/api/tests -o cache_dir=.pytest_cache/api
 
 ============================= test session starts ==============================
 platform darwin -- Python 3.12.13, pytest-9.2.0, pluggy-1.7.0
-cachedir: .pytest_cache/mcp-mocks
+cachedir: .pytest_cache/api
 rootdir: /Users/Adya/.claude/jobs/8ea1ac6c/tmp/fresh
 configfile: pyproject.toml
 plugins: cov-7.1.0
 collected 1 item
 
-apps/mcp-mocks/tests/test_onb_mcp_mocks.py .                             [100%]
+apps/api/tests/test_onb_api.py .                                         [100%]
 
 ============================== 1 passed in 0.01s ===============================
 
@@ -342,36 +372,6 @@ plugins: cov-7.1.0
 collected 1 item
 
 apps/mcp-hub/tests/test_onb_mcp_hub.py .                                 [100%]
-
-============================== 1 passed in 0.01s ===============================
-
-> nx run web:test  [existing outputs match the cache, left as is]
-
-> vitest run --config apps/web/vitest.config.ts
-
-
- RUN  v5.1.0 /Users/Adya/.claude/jobs/8ea1ac6c/tmp/fresh/apps/web
-
-
- Test Files  1 passed (1)
-      Tests  1 passed (1)
-   Start at  09:28:04
-   Duration  76ms (transform 43%, import 41%, tests 11%, worker 5%)
-
-
-> nx run api:test  [existing outputs match the cache, left as is]
-
-> uv run --frozen pytest apps/api/tests -o cache_dir=.pytest_cache/api
-
-============================= test session starts ==============================
-platform darwin -- Python 3.12.13, pytest-9.2.0, pluggy-1.7.0
-cachedir: .pytest_cache/api
-rootdir: /Users/Adya/.claude/jobs/8ea1ac6c/tmp/fresh
-configfile: pyproject.toml
-plugins: cov-7.1.0
-collected 1 item
-
-apps/api/tests/test_onb_api.py .                                         [100%]
 
 ============================== 1 passed in 0.01s ===============================
 
@@ -426,9 +426,9 @@ Failed tasks:
 
 - py-crypto:test
 
-  Run duration:      265ms
+  Run duration:      283ms
   Cache:             16/16 hit (100%)
-  Critical path:     259ms (1 task)
+  Critical path:     277ms (1 task)
   Recoverable time:  <1ms
 make: *** [test] Error 1
 exit=2

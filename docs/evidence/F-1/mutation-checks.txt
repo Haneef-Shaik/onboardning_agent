@@ -1,49 +1,49 @@
 ## M1 coverage threshold removed from libs/py-data test target
 $ uv run pytest tools/tests -q
 FAILED tools/tests/test_workspace_layout.py::test_python_lib_enforces_80_percent_line_coverage[libs/py-data]
-1 failed, 88 passed in 0.14s
+1 failed, 97 passed in 0.17s
 restored: 0 files differ
 
 ## M2 coverage threshold lowered to 70 for libs/py-llm
 $ uv run pytest tools/tests -q
 FAILED tools/tests/test_workspace_layout.py::test_python_lib_enforces_80_percent_line_coverage[libs/py-llm]
-1 failed, 88 passed in 0.11s
+1 failed, 97 passed in 0.17s
 restored: 0 files differ
 
 ## M3 .env removed from .gitignore
 $ uv run pytest tools/tests -q
 FAILED tools/tests/test_workspace_layout.py::test_gitignore_covers[.env] - As...
-1 failed, 88 passed in 0.10s
+1 failed, 97 passed in 0.13s
 restored: 0 files differ
 
 ## M4 evals/reports/ removed from .gitignore
 $ uv run pytest tools/tests -q
 FAILED tools/tests/test_workspace_layout.py::test_gitignore_covers[evals/reports/x.json]
-1 failed, 88 passed in 0.10s
+1 failed, 97 passed in 0.13s
 restored: 0 files differ
 
 ## M5 plan check removed from Makefile
 $ uv run pytest tools/tests -q
 FAILED tools/tests/test_workspace_layout.py::test_makefile_check_runs_plan_check_and_all_targets
-1 failed, 88 passed in 0.10s
+1 failed, 97 passed in 0.12s
 restored: 0 files differ
 
 ## M6 @nxlv/python switched to poetry
 $ uv run pytest tools/tests -q
 FAILED tools/tests/test_workspace_layout.py::test_nx_python_plugin_is_pinned_to_uv
-1 failed, 88 passed in 0.09s
+1 failed, 97 passed in 0.12s
 restored: 0 files differ
 
 ## M7 shared mypy cache for py-eventbus
 $ uv run pytest tools/tests -q
 FAILED tools/tests/test_workspace_layout.py::test_python_targets_do_not_share_caches[libs/py-eventbus]
-1 failed, 88 passed in 0.10s
+1 failed, 97 passed in 0.12s
 restored: 0 files differ
 
 ## M8 Nx cache moved back to the machine-global default
 $ uv run pytest tools/tests -q
 FAILED tools/tests/test_workspace_layout.py::test_nx_cache_lives_in_the_workspace
-1 failed, 88 passed in 0.09s
+1 failed, 97 passed in 0.12s
 restored: 0 files differ
 
 ## M9 apps/mcp-mocks project removed
@@ -51,6 +51,31 @@ $ uv run pytest tools/tests -q
 FAILED tools/tests/test_workspace_layout.py::test_layout_has_exactly_the_17_prd_projects
 FAILED tools/tests/test_workspace_layout.py::test_project_name_matches_folder_and_has_targets[apps/mcp-mocks]
 FAILED tools/tests/test_workspace_layout.py::test_python_targets_do_not_share_caches[apps/mcp-mocks]
-3 failed, 86 passed in 0.11s
+3 failed, 95 passed in 0.14s
+restored: 0 files differ
+
+## M10 dependency inputs (^default) dropped from typecheck/test cache keys
+$ uv run pytest tools/tests -q
+FAILED tools/tests/test_workspace_layout.py::test_cache_key_includes_dependencies[typecheck]
+FAILED tools/tests/test_workspace_layout.py::test_cache_key_includes_dependencies[test]
+2 failed, 96 passed in 0.13s
+restored: 0 files differ
+
+## M11 plan-check dropped from make check prerequisites (recipe left in place)
+$ uv run pytest tools/tests -q
+FAILED tools/tests/test_workspace_layout.py::test_makefile_check_runs_plan_check_and_all_targets
+1 failed, 97 passed in 0.13s
+restored: 0 files differ
+
+## M12 coverage switched from line to branch
+$ uv run pytest tools/tests -q
+FAILED tools/tests/test_workspace_layout.py::test_coverage_is_line_coverage
+1 failed, 97 passed in 0.14s
+restored: 0 files differ
+
+## M13 *.pem removed from .gitignore
+$ uv run pytest tools/tests -q
+FAILED tools/tests/test_workspace_layout.py::test_gitignore_covers[infra/tls/server.pem]
+1 failed, 97 passed in 0.14s
 restored: 0 files differ
 
