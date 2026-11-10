@@ -1,0 +1,54 @@
+## 1. Model change: Health gains `version: str`, contracts NOT regenerated
+$ make contracts-check
+uv run --frozen python scripts/contracts.py check
+--- /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-c-1/libs/ts-api-client/openapi.json (committed)
++++ /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-c-1/libs/ts-api-client/openapi.json (API)
+@@ -118,6 +118,11 @@
+           "status": {
+             "const": "ok",
+             "title": "Status",
++            "type": "string"
++          },
++          "version": {
++            "default": "0.1.0",
++            "title": "Version",
+             "type": "string"
+           }
+         },
+--- /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-c-1/libs/ts-api-client/src/generated/schema.ts (committed)
++++ /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-c-1/libs/ts-api-client/src/generated/schema.ts (API)
+@@ -73,6 +73,11 @@
+              * @constant
+              */
+             status: "ok";
++            /**
++             * Version
++             * @default 0.1.0
++             */
++            version: string;
+         };
+         /**
+          * HealthEnvelope
+contracts-check: stale: libs/ts-api-client/openapi.json, libs/ts-api-client/src/generated/schema.ts. Run `make contracts` and commit the result.
+make: *** [contracts-check] Error 1
+exit=2
+
+## 2. Regenerate, then check again
+$ make contracts
+uv run --frozen python scripts/contracts.py generate
+contracts: wrote libs/ts-api-client/openapi.json and libs/ts-api-client/src/generated/schema.ts
+exit=0
+
+$ make contracts-check
+uv run --frozen python scripts/contracts.py check
+contracts-check: openapi.json and the TS client are up to date
+exit=0
+
+## 3. Restore the model and the committed artefacts
+$ make contracts-check
+uv run --frozen python scripts/contracts.py check
+contracts-check: openapi.json and the TS client are up to date
+exit=0
+
+restored byte-for-byte: True
+RESULT: as expected (fail, then pass)
