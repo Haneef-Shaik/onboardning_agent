@@ -3,7 +3,16 @@ name = "onb-api"
 version = "0.1.0"
 description = "HTTP API (FastAPI)"
 requires-python = ">=3.12,<3.13"
-dependencies = []
+dependencies = [
+  "fastapi>=0.115,<1",
+  "uvicorn>=0.32,<1",
+  "onb-contracts",
+  "onb-telemetry",
+]
+
+[tool.uv.sources]
+onb-contracts = { workspace = true }
+onb-telemetry = { workspace = true }
 
 [build-system]
 requires = ["hatchling>=1.25"]

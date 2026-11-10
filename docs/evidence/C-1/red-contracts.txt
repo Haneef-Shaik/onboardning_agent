@@ -1,0 +1,6 @@
+E   ImportError: cannot import name 'RequestModel' from 'onb_contracts' (/Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-c-1/libs/py-contracts/src/onb_contracts/__init__.py)
+=========================== short test summary info ============================
+ERROR libs/py-contracts/tests/test_envelope.py
+ERROR libs/py-contracts/tests/test_request_inputs.py
+!!!!!!!!!!!!!!!!!!! Interrupted: 2 errors during collection !!!!!!!!!!!!!!!!!!!!
+2 errors in 2.92s
