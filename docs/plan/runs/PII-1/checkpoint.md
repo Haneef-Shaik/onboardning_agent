@@ -10,7 +10,7 @@
 4. Mutation checks M1–M11 all killed (`docs/evidence/PII-1/mutation-checks.txt`).
 5. `make check` passed (`docs/evidence/PII-1/make-check.txt`).
 
-## Next
+## Next (done: reviews folded in, gates re-run, handoff written)
 - Fold in code-review and security-review findings, re-run gates, write handoff, run goal-verifier.
 - Set board to `in review` and stop (orchestrator holds the merge). `make down` at the end.
 

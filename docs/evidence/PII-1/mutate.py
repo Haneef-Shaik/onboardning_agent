@@ -29,7 +29,7 @@ MUTATIONS = [
         "M3",
         "box 1: wrong master - the master key id check is removed (GCM tag must still fail)",
         "keyring.py",
-        "if record.master_key_id != self._master.key_id:",
+        "if record.master_key_id != master.key_id:",
         "if False:",
     ),
     (
@@ -57,8 +57,8 @@ MUTATIONS = [
         "M7",
         "box 2: rotation drops old versions (old ciphertext must still decrypt)",
         "keyring.py",
-        "unwrapped = tuple(self._unwrap(org_id, r) for r in sorted(records, key=lambda r: r.version))",
-        "unwrapped = tuple(self._unwrap(org_id, r) for r in sorted(records, key=lambda r: r.version))[-1:]",
+        "unwrapped = tuple(self._unwrap(org_id, r) for r in records)",
+        "unwrapped = tuple(self._unwrap(org_id, r) for r in records)[-1:]",
     ),
     (
         "M8",
@@ -89,6 +89,48 @@ MUTATIONS = [
         "        if len(material) != KEY_BYTES:\n            raise MasterKeyError(",
         "        material = material.ljust(KEY_BYTES, b'\\0')[:KEY_BYTES]\n"
         "        if len(material) != KEY_BYTES:\n            raise MasterKeyError(",
+    ),
+    (
+        "M12",
+        "review H1: tenant context check removed (cached keys of another org served)",
+        "keyring.py",
+        "    if current_tenant().org_id != valid:",
+        "    if False:",
+    ),
+    (
+        "M13",
+        "review H2: no reload on an unknown version (stale cache cannot read newer data)",
+        "keyring.py",
+        "        for attempt in range(2):",
+        "        for attempt in range(1):",
+    ),
+    (
+        "M14",
+        "review M3: a load racing a rotation caches its stale snapshot",
+        "keyring.py",
+        "        if generation == self._generation:",
+        "        if True:",
+    ),
+    (
+        "M15",
+        "review M4: duplicate key versions accepted",
+        "keyring.py",
+        "        if len(set(versions)) != len(versions):",
+        "        if False:",
+    ),
+    (
+        "M16",
+        "review: rewrap does not re-check that no version is left on the old master",
+        "keyring.py",
+        "        if left:",
+        "        if False:",
+    ),
+    (
+        "M17",
+        "A3: cached keys never expire",
+        "keyring.py",
+        "        if cached is not None and self._monotonic() - cached.loaded_at < self._cache_seconds:",
+        "        if cached is not None:",
     ),
 ]
 

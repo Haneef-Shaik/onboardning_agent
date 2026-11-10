@@ -3,9 +3,10 @@
    FAILED libs/py-crypto/tests/test_keyring.py::test_org_a_cannot_decrypt_org_b_data
    FAILED libs/py-crypto/tests/test_keyring.py::test_org_a_key_material_cannot_open_org_b_ciphertext_even_with_org_b_binding
    FAILED libs/py-crypto/tests/test_keyring.py::test_org_b_aadhaar_data_is_not_readable_by_org_a_or_with_the_data_key
+   FAILED libs/py-crypto/tests/test_keyring_review_fixes.py::test_keyring_blind_index_uses_the_aadhaar_index_key_only_for_aadhaar
    FAILED libs/py-crypto/tests/test_no_key_material_in_logs.py::test_no_key_material_appears_in_logs
    FAILED libs/py-crypto/tests/test_rotation_runbook.py::test_master_key_rotation_runbook_procedure_b
-   6 failed, 130 passed in 0.82s
+   7 failed, 151 passed in 7.38s
 == M2 (box 1: wrong master fails closed - unwrap swallows a bad tag and returns a random key) -> KILLED
    FAILED libs/py-crypto/tests/test_envelope.py::test_a_wrong_master_key_fails_closed
    FAILED libs/py-crypto/tests/test_envelope.py::test_a_wrapped_key_moved_to_another_org_version_or_purpose_fails[org_beta-1-data]
@@ -15,40 +16,44 @@
    FAILED libs/py-crypto/tests/test_envelope.py::test_a_tampered_wrapped_key_fails
    FAILED libs/py-crypto/tests/test_keyring.py::test_a_wrong_master_key_fails_even_when_the_record_claims_its_id
    FAILED libs/py-crypto/tests/test_keyring.py::test_a_key_record_swapped_from_another_org_fails_closed
-   8 failed, 128 passed in 0.86s
+   8 failed, 150 passed in 1.54s
 == M3 (box 1: wrong master - the master key id check is removed (GCM tag must still fail)) -> KILLED
    FAILED libs/py-crypto/tests/test_keyring.py::test_a_wrong_master_key_fails_closed_and_returns_nothing
-   1 failed, 135 passed in 0.74s
+   1 failed, 157 passed in 1.55s
 == M4 (box 1: wrapped key not bound to its org) -> KILLED
    FAILED libs/py-crypto/tests/test_envelope.py::test_a_wrapped_key_moved_to_another_org_version_or_purpose_fails[org_beta-1-data]
    FAILED libs/py-crypto/tests/test_keyring.py::test_a_key_record_swapped_from_another_org_fails_closed
-   2 failed, 134 passed in 0.86s
+   2 failed, 156 passed in 1.35s
 == M5 (box 1: store returns another org's record unchecked) -> KILLED
    FAILED libs/py-crypto/tests/test_key_store.py::test_a_malformed_document_fails_closed[corrupt9]
-   1 failed, 135 passed in 0.54s
+   1 failed, 157 passed in 1.30s
 == M6 (box 2: new writes keep using the oldest version after rotation) -> KILLED
    FAILED libs/py-crypto/tests/test_keyring.py::test_after_rotation_old_ciphertext_decrypts_and_new_writes_use_the_new_version
    FAILED libs/py-crypto/tests/test_keyring.py::test_rotation_replaces_encryption_and_signing_keys_and_keeps_index_keys
    FAILED libs/py-crypto/tests/test_keyring.py::test_rotation_seen_by_another_keyring_instance_after_forget
    FAILED libs/py-crypto/tests/test_keyring.py::test_ciphertext_relabelled_with_another_version_fails
    FAILED libs/py-crypto/tests/test_keyring.py::test_a_concurrent_rotation_conflict_surfaces_and_the_winner_stands
+   FAILED libs/py-crypto/tests/test_keyring_review_fixes.py::test_a_keyring_with_a_stale_cache_reads_data_written_under_a_newer_version
+   FAILED libs/py-crypto/tests/test_keyring_review_fixes.py::test_a_load_racing_a_rotation_does_not_cache_the_stale_snapshot
    FAILED libs/py-crypto/tests/test_rotation_runbook.py::test_org_key_rotation_runbook_procedure_a
-   6 failed, 130 passed in 0.60s
+   FAILED libs/py-crypto/tests/test_rotation_runbook.py::test_master_key_rotation_runbook_procedure_b
+   9 failed, 149 passed in 0.87s
 == M7 (box 2: rotation drops old versions (old ciphertext must still decrypt)) -> KILLED
    FAILED libs/py-crypto/tests/test_keyring.py::test_after_rotation_old_ciphertext_decrypts_and_new_writes_use_the_new_version
    FAILED libs/py-crypto/tests/test_keyring.py::test_rotation_replaces_encryption_and_signing_keys_and_keeps_index_keys
    FAILED libs/py-crypto/tests/test_keyring.py::test_ciphertext_relabelled_with_another_version_fails
    FAILED libs/py-crypto/tests/test_rotation_runbook.py::test_org_key_rotation_runbook_procedure_a
-   4 failed, 132 passed in 1.06s
+   FAILED libs/py-crypto/tests/test_rotation_runbook.py::test_master_key_rotation_runbook_procedure_b
+   5 failed, 153 passed in 1.51s
 == M8 (box 2: rotation carries every key forward instead of replacing data/signing/aadhaar) -> KILLED
    FAILED libs/py-crypto/tests/test_keyring.py::test_rotation_replaces_encryption_and_signing_keys_and_keeps_index_keys
-   1 failed, 135 passed in 0.72s
+   1 failed, 157 passed in 1.64s
 == M9 (box 3: key material logged on unwrap) -> KILLED
    FAILED libs/py-crypto/tests/test_no_key_material_in_logs.py::test_no_key_material_appears_in_logs
-   1 failed, 135 passed in 0.72s
+   1 failed, 157 passed in 0.78s
 == M10 (box 3: SecretKey repr shows its material) -> KILLED
    FAILED libs/py-crypto/tests/test_keys.py::test_keys_never_show_their_material
-   1 failed, 135 passed in 0.58s
+   1 failed, 157 passed in 0.80s
 == M11 (fail-fast: a short master key is accepted (padded to 32 bytes)) -> KILLED
    FAILED libs/py-crypto/tests/test_keys.py::test_a_short_master_key_fails_fast[0]
    FAILED libs/py-crypto/tests/test_keys.py::test_a_short_master_key_fails_fast[1]
@@ -56,7 +61,30 @@
    FAILED libs/py-crypto/tests/test_keys.py::test_a_short_master_key_fails_fast[31]
    FAILED libs/py-crypto/tests/test_keys.py::test_a_long_master_key_is_refused_too
    FAILED libs/py-crypto/tests/test_no_key_material_in_logs.py::test_no_key_material_appears_in_logs
-   6 failed, 130 passed in 0.79s
+   6 failed, 152 passed in 1.31s
+== M12 (review H1: tenant context check removed (cached keys of another org served)) -> KILLED
+   FAILED libs/py-crypto/tests/test_keyring_review_fixes.py::test_cached_keys_of_another_org_are_refused_in_this_tenant_context
+   FAILED libs/py-crypto/tests/test_keyring_review_fixes.py::test_every_call_needs_a_tenant_context[active]
+   FAILED libs/py-crypto/tests/test_keyring_review_fixes.py::test_every_call_needs_a_tenant_context[rotate]
+   FAILED libs/py-crypto/tests/test_keyring_review_fixes.py::test_every_call_needs_a_tenant_context[verify]
+   FAILED libs/py-crypto/tests/test_keyring_review_fixes.py::test_create_and_rewrap_need_the_matching_tenant_context
+   5 failed, 153 passed in 0.73s
+== M13 (review H2: no reload on an unknown version (stale cache cannot read newer data)) -> KILLED
+   FAILED libs/py-crypto/tests/test_keyring_review_fixes.py::test_a_keyring_with_a_stale_cache_reads_data_written_under_a_newer_version
+   FAILED libs/py-crypto/tests/test_rotation_runbook.py::test_org_key_rotation_runbook_procedure_a
+   2 failed, 156 passed in 1.47s
+== M14 (review M3: a load racing a rotation caches its stale snapshot) -> KILLED
+   FAILED libs/py-crypto/tests/test_keyring_review_fixes.py::test_a_load_racing_a_rotation_does_not_cache_the_stale_snapshot
+   1 failed, 157 passed in 1.18s
+== M15 (review M4: duplicate key versions accepted) -> KILLED
+   FAILED libs/py-crypto/tests/test_keyring_review_fixes.py::test_duplicate_versions_in_the_store_fail_closed
+   1 failed, 157 passed in 1.16s
+== M16 (review: rewrap does not re-check that no version is left on the old master) -> KILLED
+   FAILED libs/py-crypto/tests/test_keyring_review_fixes.py::test_rewrap_fails_if_a_version_is_still_on_the_old_master_afterwards
+   1 failed, 157 passed in 0.77s
+== M17 (A3: cached keys never expire) -> KILLED
+   FAILED libs/py-crypto/tests/test_rotation_runbook.py::test_org_key_rotation_runbook_procedure_a
+   1 failed, 157 passed in 0.75s
 source diff after all mutations: 0 files differ
 survivors: none
 exit=0
