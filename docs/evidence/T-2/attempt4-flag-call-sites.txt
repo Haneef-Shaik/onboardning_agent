@@ -1,0 +1,55 @@
+# T-2 attempt 4: call sites of every safety-net flag in the suites newly put under the guard
+# Date 2026-11-10, compose project ob-t-2, branch rebased onto main 1e22bba, plugin wired into the
+# conftests but before any unscoped(...) marking. Produced by docs/evidence/T-2/trace_violations.py
+# (loaded with `-p trace_violations`), which records, for each command the listener would flag,
+# the innermost repo frame under src/ ("product") and under tests_int/ ("test").
+# Result: product=- for all 103 flags, so every flag came from test code. After marking, the same
+# run prints no call sites for any of the three suites.
+# Format: <count>  <command> <collection>: product=<file:line or -> test=<file:line>
+
+##### apps/api/tests_int   (1 flag)
+  1  find users: product=-  test=apps/api/tests_int/test_mongo_login.py:97
+
+##### apps/mcp-mongo/tests_int   (90 flags)
+  1  aggregate approvals: product=-  test=apps/mcp-mongo/tests_int/test_db_users_int.py:94
+  2  aggregate audit_log: product=-  test=apps/mcp-mongo/tests_int/test_db_users_int.py:94
+  1  aggregate new_hires: product=-  test=apps/mcp-mongo/tests_int/test_db_users_int.py:94
+ 10  aggregate pii_access_log: product=-  test=apps/mcp-mongo/tests_int/test_db_users_int.py:94
+  1  aggregate pii_vault: product=-  test=apps/mcp-mongo/tests_int/test_db_users_int.py:94
+ 10  aggregate run_tasks: product=-  test=apps/mcp-mongo/tests_int/test_db_users_int.py:202
+  5  aggregate run_tasks: product=-  test=apps/mcp-mongo/tests_int/test_db_users_int.py:94
+ 10  aggregate users: product=-  test=apps/mcp-mongo/tests_int/test_db_users_int.py:94
+ 17  delete new_hires: product=-  test=apps/mcp-mongo/tests_int/test_mcp_mongo_int.py:78
+ 17  delete run_tasks: product=-  test=apps/mcp-mongo/tests_int/test_mcp_mongo_int.py:78
+  1  find new_hires: product=-  test=apps/mcp-mongo/tests_int/test_mcp_mongo_int.py:126
+  1  find new_hires: product=-  test=apps/mcp-mongo/tests_int/test_mcp_mongo_int.py:131
+  1  find run_tasks: product=-  test=apps/mcp-mongo/tests_int/test_mcp_mongo_int.py:152
+  1  find run_tasks: product=-  test=apps/mcp-mongo/tests_int/test_mcp_mongo_int.py:161
+  1  find run_tasks: product=-  test=apps/mcp-mongo/tests_int/test_mcp_mongo_int.py:164
+  1  find run_tasks: product=-  test=apps/mcp-mongo/tests_int/test_mcp_mongo_int.py:177
+  5  find run_tasks: product=-  test=apps/mcp-mongo/tests_int/test_mcp_mongo_int.py:219
+  5  find run_tasks: product=-  test=apps/mcp-mongo/tests_int/test_mcp_mongo_int.py:221
+
+##### libs/py-crypto/tests_int   (12 flags)
+  1  aggregate pii_access_log: product=-  test=libs/py-crypto/tests_int/test_grants_mongo.py:155
+  1  aggregate pii_access_log: product=-  test=libs/py-crypto/tests_int/test_grants_mongo.py:176
+  1  aggregate pii_vault: product=-  test=libs/py-crypto/tests_int/test_vault_mongo.py:125
+  1  find org_keys: product=-  test=libs/py-crypto/tests_int/test_vault_mongo.py:134
+  1  find pii_access_log: product=-  test=libs/py-crypto/tests_int/test_grants_mongo.py:123
+  1  find pii_consent: product=-  test=libs/py-crypto/tests_int/test_vault_mongo.py:126
+  1  find pii_consent: product=-  test=libs/py-crypto/tests_int/test_vault_mongo.py:134
+  1  find pii_grant_jti: product=-  test=libs/py-crypto/tests_int/test_grants_mongo.py:128
+  1  find pii_vault: product=-  test=libs/py-crypto/tests_int/test_vault_mongo.py:101
+  1  find pii_vault: product=-  test=libs/py-crypto/tests_int/test_vault_mongo.py:134
+  1  find pii_vault_aadhaar: product=-  test=libs/py-crypto/tests_int/test_vault_mongo.py:124
+  1  update pii_vault: product=-  test=libs/py-crypto/tests_int/test_vault_mongo.py:95
+
+# What each site is (line numbers are before the marking edits):
+# api :97                     root read of both orgs' users (test_user_records_are_tenant_documents)
+# mcp-mongo db_users :94      _count helper: root count across orgs proving a refused write left nothing
+# mcp-mongo db_users :202     raw-driver cross-collection stage that MongoDB must refuse (deliberate)
+# mcp-mongo mcp_mongo :78     `seeded` fixture setup: delete_many({}) of both orgs' seeds
+# mcp-mongo mcp_mongo :126..  root by-id lookups and read-backs, root snapshots before/after an attempt
+# py-crypto vault :95         deliberate tamper: re-point a token to another hire (vault must fail closed)
+# py-crypto vault :101..134   root read-backs by token, partition checks, scan for leaked Aadhaar
+# py-crypto grants :123..176  root read-backs and counts of access log / grant jti across orgs

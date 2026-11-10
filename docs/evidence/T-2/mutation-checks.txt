@@ -1,10 +1,12 @@
 ## M1 (libs/py-data/src/onb_data/safety_net.py): box 1: every filter counts as scoped
-unit: 64 failed, 294 passed in 12.03s
-int:  10 failed, 39 passed, 1 error in 13.06s
-bus:  19 passed, 1 error in 11.97s
-cryp: 4 passed in 1.29s
-tele: 5 passed in 5.98s
-tool: 5 passed in 0.09s
+unit: 64 failed, 297 passed in 5.38s
+int:  10 failed, 39 passed, 1 error in 8.07s
+bus:  19 passed, 1 error in 16.87s
+cryp: 12 passed in 3.25s
+tele: 5 passed in 3.61s
+api:  10 passed in 2.11s
+mcpm: 79 passed in 6.67s
+tool: 5 passed in 0.12s
   unit FAILED test_a_malformed_command_is_flagged_not_crashed
   unit FAILED test_a_scoped_command_on_a_tenant_collection_passes[replacement
   unit FAILED test_a_scoped_command_on_a_tenant_collection_passes[update
@@ -49,12 +51,14 @@ tool: 5 passed in 0.09s
 caught: yes
 
 ## M2 (libs/py-data/src/onb_data/safety_net.py): box 1: the listener records nothing
-unit: 11 failed, 347 passed in 5.30s
-int:  14 failed, 35 passed in 9.37s
-bus:  19 passed in 11.83s
-cryp: 4 passed in 1.60s
-tele: 5 passed in 4.17s
-tool: 5 passed in 0.07s
+unit: 11 failed, 350 passed in 5.20s
+int:  14 failed, 35 passed in 8.49s
+bus:  19 passed in 11.64s
+cryp: 12 passed in 3.20s
+tele: 5 passed in 3.58s
+api:  10 passed in 2.26s
+mcpm: 79 passed in 8.35s
+tool: 5 passed in 0.10s
   unit FAILED test_a_command_the_check_cannot_parse_is_recorded_not_lost
   unit FAILED test_a_test_that_sends_an_unscoped_command_fails
   unit FAILED test_a_violation_after_the_last_test_fails_the_run
@@ -82,27 +86,33 @@ tool: 5 passed in 0.07s
 caught: yes
 
 ## M3 (libs/py-data/src/onb_data/safety_net_pytest.py): box 2: the guard fixture is not autouse
-unit: 2 failed, 356 passed in 3.53s
-int:  1 failed, 48 passed in 8.46s
-bus:  1 failed, 18 passed in 10.57s
-cryp: 1 failed, 3 passed in 1.27s
-tele: 1 failed, 4 passed in 5.41s
-tool: 5 passed in 0.15s
+unit: 2 failed, 359 passed in 5.28s
+int:  1 failed, 48 passed in 7.85s
+bus:  1 failed, 18 passed in 10.21s
+cryp: 1 failed, 11 passed in 3.00s
+tele: 1 failed, 4 passed in 4.66s
+api:  1 failed, 9 passed in 2.51s
+mcpm: 1 failed, 78 passed in 6.40s
+tool: 5 passed in 0.12s
   unit FAILED test_a_test_that_sends_an_unscoped_command_fails
   unit FAILED test_the_guard_is_autouse
   int  FAILED test_every_integration_test_runs_under_the_safety_net_guard
   bus  FAILED test_every_event_bus_integration_test_runs_under_the_safety_net_guard
   cryp FAILED test_every_py_crypto_integration_test_runs_under_the_safety_net_guard
   tele FAILED test_every_py_telemetry_integration_test_runs_under_the_safety_net_guard
+  api  FAILED test_every_api_integration_test_runs_under_the_safety_net_guard
+  mcpm FAILED test_every_mcp_mongo_integration_test_runs_under_the_safety_net_guard
 caught: yes
 
 ## M4 (libs/py-data/src/onb_data/safety_net_pytest.py): box 2: the listener is not registered globally
-unit: 2 failed, 356 passed in 5.91s
-int:  15 failed, 34 passed in 8.44s
-bus:  1 failed, 18 passed in 12.21s
-cryp: 1 failed, 3 passed in 1.32s
-tele: 1 failed, 4 passed in 3.92s
-tool: 5 passed in 0.10s
+unit: 2 failed, 359 passed in 5.93s
+int:  15 failed, 34 passed in 7.71s
+bus:  1 failed, 18 passed in 11.27s
+cryp: 1 failed, 11 passed in 3.73s
+tele: 1 failed, 4 passed in 3.94s
+api:  1 failed, 9 passed in 2.49s
+mcpm: 1 failed, 78 passed in 8.08s
+tool: 5 passed in 0.12s
   unit FAILED test_a_violation_after_the_last_test_fails_the_run
   unit FAILED test_the_listener_is_installed_before_any_test
   int  FAILED test_a_client_made_inside_a_test_reports_to_the_listener
@@ -122,26 +132,32 @@ tool: 5 passed in 0.10s
   bus  FAILED test_the_listener_is_registered_globally
   cryp FAILED test_the_listener_is_registered_globally
   tele FAILED test_the_listener_is_registered_globally
+  api  FAILED test_the_listener_is_registered_globally
+  mcpm FAILED test_the_listener_is_registered_globally
 caught: yes
 
 ## M5 (libs/py-data/src/onb_data/safety_net.py): box 2: the guard does not check after the test
-unit: 2 failed, 356 passed in 12.00s
-int:  49 passed in 11.19s
-bus:  19 passed in 13.96s
-cryp: 4 passed in 1.44s
-tele: 5 passed in 4.53s
-tool: 5 passed in 0.10s
+unit: 2 failed, 359 passed in 6.75s
+int:  49 passed in 7.33s
+bus:  19 passed in 10.28s
+cryp: 12 passed in 2.98s
+tele: 5 passed in 3.71s
+api:  10 passed in 2.42s
+mcpm: 79 passed in 9.51s
+tool: 5 passed in 0.16s
   unit FAILED test_a_test_that_sends_an_unscoped_command_fails
   unit FAILED test_the_guard_fails_on_a_violation_sent_inside_it
 caught: yes
 
 ## M6 (libs/py-data/src/onb_data/safety_net.py): box 3: a tenant index need not start with org_id
-unit: 5 failed, 353 passed in 6.23s
-int:  1 failed, 48 passed in 12.67s
-bus:  19 passed in 16.59s
-cryp: 4 passed in 3.17s
-tele: 5 passed in 6.19s
-tool: 5 passed in 0.10s
+unit: 5 failed, 356 passed in 7.18s
+int:  1 failed, 48 passed in 9.02s
+bus:  19 passed in 12.16s
+cryp: 12 passed in 3.24s
+tele: 5 passed in 6.85s
+api:  10 passed in 5.12s
+mcpm: 79 passed in 14.96s
+tool: 5 passed in 0.25s
   unit FAILED test_a_unique_queue_index_must_still_start_with_org_id
   unit FAILED test_an_unscoped_command_on_a_tenant_collection_is_flagged[createIndexes
   unit FAILED test_create_indexes_on_the_queue_follows_the_same_rule
@@ -151,23 +167,27 @@ tool: 5 passed in 0.10s
 caught: yes
 
 ## M7 (libs/py-data/src/onb_data/safety_net.py): an org_id operator ($ne, $in, $exists) counts as scoped
-unit: 4 failed, 354 passed in 7.14s
-int:  49 passed in 8.14s
-bus:  19 passed in 12.42s
-cryp: 4 passed in 4.61s
-tele: 5 passed in 6.22s
-tool: 5 passed in 0.10s
+unit: 4 failed, 357 passed in 5.20s
+int:  49 passed in 7.74s
+bus:  19 passed in 10.89s
+cryp: 12 passed in 3.36s
+tele: 5 passed in 3.41s
+api:  10 passed in 2.29s
+mcpm: 79 passed in 6.17s
+tool: 5 passed in 0.12s
   unit FAILED test_an_unscoped_command_on_a_tenant_collection_is_flagged[find
   unit FAILED test_every_other_unscoped_queue_command_is_flagged[claim
 caught: yes
 
 ## M10 (libs/py-data/src/onb_data/safety_net.py): review fix: the update body is not checked
-unit: 9 failed, 349 passed in 4.17s
-int:  49 passed in 14.08s
-bus:  19 passed in 19.51s
-cryp: 4 passed in 6.75s
-tele: 5 passed in 11.53s
-tool: 5 passed in 0.12s
+unit: 9 failed, 352 passed in 4.74s
+int:  49 passed in 7.73s
+bus:  19 passed in 13.03s
+cryp: 12 passed in 2.78s
+tele: 5 passed in 3.26s
+api:  10 passed in 2.15s
+mcpm: 79 passed in 6.13s
+tool: 5 passed in 0.11s
   unit FAILED test_an_unscoped_command_on_a_tenant_collection_is_flagged[findAndModify
   unit FAILED test_an_unscoped_command_on_a_tenant_collection_is_flagged[pipeline
   unit FAILED test_an_unscoped_command_on_a_tenant_collection_is_flagged[replacement
@@ -176,45 +196,53 @@ tool: 5 passed in 0.12s
 caught: yes
 
 ## M11 (libs/py-data/src/onb_data/safety_net.py): review fix: database-level change streams pass
-unit: 2 failed, 356 passed in 9.14s
-int:  49 passed in 11.95s
-bus:  19 passed in 28.86s
-cryp: 4 passed in 0.93s
-tele: 5 passed in 2.89s
-tool: 5 passed in 0.09s
+unit: 2 failed, 359 passed in 4.80s
+int:  49 passed in 7.62s
+bus:  19 passed in 10.02s
+cryp: 12 passed in 2.78s
+tele: 5 passed in 3.44s
+api:  10 passed in 2.16s
+mcpm: 79 passed in 6.31s
+tool: 5 passed in 0.11s
   unit FAILED test_a_cluster_wide_change_stream_is_flagged
   unit FAILED test_an_unscoped_command_on_a_tenant_collection_is_flagged[db
 caught: yes
 
 ## M12 (libs/py-data/src/onb_data/safety_net.py): review fix: explain is not unwrapped
-unit: 2 failed, 356 passed in 5.98s
-int:  49 passed in 7.97s
-bus:  19 passed in 11.56s
-cryp: 4 passed in 1.07s
-tele: 5 passed in 2.89s
-tool: 5 passed in 0.11s
+unit: 2 failed, 359 passed in 4.91s
+int:  49 passed in 6.59s
+bus:  19 passed in 10.08s
+cryp: 12 passed in 2.89s
+tele: 5 passed in 4.82s
+api:  10 passed in 2.71s
+mcpm: 79 passed in 6.70s
+tool: 5 passed in 0.12s
   unit FAILED test_an_unscoped_command_on_a_tenant_collection_is_flagged[explain
 caught: yes
 
 ## M8 (libs/py-data/src/onb_data/safety_net.py): cross-collection stages are not checked
-unit: 7 failed, 351 passed in 4.53s
-int:  49 passed in 8.20s
-bus:  19 passed in 11.25s
-cryp: 4 passed in 1.18s
-tele: 5 passed in 4.10s
-tool: 5 passed in 0.09s
+unit: 7 failed, 354 passed in 5.77s
+int:  49 passed in 7.96s
+bus:  19 passed in 10.47s
+cryp: 12 passed in 3.16s
+tele: 5 passed in 3.76s
+api:  10 passed in 2.93s
+mcpm: 79 passed in 8.69s
+tool: 5 passed in 0.14s
   unit FAILED test_an_unscoped_command_on_a_tenant_collection_is_flagged[aggregate
   unit FAILED test_an_unscoped_command_on_a_tenant_collection_is_flagged[db
   unit FAILED test_an_unscoped_command_on_a_tenant_collection_is_flagged[lookup
 caught: yes
 
 ## M9 (libs/py-data/src/onb_data/safety_net.py): allowing_unscoped never resets
-unit: 1 failed, 357 passed in 4.79s
-int:  11 failed, 38 passed in 8.47s
-bus:  19 passed in 10.99s
-cryp: 4 passed in 1.03s
-tele: 5 passed in 3.74s
-tool: 5 passed in 0.06s
+unit: 1 failed, 360 passed in 6.85s
+int:  11 failed, 38 passed in 7.38s
+bus:  19 passed in 16.10s
+cryp: 12 passed in 7.58s
+tele: 5 passed in 5.70s
+api:  10 passed in 3.60s
+mcpm: 79 passed in 7.25s
+tool: 5 passed in 0.21s
   unit FAILED test_allowing_unscoped_is_explicit_and_scoped_to_the_block
   int  FAILED test_any_other_unscoped_queue_command_is_still_flagged[claim
   int  FAILED test_any_other_unscoped_queue_command_is_still_flagged[count
@@ -229,12 +257,14 @@ tool: 5 passed in 0.06s
 caught: yes
 
 ## Q1 (libs/py-data/src/onb_data/safety_net.py): queue: the allowance is removed (proves the bus needs it)
-unit: 11 failed, 347 passed in 3.37s
-int:  2 failed, 47 passed, 4 errors in 7.92s
-bus:  19 passed, 10 errors in 12.66s
-cryp: 4 passed in 1.57s
-tele: 5 passed in 7.09s
-tool: 5 passed in 0.13s
+unit: 11 failed, 350 passed in 5.75s
+int:  2 failed, 47 passed, 4 errors in 10.45s
+bus:  19 passed, 10 errors in 15.95s
+cryp: 12 passed in 3.02s
+tele: 5 passed in 3.94s
+api:  10 passed in 3.38s
+mcpm: 79 passed in 6.74s
+tool: 5 passed in 0.12s
   unit FAILED test_the_worker_queue_commands_pass[claim
   unit FAILED test_the_worker_queue_commands_pass[claim]
   unit FAILED test_the_worker_queue_commands_pass[complete]
@@ -261,110 +291,135 @@ tool: 5 passed in 0.13s
 caught: yes
 
 ## Q2 (libs/py-data/src/onb_data/queue_allowance.py): queue: the allowance applies to any tenant collection
-unit: 2 failed, 356 passed in 7.22s
-int:  49 passed in 11.99s
-bus:  19 passed in 10.36s
-cryp: 4 passed in 1.70s
-tele: 5 passed in 7.30s
-tool: 5 passed in 0.07s
+unit: 2 failed, 359 passed in 5.19s
+int:  49 passed in 7.90s
+bus:  19 passed in 11.64s
+cryp: 12 passed in 5.71s
+tele: 5 passed in 4.24s
+api:  10 passed in 2.53s
+mcpm: 79 passed in 6.52s
+tool: 5 passed in 0.11s
   unit FAILED test_every_other_unscoped_queue_command_is_flagged[leased
 caught: yes
 
 ## Q3 (libs/py-data/src/onb_data/queue_allowance.py): queue: a claim is allowed on dead_letters too
-unit: 1 failed, 357 passed in 3.39s
-int:  1 failed, 48 passed in 7.45s
-bus:  19 passed in 9.88s
-cryp: 4 passed in 1.31s
-tele: 5 passed in 3.03s
-tool: 5 passed in 0.05s
+unit: 1 failed, 360 passed in 4.90s
+int:  1 failed, 48 passed in 8.07s
+bus:  19 passed in 11.54s
+cryp: 12 passed in 3.48s
+tele: 5 passed in 3.38s
+api:  10 passed in 2.17s
+mcpm: 79 passed in 8.53s
+tool: 5 passed in 0.11s
   unit FAILED test_every_other_unscoped_queue_command_is_flagged[claim
   int  FAILED test_any_other_unscoped_queue_command_is_still_flagged[claim
 caught: yes
 
 ## Q4 (libs/py-data/src/onb_data/queue_allowance.py): queue: a claim may filter on any field (org_id, _id, payload)
-unit: 5 failed, 353 passed in 2.87s
-int:  49 passed in 6.26s
-bus:  19 passed in 9.91s
-cryp: 4 passed in 1.67s
-tele: 5 passed in 3.05s
-tool: 5 passed in 0.07s
+unit: 5 failed, 356 passed in 5.66s
+int:  49 passed in 9.02s
+bus:  19 passed in 10.34s
+cryp: 12 passed in 3.23s
+tele: 5 passed in 3.49s
+api:  10 passed in 2.23s
+mcpm: 79 passed in 7.52s
+tool: 5 passed in 0.10s
   unit FAILED test_every_other_unscoped_queue_command_is_flagged[claim
 caught: yes
 
 ## Q5 (libs/py-data/src/onb_data/queue_allowance.py): queue: a worker update may write any field (org_id, payload, consumer)
-unit: 6 failed, 352 passed in 3.07s
-int:  1 failed, 48 passed in 7.91s
-bus:  19 passed in 12.57s
-cryp: 4 passed in 0.91s
-tele: 5 passed in 2.71s
-tool: 5 passed in 0.06s
+unit: 6 failed, 355 passed in 4.68s
+int:  1 failed, 48 passed in 6.73s
+bus:  19 passed in 10.68s
+cryp: 12 passed in 2.80s
+tele: 5 passed in 3.43s
+api:  10 passed in 2.12s
+mcpm: 79 passed in 6.97s
+tool: 5 passed in 0.11s
   unit FAILED test_every_other_unscoped_queue_command_is_flagged[claim
   unit FAILED test_every_other_unscoped_queue_command_is_flagged[update
   int  FAILED test_any_other_unscoped_queue_command_is_still_flagged[move
 caught: yes
 
 ## Q6 (libs/py-data/src/onb_data/queue_allowance.py): queue: a leased write may use any filter
-unit: 5 failed, 353 passed in 3.06s
-int:  1 failed, 48 passed, 1 error in 6.26s
-bus:  19 passed in 9.35s
-cryp: 4 passed in 0.94s
-tele: 5 passed in 3.26s
-tool: 5 passed in 0.06s
+unit: 5 failed, 356 passed in 6.81s
+int:  1 failed, 48 passed, 1 error in 8.88s
+bus:  19 passed in 11.29s
+cryp: 12 passed in 3.37s
+tele: 5 passed in 3.83s
+api:  10 passed in 2.57s
+mcpm: 79 passed in 12.70s
+tool: 5 passed in 0.22s
   unit FAILED test_every_other_unscoped_queue_command_is_flagged[delete
   unit FAILED test_every_other_unscoped_queue_command_is_flagged[update
   int  FAILED test_the_orphan_dead_letter_move_passes_the_net
 caught: yes
 
 ## Q7 (libs/py-data/src/onb_data/queue_allowance.py): queue: a leased delete may remove many
-unit: 1 failed, 357 passed in 2.79s
-int:  49 passed in 7.06s
-bus:  19 passed in 9.61s
-cryp: 4 passed in 0.99s
-tele: 5 passed in 3.79s
-tool: 5 passed in 0.09s
+unit: 1 failed, 360 passed in 6.82s
+int:  49 passed in 8.37s
+bus:  19 passed in 13.76s
+cryp: 12 passed in 6.96s
+tele: 5 passed in 8.52s
+api:  10 passed in 4.04s
+mcpm: 79 passed in 10.42s
+tool: 5 passed in 0.15s
   unit FAILED test_every_other_unscoped_queue_command_is_flagged[delete
 caught: yes
 
 ## Q8 (libs/py-data/src/onb_data/queue_allowance.py): queue: a leased update may be multi or upsert
-unit: 2 failed, 356 passed in 3.49s
-int:  49 passed in 6.39s
-bus:  19 passed in 10.33s
-cryp: 4 passed in 1.12s
-tele: 5 passed in 3.34s
-tool: 5 passed in 0.06s
+unit: 2 failed, 359 passed in 9.23s
+int:  49 passed in 9.17s
+bus:  19 passed in 13.14s
+cryp: 12 passed in 4.70s
+tele: 5 passed in 3.81s
+api:  10 passed in 2.34s
+mcpm: 79 passed in 9.48s
+tool: 5 passed in 0.13s
   unit FAILED test_every_other_unscoped_queue_command_is_flagged[update
 caught: yes
 
 ## Q9 (libs/py-data/src/onb_data/queue_allowance.py): queue: a dead letter without org_id is allowed for any reason
-unit: 3 failed, 355 passed in 2.62s
-int:  1 failed, 48 passed in 7.11s
-bus:  19 passed in 9.52s
-cryp: 4 passed in 0.99s
-tele: 5 passed in 3.40s
-tool: 5 passed in 0.09s
+unit: 3 failed, 358 passed in 6.51s
+int:  1 failed, 48 passed in 9.79s
+bus:  19 passed in 12.89s
+cryp: 12 passed in 3.15s
+tele: 5 passed in 3.48s
+api:  10 passed in 2.63s
+mcpm: 79 passed in 7.02s
+tool: 5 passed in 0.11s
   unit FAILED test_every_other_unscoped_queue_command_is_flagged[dead
   int  FAILED test_any_other_unscoped_queue_command_is_still_flagged[orphan
 caught: yes
 
 ## Q10 (libs/py-data/src/onb_data/safety_net.py): queue: the index exception extends to unique indexes
-unit: 2 failed, 356 passed in 2.72s
-int:  49 passed in 6.06s
-bus:  19 passed in 9.78s
-cryp: 4 passed in 0.91s
-tele: 5 passed in 2.61s
-tool: 5 passed in 0.07s
+unit: 2 failed, 359 passed in 5.37s
+int:  49 passed in 6.57s
+bus:  19 passed in 10.18s
+cryp: 12 passed in 3.48s
+tele: 5 passed in 4.83s
+api:  10 passed in 2.37s
+mcpm: 79 passed in 7.60s
+tool: 5 passed in 0.11s
   unit FAILED test_a_unique_queue_index_must_still_start_with_org_id
   unit FAILED test_create_indexes_on_the_queue_follows_the_same_rule
 caught: yes
 
 ## P1 (libs/py-crypto/tests_int/conftest.py): suites: py-crypto's conftest no longer loads the plugin
-unit: 358 passed in 2.41s
-int:  49 passed in 7.23s
-bus:  19 passed in 9.72s
-cryp: 1 failed, 3 errors in 0.60s
-tele: 5 passed in 2.72s
-tool: 1 failed, 4 passed in 0.08s
+unit: 361 passed in 5.36s
+int:  49 passed in 8.50s
+bus:  19 passed in 10.61s
+cryp: 1 failed, 3 passed, 8 errors in 1.65s
+tele: 5 passed in 3.35s
+api:  10 passed in 2.24s
+mcpm: 79 passed in 6.31s
+tool: 1 failed, 4 passed in 0.19s
+  cryp FAILED test_a_resolution_writes_one_masked_access_log_entry_in_mongo
+  cryp FAILED test_aadhaar_lands_only_in_its_partition_with_consent
+  cryp FAILED test_another_hires_and_another_orgs_tokens_are_refused_in_mongo
+  cryp FAILED test_concurrent_uses_of_one_grant_have_exactly_one_winner
   cryp FAILED test_every_py_crypto_integration_test_runs_under_the_safety_net_guard
+  cryp FAILED test_put_update_resolve_and_tamper_against_mongo
   cryp FAILED test_the_listener_is_registered_globally
   cryp FAILED test_the_runbook_procedures_against_mongo
   cryp FAILED test_two_orgs_keys_are_isolated_and_a_wrong_master_fails_closed
@@ -372,23 +427,83 @@ tool: 1 failed, 4 passed in 0.08s
 caught: yes
 
 ## P2 (libs/py-telemetry/tests_int/conftest.py): suites: py-telemetry's conftest loads only part of the plugin (no guard)
-unit: 358 passed in 3.12s
-int:  49 passed in 7.23s
-bus:  19 passed in 9.86s
-cryp: 4 passed in 3.23s
-tele: 1 failed, 4 passed in 2.77s
-tool: 1 failed, 4 passed in 0.08s
+unit: 361 passed in 4.63s
+int:  49 passed in 7.59s
+bus:  19 passed in 9.85s
+cryp: 12 passed in 3.91s
+tele: 1 failed, 4 passed in 3.89s
+api:  10 passed in 2.76s
+mcpm: 79 passed in 5.93s
+tool: 1 failed, 4 passed in 0.33s
   tele FAILED test_every_py_telemetry_integration_test_runs_under_the_safety_net_guard
   tool FAILED test_every_mongo_integration_suite_runs_under_the_safety_net
 caught: yes
 
+## P4 (apps/api/tests_int/conftest.py): suites: apps/api's conftest no longer loads the plugin
+unit: 361 passed in 10.24s
+int:  49 passed in 7.22s
+bus:  19 passed in 10.42s
+cryp: 12 passed in 3.04s
+tele: 5 passed in 3.97s
+api:  1 failed, 7 passed, 2 errors in 2.22s
+mcpm: 79 passed in 6.85s
+tool: 1 failed, 4 passed in 0.26s
+  api  FAILED test_every_api_integration_test_runs_under_the_safety_net_guard
+  api  FAILED test_the_listener_is_registered_globally
+  api  FAILED test_user_records_are_tenant_documents
+  tool FAILED test_every_mongo_integration_suite_runs_under_the_safety_net
+caught: yes
+
+## P5 (apps/mcp-mongo/tests_int/conftest.py): suites: apps/mcp-mongo's conftest no longer loads the plugin
+unit: 361 passed in 6.85s
+int:  49 passed in 7.71s
+bus:  19 passed in 13.43s
+cryp: 12 passed in 3.47s
+tele: 5 passed in 5.00s
+api:  10 passed in 2.68s
+mcpm: 1 failed, 50 passed, 28 errors in 7.33s
+tool: 1 failed, 4 passed in 0.30s
+  mcpm FAILED test_a_query_mongodb_refuses_is_a_denial_not_an_internal_error
+  mcpm FAILED test_aggregate_groups_within_the_callers_org
+  mcpm FAILED test_an_agent_supplied_org_id_is_rejected[aggregate-args2]
+  mcpm FAILED test_an_agent_supplied_org_id_is_rejected[count-args1]
+  mcpm FAILED test_an_agent_supplied_org_id_is_rejected[find-args0]
+  mcpm FAILED test_an_agent_supplied_org_id_is_rejected[insert_one-args3]
+  mcpm FAILED test_an_agent_supplied_org_id_is_rejected[update_one-args4]
+  mcpm FAILED test_an_id_from_find_updates_the_document_as_oid
+  mcpm FAILED test_count
+  mcpm FAILED test_every_call_span_has_the_attributes_and_no_document_content
+  mcpm FAILED test_every_mcp_mongo_integration_test_runs_under_the_safety_net_guard
+  mcpm FAILED test_find_by_object_id_round_trips
+  mcpm FAILED test_find_sees_only_the_callers_org
+  mcpm FAILED test_find_without_limit_or_over_100_is_rejected[limit-101]
+  mcpm FAILED test_find_without_limit_or_over_100_is_rejected[no-limit]
+  mcpm FAILED test_insert_one_takes_org_id_from_the_context
+  mcpm FAILED test_list_collections
+  mcpm FAILED test_no_pipeline_stage_reaches_a_denied_collection_with_a_raw_driver[mcp_mongo_ro-graphLookup]
+  mcpm FAILED test_no_pipeline_stage_reaches_a_denied_collection_with_a_raw_driver[mcp_mongo_ro-lookup]
+  mcpm FAILED test_no_pipeline_stage_reaches_a_denied_collection_with_a_raw_driver[mcp_mongo_ro-merge]
+  mcpm FAILED test_no_pipeline_stage_reaches_a_denied_collection_with_a_raw_driver[mcp_mongo_ro-out]
+  mcpm FAILED test_no_pipeline_stage_reaches_a_denied_collection_with_a_raw_driver[mcp_mongo_ro-unionWith]
+  mcpm FAILED test_no_pipeline_stage_reaches_a_denied_collection_with_a_raw_driver[mcp_mongo_rw-graphLookup]
+  mcpm FAILED test_no_pipeline_stage_reaches_a_denied_collection_with_a_raw_driver[mcp_mongo_rw-lookup]
+  mcpm FAILED test_no_pipeline_stage_reaches_a_denied_collection_with_a_raw_driver[mcp_mongo_rw-merge]
+  mcpm FAILED test_no_pipeline_stage_reaches_a_denied_collection_with_a_raw_driver[mcp_mongo_rw-out]
+  mcpm FAILED test_no_pipeline_stage_reaches_a_denied_collection_with_a_raw_driver[mcp_mongo_rw-unionWith]
+  mcpm FAILED test_the_listener_is_registered_globally
+  mcpm FAILED test_update_one_cannot_reach_another_org
+  tool FAILED test_every_mongo_integration_suite_runs_under_the_safety_net
+caught: yes
+
 ## P3 (libs/py-data/src/onb_data/safety_net_pytest.py): plugin: a violation after the last test no longer fails the run
-unit: 2 failed, 356 passed in 2.95s
-int:  49 passed in 6.86s
-bus:  19 passed in 9.96s
-cryp: 4 passed in 1.23s
-tele: 5 passed in 3.04s
-tool: 5 passed in 0.06s
+unit: 2 failed, 359 passed in 5.53s
+int:  49 passed in 8.54s
+bus:  19 passed in 12.58s
+cryp: 12 passed in 4.40s
+tele: 5 passed in 3.96s
+api:  10 passed in 2.33s
+mcpm: 79 passed in 8.26s
+tool: 5 passed in 0.23s
   unit FAILED test_a_violation_after_the_last_test_fails_the_run
   unit FAILED test_the_session_hook_in_process
 caught: yes
