@@ -134,16 +134,38 @@ def test_a_hook_failing_on_start_does_not_break_the_caller_and_the_span_is_dropp
     assert RAW not in caplog.text
 
 
+class RecordingExportStage(SpanProcessor):
+    """An export stage with no shutdown guard of its own, so only the pipeline's guard is tested
+    (the SDK's SimpleSpanProcessor would also refuse spans after its shutdown)."""
+
+    def __init__(self) -> None:
+        self.names: list[str] = []
+
+    def on_end(self, span: ReadableSpan) -> None:
+        self.names.append(span.name)
+
+
 def test_spans_ending_after_shutdown_are_never_exported() -> None:
-    exporter = ListExporter()
-    pipeline = HookedSpanProcessor(SimpleSpanProcessor(exporter))
+    export = RecordingExportStage()
+    pipeline = HookedSpanProcessor(export)
     provider = TracerProvider()
     provider.add_span_processor(pipeline)
     tracer = provider.get_tracer("t")
+    with tracer.start_as_current_span("before"):
+        pass
     span = tracer.start_span("in-flight")
     pipeline.shutdown()
     span.end()
-    assert exporter.names == []
+    assert export.names == ["before"]
+
+
+def test_simple_export_stage_round_trip() -> None:
+    exporter = ListExporter()
+    provider = TracerProvider()
+    provider.add_span_processor(HookedSpanProcessor(SimpleSpanProcessor(exporter)))
+    with provider.get_tracer("t").start_as_current_span("one"):
+        pass
+    assert exporter.names == ["one"]
 
 
 def test_a_failing_hook_shutdown_or_flush_still_reaches_the_export_stage(caplog: pytest.LogCaptureFixture) -> None:
