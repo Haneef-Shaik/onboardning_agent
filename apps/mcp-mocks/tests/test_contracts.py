@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 import pytest
-from onb_mcp_mocks.contracts import CONTRACTS, TOOL_NAMES
+from onb_mcp_mocks.contracts import CONTRACTS, TOOL_NAMES, CreateBitbucketAccountArgs
 from pydantic import ValidationError
 
 from .harness import BITBUCKET_ARGS, LAPTOP_ARGS
@@ -46,7 +46,13 @@ def test_bad_or_extra_arguments_are_refused(name: str, change: dict[str, Any]) -
 
 @pytest.mark.parametrize(
     "change",
-    [{"workspace": "Acme Eng"}, {"workspace": ""}, {"groups": ["a"] * 11}, {"groups": ["Back End"]}, {"groups": ["x", "x"]}],
+    [
+        {"workspace": "Acme Eng"},
+        {"workspace": ""},
+        {"groups": ["a"] * 11},
+        {"groups": ["Back End"]},
+        {"groups": ["x", "x"]},
+    ],
 )
 def test_bitbucket_arguments_are_plain_slugs(change: dict[str, Any]) -> None:
     with pytest.raises(ValidationError):
@@ -61,4 +67,4 @@ def test_laptop_arguments_are_closed(change: dict[str, Any]) -> None:
 
 def test_groups_default_to_none() -> None:
     args = {k: v for k, v in BITBUCKET_ARGS.items() if k != "groups"}
-    assert CONTRACTS["create_bitbucket_account"].args.model_validate(args).groups == []
+    assert CreateBitbucketAccountArgs.model_validate(args).groups == []

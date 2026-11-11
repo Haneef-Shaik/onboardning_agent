@@ -51,5 +51,5 @@ def test_the_package_imports_no_network_client_or_vendor_sdk() -> None:
 
 
 def test_the_scan_would_catch_one() -> None:
-    assert _forbidden("httpx") and _forbidden("urllib.request") and _forbidden("telegram.ext")
-    assert not _forbidden("onb_mcp_mocks.telegram") and not _forbidden("uvicorn")
+    assert all(_forbidden(name) for name in ("httpx", "urllib.request", "telegram.ext"))
+    assert not any(_forbidden(name) for name in ("onb_mcp_mocks.telegram", "uvicorn"))

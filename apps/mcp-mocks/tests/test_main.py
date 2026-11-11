@@ -45,7 +45,7 @@ def test_a_bad_port_fails_fast(port: str) -> None:
 def test_main_serves_the_server_on_the_configured_address(monkeypatch: pytest.MonkeyPatch) -> None:
     served: dict[str, Any] = {}
     monkeypatch.setattr(main_module, "init_telemetry", lambda *a, **k: None)
-    monkeypatch.setattr(main_module.uvicorn, "run", lambda app, **kw: served.update(app=app, **kw))
+    monkeypatch.setattr("onb_mcp_mocks.main.uvicorn.run", lambda app, **kw: served.update(app=app, **kw))
     main_module.main({**ENV, "MCP_MOCKS_PORT": "9201"})
     assert (served["host"], served["port"]) == ("127.0.0.1", 9201)
     assert served["app"] is not None

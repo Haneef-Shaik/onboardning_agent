@@ -8,7 +8,7 @@ from typing import Any
 
 import pytest
 from onb_mcp_mocks import tools
-from onb_mcp_mocks.contracts import CONTRACTS
+from onb_mcp_mocks.contracts import CONTRACTS, BitbucketAccount
 from onb_mcp_mocks.store import MAX_RECORDS, IdempotencyConflictError, InMemoryIdempotencyStore, StoreFullError
 
 from .harness import BITBUCKET_ARGS, CTX_A, LAPTOP_ARGS, TASK_1, run
@@ -38,12 +38,15 @@ def test_a_laptop_order_is_created_once_and_described() -> None:
     store = InMemoryIdempotencyStore()
     order = _invoke(store, "provision_laptop", LAPTOP_ARGS)
     assert (order["status"], order["profile"], order["office"]) == ("ordered", "engineering", "bangalore")
-    assert order["model"] and order["eta_days"] > 0
+    assert order["model"]
+    assert order["eta_days"] > 0
     assert re.fullmatch(r"[0-9a-f]{24}", order["order_id"])
     assert store.count() == 1
 
 
-@pytest.mark.parametrize(("name", "args"), [("create_bitbucket_account", BITBUCKET_ARGS), ("provision_laptop", LAPTOP_ARGS)])
+@pytest.mark.parametrize(
+    ("name", "args"), [("create_bitbucket_account", BITBUCKET_ARGS), ("provision_laptop", LAPTOP_ARGS)]
+)
 def test_replaying_with_the_same_idempotency_key_returns_the_same_result_and_creates_nothing_new(
     name: str, args: dict[str, Any]
 ) -> None:
@@ -55,7 +58,9 @@ def test_replaying_with_the_same_idempotency_key_returns_the_same_result_and_cre
     assert store.creations == 1
 
 
-@pytest.mark.parametrize(("name", "args"), [("create_bitbucket_account", BITBUCKET_ARGS), ("provision_laptop", LAPTOP_ARGS)])
+@pytest.mark.parametrize(
+    ("name", "args"), [("create_bitbucket_account", BITBUCKET_ARGS), ("provision_laptop", LAPTOP_ARGS)]
+)
 def test_results_are_deterministic_across_restarts(name: str, args: dict[str, Any]) -> None:
     """A new process (a fresh store) answers the same call with the same ids: the mock never randomises."""
     assert _invoke(InMemoryIdempotencyStore(), name, args) == _invoke(InMemoryIdempotencyStore(), name, args)
@@ -96,8 +101,14 @@ def test_the_same_key_for_another_tool_is_another_record() -> None:
 def test_a_returned_result_cannot_change_the_stored_one() -> None:
     store = InMemoryIdempotencyStore()
     first = run(
-        tools.invoke(store, CTX_A, "create_bitbucket_account", CONTRACTS["create_bitbucket_account"].args.model_validate(BITBUCKET_ARGS))
+        tools.invoke(
+            store,
+            CTX_A,
+            "create_bitbucket_account",
+            CONTRACTS["create_bitbucket_account"].args.model_validate(BITBUCKET_ARGS),
+        )
     )
+    assert isinstance(first, BitbucketAccount)
     first.groups.append("admins")  # a caller mutating its copy
     assert _invoke(store, "create_bitbucket_account", BITBUCKET_ARGS)["groups"] == ["backend"]
 
@@ -114,4 +125,8 @@ def test_the_store_refuses_new_records_when_full() -> None:
 def test_an_unknown_tool_is_refused() -> None:
     store = InMemoryIdempotencyStore()
     with pytest.raises(KeyError):
-        run(tools.invoke(store, CTX_A, "drop_everything", CONTRACTS["provision_laptop"].args.model_validate(LAPTOP_ARGS)))
+        run(
+            tools.invoke(
+                store, CTX_A, "drop_everything", CONTRACTS["provision_laptop"].args.model_validate(LAPTOP_ARGS)
+            )
+        )

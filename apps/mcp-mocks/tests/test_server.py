@@ -108,7 +108,9 @@ def test_a_context_naming_another_tool_is_denied(telemetry: CapturedTelemetry) -
 
 def test_invalid_arguments_are_refused_without_echoing_values(telemetry: CapturedTelemetry) -> None:
     store = InMemoryIdempotencyStore()
-    result = _call(store, "create_bitbucket_account", {**BITBUCKET_ARGS, "workspace": "Secret Value", "org_id": "org_b"})
+    result = _call(
+        store, "create_bitbucket_account", {**BITBUCKET_ARGS, "workspace": "Secret Value", "org_id": "org_b"}
+    )
     assert result.isError is True
     assert "Secret Value" not in _text(result)
     assert "org_b" not in _text(result)

@@ -47,7 +47,7 @@ def test_the_receipt_and_the_stub_hold_no_copy_of_the_text_or_recipient() -> Non
     receipt = run(transport.send_message(CHAT, TEXT))
     gc.collect()
     held = repr(vars(transport)) + repr(receipt) + repr(receipt.to_bot_api())
-    assert TEXT not in held and "Asha" not in held and str(CHAT) not in held
+    assert all(secret not in held for secret in (TEXT, "Asha", str(CHAT)))
 
 
 def test_inline_buttons_carry_callback_data_like_the_real_api() -> None:
@@ -61,7 +61,7 @@ def test_inline_buttons_carry_callback_data_like_the_real_api() -> None:
     [("", "approve"), ("Approve", ""), ("Approve", "x" * (MAX_CALLBACK_DATA_BYTES + 1)), ("Approve", "é" * 33)],
 )
 def test_a_button_outside_the_bot_api_limits_is_refused(text: str, data: str) -> None:
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match=r"button needs text|callback_data"):
         InlineButton(text, data)
 
 
