@@ -1,4 +1,4 @@
-# Handoff — REG-1 · Declare every agent's allowed tools in a versioned registry        attempt 1 · goal/reg-1-agent-registry · ff394c9
+# Handoff — REG-1 · Declare every agent's allowed tools in a versioned registry        attempt 2 · goal/reg-1-agent-registry · 83adf43 (rebased by the orchestrator onto main with T-2)
 
 **Outcome claimed.** Each of the six agents has a validated manifest in `config/agents/`. Syncing stores the manifests in the global `agent_registry` collection with a version that goes up on every change. Each change gets an audit record in every org, and HR_ADMIN reads the registry through `GET /agents` and `GET /agents/{name}`.
 
@@ -6,7 +6,7 @@
 | Box | Met | Evidence |
 |-----|-----|----------|
 | A manifest listing a vault collection is rejected (test) | yes | `libs/py-agents/tests/test_manifest.py::test_a_manifest_listing_a_vault_collection_to_read_is_rejected[*]`, `…_to_write_is_rejected[*]`, `test_a_vault_name_anywhere_in_the_manifest_is_rejected[*]`; `test_review_fixes.py::test_a_vault_name_as_yaml_binary_is_rejected[*]`, `test_a_name_with_the_vault_inside_it_is_rejected[*]`. Command `uv run --frozen pytest libs/py-agents/tests -q -k "vault_collection or vault_name or yaml_binary"` → `20 passed, 95 deselected` |
-| Changing a YAML and re-syncing bumps the version and writes an audit record (test) | yes | `libs/py-agents/tests/test_sync.py::test_changing_a_yaml_and_resyncing_bumps_the_version_and_writes_an_audit_record` (`-k bumps_the_version` → `1 passed`). Live on compose Mongo: `apps/api/tests_int/test_mongo_registry.py::test_changing_a_yaml_and_resyncing_bumps_the_version_and_audits_it_in_mongo` (`nx run api:test-int` → `25 passed`) |
+| Changing a YAML and re-syncing bumps the version and writes an audit record (test) | yes | `libs/py-agents/tests/test_sync.py::test_changing_a_yaml_and_resyncing_bumps_the_version_and_writes_an_audit_record` (`-k bumps_the_version` → `1 passed`). Live on compose Mongo: `apps/api/tests_int/test_mongo_registry.py::test_changing_a_yaml_and_resyncing_bumps_the_version_and_audits_it_in_mongo` (`nx run api:test-int` → `27 passed` on the rebased branch, under the T-2 safety net) |
 | All six manifests validate, and the catalog matches `evals/fixtures/seed_v1.json` `action_catalog` (test) | yes | `libs/py-agents/tests/test_config_manifests.py::test_all_six_manifests_validate`, `::test_the_catalog_matches_the_eval_fixture_action_catalog` → `2 passed, 113 deselected` |
 | `GET /agents` is HR_ADMIN only (role test) | yes | `apps/api/tests/test_role_matrix.py::test_role_matrix[*-GET /agents]` and `[*-GET /agents/{name}]`, `apps/api/tests/test_agents_route.py::test_the_registry_is_hr_admin_only[*]`, `::test_hr_and_managers_are_refused_before_the_registry_is_read`. Command `uv run --frozen pytest -q apps/api/tests/test_agents_route.py apps/api/tests/test_role_matrix.py -k agents` → `26 passed, 26 deselected`. Live: `test_mongo_registry.py::test_get_agents_is_hr_admin_only_against_the_real_registry[*]` |
 
@@ -33,9 +33,9 @@
 | Gate | Command | Result |
 |------|---------|--------|
 | Check | `make check` | `make check: all passed` (lint/typecheck/test for 17 projects; py-agents 97%) |
-| Integration | `make test-int` | `NX Successfully ran target test-int for 7 projects` (api 25 passed) |
+| Integration | `make test-int` | `NX Successfully ran target test-int for 7 projects` (api 27 passed, py-data 49, mcp-mongo 79, py-eventbus 19, py-crypto 12, py-telemetry 5, py-evals 4; tools 12) |
 | Contracts | `make contracts-check` | `contracts-check: openapi.json and the TS client are up to date` |
-| Eval self-test | `make evals-selftest` | `result: PASS` (`evr_20261110T184744Z_e6973eb3`) |
+| Eval self-test | `make evals-selftest` | `result: PASS` (`evr_20261111T044252Z_7162b985`, 27 cases x 3, controls caught 8/8) |
 | Cross-tenant | `make test-xt` | not available yet (T-3). There is a cross-tenant case in `test_agents_route.py::test_both_orgs_admins_see_the_same_global_registry_and_no_org_data` |
 
 Full result lines: `docs/evidence/REG-1/gates.md`.
@@ -48,6 +48,7 @@ Full result lines: `docs/evidence/REG-1/gates.md`.
 | AUD-1 | `AuditLog.audit` in `tenant_scope`, fails closed, joins the transaction | yes |
 | AUD-1 | `InMemoryAuditLog` refuses the same input | yes (used in unit tests) |
 | C-1 | envelope subclasses, `respond()`, `AppError`, `make contracts` | yes |
+| T-2 | a root read across orgs in an integration test goes in `with unscoped("reason"):`; product code must be scoped | yes: the registry's product code made no flagged command (trace below) |
 | AUTH-1 | `require_role` runs before other dependencies and data reads | yes (`test_hr_and_managers_are_refused_before_the_registry_is_read`) |
 
 ## Mutation checks
@@ -106,6 +107,20 @@ None. No ADR number was used, so 0008 is still free. Decisions recorded here:
 1. The registry owns `version`, so a manifest file carries none (`version:` in a YAML is refused). The PRD §7.3 example shows the stored form.
 2. The PRD §7.3 example has `requires_approval: [update_one:new_hires]` while `new_hires` is not in its `write` list. I made approvals apply only to collections already writable, because an approval rule must not widen a grant (§5.2). So `db_agent` writes `run_tasks` and `documents_meta` only (eval case db-005), with no approval rules. This is a conflict with the PRD example, reported here and not built.
 3. The registry is global and the audit log is per org, so each change is audited in every org.
+
+## Attempt 2 (after the rebase onto T-2)
+The orchestrator rebased the branch onto `main` with T-2. Two integration tests then failed with `UnscopedCommandError`:
+- `test_changing_a_yaml_and_resyncing_bumps_the_version_and_audits_it_in_mongo`: an unscoped `find` on `audit_log`.
+- `test_a_failed_audit_write_rolls_back_the_registry_and_the_audit_records`: an unscoped `aggregate` (`count_documents`) on `audit_log`.
+
+I traced both with `docs/evidence/T-2/trace_violations.py`, pointed at this worktree. Output:
+`aggregate audit_log: product=-  test=apps/api/tests_int/test_mongo_registry.py:125` and
+`find audit_log: product=-  test=apps/api/tests_int/test_mongo_registry.py:105`.
+Both come from test code: root read-backs that look across both orgs on purpose, to prove a change was audited in every org and that a rollback left no record in any org.
+No product frame was involved. The registry sync and `GET /agents` never read `audit_log`; they only write it through `AuditLog.audit` inside `tenant_scope`.
+
+Each read-back is now in a named `unscoped("…")` block (commit `83adf43`). Assertions are unchanged and the net is untouched.
+A re-trace of the whole API integration suite records no violation call sites (`27 passed`).
 
 ## Traps hit
 - `rtk` truncates `make` output. Run gates as `rtk proxy make …`.
