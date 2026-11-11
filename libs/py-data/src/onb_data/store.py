@@ -28,7 +28,10 @@ Document = dict[str, Any]
 # The only collections without tenant scoping. Everything else is a tenant collection.
 # `user_logins` is the login directory (ADR 0004): `{_id: sha256(email), org_id, user_id}` and nothing
 # else, read before any org is known; the user records themselves are tenant documents in `users`.
-GLOBAL_COLLECTIONS = frozenset({"orgs", "agent_registry", "tool_catalog", "user_logins"})
+# `telegram_callbacks` is the Telegram callback directory (ADR 0013): `{_id: callback data, org_id,
+# created_at}` and nothing else, read by the webhook before any org is known; the message and the
+# decision its button stands for are tenant documents in `mock_outbox`.
+GLOBAL_COLLECTIONS = frozenset({"orgs", "agent_registry", "tool_catalog", "user_logins", "telegram_callbacks"})
 
 _BAD_DATABASE_CHARS = frozenset('/\\. "$\x00')
 

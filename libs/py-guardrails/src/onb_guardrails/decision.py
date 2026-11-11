@@ -18,6 +18,8 @@ class GuardrailCheck(StrEnum):
     BUDGET = "budget"
     EXTERNAL_INPUT = "external.input"
     EXTERNAL_OUTPUT = "external.output"
+    # NOTIF-1: a sink refused the orchestrator's PII grant (PRD §7.10 "a guardrail event and audit record").
+    SINK_GRANT = "sink.grant"
 
 
 class GuardrailOutcome(StrEnum):

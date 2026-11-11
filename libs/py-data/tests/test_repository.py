@@ -50,6 +50,7 @@ OPERATIONS: dict[str, Op] = {
     "update_by_id": lambda r: r.update_by_id("h1", {"$set": {"status": "done"}}),
     "delete_one": lambda r: r.delete_one({"_id": "h1"}),
     "delete_by_id": lambda r: r.delete_by_id("h1"),
+    "delete_many": lambda r: r.delete_many({"status": "expired"}),
     "aggregate": lambda r: r.aggregate([{"$sort": {"name": 1}}]),
     "count": lambda r: r.count({"status": "active"}),
 }
@@ -169,6 +170,20 @@ def test_update_by_id_and_delete_by_id_succeed_for_an_own_id() -> None:
     scoped(ORG, lambda: repo.delete_by_id("h1"))
     assert scoped(ORG, lambda: repo.delete_one({"name": "x"})) == 1
     assert collection.last("delete_one").args[0] == {"name": "x", "org_id": ORG}
+
+
+def test_delete_many_deletes_only_the_current_orgs_matching_documents() -> None:
+    # NOTIF-1: the sink sweeps its org's expired `pii_grant_jti` rows.
+    collection = FakeCollection(deleted_count=3)
+    assert scoped(ORG, lambda: repo_over(collection).delete_many({"expires_at": {"$lt": 5}})) == 3
+    assert collection.last("delete_many").args[0] == {"expires_at": {"$lt": 5}, "org_id": ORG}
+
+
+def test_delete_many_cannot_be_aimed_at_another_org() -> None:
+    collection = FakeCollection()
+    with pytest.raises(TenantViolationError):
+        scoped(ORG, lambda: repo_over(collection).delete_many({"org_id": "org_b"}))
+    assert collection.calls == []
 
 
 # --- inserts -------------------------------------------------------------------------------

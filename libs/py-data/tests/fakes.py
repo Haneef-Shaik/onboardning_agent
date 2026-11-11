@@ -93,6 +93,10 @@ class FakeCollection:
         self._record("delete_one", *args, **kwargs)
         return SimpleNamespace(deleted_count=self.deleted_count)
 
+    async def delete_many(self, *args: Any, **kwargs: Any) -> SimpleNamespace:
+        self._record("delete_many", *args, **kwargs)
+        return SimpleNamespace(deleted_count=self.deleted_count)
+
     async def count_documents(self, *args: Any, **kwargs: Any) -> int:
         self._record("count_documents", *args, **kwargs)
         return self.count_result

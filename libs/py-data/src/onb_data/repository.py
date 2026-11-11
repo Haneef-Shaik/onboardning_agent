@@ -136,6 +136,11 @@ class _Repository(ABC):
         result = await self._collection.delete_one(self._filter(query), **session_kwargs())
         return result.deleted_count
 
+    async def delete_many(self, query: Mapping[str, Any] | None) -> int:
+        """Delete every matching document (of the current org, on a tenant collection); the count."""
+        result = await self._collection.delete_many(self._filter(query), **session_kwargs())
+        return result.deleted_count
+
     async def delete_by_id(self, doc_id: Any) -> None:
         if await self.delete_one(self._by_id(doc_id)) == 0:
             raise self._not_found()

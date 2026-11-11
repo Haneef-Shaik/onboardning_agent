@@ -24,7 +24,11 @@ from .fakes import FakeClient, FakeCollection, FakeDatabase, make_store
 
 def test_the_global_collections_are_exactly_the_short_list() -> None:
     # user_logins: the login directory (AUTH-1, ADR 0004); it holds only {_id: email hash, org_id, user_id}.
-    assert frozenset({"orgs", "agent_registry", "tool_catalog", "user_logins"}) == GLOBAL_COLLECTIONS
+    # telegram_callbacks: the Telegram callback directory (NOTIF-1, ADR 0013); it holds only
+    # {_id: callback data, org_id, created_at}.
+    assert (
+        frozenset({"orgs", "agent_registry", "tool_catalog", "user_logins", "telegram_callbacks"}) == GLOBAL_COLLECTIONS
+    )
 
 
 def test_users_stay_a_tenant_collection() -> None:
