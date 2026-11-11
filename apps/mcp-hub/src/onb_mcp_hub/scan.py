@@ -20,7 +20,7 @@ from collections.abc import Collection
 from dataclasses import dataclass
 from typing import Any
 
-from mcp.types import CallToolResult, TextContent
+from mcp.types import CallToolResult, ContentBlock, TextContent
 from onb_crypto.tokens import is_token
 from onb_guardrails.pii import detect, redact
 
@@ -79,7 +79,7 @@ def scan_result(result: CallToolResult, *, secrets: Collection[str]) -> Scanned:
         for text in blocks:  # replaced by the structure below; only checked for credentials here
             scanner.check_secrets(text)
         structured = scanner.value(result.structuredContent)
-        content = [TextContent(type="text", text=json.dumps(structured, ensure_ascii=False))]
+        content: list[ContentBlock] = [TextContent(type="text", text=json.dumps(structured, ensure_ascii=False))]
     else:
         structured = None
         content = [TextContent(type="text", text=scanner.text(text)) for text in blocks]

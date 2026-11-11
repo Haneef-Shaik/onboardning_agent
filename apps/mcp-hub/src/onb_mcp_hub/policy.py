@@ -51,9 +51,11 @@ MAX_NODES = 10_000
 class CallDeniedError(Exception):
     """A refused call. `reason` is a stable code for the span, the audit record and the caller."""
 
-    def __init__(self, reason: str, message: str) -> None:
+    def __init__(self, reason: str, message: str, *, claims: AgentClaims | None = None) -> None:
         super().__init__(message)
         self.reason = reason
+        # Set only for an expired but genuine agent token: its org is known, so the denial is audited there.
+        self.claims = claims
 
 
 @dataclass(frozen=True, slots=True)

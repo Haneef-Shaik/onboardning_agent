@@ -3,13 +3,14 @@
 from __future__ import annotations
 
 import json
+import secrets
 
 import pytest
 from mcp.types import CallToolResult, ImageContent, TextContent
 from onb_mcp_hub.policy import CallDeniedError
 from onb_mcp_hub.scan import scan_result
 
-SECRET = "downstream-credential-0123456789abcdef"
+SECRET = secrets.token_urlsafe(32)
 MOBILE = "9876543210"
 
 
