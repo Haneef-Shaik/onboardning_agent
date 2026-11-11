@@ -360,3 +360,22 @@ def test_a_seed_racing_another_for_the_org_record_takes_the_existing_one(plan: S
     report = _run(lambda: racing.run(plan))
     assert report.steps[0].line() == "unchanged org:org_demo"
     assert world.db.raw("orgs") == [{"_id": ORG, "name": "Inserted by the other seed"}]
+
+
+def test_a_second_run_writes_no_org_record(plan: SeedPlan) -> None:
+    world = _world()
+    _run(lambda: world.seeder().run(plan))
+    orgs = world.store.shared("orgs")
+    inserts: list[Mapping[str, Any]] = []
+
+    class CountingOrgs:
+        async def find_one(self, query: Mapping[str, Any] | None = None) -> dict[str, Any] | None:
+            return await orgs.find_one(query)
+
+        async def insert_one(self, document: Mapping[str, Any]) -> Any:
+            inserts.append(document)
+            return await orgs.insert_one(document)
+
+    counting = Seeder(replace(world.services(), orgs=CountingOrgs()), bcrypt_rounds=ROUNDS)
+    _run(lambda: counting.run(plan))
+    assert inserts == []
