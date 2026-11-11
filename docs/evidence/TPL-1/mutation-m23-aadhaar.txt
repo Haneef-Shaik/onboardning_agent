@@ -1,0 +1,10 @@
+M23 (never-sinkable floor and policy both off) with -k test_pii_access_for_aadhaar_is_rejected:
+FAILED libs/py-agents/tests/test_template_validator.py::test_pii_access_for_aadhaar_is_rejected[fields0-notify.telegram]
+FAILED libs/py-agents/tests/test_template_validator.py::test_pii_access_for_aadhaar_is_rejected[fields0-notify.email]
+FAILED libs/py-agents/tests/test_template_validator.py::test_pii_access_for_aadhaar_is_rejected[fields0-notify.sms]
+FAILED libs/py-agents/tests/test_template_validator.py::test_pii_access_for_aadhaar_is_rejected[fields0-uidai.verify]
+FAILED libs/py-agents/tests/test_template_validator.py::test_pii_access_for_aadhaar_is_rejected[fields1-notify.telegram]
+FAILED libs/py-agents/tests/test_template_validator.py::test_pii_access_for_aadhaar_is_rejected[fields1-notify.email]
+FAILED libs/py-agents/tests/test_template_validator.py::test_pii_access_for_aadhaar_is_rejected[fields1-notify.sms]
+FAILED libs/py-agents/tests/test_template_validator.py::test_pii_access_for_aadhaar_is_rejected[fields1-uidai.verify]
+8 failed, 328 deselected in 0.84s
