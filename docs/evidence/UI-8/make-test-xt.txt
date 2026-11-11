@@ -1,0 +1,167 @@
+infra/mongo/gen-keyfile.sh
+gen-keyfile: wrote infra/mongo/keyfile
+docker compose up -d --wait --build
+ Image onb/otel-collector:0.165.0 Building 
+#1 [internal] load local bake definitions
+#1 reading from stdin 644B done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 578B done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/otel/opentelemetry-collector-contrib:0.165.0@sha256:e40d61f10c9a617cca1ffd1be4d7e2b3a4b0f0001798ff07e58cabe82e618cea
+#3 DONE 0.1s
+
+#4 [internal] load metadata for docker.io/library/alpine:3.24.4@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf
+#4 DONE 0.1s
+
+#5 [internal] load .dockerignore
+#5 transferring context: 2B done
+#5 DONE 0.0s
+
+#6 [stage-1 1/3] FROM docker.io/library/alpine:3.24.4@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf
+#6 resolve docker.io/library/alpine:3.24.4@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf done
+#6 DONE 0.0s
+
+#7 [upstream 1/1] FROM docker.io/otel/opentelemetry-collector-contrib:0.165.0@sha256:e40d61f10c9a617cca1ffd1be4d7e2b3a4b0f0001798ff07e58cabe82e618cea
+#7 resolve docker.io/otel/opentelemetry-collector-contrib:0.165.0@sha256:e40d61f10c9a617cca1ffd1be4d7e2b3a4b0f0001798ff07e58cabe82e618cea done
+#7 DONE 0.0s
+
+#8 [stage-1 2/3] RUN adduser -D -H -u 10001 otel
+#8 CACHED
+
+#9 [stage-1 3/3] COPY --from=upstream /otelcol-contrib /otelcol-contrib
+#9 CACHED
+
+#10 exporting to image
+#10 exporting layers done
+#10 exporting manifest sha256:14af97b5e302fea5ff472166b01ca46840a20f5c9f120da3dbd61f9939a54d33 done
+#10 exporting config sha256:dc4a421b1f5c4a3185546db69ed8ed403964aef463fdb176d876358273acd7b3 done
+#10 exporting attestation manifest sha256:985ef66ec4037d3fcd47589062fb610c42c5fa7af5ae65b6f82efe5546e1e15c done
+#10 exporting manifest list sha256:96112d28faf3f8856ac2bbf136e169e1438bf65543eb6b1387b539405dc05cb3 done
+#10 naming to docker.io/onb/otel-collector:0.165.0 done
+#10 unpacking to docker.io/onb/otel-collector:0.165.0 done
+#10 DONE 0.0s
+
+#11 resolving provenance for metadata file
+#11 DONE 0.0s
+ Image onb/otel-collector:0.165.0 Built 
+ Volume ob-ui-8_caddy_config Creating 
+ Volume ob-ui-8_caddy_data Creating 
+ Network ob-ui-8_backend Creating 
+ Network ob-ui-8_edge Creating 
+ Volume ob-ui-8_caddy_data Creating 
+ Volume ob-ui-8_caddy_config Creating 
+ Volume ob-ui-8_mongo_data Creating 
+ Volume ob-ui-8_mongo_data Creating 
+ Volume ob-ui-8_mongo_config Creating 
+ Volume ob-ui-8_mongo_config Creating 
+ Network ob-ui-8_edge Creating 
+ Network ob-ui-8_backend Creating 
+ Volume ob-ui-8_caddy_data Created 
+ Volume ob-ui-8_caddy_data Created 
+ Volume ob-ui-8_caddy_config Created 
+ Volume ob-ui-8_caddy_config Created 
+ Volume ob-ui-8_mongo_config Created 
+ Volume ob-ui-8_mongo_config Created 
+ Volume ob-ui-8_mongo_data Created 
+ Volume ob-ui-8_mongo_data Created 
+ Network ob-ui-8_backend Created 
+ Network ob-ui-8_backend Created 
+ Container ob-ui-8-mongo-1 Creating 
+ Container ob-ui-8-jaeger-1 Creating 
+ Network ob-ui-8_edge Created 
+ Network ob-ui-8_edge Created 
+ Container ob-ui-8-jaeger-1 Created 
+ Container ob-ui-8-otel-collector-1 Creating 
+ Container ob-ui-8-caddy-1 Creating 
+ Container ob-ui-8-mongo-1 Created 
+ Container ob-ui-8-otel-collector-1 Created 
+ Container ob-ui-8-caddy-1 Created 
+ Container ob-ui-8-mongo-1 Starting 
+ Container ob-ui-8-jaeger-1 Starting 
+ Container ob-ui-8-mongo-1 Started 
+ Container ob-ui-8-jaeger-1 Started 
+ Container ob-ui-8-jaeger-1 Waiting 
+ Container ob-ui-8-jaeger-1 Waiting 
+ Container ob-ui-8-jaeger-1 Healthy 
+ Container ob-ui-8-jaeger-1 Healthy 
+ Container ob-ui-8-caddy-1 Starting 
+ Container ob-ui-8-otel-collector-1 Starting 
+ Container ob-ui-8-caddy-1 Started 
+ Container ob-ui-8-otel-collector-1 Started 
+ Container ob-ui-8-otel-collector-1 Waiting 
+ Container ob-ui-8-jaeger-1 Waiting 
+ Container ob-ui-8-caddy-1 Waiting 
+ Container ob-ui-8-mongo-1 Waiting 
+ Container ob-ui-8-jaeger-1 Healthy 
+ Container ob-ui-8-caddy-1 Healthy 
+ Container ob-ui-8-otel-collector-1 Healthy 
+ Container ob-ui-8-mongo-1 Healthy 
+set -a && . ./.env && set +a && \
+	uv run --frozen pytest tools/tests_xt -q -o cache_dir=.pytest_cache/tests-xt && \
+	node_modules/.bin/nx run-many -t test-xt --output-style=static
+........................................................................ [ 48%]
+........................................................................ [ 97%]
+...                                                                      [100%]
+cross-tenant surface: 14 API routes, 8 MCP tools, 0 event consumers
+  route    GET    /agents
+  route    GET    /agents/{name}
+  route    GET    /audit
+  route    GET    /evals/runs
+  route    GET    /evals/runs/{run_id}
+  route    GET    /health
+  route    GET    /hires
+  route    GET    /hires/{hire_id}
+  route    GET    /me
+  route    GET    /pii-access-log
+  route    POST   /auth/login
+  route    POST   /hires
+  route    POST   /hires/{hire_id}/pii/{field}/reveal
+  route    PUT    /hires/{hire_id}/pii/{field}
+  tool     mcp-mocks.create_bitbucket_account
+  tool     mcp-mocks.provision_laptop
+  tool     mcp-mongo.aggregate
+  tool     mcp-mongo.count
+  tool     mcp-mongo.find
+  tool     mcp-mongo.insert_one
+  tool     mcp-mongo.list_collections
+  tool     mcp-mongo.update_one
+147 passed in 90.38s (0:01:30)
+
+ NX   Running target test-xt for project mcp-hub:
+
+- mcp-hub
+
+
+
+> nx run mcp-hub:test-xt
+
+[2m> [22muv run --frozen pytest apps/mcp-hub/tests_int/test_hub_xt.py apps/mcp-hub/tests_int/test_safety_net_guard.py -s -o cache_dir=.pytest_cache/mcp-hub-xt
+
+[1m============================= test session starts ==============================[0m
+platform darwin -- Python 3.12.13, pytest-9.2.0, pluggy-1.7.0
+cachedir: .pytest_cache/mcp-hub-xt
+rootdir: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-ui-8
+configfile: pyproject.toml
+plugins: hypothesis-6.170.15, langsmith-0.14.17, cov-7.1.0, anyio-4.16.0
+collected 12 items
+
+apps/mcp-hub/tests_int/test_hub_xt.py 
+make test-xt: hub tools covered: mocks__create_bitbucket_account, mocks__provision_laptop, mongo__aggregate, mongo__count, mongo__find, mongo__insert_one, mongo__list_collections, mongo__update_one
+[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m
+apps/mcp-hub/tests_int/test_safety_net_guard.py [32m.[0m[32m.[0m
+
+[32m============================== [32m[1m12 passed[0m[32m in 6.48s[0m[32m ==============================[0m
+
+
+
+ NX   Successfully ran target test-xt for project mcp-hub
+
+
+  Run duration:      9.2s
+  Cache:             0/1 hit (0%)
+  Critical path:     9.2s (1 task)
+  Recoverable time:  <1ms
+exit 0

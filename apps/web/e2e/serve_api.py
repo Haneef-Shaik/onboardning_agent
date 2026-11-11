@@ -4,6 +4,8 @@ AUTH-1's app (`create_app`: login, JWT, `/me`, the envelope) with its in-memory 
 with the synthetic users of `onb_api.testing.SEED_USERS`. No Mongo: the Mongo-backed store is proved
 by AUTH-1's integration tests, and the compose golden path is E2E-1's.
 
+UI-8: the admin routes' services, seeded in memory through the real services (`admin_seed.py`).
+
 Test-only. The password and the JWT secret come from the environment (Playwright makes fresh ones
 per run); nothing here is a real credential.
 """
@@ -21,6 +23,8 @@ from onb_api.auth.settings import AuthSettings, require_env
 from onb_api.auth.users import NewUser
 from onb_api.testing import SEED_USERS, InMemoryUserStore, email_of
 from onb_data import tenant_scope
+
+from admin_seed import admin_services
 
 HOST = "127.0.0.1"
 BCRYPT_ROUNDS = 4  # test speed; the production default stays 12
@@ -41,7 +45,8 @@ def main() -> int:
     password = require_env(os.environ, "E2E_PASSWORD")
     settings = AuthSettings(jwt_secret=require_env(os.environ, "E2E_JWT_SECRET"), bcrypt_rounds=BCRYPT_ROUNDS)
     users = asyncio.run(seeded(password))
-    uvicorn.run(create_app(auth=settings, users=users), host=HOST, port=port, log_level="warning")
+    admin = asyncio.run(admin_services(users))
+    uvicorn.run(create_app(auth=settings, users=users, **admin), host=HOST, port=port, log_level="warning")
     return 0
 
 
