@@ -19,68 +19,128 @@ M7 CAUGHT: an approval scope only for a required rule (libs/py-agents/src/onb_ag
     FAILED libs/py-agents/tests/test_task_context.py::test_an_approval_is_added_only_for_a_rule_the_manifest_requires
 M8 CAUGHT: the grant travels only in a header (leaked into the instruction) (libs/py-agents/src/onb_agents/runtime/prompt.py)
     FAILED libs/py-agents/tests/test_runtime_boxes.py::test_box2_the_grant_and_the_agent_token_never_appear_in_captured_llm_input
+    FAILED libs/py-agents/tests/test_runtime_boxes.py::test_box2_the_grant_and_token_stay_out_of_llm_input_logs_audit_and_results_on_every_path[hub_denial_then_repair]
+    FAILED libs/py-agents/tests/test_runtime_boxes.py::test_box2_the_grant_and_token_stay_out_of_llm_input_logs_audit_and_results_on_every_path[repair_fails]
 M9 CAUGHT: the token travels only in a header (leaked into the task input) (libs/py-agents/src/onb_agents/runtime/runner.py)
     FAILED libs/py-agents/tests/test_runtime_boxes.py::test_box2_the_grant_and_the_agent_token_never_appear_in_captured_llm_input
+    FAILED libs/py-agents/tests/test_runtime_boxes.py::test_box2_the_grant_and_token_stay_out_of_llm_input_logs_audit_and_results_on_every_path[hub_denial_then_repair]
+    FAILED libs/py-agents/tests/test_runtime_boxes.py::test_box2_the_grant_and_token_stay_out_of_llm_input_logs_audit_and_results_on_every_path[repair_fails]
 M10 CAUGHT: the grant is hidden from the task's repr (libs/py-agents/src/onb_agents/runtime/task.py)
     FAILED libs/py-agents/tests/test_task_context.py::test_the_grant_travels_only_in_a_header_and_never_in_the_tasks_repr
 M11 CAUGHT: the grant is sent to the hub (libs/py-agents/src/onb_agents/runtime/task.py)
     FAILED libs/py-agents/tests/test_runtime_boxes.py::test_box2_the_grant_and_the_agent_token_never_appear_in_captured_llm_input
     FAILED libs/py-agents/tests/test_task_context.py::test_the_grant_travels_only_in_a_header_and_never_in_the_tasks_repr
-M12 CAUGHT: step budget from the manifest (libs/py-agents/src/onb_agents/runtime/runner.py)
+M12 CAUGHT: the failure reason is a code or a type, never the exception text (libs/py-agents/src/onb_agents/runtime/runner.py)
+    FAILED libs/py-agents/tests/test_runtime_review_fixes.py::test_a_hub_transport_failure_mid_task_names_its_cause_and_keeps_the_trajectory
+M13 CAUGHT: step budget from the manifest (libs/py-agents/src/onb_agents/runtime/runner.py)
+    FAILED libs/py-agents/tests/test_runtime_boxes.py::test_box2_the_grant_and_token_stay_out_of_llm_input_logs_audit_and_results_on_every_path[step_budget]
     FAILED libs/py-agents/tests/test_runtime_boxes.py::test_box3_an_exhausted_step_budget_ends_the_run_with_a_visible_failure
-M13 CAUGHT: an exhausted budget is a failure (libs/py-agents/src/onb_agents/runtime/runner.py)
+M14 CAUGHT: an exhausted budget is a failure (libs/py-agents/src/onb_agents/runtime/runner.py)
+    FAILED libs/py-agents/tests/test_runtime_boxes.py::test_box2_the_grant_and_token_stay_out_of_llm_input_logs_audit_and_results_on_every_path[step_budget]
     FAILED libs/py-agents/tests/test_runtime_boxes.py::test_box3_an_exhausted_step_budget_ends_the_run_with_a_visible_failure
-M14 CAUGHT: the run's budget is the task budget's parent (libs/py-agents/src/onb_agents/runtime/runner.py)
+M15 CAUGHT: the run's budget is the task budget's parent (libs/py-agents/src/onb_agents/runtime/runner.py)
     FAILED libs/py-agents/tests/test_runtime.py::test_a_token_budget_shared_by_the_run_stops_the_task
-M15 CAUGHT: the task time limit (libs/py-agents/src/onb_agents/runtime/runner.py)
+    FAILED libs/py-agents/tests/test_runtime_review_fixes.py::test_the_runs_remaining_time_bounds_a_tool_call
+M16 CAUGHT: one deadline over the whole task (libs/py-agents/src/onb_agents/runtime/runner.py)
     FAILED libs/py-agents/tests/test_runtime.py::test_a_task_over_its_time_limit_fails_with_a_timeout
-M16 CAUGHT: a failed run has no output (libs/py-agents/src/onb_agents/runtime/runner.py)
+    FAILED libs/py-agents/tests/test_runtime_review_fixes.py::test_calls_already_made_in_a_turn_stay_in_the_trajectory_when_a_later_one_times_out
+    FAILED libs/py-agents/tests/test_runtime_review_fixes.py::test_a_hub_that_stalls_on_connect_is_bounded_by_the_task_time_limit
+M17 CAUGHT: a failed run has no output (libs/py-agents/src/onb_agents/runtime/runner.py)
     FAILED libs/py-agents/tests/test_runtime.py::test_a_failed_result_never_carries_a_partial_output
-M17 CAUGHT: every model call goes through the guards (libs/py-agents/src/onb_agents/runtime/graph.py)
-    FAILED libs/py-agents/tests/test_runtime.py::test_an_allowed_hub_call_runs_in_the_token_org_and_the_answer_is_validated
-    FAILED libs/py-agents/tests/test_runtime.py::test_an_injection_in_the_task_input_is_a_refusal_in_the_agents_contract
-    FAILED libs/py-agents/tests/test_runtime.py::test_an_injection_in_a_tool_result_is_a_refusal_too
-M18 CAUGHT: the task input is untrusted (not a trusted message) (libs/py-agents/src/onb_agents/runtime/prompt.py)
-    FAILED libs/py-agents/tests/test_runtime.py::test_the_task_input_reaches_the_model_delimited_and_ids_only_in_the_instruction
-M19 CAUGHT: an injection is a contract refusal (libs/py-agents/src/onb_agents/runtime/runner.py)
-    FAILED libs/py-agents/tests/test_runtime.py::test_an_injection_in_the_task_input_is_a_refusal_in_the_agents_contract
-    FAILED libs/py-agents/tests/test_runtime.py::test_an_injection_in_a_tool_result_is_a_refusal_too
-M20 CAUGHT: the final reply is validated against the contract (libs/py-agents/src/onb_agents/runtime/graph.py)
-    FAILED libs/py-agents/tests/test_runtime.py::test_an_allowed_hub_call_runs_in_the_token_org_and_the_answer_is_validated
-    FAILED libs/py-agents/tests/test_runtime.py::test_an_invalid_answer_gets_one_repair_and_then_validates
-    FAILED libs/py-agents/tests/test_runtime.py::test_an_answer_still_invalid_after_the_repair_fails_the_task_visibly
-M21 CAUGHT: one repair, then a visible failure (libs/py-agents/src/onb_agents/runtime/graph.py)
-    FAILED libs/py-agents/tests/test_runtime.py::test_an_answer_still_invalid_after_the_repair_fails_the_task_visibly
-M22 CAUGHT: the guarded calls run in the task org's tenant scope (libs/py-agents/src/onb_agents/runtime/runner.py)
+M18 CAUGHT: a transport failure is reported by its real cause (libs/py-agents/src/onb_agents/runtime/runner.py)
+    FAILED libs/py-agents/tests/test_runtime_review_fixes.py::test_a_hub_transport_failure_mid_task_names_its_cause_and_keeps_the_trajectory
+M19 CAUGHT: the state streamed so far survives a failure (libs/py-agents/src/onb_agents/runtime/runner.py)
     FAILED libs/py-agents/tests/test_runtime_boxes.py::test_box1_a_tool_outside_the_manifest_is_denied_by_the_hub_and_the_denial_is_in_the_trajectory
     FAILED libs/py-agents/tests/test_runtime_boxes.py::test_box1_a_tool_the_agent_was_never_given_is_still_sent_to_the_hub_and_denied
     FAILED libs/py-agents/tests/test_runtime_boxes.py::test_box2_the_grant_and_the_agent_token_never_appear_in_captured_llm_input
-M23 CAUGHT: only the local tools the manifest lists (libs/py-agents/src/onb_agents/runtime/local_tools.py)
+M20 CAUGHT: every model call goes through the guards (libs/py-agents/src/onb_agents/runtime/graph.py)
+    FAILED libs/py-agents/tests/test_runtime.py::test_an_allowed_hub_call_runs_in_the_token_org_and_the_answer_is_validated
+    FAILED libs/py-agents/tests/test_runtime.py::test_an_injection_in_the_task_input_is_a_refusal_in_the_agents_contract
+    FAILED libs/py-agents/tests/test_runtime.py::test_an_injection_in_a_tool_result_is_a_refusal_too
+M21 CAUGHT: the task input is untrusted (not a trusted message) (libs/py-agents/src/onb_agents/runtime/prompt.py)
+    FAILED libs/py-agents/tests/test_runtime.py::test_the_task_input_reaches_the_model_delimited_and_ids_only_in_the_instruction
+M22 CAUGHT: an injection is a contract refusal (libs/py-agents/src/onb_agents/runtime/runner.py)
+    FAILED libs/py-agents/tests/test_runtime.py::test_an_injection_in_the_task_input_is_a_refusal_in_the_agents_contract
+    FAILED libs/py-agents/tests/test_runtime.py::test_an_injection_in_a_tool_result_is_a_refusal_too
+M23 CAUGHT: the guarded calls run in the task org's tenant scope (libs/py-agents/src/onb_agents/runtime/runner.py)
+    FAILED libs/py-agents/tests/test_runtime_boxes.py::test_box1_a_tool_outside_the_manifest_is_denied_by_the_hub_and_the_denial_is_in_the_trajectory
+    FAILED libs/py-agents/tests/test_runtime_boxes.py::test_box1_a_tool_the_agent_was_never_given_is_still_sent_to_the_hub_and_denied
+    FAILED libs/py-agents/tests/test_runtime_boxes.py::test_box2_the_grant_and_the_agent_token_never_appear_in_captured_llm_input
+M24 CAUGHT: the final reply is validated against the contract (libs/py-agents/src/onb_agents/runtime/graph.py)
+    FAILED libs/py-agents/tests/test_runtime.py::test_an_allowed_hub_call_runs_in_the_token_org_and_the_answer_is_validated
+    FAILED libs/py-agents/tests/test_runtime.py::test_an_invalid_answer_gets_one_repair_and_then_validates
+    FAILED libs/py-agents/tests/test_runtime.py::test_an_answer_still_invalid_after_the_repair_fails_the_task_visibly
+M25 CAUGHT: one repair, then a visible failure (libs/py-agents/src/onb_agents/runtime/graph.py)
+    FAILED libs/py-agents/tests/test_runtime.py::test_an_answer_still_invalid_after_the_repair_fails_the_task_visibly
+    FAILED libs/py-agents/tests/test_runtime_review_fixes.py::test_a_failed_repair_is_a_model_step_in_the_trajectory
+M26 CAUGHT: a schema failure is an invalid_output (libs/py-agents/src/onb_agents/runtime/runner.py)
+    FAILED libs/py-agents/tests/test_runtime.py::test_an_answer_still_invalid_after_the_repair_fails_the_task_visibly
+    FAILED libs/py-agents/tests/test_runtime_review_fixes.py::test_an_invalid_answer_on_the_last_step_is_an_invalid_output_not_a_budget_failure
+    FAILED libs/py-agents/tests/test_runtime_review_fixes.py::test_a_failed_repair_is_a_model_step_in_the_trajectory
+M27 CAUGHT: a repair needs a step left (libs/py-agents/src/onb_agents/runtime/graph.py)
+    FAILED libs/py-agents/tests/test_runtime_review_fixes.py::test_an_invalid_answer_on_the_last_step_is_an_invalid_output_not_a_budget_failure
+M28 CAUGHT: the repair prompt never echoes model-made keys (libs/py-agents/src/onb_agents/runtime/graph.py)
+    FAILED libs/py-agents/tests/test_runtime_review_fixes.py::test_the_repair_prompt_never_echoes_a_key_the_model_invented
+M29 CAUGHT: the per-turn tool-call cap (libs/py-agents/src/onb_agents/runtime/graph.py)
+    FAILED libs/py-agents/tests/test_runtime_review_fixes.py::test_tool_calls_past_the_per_turn_cap_are_answered_with_an_error_and_never_run
+M30 CAUGHT: every call of a turn is answered, one per visit (libs/py-agents/src/onb_agents/runtime/graph.py)
+    FAILED libs/py-agents/tests/test_runtime_review_fixes.py::test_calls_already_made_in_a_turn_stay_in_the_trajectory_when_a_later_one_times_out
+    FAILED libs/py-agents/tests/test_runtime_review_fixes.py::test_tool_calls_past_the_per_turn_cap_are_answered_with_an_error_and_never_run
+M31 CAUGHT: model-chosen tool names are recorded only in a safe shape (libs/py-agents/src/onb_agents/runtime/trajectory.py)
+    FAILED libs/py-agents/tests/test_runtime_review_fixes.py::test_the_result_holds_no_tool_name_the_model_made_up_beyond_a_safe_shape
+M32 CAUGHT: only the local tools the manifest lists (libs/py-agents/src/onb_agents/runtime/local_tools.py)
     FAILED libs/py-agents/tests/test_local_tools.py::test_only_the_local_tools_a_manifest_lists_are_given_to_the_agent
-M24 CAUGHT: render never re-renders substituted values (libs/py-agents/src/onb_agents/runtime/local_tools.py)
+M33 CAUGHT: render never re-renders substituted values (libs/py-agents/src/onb_agents/runtime/local_tools.py)
     FAILED libs/py-agents/tests/test_local_tools.py::test_render_does_not_render_placeholders_inside_substituted_values
-M25 CAUGHT: render placeholders are plain names (libs/py-agents/src/onb_agents/runtime/local_tools.py)
+M34 CAUGHT: render placeholders are plain names (libs/py-agents/src/onb_agents/runtime/local_tools.py)
     FAILED libs/py-agents/tests/test_local_tools.py::test_render_refuses_an_undeclared_variable_and_never_evaluates_expressions
-M26 CAUGHT: date_calc bounds (libs/py-agents/src/onb_agents/runtime/local_tools.py)
+M35 CAUGHT: date_calc bounds (libs/py-agents/src/onb_agents/runtime/local_tools.py)
     FAILED libs/py-agents/tests/test_local_tools.py::test_date_calc_refuses_bad_arguments[args2]
-M27 CAUGHT: an ok answer carries its payload (libs/py-contracts/src/onb_contracts/agent_outputs.py)
+M36 CAUGHT: bad local-tool arguments are an error message (libs/py-agents/src/onb_agents/runtime/local_tools.py)
+    FAILED libs/py-agents/tests/test_local_tools.py::test_bad_arguments_through_the_tool_are_an_error_message_never_a_crash[args0]
+    FAILED libs/py-agents/tests/test_local_tools.py::test_bad_arguments_through_the_tool_are_an_error_message_never_a_crash[args1]
+    FAILED libs/py-agents/tests/test_local_tools.py::test_bad_render_arguments_through_the_tool_are_an_error_message
+M37 CAUGHT: a date out of range is an error message (libs/py-agents/src/onb_agents/runtime/local_tools.py)
+    FAILED libs/py-agents/tests/test_local_tools.py::test_bad_arguments_through_the_tool_are_an_error_message_never_a_crash[args2]
+    FAILED libs/py-agents/tests/test_local_tools.py::test_bad_arguments_through_the_tool_are_an_error_message_never_a_crash[args3]
+    FAILED libs/py-agents/tests/test_local_tools.py::test_bad_arguments_through_the_tool_are_an_error_message_never_a_crash[args4]
+M38 CAUGHT: an ok answer carries its payload (libs/py-contracts/src/onb_contracts/agent_outputs.py)
     FAILED libs/py-contracts/tests/test_agent_output_contracts.py::test_an_ok_answer_without_its_payload_is_refused[approvals_agent]
     FAILED libs/py-contracts/tests/test_agent_output_contracts.py::test_an_ok_answer_without_its_payload_is_refused[db_agent]
     FAILED libs/py-contracts/tests/test_agent_output_contracts.py::test_an_ok_answer_without_its_payload_is_refused[provisioning_agent]
-M28 CAUGHT: contracts forbid unknown fields (libs/py-contracts/src/onb_contracts/agent_outputs.py)
+M39 CAUGHT: contracts forbid unknown fields (libs/py-contracts/src/onb_contracts/agent_outputs.py)
     FAILED libs/py-contracts/tests/test_agent_output_contracts.py::test_an_unknown_field_is_refused[approvals_agent]
     FAILED libs/py-contracts/tests/test_agent_output_contracts.py::test_an_unknown_field_is_refused[db_agent]
     FAILED libs/py-contracts/tests/test_agent_output_contracts.py::test_an_unknown_field_is_refused[provisioning_agent]
-M29 CAUGHT: the status is one of ok | refused | needs_human (libs/py-contracts/src/onb_contracts/agent_outputs.py)
-    FAILED libs/py-contracts/tests/test_agent_output_contracts.py::test_an_unknown_status_is_refused[done-approvals_agent]
+M40 CAUGHT: the status is one of ok | refused | needs_human (libs/py-contracts/src/onb_contracts/agent_outputs.py)
     FAILED libs/py-contracts/tests/test_agent_output_contracts.py::test_an_unknown_status_is_refused[done-db_agent]
-    FAILED libs/py-contracts/tests/test_agent_output_contracts.py::test_an_unknown_status_is_refused[done-provisioning_agent]
-M30 CAUGHT: the approval recommendation is an enum (libs/py-contracts/src/onb_contracts/agent_outputs.py)
+    FAILED libs/py-contracts/tests/test_agent_output_contracts.py::test_an_unknown_status_is_refused[done-run_assistant]
+    FAILED libs/py-contracts/tests/test_agent_output_contracts.py::test_an_unknown_status_is_refused[done-template_builder]
+M41 CAUGHT: the approval recommendation is an enum (libs/py-contracts/src/onb_contracts/agent_outputs.py)
     FAILED libs/py-contracts/tests/test_agent_output_contracts.py::test_a_wrongly_typed_payload_is_refused[approvals_agent]
-M31 CAUGHT: the run assistant's refusal fills `answer` (libs/py-contracts/src/onb_contracts/agent_outputs.py)
+M42 CAUGHT: the run assistant's refusal fills `answer` (libs/py-contracts/src/onb_contracts/agent_outputs.py)
+    FAILED libs/py-contracts/tests/test_agent_output_contracts.py::test_every_contract_builds_a_valid_refusal_from_a_code[run_assistant]
     FAILED libs/py-agents/tests/test_runtime.py::test_an_injection_in_the_task_input_is_a_refusal_in_the_agents_contract
-M32 CAUGHT: the mode selects the contract (libs/py-contracts/src/onb_contracts/agent_outputs.py)
+M43 CAUGHT: the mode selects the contract (libs/py-contracts/src/onb_contracts/agent_outputs.py)
     FAILED libs/py-contracts/tests/test_agent_output_contracts.py::test_contract_lookup_uses_the_agent_and_its_mode
     FAILED libs/py-contracts/tests/test_agent_output_contracts.py::test_every_scripted_eval_output_validates_against_its_agents_contract
     FAILED libs/py-agents/tests/test_runtime.py::test_an_agent_with_no_output_contract_is_not_run
-SUMMARY: 32 of 32 mutations caught
+M44 CAUGHT: a refusal or hand-off explains itself (libs/py-contracts/src/onb_contracts/agent_outputs.py)
+    FAILED libs/py-contracts/tests/test_agent_output_contracts.py::test_a_refusal_or_hand_off_must_explain_itself[approvals_agent]
+    FAILED libs/py-contracts/tests/test_agent_output_contracts.py::test_a_refusal_or_hand_off_must_explain_itself[db_agent]
+    FAILED libs/py-contracts/tests/test_agent_output_contracts.py::test_a_refusal_or_hand_off_must_explain_itself[provisioning_agent]
+M45 CAUGHT: a refusal carries no payload (libs/py-contracts/src/onb_contracts/agent_outputs.py)
+    FAILED libs/py-contracts/tests/test_agent_output_contracts.py::test_a_refusal_carries_no_payload[template_builder]
+    FAILED libs/py-contracts/tests/test_agent_output_contracts.py::test_a_refusal_carries_no_payload[template_builder:suggest]
+    FAILED libs/py-contracts/tests/test_agent_output_contracts.py::test_a_refusal_carries_no_payload[approvals_agent]
+M46 CAUGHT: a DB answer never names an org (libs/py-contracts/src/onb_contracts/agent_outputs.py)
+    FAILED libs/py-contracts/tests/test_agent_output_contracts.py::test_a_db_answer_is_bounded_and_never_names_an_org[answer0]
+    FAILED libs/py-contracts/tests/test_agent_output_contracts.py::test_a_db_answer_is_bounded_and_never_names_an_org[answer1]
+M47 CAUGHT: a message recipient is a ptk_ token (libs/py-contracts/src/onb_contracts/agent_outputs.py)
+    FAILED libs/py-contracts/tests/test_agent_output_contracts.py::test_a_message_recipient_must_be_a_pii_token[+919876543210]
+    FAILED libs/py-contracts/tests/test_agent_output_contracts.py::test_a_message_recipient_must_be_a_pii_token[priya@example.com]
+    FAILED libs/py-contracts/tests/test_agent_output_contracts.py::test_a_message_recipient_must_be_a_pii_token[ptk_]
+M48 CAUGHT: task-update inputs are bounded (libs/py-contracts/src/onb_contracts/agent_outputs.py)
+    FAILED libs/py-contracts/tests/test_agent_output_contracts.py::test_a_change_request_task_update_has_the_template_tasks_bounds[update1]
+    FAILED libs/py-contracts/tests/test_agent_output_contracts.py::test_a_change_request_task_update_has_the_template_tasks_bounds[update2]
+SUMMARY: 48 of 48 mutations caught

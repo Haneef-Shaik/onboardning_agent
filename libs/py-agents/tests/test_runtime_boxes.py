@@ -5,11 +5,14 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 import secrets
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any
 
+import httpx
+import pytest
 from langchain_core.language_models import BaseChatModel, LanguageModelInput
 from langchain_core.messages import AIMessage, BaseMessage
 from langchain_core.outputs import ChatGeneration, ChatResult
@@ -162,6 +165,74 @@ def test_box2_the_grant_and_the_agent_token_never_appear_in_captured_llm_input(t
     assert token not in kept
     assert grant not in kept
     assert result.outcome == "completed"
+
+
+def _cut_calls(stack: HubStack) -> Any:
+    """A client whose `tools/call` requests fail in transit (the hub goes away mid-task)."""
+
+    def client(headers: Mapping[str, str]) -> httpx.AsyncClient:
+        inner = stack.client(headers)
+
+        async def handle(request: httpx.Request) -> httpx.Response:
+            if b'"tools/call"' in request.content:
+                raise httpx.ConnectError("hub went away", request=request)
+            return await inner._transport.handle_async_request(request)
+
+        transport = httpx.MockTransport(handle)
+        return httpx.AsyncClient(transport=transport, base_url="http://mcp-hub", headers=dict(headers))
+
+    return client
+
+
+PATHS: dict[str, tuple[AgentManifest, list[dict[str, Any]], str]] = {
+    "hub_denial_then_repair": (
+        widened(DB, "insert_one"),
+        [tool_turn("mongo__insert_one", INSERT), {"content": "not json"}, final({"status": "ok", "answer": {}})],
+        "completed",
+    ),
+    "repair_fails": (DB, [{"content": "not json"}, {"content": "still not json"}], "invalid_output"),
+    "step_budget": (
+        DB.model_copy(update={"limits": DB.limits.model_copy(update={"max_steps": 2})}),
+        [tool_turn("mongo__find", FIND)] * 3,
+        "budget_exceeded",
+    ),
+    "transport_failure": (DB, [tool_turn("mongo__find", FIND), final({"status": "ok", "answer": {}})], "error"),
+}
+
+
+@pytest.mark.parametrize("path", sorted(PATHS))
+def test_box2_the_grant_and_token_stay_out_of_llm_input_logs_audit_and_results_on_every_path(
+    path: str, tmp_path: Path, caplog: pytest.LogCaptureFixture
+) -> None:
+    caplog.set_level(logging.DEBUG)
+    manifest, script, ending = PATHS[path]
+    grant = "eyJhbGciOiJFZERTQSJ9." + secrets.token_urlsafe(48)
+    stack = HubStack({"db_agent": DB}, documents=[{"_id": "t1", "status": "open"}])
+    models = FakeModels(script, tmp_path)
+    client = _cut_calls(stack) if path == "transport_failure" else stack.client
+    runner = AgentRunner(
+        models=models, tools=HubToolSource(HUB_URL, client=client), auditor=stack.audit, token_key=TOKEN_KEY
+    )
+
+    async def go() -> AgentRunResult:
+        async with stack.running():
+            return await runner.run(manifest, task(grant=grant))
+
+    result = asyncio.run(go())
+
+    assert (result.failure.kind if result.failure else result.outcome) == ending
+    token = next(h["authorization"] for h in stack.headers_seen if "authorization" in h).removeprefix("Bearer ")
+    sent = models.sent_texts()
+    assert sent, "the model was called"
+    places = {
+        "llm input": "\n".join(sent),
+        "result": json.dumps(result.to_dict()),
+        "logs": caplog.text,
+        "audit": repr(records(stack)),
+    }
+    for where, text in places.items():
+        for secret in (token, grant, *token.split("."), *grant.split(".")):
+            assert secret not in text, f"{path}: a secret reached the {where}"
 
 
 # --- box 3 ---------------------------------------------------------------------------------------

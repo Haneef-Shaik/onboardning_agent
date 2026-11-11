@@ -38,7 +38,22 @@ AG-1 builds any registered agent from its manifest as a LangGraph subgraph. Five
    `failure.kind` = `budget_exceeded` | `invalid_output` | `guardrail_blocked` | `timeout` | `error`
    and a reason of codes and counts (or an exception type). A failed result never carries output.
    The final reply gets one repair through the guards, recorded as `guardrail.output.schema`.
-5. **Eval adapters are registered by each agent's own goal** (TB-1, AGT-1, HIL-1, CHAT-1), which owns
+   One deadline, the task budget's remaining time (so also the run's), bounds the whole task: the hub
+   connection, model calls and tool calls. Any time overrun is `timeout` with the budget's reason
+   (`seconds 1.2/1`, `run seconds …`); `budget_exceeded` is for steps and tokens. The repair turn needs
+   a step left; without one the task fails `invalid_output` (`no_repair_budget`). The trajectory up to
+   any failure is kept, and a transport failure is reported by its real cause (`ConnectError`), not
+   the task group's `ExceptionGroup`. Errors that are the caller's bug (retired agent, no contract for
+   the mode, an approval the manifest does not require, unknown local tool, missing connector) raise
+   before the task starts.
+6. **Tool rounds.** The graph runs one tool call per step, so every call that ran is in the state and
+   the trajectory. At most 8 calls of one reply run; the rest are answered with an error and recorded
+   as `error / too_many_tool_calls`. Tool names chosen by the model are recorded only as plain
+   identifiers (`<invalid>` otherwise).
+7. **Approvals.** `AgentTask.approvals` becomes `approved:<rule>` scopes. Only the orchestrator builds
+   an `AgentTask`, and only from persisted HIL approval records for that task (HIL-1); no API handler
+   may copy request fields into it.
+8. **Eval adapters are registered by each agent's own goal** (TB-1, AGT-1, HIL-1, CHAT-1), which owns
    the agent's prompt and behaviour. They pass `invocation.chat_model` through a `ModelProvider` and
    the harness's tools through a `ToolSource`; the runtime takes both by injection.
 
