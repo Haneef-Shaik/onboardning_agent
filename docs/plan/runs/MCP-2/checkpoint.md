@@ -1,24 +1,22 @@
-# Checkpoint — MCP-2 · goal/mcp-2-query-validator · ON HOLD after verifier attempt 6
+# Checkpoint — MCP-2 · goal/mcp-2-query-validator · ON HOLD after verifier attempt 7 (the declared last attempt)
 
-**State (fafe580)**
-- Boxes 1–3 pass in all six verifier runs. `make check` green (mcp-mongo 516 passed); `make test-int` green (7 projects). Mutations: 40 of 40 caught, including V38–V40 (the attempt-5 survivors).
-- **Box 4** follows the confirmed threat model plus the approved attempt-6 plan:
-  - production-path `main()` in two configurations (required-only, all-non-default);
-  - the served app's route table is exactly `/mcp`;
-  - tools are listed over a real MCP session;
-  - static rules: `mcp.server` is imported only by `server.py`, and the environment is read only via `load_settings`.
-- **Attempt 6 fail (box 4).** The verifier classed both survivors as IN MODEL. Each passes all 516 tests:
-  - **A, a second endpoint through `FastMCP.run`:** `server.py` gains `build_ops_server(fn, host, port)` returning `FastMCP(..., tools=[Tool.from_function(fn, name="run_command")])`. `main.py` starts it with `threading.Thread(target=ops.run, args=("streamable-http",), daemon=True).start()` on port+1, before the normal `uvicorn.run`. The test patches only `uvicorn.run`, so a server started any other way is never captured.
-  - **B, a branch on a combination of settings:** `build_server` appends a `drop_collection` tool when `host != "127.0.0.1" and port == 8000` (a networked host on the default port). Only two configuration points are tested, so mixed combinations go unexercised.
+**State (c0393ea)**
+- Boxes 1–3 pass in all seven verifier runs. `make check` green (mcp-mongo 518 passed); `make test-int` green (7 projects). Mutations: 41 of 41 caught, including V41 (attempt-6 survivor A).
+- Box 4 implements the orchestrator's FINAL narrowed model:
+  1. production-path `main()` serves one MCP endpoint with exactly the six PRD tools (two configurations);
+  2. only `server.py` imports `mcp.server`, and `FastMCP` is constructed exactly once, inside `build_server`;
+  3. nothing starts a server or listener except `main()`'s single `uvicorn.run`.
 
-**Next step if resumed (attempt 7, needs integrator approval; the verifier's retry guidance)**
-1. **A:** prove `main()` starts no listener other than the app it passes to `uvicorn.run`. Two options:
-   - patch or forbid `FastMCP.run*`, `uvicorn.Server`/`Config`, `anyio.run`, `threading.Thread.start` and `asyncio` loop starts during `main()`;
-   - add a static rule: `main.py`/`server.py` never call `.run*`, `uvicorn.Server` or `uvicorn.Config`, and `FastMCP(` is constructed exactly once, inside `build_server`.
+  Survivor B (configuration combinations) is out of model and flagged for SEC-2 in the handoff.
+- **Attempt 7 fail (box 4).** The verifier classed all four survivors IN MODEL; each passes all 518 tests:
+  - **Q1 (guarantee 2):** `server.py` does `import mcp.server.fastmcp as fastmcp_mod` and builds a module-level `OPS = fastmcp_mod.FastMCP("ops", tools=[... drop_collection ...])`. The exactly-once test resolves only from-imported names (`ast.Name`), not attribute chains.
+  - **Q3 (guarantee 2):** `class _Ops(FastMCP): pass; OPS = _Ops(...)`. Subclass construction is not counted.
+  - **Q4 (guarantee 3):** `main.py` calls `os.system("npx -y mongodb-mcp-server")` before `uvicorn.run`. The listener rule forbids `subprocess`/`multiprocessing` but not the `os` spawn family (`os.system`, `popen`, `spawn*`, `posix_spawn*`, `exec*`, `fork`) or `pty`.
+  - **Q2 (guarantees 2 and 3, end to end):** Q1's server becomes a module-level `ops_app` in `server.py`, and `main.py` runs `os.system("uvicorn onb_mcp_mongo.server:ops_app --port …+1")`. The verifier confirmed over HTTP that it lists `drop_collection`.
 
-   Mutation V41.
-2. **B:** cover configuration combinations. Two options:
-   - run all 8 combinations of {default, non-default} for HOST, PORT and DATABASE;
-   - prove statically that `main`/`build_server` use host, port and database only as pass-through arguments (never compared or branched on).
+**If the integrator allows another round (the verifier's guidance)**
+1. **Exactly-once test:** resolve `FastMCP` through attribute chains on any `mcp…` import alias as well as from-imports. Fail on any `ClassDef` with a `FastMCP` base.
+2. **Listener rule:** forbid the `os` process-spawn family and `pty`, ideally by forbidding every `os.<attr>` call except an allowlist (`main.py`'s `os.environ` passed to `load_settings`; `db_users.py`'s environment read).
+3. **Mutations:** add Q1–Q4 as V42–V45, show each killed, refresh the evidence and the handoff.
 
-   Mutation V42.
+This is the same pattern as attempts 2–6: each closure is followed by a new ordinary-code spelling. A different framing of box 4 may be needed rather than another rule.
