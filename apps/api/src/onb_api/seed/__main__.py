@@ -26,7 +26,7 @@ from onb_crypto import (
     RepositoryOrgKeyStore,
     ensure_org_keys_index,
 )
-from onb_data import AuditLog, DataStore, connect
+from onb_data import AuditLog, DataAccessError, DataStore, connect
 from pymongo.errors import PyMongoError
 
 from onb_api.auth.mongo_users import MongoUserStore
@@ -34,7 +34,13 @@ from onb_api.auth.settings import DEFAULT_BCRYPT_ROUNDS, ConfigError, require_en
 from onb_api.auth.users import EmailTakenError
 from onb_api.seed.seeder import SeedConflictError, Seeder, SeedReport, SeedServices
 from onb_api.seed.spec import SeedConfigError, load_seed
-from onb_api.templates import MongoTemplateStore, RegistryValidatorSource, TemplateLifecycle, TemplateRejectedError
+from onb_api.templates import (
+    LifecycleConflictError,
+    MongoTemplateStore,
+    RegistryValidatorSource,
+    TemplateLifecycle,
+    TemplateRejectedError,
+)
 
 __all__ = ["build_services", "main", "parse_args"]
 
@@ -46,6 +52,8 @@ _REFUSALS = (
     RegistrySyncError,
     ManifestError,
     EmailTakenError,
+    LifecycleConflictError,  # another seed published the same template at the same time: run it again
+    DataAccessError,
 )
 
 

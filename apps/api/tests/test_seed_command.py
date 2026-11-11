@@ -14,7 +14,7 @@ import pytest
 from onb_agents.templates import Issue, Rule
 from onb_api.seed import __main__ as command
 from onb_api.seed.seeder import SeedConflictError, SeedReport, SeedStep
-from onb_api.templates import TemplateRejectedError
+from onb_api.templates import LifecycleConflictError, TemplateRejectedError
 from pymongo.errors import ServerSelectionTimeoutError
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -100,7 +100,7 @@ def test_a_database_error_names_its_type_only(
 def test_a_finished_seed_prints_one_line_per_record_and_a_summary(
     capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    report = SeedReport(steps=(SeedStep(created=True, target="org:org_demo"), SeedStep(False, "agent:db_agent")))
+    report = SeedReport(steps=(SeedStep("created", "org:org_demo"), SeedStep("unchanged", "agent:db_agent")))
 
     async def seed(_: argparse.Namespace, __: Mapping[str, str]) -> SeedReport:
         return report
@@ -108,3 +108,12 @@ def test_a_finished_seed_prints_one_line_per_record_and_a_summary(
     monkeypatch.setattr(command, "_seed", seed)
     assert command.main(ARGS, ENV) == 0
     assert capsys.readouterr().out == "created org:org_demo\nunchanged agent:db_agent\n1 created, 1 unchanged\n"
+
+
+def test_a_concurrent_publish_is_refused_in_one_line(
+    capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    conflict = LifecycleConflictError("another version of this template was published at the same time")
+    monkeypatch.setattr(command, "_seed", _raising(conflict))
+    assert command.main(ARGS, ENV) == 1
+    assert capsys.readouterr().err == f"seed refused: {conflict}\n"

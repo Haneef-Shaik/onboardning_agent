@@ -167,3 +167,10 @@ def test_a_seed_file_that_is_not_yaml_is_a_config_error(tmp_path: Path) -> None:
     path.write_text("org: [unclosed\n")
     with pytest.raises(SeedConfigError, match=r"seed\.yaml"):
         load_seed(path, GOOD_ENV)
+
+
+def test_a_password_with_surrounding_whitespace_is_refused_without_echoing_it() -> None:
+    padded = " hr-pass-0123456789 "
+    with pytest.raises(SeedConfigError, match="SEED_HR_PASSWORD must not start or end with whitespace") as caught:
+        load_seed(SEED_FILE, {**GOOD_ENV, "SEED_HR_PASSWORD": padded})
+    assert padded.strip() not in str(caught.value)

@@ -33,9 +33,15 @@ if [[ -z "$container" ]]; then
   echo "seed: the compose mongo service is not running: run \`make up\`" >&2
   exit 1
 fi
+# One "<network> <ip>" line per network; mongo sits on the stack's private network only, take the first.
 read -r network mongo_ip < <(
-  docker inspect -f '{{range $k, $v := .NetworkSettings.Networks}}{{$k}} {{$v.IPAddress}}{{end}}' "$container"
+  docker inspect -f '{{range $k, $v := .NetworkSettings.Networks}}{{$k}} {{$v.IPAddress}}{{"\n"}}{{end}}' "$container" |
+    head -n 1
 )
+if [[ -z "${network:-}" || -z "${mongo_ip:-}" ]]; then
+  echo "seed: could not find the mongo container's network address" >&2
+  exit 1
+fi
 label="${LABEL_KEY}=${network}"
 
 stale="$(docker ps -aq --filter "label=${label}")"
@@ -44,9 +50,16 @@ if [[ -n "$stale" ]]; then
   docker rm -f $stale >/dev/null
 fi
 
+# Armed before the tunnel starts: an interrupt between `docker run` and here still removes it (by label).
+remove_tunnel() {
+  local ids
+  ids="$(docker ps -aq --filter "label=${label}")"
+  # shellcheck disable=SC2086  # one container id per word
+  [[ -z "$ids" ]] || docker rm -f $ids >/dev/null 2>&1 || true
+}
+trap remove_tunnel EXIT
 tunnel="$(docker run -d --rm --label "$label" -p 127.0.0.1::27017 "$SOCAT_IMAGE" \
   TCP-LISTEN:27017,fork,reuseaddr "TCP:${mongo_ip}:27017")"
-trap 'docker rm -f "$tunnel" >/dev/null 2>&1 || true' EXIT
 docker network connect "$network" "$tunnel"
 SEED_TUNNEL="$(docker port "$tunnel" 27017/tcp | head -n 1)"
 export SEED_TUNNEL

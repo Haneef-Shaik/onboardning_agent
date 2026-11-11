@@ -9,6 +9,7 @@ M3 KILLED · keys: always create, never verify · apps/api/src/onb_api/seed/seed
     FAILED apps/api/tests/test_seeder.py::test_an_existing_template_is_left_as_it_is
     FAILED apps/api/tests/test_seeder.py::test_an_existing_user_keeps_its_password
     FAILED apps/api/tests/test_seeder.py::test_org_keys_made_under_another_master_key_stop_the_seed
+    FAILED apps/api/tests/test_seeder.py::test_registry_changes_are_reported_as_updates_and_retirements_not_creations
 M4 KILLED · keys: any crypto error (a wrong master key) creates keys · apps/api/src/onb_api/seed/seeder.py
     FAILED apps/api/tests/test_seeder.py::test_org_keys_made_under_another_master_key_stop_the_seed
 M5 KILLED · users: no look for an existing login · apps/api/src/onb_api/seed/seeder.py
@@ -20,6 +21,8 @@ M5 KILLED · users: no look for an existing login · apps/api/src/onb_api/seed/s
     FAILED apps/api/tests/test_seeder.py::test_a_stored_publisher_who_is_not_hr_admin_publishes_nothing
     FAILED apps/api/tests/test_seeder.py::test_a_login_entry_without_its_user_record_stops_the_seed
     FAILED apps/api/tests/test_seeder.py::test_a_second_run_writes_no_org_record
+    FAILED apps/api/tests/test_seeder.py::test_a_user_record_without_its_login_entry_stops_the_seed
+    FAILED apps/api/tests/test_seeder.py::test_registry_changes_are_reported_as_updates_and_retirements_not_creations
 M6 KILLED · users: an email registered to another user is accepted · apps/api/src/onb_api/seed/seeder.py
     FAILED apps/api/tests/test_seeder.py::test_an_email_registered_to_another_user_stops_the_seed
 M7 KILLED · users: a login entry without its record is accepted · apps/api/src/onb_api/seed/seeder.py
@@ -34,6 +37,8 @@ M10 KILLED · templates: no look for an existing version · apps/api/src/onb_api
     FAILED apps/api/tests/test_seeder.py::test_a_second_run_changes_nothing - Ass...
     FAILED apps/api/tests/test_seeder.py::test_an_existing_template_is_left_as_it_is
     FAILED apps/api/tests/test_seeder.py::test_an_existing_user_keeps_its_password
+    FAILED apps/api/tests/test_seeder.py::test_registry_changes_are_reported_as_updates_and_retirements_not_creations
+    FAILED apps/api/tests_int/test_mongo_seed.py::test_make_seed_on_an_empty_database_creates_every_listed_record
     FAILED apps/api/tests_int/test_mongo_seed.py::test_a_second_make_seed_changes_nothing
 M11 KILLED · templates: a pending seed draft is not reused · apps/api/src/onb_api/seed/seeder.py
     FAILED apps/api/tests/test_seeder.py::test_a_run_that_failed_at_the_publish_is_finished_by_the_next_run_without_a_second_draft
@@ -61,7 +66,15 @@ M21 KILLED · command: the database is reached before the settings are checked �
     FAILED apps/api/tests/test_seed_command.py::test_a_missing_setting_is_refused_before_any_connection[PII_MASTER_KEY]
     FAILED apps/api/tests/test_seed_command.py::test_a_missing_setting_is_refused_before_any_connection[MONGO_URI]
     FAILED apps/api/tests/test_seed_command.py::test_a_missing_setting_is_refused_before_any_connection[MONGO_DATABASE]
-20/21 killed; survived: ['M12']
+M22 KILLED · users: a user record without its login entry is re-added · apps/api/src/onb_api/seed/seeder.py
+    FAILED apps/api/tests/test_seeder.py::test_a_user_record_without_its_login_entry_stops_the_seed
+M23 KILLED · registry: every sync change is reported as created · apps/api/src/onb_api/seed/seeder.py
+    FAILED apps/api/tests/test_seeder.py::test_registry_changes_are_reported_as_updates_and_retirements_not_creations
+M24 KILLED · spec: a password with surrounding whitespace is accepted · apps/api/src/onb_api/seed/spec.py
+    FAILED apps/api/tests/test_seed_spec.py::test_a_password_with_surrounding_whitespace_is_refused_without_echoing_it
+M25 KILLED · command: a concurrent publish escapes as a traceback · apps/api/src/onb_api/seed/__main__.py
+    FAILED apps/api/tests/test_seed_command.py::test_a_concurrent_publish_is_refused_in_one_line
+24/25 killed; survived: ['M12']
 
 M12 is an equivalent mutant: a draft is locked as published in the same transaction that writes its
 template head (TPL-2), so a published draft whose key has no head is unreachable, and `_template`

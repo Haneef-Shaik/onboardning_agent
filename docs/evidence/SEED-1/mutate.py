@@ -53,7 +53,7 @@ MUTATIONS = [
     ("M18", "spec: duplicate emails are accepted", SPEC,
      '_check_unique("user email", [normalise_email(u.email) for u in users])', "pass", UNIT),
     ("M19", "spec: an unset variable reads as an empty password", SPEC,
-     'if not value:\n        raise SeedConfigError(f"{name} is not set")', "if False:\n        pass", UNIT),
+     'if not value.strip():\n        raise SeedConfigError(f"{name} is not set")', "if False:\n        pass", UNIT),
     ("M20", "command: a database error prints its text (host, URI)", MAIN,
      'sys.stderr.write(f"seed failed: MongoDB error {type(error).__name__}\\n")',
      'sys.stderr.write(f"seed failed: MongoDB error {type(error).__name__}: {error}\\n")', UNIT),
@@ -61,6 +61,14 @@ MUTATIONS = [
      "    plan = load_seed(args.seed, env)\n    master_key = MasterKey.from_env(env)\n    uri, database = require_env(env, \"MONGO_URI\"), require_env(env, \"MONGO_DATABASE\")\n    store = connect(uri, database, app_name=\"seed\")",
      "    store = connect(env.get(\"MONGO_URI\", \"\") or \"mongodb://x\", env.get(\"MONGO_DATABASE\", \"\") or \"x\", app_name=\"seed\")\n    plan = load_seed(args.seed, env)\n    master_key = MasterKey.from_env(env)\n    uri, database = require_env(env, \"MONGO_URI\"), require_env(env, \"MONGO_DATABASE\")",
      UNIT),
+    ("M22", "users: a user record without its login entry is re-added", SEEDER,
+     "if await self._s.users.get_user(user.id) is not None:\n            raise SeedConflictError", "if False:\n            raise SeedConflictError", UNIT),
+    ("M23", "registry: every sync change is reported as created", SEEDER,
+     "SeedStep(_SYNC_ACTIONS[change.kind], change.target)", 'SeedStep("created", change.target)', UNIT),
+    ("M24", "spec: a password with surrounding whitespace is accepted", SPEC,
+     "if value != value.strip():", "if False:", UNIT),
+    ("M25", "command: a concurrent publish escapes as a traceback", MAIN,
+     "    LifecycleConflictError,  # another seed", "    # LifecycleConflictError,  # another seed", UNIT),
 ]
 
 

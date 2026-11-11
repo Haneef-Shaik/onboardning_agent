@@ -131,9 +131,12 @@ def _check_users(users: list[_UserEntry]) -> None:
 
 
 def _password(name: str, env: Mapping[str, str]) -> str:
-    value = env.get(name, "").strip()
-    if not value:
+    value = env.get(name, "")
+    if not value.strip():
         raise SeedConfigError(f"{name} is not set")
+    if value != value.strip():
+        # Stored as given, a login typed without the spaces would fail; stripped, one typed with them would.
+        raise SeedConfigError(f"{name} must not start or end with whitespace")
     if len(value) < MIN_PASSWORD_LENGTH:
         raise SeedConfigError(f"{name} must be at least {MIN_PASSWORD_LENGTH} characters")
     if len(value.encode()) > MAX_PASSWORD_BYTES:

@@ -24,7 +24,7 @@ from __future__ import annotations
 import asyncio
 from collections.abc import Awaitable, Callable, Mapping, Sequence
 from dataclasses import dataclass, field
-from typing import Any, Final, Protocol
+from typing import Any, Final, Literal, Protocol
 
 from onb_agents.registry import AgentRegistry, ToolCatalog
 from onb_agents.registry.manifest import AgentManifest
@@ -41,7 +41,7 @@ from onb_api.auth.users import NewUser, UserStore
 from onb_api.seed.spec import SeedPlan, SeedUser
 from onb_api.templates import TemplateLifecycle
 
-__all__ = ["OrgRecords", "SeedConflictError", "SeedReport", "SeedServices", "SeedStep", "Seeder"]
+__all__ = ["Action", "OrgRecords", "SeedConflictError", "SeedReport", "SeedServices", "SeedStep", "Seeder"]
 
 _LIFECYCLE_FIELDS: Final = frozenset({"version", "status"})
 
@@ -50,13 +50,23 @@ class SeedConflictError(RuntimeError):
     """The database holds something the seed cannot reconcile without changing it."""
 
 
+Action = Literal["created", "updated", "retired", "unchanged"]
+_ACTIONS: Final[tuple[Action, ...]] = ("created", "updated", "retired", "unchanged")
+_SYNC_ACTIONS: Final[dict[str, Action]] = {
+    "register": "created",
+    "update": "updated",
+    "retire": "retired",
+    "catalog_update": "updated",
+}
+
+
 @dataclass(frozen=True, slots=True)
 class SeedStep:
-    created: bool
+    action: Action
     target: str
 
     def line(self) -> str:
-        return f"{'created' if self.created else 'unchanged'} {self.target}"
+        return f"{self.action} {self.target}"
 
 
 @dataclass(frozen=True, slots=True)
@@ -64,16 +74,19 @@ class SeedReport:
     steps: tuple[SeedStep, ...]
 
     @property
-    def created(self) -> tuple[SeedStep, ...]:
-        return tuple(s for s in self.steps if s.created)
+    def changed(self) -> tuple[SeedStep, ...]:
+        """Every step that wrote something (created, updated or retired)."""
+        return tuple(s for s in self.steps if s.action != "unchanged")
 
     @property
     def unchanged(self) -> tuple[SeedStep, ...]:
-        return tuple(s for s in self.steps if not s.created)
+        return tuple(s for s in self.steps if s.action == "unchanged")
 
     def render(self) -> str:
-        summary = f"{len(self.created)} created, {len(self.unchanged)} unchanged"
-        return "\n".join([*(s.line() for s in self.steps), summary])
+        """One line per step, then counts: created and unchanged always, updated and retired when any."""
+        counts = {a: sum(1 for s in self.steps if s.action == a) for a in _ACTIONS}
+        shown = [f"{n} {a}" for a, n in counts.items() if n or a in ("created", "unchanged")]
+        return "\n".join([*(s.line() for s in self.steps), ", ".join(shown)])
 
 
 class OrgRecords(Protocol):
@@ -118,20 +131,20 @@ class Seeder:
     async def _org(self, plan: SeedPlan) -> SeedStep:
         target = f"org:{plan.org.id}"
         if await self._s.orgs.find_one({"_id": plan.org.id}) is not None:
-            return SeedStep(created=False, target=target)
+            return SeedStep("unchanged", target)
         try:
             await self._s.orgs.insert_one({"_id": plan.org.id, "name": plan.org.name})
         except DuplicateKeyError:  # another seed got there first: the same end state
-            return SeedStep(created=False, target=target)
-        return SeedStep(created=True, target=target)
+            return SeedStep("unchanged", target)
+        return SeedStep("created", target)
 
     async def _keys(self, org_id: str) -> SeedStep:
         try:
             version = await self._s.keyring.verify(org_id)
         except NoOrgKeysError:
             version = await self._s.keyring.create(org_id)
-            return SeedStep(created=True, target=f"org_keys:{org_id}/v{version}")
-        return SeedStep(created=False, target=f"org_keys:{org_id}/v{version}")
+            return SeedStep("created", f"org_keys:{org_id}/v{version}")
+        return SeedStep("unchanged", f"org_keys:{org_id}/v{version}")
 
     async def _user(self, org_id: str, user: SeedUser) -> SeedStep:
         target = f"user:{user.id} ({user.role.value})"
@@ -141,11 +154,13 @@ class Seeder:
                 raise SeedConflictError(f"the email of {user.id} is registered to another user")
             if await self._s.users.get_user(user.id) is None:
                 raise SeedConflictError(f"{user.id} has a login entry but no user record")
-            return SeedStep(created=False, target=target)
+            return SeedStep("unchanged", target)
+        if await self._s.users.get_user(user.id) is not None:
+            raise SeedConflictError(f"{user.id} has a user record but no login entry")
         password_hash = await asyncio.to_thread(hash_password, user.password, rounds=self._rounds)
         new = NewUser(email=user.email, name=user.name, role=user.role, password_hash=password_hash)
         await self._s.users.add_user(new, user_id=user.id)
-        return SeedStep(created=True, target=target)
+        return SeedStep("created", target)
 
     async def _check_publisher(self, actor: SeedUser) -> None:
         stored = await self._s.users.get_user(actor.id)
@@ -154,21 +169,21 @@ class Seeder:
 
     async def _registry(self, actor: SeedUser) -> list[SeedStep]:
         report = await self._s.registry.sync(self._s.manifests, self._s.catalog, actor=Actor.user(actor.id))
-        steps = [SeedStep(created=True, target=change.target) for change in report.changes]
-        steps += [SeedStep(created=False, target=f"agent:{name}") for name in report.unchanged]
+        steps = [SeedStep(_SYNC_ACTIONS[change.kind], change.target) for change in report.changes]
+        steps += [SeedStep("unchanged", f"agent:{name}") for name in report.unchanged]
         if not any(change.kind == "catalog_update" for change in report.changes):
-            steps.append(SeedStep(created=False, target=f"catalog:{CATALOG_ID}"))
+            steps.append(SeedStep("unchanged", f"catalog:{CATALOG_ID}"))
         return steps
 
     async def _template(self, template: Template, actor: SeedUser) -> SeedStep:
         current = next((t for t in await self._s.templates.list_templates() if t.key == template.key), None)
         if current is not None:
-            return SeedStep(created=False, target=f"template:{template.key}/v{current.latest_version}")
+            return SeedStep("unchanged", f"template:{template.key}/v{current.latest_version}")
         draft = await self._pending_draft(template)
         if draft is None:
             draft = await self._s.templates.create_draft(template, actor_id=actor.id)
         published = await self._s.templates.publish(draft.id, actor_id=actor.id)
-        return SeedStep(created=True, target=f"template:{published.key}/v{published.version}")
+        return SeedStep("created", f"template:{published.key}/v{published.version}")
 
     async def _pending_draft(self, template: Template) -> DraftRecord | None:
         """An unpublished draft holding exactly this body: left by a run that stopped before publishing."""

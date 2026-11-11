@@ -22,10 +22,14 @@
    existing record is never changed: a user keeps its password and role, a template key that already
    has a version is left as it is (HR may have published newer ones). A run that stopped part-way is
    finished by the next one; an unpublished draft with the seed template's exact body is published
-   rather than duplicated.
+   rather than duplicated. **The registry step is the exception:** it is REG-1's full sync, so
+   `config/agents` is the registry's source of truth. Unchanged manifests write nothing; an edited
+   manifest is a new version and a removed one is retired. The output says `updated` / `retired` for
+   those, never `created`.
 3. **Conflicts stop the seed** instead of being overwritten: an email registered to another user
-   (ADR 0004), a login entry without its user record, org keys the master key cannot unwrap, or a
-   seed publisher who is not an HR_ADMIN in the stored records.
+   (ADR 0004), a login entry without its user record or a user record without its login entry (a
+   half-written `add_user`), org keys the master key cannot unwrap, or a seed publisher who is not
+   an HR_ADMIN in the stored records. A password with surrounding whitespace is refused, not stripped.
 4. **The seed's first HR_ADMIN is the actor** of the registry sync and of each publish, so the audit
    log shows who the platform was set up as.
 5. **Reaching Mongo.** `python -m onb_api.seed` takes `MONGO_URI` and `MONGO_DATABASE` from the

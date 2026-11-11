@@ -158,7 +158,7 @@ def test_an_empty_database_gets_the_org_its_keys_the_users_the_registry_and_the_
     assert version.status == "published"
     assert version.published_by == "u_demo_hradmin"
 
-    assert [s.line() for s in report.created][:7] == [
+    assert [s.line() for s in report.changed][:7] == [
         "created org:org_demo",
         "created org_keys:org_demo/v1",
         "created user:u_demo_hradmin (HR_ADMIN)",
@@ -223,7 +223,7 @@ def test_a_second_run_changes_nothing(plan: SeedPlan) -> None:
     second = _run(lambda: world.seeder().run(plan))
 
     assert _snapshot(world) == before
-    assert second.created == ()
+    assert second.changed == ()
     assert [s.target for s in second.steps] == [
         "org:org_demo",
         "org_keys:org_demo/v1",
@@ -254,7 +254,7 @@ def test_a_run_that_failed_at_the_publish_is_finished_by_the_next_run_without_a_
 
     audit.fail = False
     report = _run(lambda: world.seeder().run(plan))
-    assert [s.line() for s in report.created] == ["created template:engineer-india/v1"]
+    assert [s.line() for s in report.changed] == ["created template:engineer-india/v1"]
     drafts = _in_org(world.templates.list_drafts)
     assert [(d.status, d.published_version) for d in drafts] == [("published", 1)]
 
@@ -271,7 +271,7 @@ def test_an_existing_template_is_left_as_it_is(plan: SeedPlan) -> None:
 
     _run(publish_v2)
     report = _run(lambda: world.seeder().run(plan))
-    assert report.created == ()
+    assert report.changed == ()
     assert report.steps[-1].line() == "unchanged template:engineer-india/v2"
     summaries = _in_org(world.templates.list_templates)
     assert [(t.latest_version, t.name) for t in summaries] == [(2, "Engineers, India (edited by HR)")]
@@ -282,7 +282,7 @@ def test_an_existing_user_keeps_its_password(plan: SeedPlan) -> None:
     _run(lambda: world.seeder().run(plan))
     rotated = load_seed(CONFIG / "seed.yaml", {**ENV, "SEED_HR_PASSWORD": "a-new-password-987654"})
     report = _run(lambda: world.seeder().run(rotated))
-    assert report.created == ()
+    assert report.changed == ()
     record = _in_org(lambda: world.users.get_user("u_demo_hr"))
     assert record is not None
     assert verify_password(ENV["SEED_HR_PASSWORD"], record.password_hash, rounds=ROUNDS)
@@ -379,3 +379,30 @@ def test_a_second_run_writes_no_org_record(plan: SeedPlan) -> None:
     counting = Seeder(replace(world.services(), orgs=CountingOrgs()), bcrypt_rounds=ROUNDS)
     _run(lambda: counting.run(plan))
     assert inserts == []
+
+
+def test_a_user_record_without_its_login_entry_stops_the_seed(plan: SeedPlan) -> None:
+    world = _world()
+    _run(lambda: world.seeder().run(plan))
+    logins = world.db["user_logins"]
+    logins.documents = [d for d in logins.documents if d["user_id"] != "u_demo_mgr_arjun"]
+    with pytest.raises(SeedConflictError, match="u_demo_mgr_arjun has a user record but no login entry"):
+        _run(lambda: world.seeder().run(plan))
+
+
+def test_registry_changes_are_reported_as_updates_and_retirements_not_creations(plan: SeedPlan) -> None:
+    world = _world()
+    _run(lambda: world.seeder().run(plan))
+    edited = [
+        m.model_copy(update={"purpose": "Edited after the first seed"}) if m.name == "db_agent" else m
+        for m in load_manifests(CONFIG / "agents")
+        if m.name != "run_assistant"
+    ]
+    drifted = Seeder(replace(world.services(), manifests=edited), bcrypt_rounds=ROUNDS)
+    report = _run(lambda: drifted.run(plan))
+
+    lines = [s.line() for s in report.changed]
+    assert "updated agent:db_agent/v2" in lines
+    assert "retired agent:run_assistant/v2" in lines
+    assert not any(line.startswith("created ") for line in lines)
+    assert report.render().splitlines()[-1] == f"0 created, 1 updated, 1 retired, {len(report.unchanged)} unchanged"
