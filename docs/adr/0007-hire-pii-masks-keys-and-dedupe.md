@@ -1,7 +1,7 @@
-# 0008 · Hire PII: stored masks, org keys on first write, partial email index
+# 0007 · Hire PII: stored masks, org keys on first write, partial email index
 
 - **Status:** accepted · 2026-11-11 · goal HIRE-1
-- **Number:** 0008 by the orchestrator (TPL-2 runs in parallel with 0009).
+- **Number:** assigned 0008, renumbered to 0007 at integration because DAG-1 merged first with 0008.
 - **Context:** PRD §7.10 keeps raw values only in the vault and shows every sensitive field masked
   (FR-P1). FR-P5 logs every token resolution in `pii_access_log`. §7.10 Lookup / dedupe makes
   `{org_id, email_hash}` the duplicate check. Three questions the PRD leaves open came up building
