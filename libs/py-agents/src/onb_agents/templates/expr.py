@@ -14,7 +14,8 @@ Grammar (a closed set; anything else is refused):
     list    := '[' (literal (',' literal)* ','?)? ']'
     literal := 'single' | "double" (no backslashes) | integer | true | false | null
 
-A NAME is a template variable. Before parsing, a scan refuses, by name: attribute access (`a.b`),
+Only ASCII digits and ASCII whitespace are accepted. A NAME is a template variable. Before parsing,
+a scan refuses, by name: attribute access (`a.b`),
 function calls (`f(x)`, `(...)(...)`), subscripts (`a[0]`), imports (`import`, `from`, `__import__`,
 `importlib`) and dangerous or dunder names (`eval`, `lambda`, `__class__`). Error messages carry the
 reason and a position, never the condition text, which may hold anything a template author typed.
@@ -88,9 +89,9 @@ _ORDER_OPS: Final[Mapping[str, Callable[[Any, Any], Any]]] = {
     ">=": operator.ge,
 }
 _TOKEN: Final = re.compile(
-    r"""(?P<ws>\s+)
+    r"""(?P<ws>[ \t\r\n]+)
       | (?P<str>'[^'\\\n]*'|"[^"\\\n]*")
-      | (?P<num>-?\d+)
+      | (?P<num>-?[0-9]+)
       | (?P<name>[A-Za-z_][A-Za-z0-9_]*)
       | (?P<op>==|!=|<=|>=|<|>)
       | (?P<punct>[()\[\],.])
@@ -449,6 +450,12 @@ class WhenExpression:
                     yield name.name, other.value
                 elif isinstance(other, _List):
                     yield from ((name.name, item) for item in other.items)
+
+    def name_pairs(self) -> Iterator[tuple[str, str]]:
+        """Each `(variable, variable)` pair the condition compares, for type checks."""
+        for node in _walk(self._root):
+            if isinstance(node, _Compare) and isinstance(node.left, _Name) and isinstance(node.right, _Name):
+                yield node.left.name, node.right.name
 
     def evaluate(self, variables: Mapping[str, object]) -> bool:
         """True or false for these variables; `ExpressionError(EVALUATION)` when it cannot be decided."""

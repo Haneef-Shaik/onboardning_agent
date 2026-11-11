@@ -11,6 +11,8 @@ from typing import Any
 
 import pytest
 from onb_contracts.templates import (
+    MAX_INPUT_STRING,
+    MAX_LIST,
     RESERVED_VARIABLE_NAMES,
     Sla,
     Template,
@@ -179,13 +181,34 @@ def test_an_enum_variable_needs_values() -> None:
 def test_task_ids_are_unique() -> None:
     data = prd_template()
     data["tasks"][1]["id"] = "collect_docs"
-    assert "collect_docs" in _rejects(data)
+    assert "task ids: item 1 repeats an earlier item" in _rejects(data)
 
 
 def test_variable_names_are_unique() -> None:
     data = prd_template()
     data["variables"][1]["name"] = "role"
-    assert "role" in _rejects(data)
+    assert "variables: item 1 repeats an earlier item" in _rejects(data)
+
+
+def test_a_repeated_value_is_reported_by_position_not_echoed() -> None:
+    data = prd_template()
+    data["variables"][0]["values"] = ["engineer", "secret text <x>", "secret text <x>"]
+    message = _rejects(data)
+    assert "secret text" not in message
+    assert "item 2 repeats an earlier item" in message
+
+
+@pytest.mark.parametrize("length", [MAX_INPUT_STRING + 1, 40_000])
+def test_an_overlong_input_string_is_refused(length: int) -> None:
+    data = prd_template()
+    _task(data, "welcome_message")["inputs"] = {"note": "a" * length}
+    _rejects(data)
+
+
+def test_inputs_larger_than_the_limit_in_total_are_refused() -> None:
+    data = prd_template()
+    _task(data, "welcome_message")["inputs"] = {f"k{n}": "a" * MAX_INPUT_STRING for n in range(20)}
+    assert "inputs" in _rejects(data)
 
 
 @pytest.mark.parametrize("name", sorted(RESERVED_VARIABLE_NAMES))
@@ -229,3 +252,31 @@ def test_a_task_exposes_its_typed_fields() -> None:
     assert task.depends_on == ("manager_approval",)
     assert task.tools == ()
     assert task.inputs == {}
+
+
+@pytest.mark.parametrize(
+    ("path", "count"),
+    [
+        (("variables",), MAX_LIST),
+        (("variables", 0, "values"), MAX_LIST),
+        (("tasks", 1, "depends_on"), MAX_LIST),
+        (("tasks", 0, "tools"), MAX_LIST),
+        (("tasks", 3, "pii_access", "fields"), MAX_LIST),
+    ],
+)
+def test_lists_in_a_template_are_bounded(path: tuple[Any, ...], count: int) -> None:
+    data = prd_template()
+    node: Any = data
+    for key in path[:-1]:
+        node = node[key]
+    node[path[-1]] = [
+        f"v{n}" if path[-1] != "variables" else {"name": f"v{n}", "type": "string"} for n in range(count + 1)
+    ]
+    _rejects(data)
+
+
+@pytest.mark.parametrize("key", ["Mobile.Number", "my key", "mob\u200bile", "\u0430adhaar", "1st"])
+def test_input_keys_are_plain_ascii_names(key: str) -> None:
+    data = prd_template()
+    _task(data, "welcome_message")["inputs"] = {key: "x"}
+    _rejects(data)

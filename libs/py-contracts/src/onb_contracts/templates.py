@@ -50,7 +50,10 @@ from pydantic import (
 
 __all__ = [
     "APPROVER_ROLES",
+    "MAX_INPUTS_SIZE",
     "MAX_INPUT_DEPTH",
+    "MAX_INPUT_STRING",
+    "MAX_LIST",
     "MAX_TASKS",
     "RESERVED_VARIABLE_NAMES",
     "SINK_PATTERN",
@@ -66,7 +69,10 @@ __all__ = [
 _FROZEN = ConfigDict(frozen=True, extra="forbid", hide_input_in_errors=True)
 
 MAX_TASKS: Final = 100
+MAX_LIST: Final = 50
 MAX_INPUT_DEPTH: Final = 6
+MAX_INPUT_STRING: Final = 2000
+MAX_INPUTS_SIZE: Final = 16_000
 APPROVER_ROLES: Final = frozenset({"HR", "HR_ADMIN", "MANAGER"})
 # Words of the `when` language: a variable with one of these names could never be referenced.
 RESERVED_VARIABLE_NAMES: Final = frozenset({"and", "or", "not", "in", "true", "false", "null"})
@@ -78,14 +84,17 @@ TemplateKey = Annotated[StrictStr, Field(pattern=r"^[a-z][a-z0-9_-]{0,63}$")]
 ToolRef = Annotated[StrictStr, Field(pattern=r"^[a-z][a-z0-9_]{0,63}(\.[a-z][a-z0-9_]{0,63})?$")]
 Title = Annotated[StrictStr, Field(min_length=1, max_length=200)]
 EnumValue = Annotated[StrictStr, Field(min_length=1, max_length=64)]
-InputKey = Annotated[StrictStr, Field(min_length=1, max_length=64)]
+InputKey = Annotated[StrictStr, Field(pattern=r"^[A-Za-z][A-Za-z0-9_-]{0,63}$")]
 VariableType = Literal["string", "enum", "date", "user_ref", "number", "boolean"]
 
 
 def _unique(values: tuple[str, ...], what: str) -> tuple[str, ...]:
-    repeated = sorted({value for value in values if values.count(value) > 1})
-    if repeated:
-        raise ValueError(f"{what} repeats {', '.join(repeated)}")
+    """Refuse repeats, naming the position only: a value may be anything the author typed."""
+    seen: set[str] = set()
+    for index, value in enumerate(values):
+        if value in seen:
+            raise ValueError(f"{what}: item {index} repeats an earlier item")
+        seen.add(value)
     return values
 
 
@@ -96,7 +105,7 @@ class Variable(BaseModel):
 
     name: Identifier
     type: VariableType
-    values: tuple[EnumValue, ...] | None = None
+    values: Annotated[tuple[EnumValue, ...], Field(max_length=MAX_LIST)] | None = None
 
     @field_validator("name")
     @classmethod
@@ -136,7 +145,7 @@ class PiiAccess(BaseModel):
 
     model_config = _FROZEN
 
-    fields: tuple[Identifier, ...] = Field(min_length=1)
+    fields: tuple[Identifier, ...] = Field(min_length=1, max_length=MAX_LIST)
     sink: Annotated[StrictStr, Field(pattern=SINK_PATTERN)]
 
     @field_validator("fields")
@@ -169,6 +178,19 @@ class Sla(BaseModel):
         return variable, offset, "h" if unit == "h" else "d"
 
 
+def _size(value: object) -> int:
+    """Characters of text in `value` (keys and strings); a string over the per-string cap is refused."""
+    if isinstance(value, str):
+        if len(value) > MAX_INPUT_STRING:
+            raise ValueError(f"an inputs string is at most {MAX_INPUT_STRING} characters")
+        return len(value)
+    if isinstance(value, Mapping):
+        return sum(len(str(key)) + _size(item) for key, item in value.items())
+    if isinstance(value, list):
+        return sum(_size(item) for item in value)
+    return 1
+
+
 def _depth(value: object) -> int:
     if isinstance(value, Mapping):
         return 1 + max((_depth(item) for item in value.values()), default=0)
@@ -187,10 +209,10 @@ class TemplateTask(BaseModel):
     agent: Identifier
     action: Identifier
     type: Literal["action", "approval"] = "action"
-    depends_on: tuple[Identifier, ...] = ()
+    depends_on: tuple[Identifier, ...] = Field(default=(), max_length=MAX_LIST)
     when: Annotated[StrictStr, Field(min_length=1, max_length=512)] | None = None
     inputs: dict[InputKey, JsonValue] = Field(default_factory=dict)
-    tools: tuple[ToolRef, ...] = ()
+    tools: tuple[ToolRef, ...] = Field(default=(), max_length=MAX_LIST)
     pii_access: PiiAccess | None = None
     approver: Approver | None = None
     requires_approval: StrictBool = False
@@ -212,6 +234,8 @@ class TemplateTask(BaseModel):
     def _bounded_inputs(cls, value: dict[str, JsonValue]) -> dict[str, JsonValue]:
         if _depth(value) > MAX_INPUT_DEPTH:
             raise ValueError(f"inputs nest at most {MAX_INPUT_DEPTH} levels deep")
+        if _size(value) > MAX_INPUTS_SIZE:
+            raise ValueError(f"inputs hold at most {MAX_INPUTS_SIZE} characters in total")
         return value
 
     @model_validator(mode="after")
@@ -230,7 +254,7 @@ class Template(BaseModel):
     name: Title | None = None
     version: Annotated[StrictInt, Field(ge=1)] | None = None
     status: Literal["draft", "published", "archived"] = "draft"
-    variables: tuple[Variable, ...] = ()
+    variables: tuple[Variable, ...] = Field(default=(), max_length=MAX_LIST)
     tasks: tuple[TemplateTask, ...] = Field(min_length=1, max_length=MAX_TASKS)
 
     @model_validator(mode="after")

@@ -1,0 +1,25 @@
+ERROR libs/py-contracts/tests/test_template_contracts.py
+!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+1 error in 0.48s
+FAILED libs/py-agents/tests/test_template_validator.py::test_sensitive_names_are_found_inside_longer_names[variables0-{{ personal_email }}]
+FAILED libs/py-agents/tests/test_template_validator.py::test_sensitive_names_are_found_inside_longer_names[variables1-{{ aadhaar_no }}]
+FAILED libs/py-agents/tests/test_template_validator.py::test_sensitive_names_are_found_inside_longer_names[variables2-{{ hire.emailId }}]
+FAILED libs/py-agents/tests/test_template_validator.py::test_sensitive_names_are_found_inside_longer_names[variables3-{{ hire.e_mail }}]
+FAILED libs/py-agents/tests/test_template_validator.py::test_sensitive_names_are_found_inside_longer_names[variables4-see hire.contact_mobile]
+FAILED libs/py-agents/tests/test_template_validator.py::test_sensitive_names_are_found_inside_longer_names[variables5-see hire.panNumber]
+FAILED libs/py-agents/tests/test_template_validator.py::test_sensitive_names_are_found_inside_longer_names[variables6-${ hire.MobileNo }]
+FAILED libs/py-agents/tests/test_template_validator.py::test_a_variable_named_after_a_sensitive_field_in_part_is_refused[personal_email]
+FAILED libs/py-agents/tests/test_template_validator.py::test_a_variable_named_after_a_sensitive_field_in_part_is_refused[aadhaar_no]
+FAILED libs/py-agents/tests/test_template_validator.py::test_a_variable_named_after_a_sensitive_field_in_part_is_refused[contact_mobile]
+FAILED libs/py-agents/tests/test_template_validator.py::test_a_variable_named_after_a_sensitive_field_in_part_is_refused[pan_no]
+FAILED libs/py-agents/tests/test_template_validator.py::test_raw_pii_in_an_approver_ref_is_refused[approver0]
+FAILED libs/py-agents/tests/test_template_validator.py::test_raw_pii_in_an_approver_ref_is_refused[approver1]
+FAILED libs/py-agents/tests/test_template_validator.py::test_a_deeply_nested_schema_error_has_a_short_message
+FAILED libs/py-agents/tests/test_template_validator.py::test_two_variables_of_different_types_cannot_be_compared[role == level]
+FAILED libs/py-agents/tests/test_template_validator.py::test_two_variables_of_different_types_cannot_be_compared[remote == location]
+FAILED libs/py-agents/tests/test_template_validator.py::test_two_variables_of_different_types_cannot_be_compared[level < start_date]
+FAILED libs/py-agents/tests/test_when_expr.py::test_other_unsafe_or_malformed_conditions_are_rejected[x == \u0661\u0662-syntax]
+FAILED libs/py-agents/tests/test_when_expr.py::test_other_unsafe_or_malformed_conditions_are_rejected[x ==\xa01-syntax]
+FAILED libs/py-agents/tests/test_when_expr.py::test_other_unsafe_or_malformed_conditions_are_rejected[x\u2003== 1-syntax]
+FAILED libs/py-agents/tests/test_when_expr.py::test_the_variable_pairs_compared_are_listed
+21 failed, 208 passed in 0.40s

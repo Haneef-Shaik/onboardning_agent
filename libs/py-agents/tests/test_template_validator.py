@@ -527,3 +527,172 @@ def test_every_template_in_the_eval_fixture_validates(validator: TemplateValidat
 
 def test_the_eval_fixture_holds_templates() -> None:
     assert len(_fixture_templates()) >= 2
+
+
+# --- review fixes (code review of attempt 1) -----------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("variables", "note"),
+    [
+        ([{"name": "personal_email", "type": "string"}], "{{ personal_email }}"),
+        ([{"name": "aadhaar_no", "type": "string"}], "{{ aadhaar_no }}"),
+        ([{"name": "hire", "type": "string"}], "{{ hire.emailId }}"),
+        ([{"name": "hire", "type": "string"}], "{{ hire.e_mail }}"),
+        ([{"name": "hire", "type": "string"}], "see hire.contact_mobile"),
+        ([{"name": "hire", "type": "string"}], "see hire.panNumber"),
+        ([], "${ hire.MobileNo }"),
+    ],
+)
+def test_sensitive_names_are_found_inside_longer_names(
+    validator: TemplateValidator, variables: list[dict[str, str]], note: str
+) -> None:
+    data = base()
+    data["variables"].extend(variables)
+    task(data, "welcome_message")["inputs"] = {"channel": "telegram", "note": note}
+    failing(validator.validate(data), Rule.SENSITIVE_INPUT)
+
+
+@pytest.mark.parametrize("name", ["personal_email", "aadhaar_no", "contact_mobile", "pan_no"])
+def test_a_variable_named_after_a_sensitive_field_in_part_is_refused(validator: TemplateValidator, name: str) -> None:
+    data = base()
+    data["variables"].append({"name": name, "type": "string"})
+    failing(validator.validate(data), Rule.SENSITIVE_INPUT)
+
+
+def test_a_long_input_string_validates_quickly(validator: TemplateValidator) -> None:
+    import time
+
+    data = base()
+    task(data, "welcome_message")["inputs"] = {"channel": "telegram", "note": "a" * 2000, "path": "a." * 1000}
+    started = time.perf_counter()
+    validator.validate(data)
+    assert time.perf_counter() - started < 1.0
+
+
+@pytest.mark.parametrize(
+    "approver", [{"rule": "user", "ref": "9876543210"}, {"rule": "user", "ref": "ptk_seed_acme001_mobile"}]
+)
+def test_raw_pii_in_an_approver_ref_is_refused(validator: TemplateValidator, approver: dict[str, str]) -> None:
+    data = base()
+    task(data, "bitbucket_access")["approver"] = approver
+    issues = failing(validator.validate(data), Rule.SENSITIVE_INPUT)
+    assert all("9876543210" not in issue.message for issue in issues)
+
+
+def test_a_deeply_nested_schema_error_has_a_short_message(validator: TemplateValidator) -> None:
+    value: Any = "x"
+    for _ in range(3000):
+        value = [value]
+    data = base()
+    task(data, "welcome_message")["inputs"] = {"deep": value}
+    issues = failing(validator.validate(data), Rule.SCHEMA)
+    assert all(len(issue.message) < 300 for issue in issues)
+
+
+@pytest.mark.parametrize("when", ["role == level", "remote == location", "level < start_date"])
+def test_two_variables_of_different_types_cannot_be_compared(validator: TemplateValidator, when: str) -> None:
+    data = base()
+    task(data, "bitbucket_access")["when"] = when
+    (issue,) = failing(validator.validate(data), Rule.BAD_CONDITION)
+    assert issue.task_id == "bitbucket_access"
+
+
+def test_two_text_variables_may_be_compared(validator: TemplateValidator) -> None:
+    data = base()
+    task(data, "bitbucket_access")["when"] = "role == location"
+    assert validator.validate(data).ok
+
+
+# --- review fixes (security review of attempt 1) -------------------------------------------------
+
+
+@pytest.mark.parametrize("value", [9876543210, 234123412346, 9876543210.0, [9876543210]])
+def test_numeric_pii_in_inputs_is_refused(validator: TemplateValidator, value: Any) -> None:
+    data = base()
+    task(data, "welcome_message")["inputs"] = {"channel": "telegram", "slot": value}
+    failing(validator.validate(data), Rule.SENSITIVE_INPUT)
+
+
+@pytest.mark.parametrize(
+    "value",
+    ["mob\u200bile", "\uff4dobile", "\u0430adhaar", "pii\u200b_vault", "{{ hire.\u0430adhaar }}", "e\u00adm\u00adail"],
+)
+def test_sensitive_values_hidden_by_unicode_tricks_are_refused(validator: TemplateValidator, value: str) -> None:
+    data = base()
+    task(data, "welcome_message")["inputs"] = {"channel": "telegram", "field": value}
+    failing(validator.validate(data), Rule.SENSITIVE_INPUT)
+
+
+@pytest.mark.parametrize("key", ["mobileNumber", "Mobile.Number", "e_mail", "mob\u200bile", "\u0430adhaar", "my key"])
+def test_input_keys_hiding_a_sensitive_name_are_refused(validator: TemplateValidator, key: str) -> None:
+    data = base()
+    task(data, "welcome_message")["inputs"] = {"channel": "telegram", key: "x"}
+    report = validator.validate(data)
+    assert not report.ok
+    assert report.rules & {Rule.SENSITIVE_INPUT, Rule.SCHEMA}
+
+
+@pytest.mark.parametrize("value", ['hire["aadhaar"]', "hire/aadhaar", "hire['pan_number']"])
+def test_other_path_forms_naming_a_sensitive_field_are_refused(validator: TemplateValidator, value: str) -> None:
+    data = base()
+    task(data, "welcome_message")["inputs"] = {"channel": "telegram", "lookup": value}
+    failing(validator.validate(data), Rule.SENSITIVE_INPUT)
+
+
+@pytest.mark.parametrize("note", ["Please reply by email.", "Bring your PAN card and/or passport.", "e.g. laptop"])
+def test_prose_mentioning_a_field_is_not_a_reference(validator: TemplateValidator, note: str) -> None:
+    data = base()
+    task(data, "welcome_message")["inputs"] = {"channel": "telegram", "note": note}
+    assert validator.validate(data).ok, validator.validate(data).issues
+
+
+@pytest.mark.parametrize(
+    ("path", "value"),
+    [
+        (("tasks", 0, "id"), "x9876543210"),
+        (("tasks", 0, "id"), "ptk_x"),
+        (("variables", 1, "name"), "ptk_abc"),
+        (("variables", 1, "name"), "pii_vault_x"),
+        (("variables", 1, "name"), "m9876543210"),
+        (("tasks", 1, "approver"), {"rule": "user", "ref": "ABCDE1234F"}),
+        (("tasks", 1, "approver"), {"rule": "user", "ref": "234123412346"}),
+    ],
+)
+def test_raw_pii_and_tokens_in_identifiers_are_refused(
+    validator: TemplateValidator, path: tuple[Any, ...], value: Any
+) -> None:
+    data = base()
+    node: Any = data
+    for key in path[:-1]:
+        node = node[key]
+    old = node[path[-1]]
+    node[path[-1]] = value
+    if path[-1] == "id":
+        for other in data["tasks"]:
+            other["depends_on"] = [value if d == old else d for d in other.get("depends_on", [])]
+    failing(validator.validate(data), Rule.SENSITIVE_INPUT)
+
+
+def test_a_cycle_message_does_not_echo_raw_values(validator: TemplateValidator) -> None:
+    data = base()
+    task(data, "collect_docs")["id"] = "m9876543210"
+    task(data, "m9876543210")["depends_on"] = ["m9876543210"]
+    task(data, "manager_approval")["depends_on"] = ["m9876543210"]
+    issues = failing(validator.validate(data), Rule.CYCLE)
+    assert all("9876543210" not in issue.message for issue in issues)
+
+
+def test_input_findings_name_the_key_by_position(validator: TemplateValidator) -> None:
+    data = base()
+    task(data, "welcome_message")["inputs"] = {"channel": "telegram", "ravi_kumar_dob_mobile": "x"}
+    (issue,) = failing(validator.validate(data), Rule.SENSITIVE_INPUT)
+    assert "ravi_kumar" not in issue.message
+    assert "inputs[1]" in issue.message
+
+
+def test_a_schema_error_inside_inputs_does_not_name_input_keys(validator: TemplateValidator) -> None:
+    data = base()
+    task(data, "welcome_message")["inputs"] = {"Ravi Kumar DOB": {"x": 1.5j}}
+    issues = failing(validator.validate(data), Rule.SCHEMA)
+    assert all("Ravi" not in issue.message for issue in issues)

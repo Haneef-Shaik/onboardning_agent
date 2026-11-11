@@ -15,12 +15,12 @@ The rules (PRD §6.1 FR-T3, §5.2, §7.10), each reported as a `Rule`:
 - `undeclared_variable`: `when`, an approver `variable`, `sla.due` and `{{ … }}` placeholders in
   `inputs` read declared variables only.
 - `bad_condition` / `bad_approver` / `bad_sla`: a `when` parses (no calls, attributes or imports) and
-  compares each variable with values of its type (enum values from its list); a variable approver is
+  compares each variable with values, or variables, of its type (enum values from its list); a variable approver is
   a `user_ref`; an approver sits on an approval or `requires_approval` task; `sla.due` reads a date.
 - `approver_missing`: every approval task names an approver rule.
 - `sensitive_input`: no sensitive field reference or raw value in LLM-visible inputs, and no raw
-  value, vault token or vault name anywhere in the template (see `sensitive.py`); no variable is
-  named after a sensitive field.
+  value, vault token or vault name in any string of the template (see `sensitive.py`); no variable
+  is named after a sensitive field, whole or in part (`personal_email`).
 - `pii_access_forbidden`: each `pii_access` field is allowed at its sink by the field → sink policy;
   Aadhaar, PAN and bank fields never are.
 
@@ -44,11 +44,14 @@ from onb_agents.registry import AgentManifest, RegisteredAgent, ToolCatalog, loa
 
 from . import graph
 from .expr import ExpressionError, WhenExpression, parse_when
-from .sensitive import input_findings, is_sensitive_name, placeholders, raw_findings, reference_findings
+from .sensitive import input_findings, names_a_sensitive_field, placeholders, raw_findings, reference_findings
 
 __all__ = ["Issue", "Rule", "TemplateInvalidError", "TemplateReport", "TemplateValidator"]
 
 _FIELDS_BY_NAME = {member.value: member for member in VaultField}
+_MAX_LOC_PARTS = 6
+# Variable types that hold the same kind of value, so two variables of them may be compared.
+_KIND = {"string": "text", "enum": "text", "date": "text", "user_ref": "text", "number": "number", "boolean": "bool"}
 # Which literal kinds a variable of each type may be compared with (`null` always may).
 _COMPARABLE: Mapping[str, tuple[type, ...]] = {
     "string": (str,),
@@ -145,7 +148,7 @@ class TemplateValidator:
             issues.extend(_TaskCheck(self, template, task).issues())
         edges = {task.id: task.depends_on for task in template.tasks}
         for loop in graph.cycles(edges):
-            issues.append(Issue(Rule.CYCLE, loop[0], "tasks form a cycle: " + " -> ".join(loop)))
+            issues.append(Issue(Rule.CYCLE, loop[0], redact("tasks form a cycle: " + " -> ".join(loop))))
         return TemplateReport(template, tuple(issues), graph.topological_order(edges))
 
     def require_valid(self, data: object) -> Template:
@@ -155,20 +158,20 @@ class TemplateValidator:
         return report.template
 
     def _template_issues(self, template: Template) -> Iterator[Issue]:
-        for name, value in (("key", template.key), ("name", template.name or "")):
-            for finding in raw_findings(value) + reference_findings(value):
-                yield Issue(Rule.SENSITIVE_INPUT, None, f"template {name} holds {finding}")
-        for variable in template.variables:
-            if is_sensitive_name(variable.name):
-                yield Issue(Rule.SENSITIVE_INPUT, None, f"variable {variable.name} is named after a sensitive field")
-            for index, value in enumerate(variable.values or ()):
-                for finding in raw_findings(value):
-                    yield Issue(Rule.SENSITIVE_INPUT, None, f"variable {variable.name} value {index} holds {finding}")
+        for where, text in _strings(template.model_dump(mode="json", exclude={"tasks"}), ""):
+            for finding in raw_findings(text) + (reference_findings(text) if where in {"key", "name"} else []):
+                yield Issue(Rule.SENSITIVE_INPUT, None, f"template {where} holds {finding}")
+        for index, variable in enumerate(template.variables):
+            if names_a_sensitive_field(variable.name):
+                yield Issue(Rule.SENSITIVE_INPUT, None, f"variables[{index}] is named after a sensitive field")
 
 
 def _schema_issues(error: ValidationError) -> Iterator[Issue]:
     for item in error.errors(include_url=False, include_input=False, include_context=False):
-        where = ".".join(str(part) for part in item["loc"]) or "template"
+        loc = [str(part) for part in item["loc"]]
+        if "inputs" in loc:  # input keys are submitted text: stop at `inputs`
+            loc = loc[: loc.index("inputs") + 1] + (["…"] if loc[-1] != "inputs" else [])
+        where = ".".join(loc[:_MAX_LOC_PARTS]) + (".…" if len(loc) > _MAX_LOC_PARTS else "") if loc else "template"
         yield Issue(Rule.SCHEMA, None, redact(f"{where}: {item['msg']}"))
 
 
@@ -235,6 +238,10 @@ class _TaskCheck:
         for name in sorted(condition.names):
             if self._variable(name) is None:
                 self._add(Rule.UNDECLARED_VARIABLE, f"when reads {name}, which is not a declared variable")
+        for left, right in condition.name_pairs():
+            first, second = self._variable(left), self._variable(right)
+            if first is not None and second is not None and _KIND[first.type] != _KIND[second.type]:
+                self._add(Rule.BAD_CONDITION, f"when compares {first.type} {left} with {second.type} {right}")
         for name, literal in condition.comparisons():
             variable = self._variable(name)
             if variable is None or literal is None:
@@ -272,7 +279,7 @@ class _TaskCheck:
 
     def _check_sensitive(self) -> None:
         task = self._task
-        for where, text in (("title", task.title), ("when", task.when or "")):
+        for where, text in _strings(task.model_dump(mode="json", exclude={"inputs"}), ""):
             for finding in raw_findings(text) + (reference_findings(text) if where == "title" else []):
                 self._add(Rule.SENSITIVE_INPUT, f"{where} holds {finding}")
         for where, finding in input_findings(task.inputs):
@@ -289,7 +296,7 @@ class _TaskCheck:
         elif isinstance(value, str):
             for segments in placeholders(value):
                 head = segments[0] if segments else ""
-                if any(is_sensitive_name(s) for s in segments):
+                if any(names_a_sensitive_field(s) for s in segments):
                     continue  # reported as sensitive_input
                 if self._variable(head) is None:
                     self._add(Rule.UNDECLARED_VARIABLE, "an inputs placeholder reads an undeclared variable")
@@ -310,6 +317,18 @@ class _TaskCheck:
         server = access.sink.split(".", 1)[0]
         if manifest is not None and server not in manifest.mcp:
             self._add(Rule.TOOL_NOT_ALLOWED, f"{manifest.name} cannot call the {server} server of sink {access.sink}")
+
+
+def _strings(value: object, where: str) -> Iterator[tuple[str, str]]:
+    """Every string in a dumped task (title, when, approver.ref, tools...), with where it sits."""
+    if isinstance(value, str):
+        yield where, value
+    elif isinstance(value, Mapping):
+        for key, item in value.items():
+            yield from _strings(item, f"{where}.{key}" if where else str(key))
+    elif isinstance(value, list):
+        for index, item in enumerate(value):
+            yield from _strings(item, f"{where}[{index}]")
 
 
 def _granted(manifest: AgentManifest, tool: str) -> bool:

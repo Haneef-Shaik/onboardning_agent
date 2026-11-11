@@ -101,6 +101,9 @@ def test_the_when_parser_rejects_imports(source: str) -> None:
         ("x == 1 * 2", ExpressionReason.SYNTAX),
         ("x in []]", ExpressionReason.SYNTAX),
         ("role in 'engineer'", ExpressionReason.SYNTAX),
+        ("x == \u0661\u0662", ExpressionReason.SYNTAX),
+        ("x ==\u00a01", ExpressionReason.SYNTAX),
+        ("x\u2003== 1", ExpressionReason.SYNTAX),
         ("x in role", ExpressionReason.SYNTAX),
         ("x == 1.5", ExpressionReason.SYNTAX),
     ],
@@ -193,6 +196,11 @@ def test_accepted_conditions_evaluate(source: str, variables: dict[str, object],
 def test_the_names_a_condition_reads_are_listed() -> None:
     parsed = parse_when("role == 'engineer' and (location in ['Pune'] or not remote) and 1 == 1")
     assert parsed.names == frozenset({"role", "location", "remote"})
+
+
+def test_the_variable_pairs_compared_are_listed() -> None:
+    parsed = parse_when("role == location or level > 1 or not (a != b)")
+    assert sorted(parsed.name_pairs()) == [("a", "b"), ("role", "location")]
 
 
 def test_the_literals_compared_with_each_name_are_listed() -> None:

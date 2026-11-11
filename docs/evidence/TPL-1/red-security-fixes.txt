@@ -1,0 +1,23 @@
+FAILED libs/py-agents/tests/test_template_validator.py::test_numeric_pii_in_inputs_is_refused[9876543210]
+FAILED libs/py-agents/tests/test_template_validator.py::test_numeric_pii_in_inputs_is_refused[234123412346]
+FAILED libs/py-agents/tests/test_template_validator.py::test_numeric_pii_in_inputs_is_refused[9876543210.0]
+FAILED libs/py-agents/tests/test_template_validator.py::test_numeric_pii_in_inputs_is_refused[value3]
+FAILED libs/py-agents/tests/test_template_validator.py::test_sensitive_values_hidden_by_unicode_tricks_are_refused[mob\u200bile]
+FAILED libs/py-agents/tests/test_template_validator.py::test_sensitive_values_hidden_by_unicode_tricks_are_refused[\uff4dobile]
+FAILED libs/py-agents/tests/test_template_validator.py::test_sensitive_values_hidden_by_unicode_tricks_are_refused[\u0430adhaar]
+FAILED libs/py-agents/tests/test_template_validator.py::test_sensitive_values_hidden_by_unicode_tricks_are_refused[pii\u200b_vault]
+FAILED libs/py-agents/tests/test_template_validator.py::test_sensitive_values_hidden_by_unicode_tricks_are_refused[{{ hire.\u0430adhaar }}]
+FAILED libs/py-agents/tests/test_template_validator.py::test_sensitive_values_hidden_by_unicode_tricks_are_refused[e\xadm\xadail]
+FAILED libs/py-agents/tests/test_template_validator.py::test_input_keys_hiding_a_sensitive_name_are_refused[mob\u200bile]
+FAILED libs/py-agents/tests/test_template_validator.py::test_input_keys_hiding_a_sensitive_name_are_refused[\u0430adhaar]
+FAILED libs/py-agents/tests/test_template_validator.py::test_input_keys_hiding_a_sensitive_name_are_refused[my key]
+FAILED libs/py-agents/tests/test_template_validator.py::test_other_path_forms_naming_a_sensitive_field_are_refused[hire["aadhaar"]]
+FAILED libs/py-agents/tests/test_template_validator.py::test_other_path_forms_naming_a_sensitive_field_are_refused[hire/aadhaar]
+FAILED libs/py-agents/tests/test_template_validator.py::test_other_path_forms_naming_a_sensitive_field_are_refused[hire['pan_number']]
+FAILED libs/py-agents/tests/test_template_validator.py::test_prose_mentioning_a_field_is_not_a_reference[Please reply by email.]
+FAILED libs/py-agents/tests/test_template_validator.py::test_raw_pii_and_tokens_in_identifiers_are_refused[path2-ptk_abc]
+FAILED libs/py-agents/tests/test_template_validator.py::test_raw_pii_and_tokens_in_identifiers_are_refused[path4-m9876543210]
+FAILED libs/py-agents/tests/test_template_validator.py::test_a_cycle_message_does_not_echo_raw_values
+FAILED libs/py-agents/tests/test_template_validator.py::test_input_findings_name_the_key_by_position
+FAILED libs/py-agents/tests/test_template_validator.py::test_a_schema_error_inside_inputs_does_not_name_input_keys
+22 failed, 11 passed, 125 deselected in 0.44s
