@@ -64,6 +64,27 @@ MUTATIONS = [
         "                doc = await self._store.tenant(USERS).get(user_id)",
     ),
     (
+        "M11 GET /agents/{name} answers 403 (not 404) for a name it does not hold",
+        "apps/api/src/onb_api/agents/routes.py",
+        "        raise AppError(ErrorCode.NOT_FOUND)",
+        "        raise AppError(ErrorCode.FORBIDDEN)",
+    ),
+    (
+        "M12 GET /agents answers by the caller's org (a per-org view of a global registry)",
+        "apps/api/src/onb_api/agents/routes.py",
+        "async def list_agents(_: HrAdmin, registry: Registry) -> Envelope[list[AgentRecord]]:\n"
+        "    return respond([_record(agent) for agent in await registry.list_agents()])",
+        "async def list_agents(_: HrAdmin, registry: Registry) -> Envelope[list[AgentRecord]]:\n"
+        "    agents = [_record(agent) for agent in await registry.list_agents()]\n"
+        "    return respond(agents if _.org_id == 'org_acme' else agents[:1])",
+    ),
+    (
+        "M13 MCP-2's validator stops refusing org_id field paths (and $org_id references)",
+        "apps/mcp-mongo/src/onb_mcp_mongo/validator_rules.py",
+        "        if segments[0] == ORG_FIELD:\n            raise self.fail(\"org_id_not_allowed\")",
+        "        if False:\n            raise self.fail(\"org_id_not_allowed\")",
+    ),
+    (
         "M9 the route enumerator keys routes by their path inside the router (prefix dropped)",
         "tools/tests_xt/surface.py",
         "route, path = context.original_route, context.path or repr(context.original_route)",

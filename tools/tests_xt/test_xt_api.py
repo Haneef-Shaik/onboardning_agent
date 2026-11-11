@@ -161,6 +161,45 @@ def _audit_check(client: TestClient, _: World) -> None:
     assert {r["org_id"] for r in b_body["data"]} == {ORG_B}
 
 
+# --- GET /agents, GET /agents/{name} (REG-1) ---------------------------------------------------------
+# The registry is global: what an admin sees may not depend on the admin's org, and no record may
+# carry an org. A name that exists only in org B's data answers like a name nobody has: 404, not 403.
+
+KNOWN_AGENT = "db_agent"
+
+
+def _agents_request(_: World, role: Role) -> Request:
+    return {"method": "GET", "url": "/agents", "headers": bearer(_token(role))}
+
+
+def _agent_request(_: World, role: Role) -> Request:
+    return {"method": "GET", "url": f"/agents/{KNOWN_AGENT}", "headers": bearer(_token(role))}
+
+
+def _same_for_both_orgs(client: TestClient, url: str) -> dict[str, Any]:
+    as_a = client.get(url, headers=bearer(_token(Role.HR_ADMIN)))
+    as_b = client.get(url, headers=bearer(token_for(*B_ADMIN)))
+    assert as_a.status_code == 200, as_a.text
+    assert seen(as_a) == seen(as_b), f"GET {url} depends on the caller's org"
+    assert "org_id" not in as_a.text, f"GET {url}: a global record names an org"
+    body: dict[str, Any] = as_a.json()
+    return body
+
+
+def _agents_check(client: TestClient, _: World) -> None:
+    body = _same_for_both_orgs(client, "/agents")
+    assert KNOWN_AGENT in {agent["name"] for agent in body["data"]}
+
+
+def _agent_check(client: TestClient, _: World) -> None:
+    assert _same_for_both_orgs(client, f"/agents/{KNOWN_AGENT}")["data"]["name"] == KNOWN_AGENT
+    admin = bearer(_token(Role.HR_ADMIN))
+    foreign = client.get("/agents/globex_doc_agent", headers=admin)  # an org-B actor name (AUDIT_ROWS)
+    missing = client.get("/agents/nobody_xt_agent", headers=admin)
+    assert foreign.status_code == 404, foreign.text
+    assert_indistinguishable(seen(foreign), seen(missing), "GET /agents/{name} for an org-B name")
+
+
 ALL_200: Mapping[Role, int] = dict.fromkeys(ACTORS, 200)
 ADMIN_ONLY: Mapping[Role, int] = {Role.HR_ADMIN: 200, Role.HR: 403, Role.MANAGER: 403}
 
@@ -171,6 +210,8 @@ ROUTE_CASES: Mapping[tuple[str, str], RouteCase] = {
     ),
     ("GET", "/me"): RouteCase(_me_request, _me_check, ALL_200),
     ("GET", "/audit"): RouteCase(_audit_request, _audit_check, ADMIN_ONLY),
+    ("GET", "/agents"): RouteCase(_agents_request, _agents_check, ADMIN_ONLY),
+    ("GET", "/agents/{name}"): RouteCase(_agent_request, _agent_check, ADMIN_ONLY),
 }
 
 _ROUTE_IDS = [f"{method} {path}" for method, path in ROUTE_CASES]

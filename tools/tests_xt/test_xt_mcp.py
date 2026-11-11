@@ -38,6 +38,19 @@ class ToolCase:
     """The tool's own cross-tenant assertions."""
 
 
+# MCP-2's validator refuses any filter, pipeline or document that names `org_id`, even as `$org_id`.
+NAMES_ORG_REFUSAL = "may not name org_id: tenant scope comes from the hub"
+
+
+def _assert_refused_for_naming_org(outcome: Outcome, what: str) -> None:
+    """A call that names an org is refused before it reads anything: no data, MCP-2's reason, and no
+    trace of org B in the message."""
+    assert outcome.error, f"{what}: answered {outcome.data}"
+    assert outcome.data is None, f"{what}: a refusal carried data"
+    assert NAMES_ORG_REFUSAL in outcome.text, outcome.text
+    assert_no_leak(outcome.text, what)
+
+
 def _a_count(collection: str) -> int:
     return len(tenant_documents(ORG_A)[collection])
 
@@ -65,10 +78,10 @@ def _find_check(agent: Call, _: World, __: Unscoped) -> None:
     assert by_field.ok()["documents"] == []
     for collection in sorted(READ):
         named = agent("find", {"collection": collection, "filter": {"org_id": ORG_B}, "limit": 100})
-        assert named.error, named.data
-        assert_no_leak(named.text, "find naming org B in the filter")
+        _assert_refused_for_naming_org(named, f"find on {collection} naming org B in the filter")
     by_expr = {"$expr": {"$eq": ["$org_id", ORG_B]}}
-    assert agent("find", {"collection": "new_hires", "filter": by_expr, "limit": 100}).ok()["documents"] == []
+    by_expr_found = agent("find", {"collection": "new_hires", "filter": by_expr, "limit": 100})
+    _assert_refused_for_naming_org(by_expr_found, "find naming org B through $org_id")
 
 
 # --- count -----------------------------------------------------------------------------------------------
@@ -82,9 +95,10 @@ def _count_check(agent: Call, _: World, __: Unscoped) -> None:
     assert foreign.ok() == {"count": 0}
     assert_indistinguishable(_seen(foreign), _seen(missing), "count of org B's id")
     named = agent("count", {"collection": "new_hires", "filter": {"$or": [{"org_id": ORG_B}]}})
-    assert named.error, named.data
+    _assert_refused_for_naming_org(named, "count naming org B in the filter")
     by_expr = {"$expr": {"$eq": ["$org_id", ORG_B]}}
-    assert agent("count", {"collection": "new_hires", "filter": by_expr}).ok() == {"count": 0}
+    by_expr_counted = agent("count", {"collection": "new_hires", "filter": by_expr})
+    _assert_refused_for_naming_org(by_expr_counted, "count naming org B through $org_id")
 
 
 # --- aggregate -------------------------------------------------------------------------------------------
@@ -99,9 +113,9 @@ def _aggregate_check(agent: Call, _: World, __: Unscoped) -> None:
     missing = agent("aggregate", {"collection": "run_tasks", "pipeline": [{"$match": {"run_id": MISSING_RUN}}]})
     assert_indistinguishable(_seen(foreign), _seen(missing), "aggregate over org B's run")
     named = agent("aggregate", {"collection": "run_tasks", "pipeline": [{"$match": {"org_id": ORG_B}}]})
-    assert named.error, named.data
+    _assert_refused_for_naming_org(named, "aggregate naming org B in $match")
     by_org = agent("aggregate", {"collection": "run_tasks", "pipeline": [{"$group": {"_id": "$org_id"}}]})
-    assert by_org.ok()["documents"] == [{"_id": ORG_A}]
+    _assert_refused_for_naming_org(by_org, "aggregate grouping by $org_id")
     # Stages that read another collection would leave the org's scope: refused.
     for stage in (
         {"$lookup": {"from": "new_hires", "localField": "run_id", "foreignField": "_id", "as": "x"}},

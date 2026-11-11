@@ -33,11 +33,13 @@ import pytest
 import uvicorn
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+from onb_agents.registry import AgentRegistry, load_catalog, load_manifests
+from onb_agents.registry.mongo import ORGS, MongoRegistryStore
 from onb_api import create_app
 from onb_api.auth.mongo_users import MongoUserStore
 from onb_api.auth.passwords import hash_password
 from onb_api.auth.users import NewUser
-from onb_api.testing import TEST_SETTINGS
+from onb_api.testing import TEST_SETTINGS, InMemoryAuditLog
 from onb_contracts.auth import Role
 from onb_data import Actor, ActorType, AuditLog, AuditOutcome, DataStore, connect, tenant_scope
 from onb_data.safety_net_pytest import (  # T-2 tenant safety net (PRD §7.9): registers these with pytest
@@ -177,6 +179,20 @@ async def _seed(store: DataStore) -> None:
         actor = Actor.user(actor_id) if actor_type == ActorType.USER else Actor.agent(actor_id)
         with tenant_scope(org_id):
             await log.audit(actor=actor, action=action, target=target, outcome=AuditOutcome(outcome), reason="xt")
+    await _seed_registry(store)
+
+
+async def _seed_registry(store: DataStore) -> None:
+    """The global `orgs` and the agent registry, synced from `config/` as REG-1's command does.
+
+    The sync audits each change in every org; those records go to an in-memory log here, so the
+    seeded audit totals per org stay exactly `world.AUDIT_ROWS`.
+    """
+    await store.shared(ORGS).insert_many([{"_id": org["_id"], "name": org["name"]} for org in world.seed()["orgs"]])
+    manifests = load_manifests(world.ROOT / "config" / "agents")
+    catalog = load_catalog(world.ROOT / "config" / "tool_catalog.yaml", manifests)
+    registry = AgentRegistry(MongoRegistryStore(store), InMemoryAuditLog())
+    await registry.sync(manifests, catalog, actor=Actor.user("u_acme_hradmin"))
 
 
 @pytest.fixture
@@ -200,8 +216,11 @@ def xt_world(root_client: RootClient, mongo_uri: str, database_name: str) -> Wor
 
 
 def build_api(store: DataStore) -> FastAPI:
-    """The app as `onb_api.main` builds it, over the scratch database (REG-1: pass new stores here)."""
-    return create_app(auth=TEST_SETTINGS, users=MongoUserStore(store), audit=AuditLog(store))
+    """The app as `onb_api.main` builds it, over the scratch database. A new `create_app` argument
+    gets its Mongo-backed value here."""
+    audit = AuditLog(store)
+    agents = AgentRegistry(MongoRegistryStore(store), audit)
+    return create_app(auth=TEST_SETTINGS, users=MongoUserStore(store), audit=audit, agents=agents)
 
 
 @pytest.fixture
