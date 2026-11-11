@@ -119,6 +119,11 @@ class Gateway:
     def catalog(self) -> Mapping[str, HubTool]:
         return self._catalog
 
+    @property
+    def secrets(self) -> tuple[str, ...]:
+        """Every credential the hub holds; a response containing one is withheld."""
+        return (*self._secrets, *self._downstream.secrets)
+
     async def call(self, name: str, args: Mapping[str, Any], authorization: str | None) -> CallToolResult:
         """The result the agent sees for `name(args)`, called with the given `Authorization` header."""
         tool = self._catalog.get(name)
@@ -173,7 +178,7 @@ class Gateway:
             result, sent = await self._downstream.call(tool, args, context)
         except Exception as exc:
             return await self._fail(span, call, exc)
-        scanned = scan_result(result, secrets=(*self._secrets, *self._downstream.secrets, *sent))
+        scanned = scan_result(result, secrets=(*self.secrets, *sent))
         if scanned.result.isError:
             raise CallDeniedError("downstream_denied", "the tool server refused the call") from None
         span.set_attributes({"pii.redacted": scanned.redacted, "result.count": _result_count(scanned.result)})
