@@ -1,0 +1,2 @@
+ImportError while importing test module '/Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-tpl-1/libs/py-contracts/tests/test_template_contracts.py'.
+E   ModuleNotFoundError: No module named 'onb_contracts.templates'
