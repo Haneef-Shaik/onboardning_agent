@@ -13,11 +13,14 @@ of org B must look exactly like asking about something that does not exist.
 
 from __future__ import annotations
 
+import copy
 import json
 from collections.abc import Iterable, Iterator, Mapping
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+
+import yaml
 
 ROOT = Path(__file__).resolve().parents[2]
 SEED = ROOT / "evals" / "fixtures" / "seed_v1.json"
@@ -109,6 +112,45 @@ def audit_rows(org_id: str) -> list[tuple[str, str, str, str, str, str]]:
     return [row for row in AUDIT_ROWS if row[0] == org_id]
 
 
+# --- templates (TPL-2) ----------------------------------------------------------------------------------
+# Each org's drafts, in creation order: (draft id, template body, publish it?). Org A has one published
+# version of `engineer-india` and one open draft. Org B has three versions of the same key, so a
+# version counter shared across orgs would show up in org A's numbers, plus a template of its own.
+
+SEED_TEMPLATE = ROOT / "templates" / "engineer-india.yaml"
+A_DRAFT = "tdr_" + "a" * 32
+A_PUBLISHED_DRAFT = "tdr_" + "a" * 31 + "1"
+B_DRAFT = "tdr_" + "b" * 32
+B_SALES_DRAFT = "tdr_" + "b" * 31 + "1"
+B_ENGINEER_DRAFTS = tuple("tdr_" + "b" * 31 + str(n) for n in (2, 3, 4))
+SHARED_KEY = "engineer-india"
+B_ONLY_KEY = "globex-xt-sales"
+B_ENGINEER_VERSIONS = len(B_ENGINEER_DRAFTS)
+
+
+def base_template() -> dict[str, Any]:
+    data: dict[str, Any] = yaml.safe_load(SEED_TEMPLATE.read_text())
+    return data
+
+
+def _b_sales_template() -> dict[str, Any]:
+    template = copy.deepcopy(base_template())
+    template["key"] = B_ONLY_KEY
+    template["name"] = "Globex XT Field Sales"
+    template["tasks"][0]["title"] = "Globex XT paperwork pickup"
+    return template
+
+
+def template_drafts(org_id: str) -> list[tuple[str, dict[str, Any], bool]]:
+    if org_id == ORG_A:
+        return [(A_DRAFT, base_template(), False), (A_PUBLISHED_DRAFT, base_template(), True)]
+    return [
+        (B_DRAFT, _b_sales_template(), False),
+        (B_SALES_DRAFT, _b_sales_template(), True),
+        *((draft_id, base_template(), True) for draft_id in B_ENGINEER_DRAFTS),
+    ]
+
+
 def _strings(value: object) -> Iterator[str]:
     if isinstance(value, str):
         yield value
@@ -127,7 +169,17 @@ def _org_strings(org_id: str) -> set[str]:
     # The org's name and its raw sensitive values: a reveal or document route must never show B's.
     org = [o for o in data["orgs"] if o["_id"] == org_id]
     vault = [v for v in data["pii_vault_plain"] if v["org_id"] == org_id]
-    sources = [org_id, org, users, vault, tenant_documents(org_id), audit_rows(org_id), xt_vault_strings(org_id)]
+    templates = template_drafts(org_id)
+    sources = [
+        org_id,
+        org,
+        users,
+        vault,
+        tenant_documents(org_id),
+        audit_rows(org_id),
+        xt_vault_strings(org_id),
+        templates,
+    ]
     return {s for s in _strings(sources) if len(s) >= _MIN_MARKER}
 
 

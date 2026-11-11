@@ -26,16 +26,24 @@ from onb_api.auth.tokens import read_token
 from onb_api.testing import TEST_SETTINGS, bearer, token_for
 from onb_contracts.auth import Role
 
-from .conftest import World
+from .conftest import Unscoped, World
 from .world import (
+    A_DRAFT,
+    B_DRAFT,
+    B_ENGINEER_VERSIONS,
+    B_ONLY_KEY,
+    B_SALES_DRAFT,
     ORG_A,
     ORG_B,
+    SHARED_KEY,
     XT_VAULT_HIRES,
     Seen,
     assert_indistinguishable,
     assert_no_leak,
     audit_rows,
+    base_template,
     email_of,
+    template_drafts,
     tenant_documents,
     without_volatile,
 )
@@ -76,8 +84,8 @@ def seen(response: Response, *, volatile: frozenset[str] = frozenset()) -> Seen:
 class RouteCase:
     request: Callable[[World, Role], Request]
     """The ordinary request an org-A actor with this role makes."""
-    check: Callable[[TestClient, World], None]
-    """The route's own cross-tenant assertions."""
+    check: Callable[[TestClient, World, Unscoped], None]
+    """The route's own cross-tenant assertions (`unscoped` is for root snapshots of org B)."""
     expected: Mapping[Role, int]
     """The status each org-A role gets for `request`: the generic checks hold it to that, so a check
     that only ever compared two refusals cannot pass for a role that should succeed."""
@@ -364,40 +372,227 @@ def _access_log_check(client: TestClient, xt: World) -> None:
     ]
 
 
+# --- /templates (TPL-2) ---------------------------------------------------------------------------------
+# Org A has `engineer-india` v1 and an open draft; org B has `engineer-india` v1-v3, `globex-xt-sales`
+# v1 and an open draft (`world.template_drafts`). Org B's drafts and versions answer org A exactly like
+# ones that do not exist (404), org A's version numbers never count org B's, and no call by org A
+# changes any org-B document.
+
+MISSING_DRAFT = "tdr_" + "0" * 32
+DRAFT_VOLATILE = frozenset({"id", "revision", "created_at", "updated_at"})
+
+
+def _admin() -> dict[str, str]:
+    return bearer(_token(Role.HR_ADMIN))
+
+
+def _a_draft_ids() -> set[str]:
+    return {draft_id for draft_id, _, _ in template_drafts(ORG_A)}
+
+
+def _unchanged_for_b(xt: World, unscoped: Unscoped, call: Callable[[], None]) -> None:
+    """Run `call` (org A's requests) and show that no org-B document changed."""
+    before = xt.org_b_snapshot(unscoped)
+    call()
+    assert xt.org_b_snapshot(unscoped) == before, "an org-A call changed org B's documents"
+
+
+def _foreign_like_missing(client: TestClient, method: str, foreign: str, missing: str, **kw: Any) -> None:
+    as_foreign = client.request(method, foreign, headers=_admin(), **kw)
+    as_missing = client.request(method, missing, headers=_admin(), **kw)
+    assert as_foreign.status_code == 404, as_foreign.text
+    assert_indistinguishable(seen(as_foreign), seen(as_missing), f"{method} {foreign}")
+
+
+def _create_draft_request(_: World, role: Role) -> Request:
+    return {
+        "method": "POST",
+        "url": "/templates/drafts",
+        "headers": bearer(_token(role)),
+        "json": {"template": base_template()},
+    }
+
+
+def _create_draft_check(client: TestClient, xt: World) -> None:
+    # A key org B uses is free in org A: no unique-index inference across orgs.
+    b_key = {**base_template(), "key": B_ONLY_KEY}
+    created = client.post("/templates/drafts", json={"template": b_key}, headers=_admin())
+    assert created.status_code == 201, created.text
+    listed = client.get("/templates/drafts", headers=_admin()).json()["data"]
+    assert {draft["id"] for draft in listed} == _a_draft_ids() | {created.json()["data"]["id"]}
+
+
+def _list_drafts_request(_: World, role: Role) -> Request:
+    return {"method": "GET", "url": "/templates/drafts", "headers": bearer(_token(role))}
+
+
+def _list_drafts_check(client: TestClient, _: World) -> None:
+    listed = client.get("/templates/drafts", headers=_admin()).json()["data"]
+    assert {draft["id"] for draft in listed} == _a_draft_ids()
+    b_admin = client.get("/templates/drafts", headers=bearer(token_for(*B_ADMIN))).json()["data"]
+    assert {draft["id"] for draft in b_admin} == {draft_id for draft_id, _, _ in template_drafts(ORG_B)}
+
+
+def _get_draft_request(_: World, role: Role) -> Request:
+    return {"method": "GET", "url": f"/templates/drafts/{A_DRAFT}", "headers": bearer(_token(role))}
+
+
+def _get_draft_check(client: TestClient, _: World) -> None:
+    for draft_id in (B_DRAFT, B_SALES_DRAFT):
+        _foreign_like_missing(client, "GET", f"/templates/drafts/{draft_id}", f"/templates/drafts/{MISSING_DRAFT}")
+
+
+def _put_draft_request(_: World, role: Role) -> Request:
+    return {
+        "method": "PUT",
+        "url": f"/templates/drafts/{A_DRAFT}",
+        "headers": bearer(_token(role)),
+        "json": {"template": base_template()},
+    }
+
+
+def _put_draft_check(client: TestClient, xt: World, unscoped: Unscoped) -> None:
+    body = {"template": {**base_template(), "name": "Overwritten by org A"}}
+
+    def call() -> None:
+        for draft_id in (B_DRAFT, B_SALES_DRAFT):
+            foreign, missing = f"/templates/drafts/{draft_id}", f"/templates/drafts/{MISSING_DRAFT}"
+            _foreign_like_missing(client, "PUT", foreign, missing, json=body)
+
+    _unchanged_for_b(xt, unscoped, call)
+
+
+def _validate_request(_: World, role: Role) -> Request:
+    return {"method": "POST", "url": f"/templates/drafts/{A_DRAFT}/validate", "headers": bearer(_token(role))}
+
+
+def _validate_check(client: TestClient, _: World) -> None:
+    foreign, missing = f"/templates/drafts/{B_DRAFT}/validate", f"/templates/drafts/{MISSING_DRAFT}/validate"
+    _foreign_like_missing(client, "POST", foreign, missing)
+
+
+def _publish_request(_: World, role: Role) -> Request:
+    return {"method": "POST", "url": f"/templates/drafts/{A_DRAFT}/publish", "headers": bearer(_token(role))}
+
+
+def _publish_check(client: TestClient, xt: World, unscoped: Unscoped) -> None:
+    def call() -> None:
+        foreign, missing = f"/templates/drafts/{B_DRAFT}/publish", f"/templates/drafts/{MISSING_DRAFT}/publish"
+        _foreign_like_missing(client, "POST", foreign, missing)
+        # Org B holds engineer-india v1-v3; org A's next version is its own v2.
+        published = client.post(f"/templates/drafts/{A_DRAFT}/publish", headers=_admin())
+        assert published.status_code == 200, published.text
+        assert (published.json()["data"]["key"], published.json()["data"]["version"]) == (SHARED_KEY, 2)
+
+    _unchanged_for_b(xt, unscoped, call)
+
+
+def _list_templates_request(_: World, role: Role) -> Request:
+    return {"method": "GET", "url": "/templates", "headers": bearer(_token(role))}
+
+
+def _list_templates_check(client: TestClient, _: World) -> None:
+    listed = client.get("/templates", headers=_admin()).json()["data"]
+    assert [(t["key"], t["latest_version"], len(t["versions"])) for t in listed] == [(SHARED_KEY, 1, 1)]
+    b_listed = client.get("/templates", headers=bearer(token_for(*B_ADMIN))).json()["data"]
+    assert [(t["key"], t["latest_version"]) for t in b_listed] == [(SHARED_KEY, B_ENGINEER_VERSIONS), (B_ONLY_KEY, 1)]
+
+
+def _version_request(_: World, role: Role) -> Request:
+    return {"method": "GET", "url": f"/templates/{SHARED_KEY}/versions/1", "headers": bearer(_token(role))}
+
+
+def _version_check(client: TestClient, _: World) -> None:
+    mine = client.get(f"/templates/{SHARED_KEY}/versions/1", headers=_admin()).json()["data"]
+    assert mine["draft_id"] in _a_draft_ids()
+    # A key only org B has, and a version number only org B has reached, look like nothing at all.
+    _foreign_like_missing(client, "GET", f"/templates/{B_ONLY_KEY}/versions/1", "/templates/nobody-xt/versions/1")
+    _foreign_like_missing(
+        client, "GET", f"/templates/{SHARED_KEY}/versions/{B_ENGINEER_VERSIONS}", f"/templates/{SHARED_KEY}/versions/99"
+    )
+
+
+def _archive_request(_: World, role: Role) -> Request:
+    return {"method": "POST", "url": f"/templates/{SHARED_KEY}/versions/1/archive", "headers": bearer(_token(role))}
+
+
+def _archive_check(client: TestClient, xt: World, unscoped: Unscoped) -> None:
+    def call() -> None:
+        foreign_only = f"/templates/{B_ONLY_KEY}/versions/1/archive"
+        _foreign_like_missing(client, "POST", foreign_only, "/templates/nobody-xt/versions/1/archive")
+        foreign_number = f"/templates/{SHARED_KEY}/versions/{B_ENGINEER_VERSIONS}/archive"
+        _foreign_like_missing(client, "POST", foreign_number, f"/templates/{SHARED_KEY}/versions/99/archive")
+        archived = client.post(f"/templates/{SHARED_KEY}/versions/1/archive", headers=_admin())
+        assert archived.json()["data"]["status"] == "archived", archived.text
+
+    _unchanged_for_b(xt, unscoped, call)
+    # Org B's v1 of the shared key is still published.
+    b_version = client.get(f"/templates/{SHARED_KEY}/versions/1", headers=bearer(token_for(*B_ADMIN)))
+    assert b_version.json()["data"]["status"] == "published"
+
+
+def _reads_only(check: Callable[[TestClient, World], None]) -> Callable[[TestClient, World, Unscoped], None]:
+    """A check that takes no root snapshot."""
+
+    def run(client: TestClient, xt: World, _: Unscoped) -> None:
+        check(client, xt)
+
+    return run
+
+
 ALL_200: Mapping[Role, int] = dict.fromkeys(ACTORS, 200)
 ADMIN_ONLY: Mapping[Role, int] = {Role.HR_ADMIN: 200, Role.HR: 403, Role.MANAGER: 403}
 HR_ONLY: Mapping[Role, int] = {Role.HR_ADMIN: 200, Role.HR: 200, Role.MANAGER: 403}
+AUTHORS: Mapping[Role, int] = {Role.HR_ADMIN: 200, Role.HR: 200, Role.MANAGER: 403}
+AUTHORS_CREATE: Mapping[Role, int] = {Role.HR_ADMIN: 201, Role.HR: 201, Role.MANAGER: 403}
 
 ROUTE_CASES: Mapping[tuple[str, str], RouteCase] = {
-    ("GET", "/health"): RouteCase(_health_request, _health_check, ALL_200),
+    ("GET", "/health"): RouteCase(_health_request, _reads_only(_health_check), ALL_200),
     ("POST", "/auth/login"): RouteCase(
-        _login_request, _login_check, ALL_200, volatile=frozenset({"access_token", "expires_at"})
+        _login_request, _reads_only(_login_check), ALL_200, volatile=frozenset({"access_token", "expires_at"})
     ),
-    ("GET", "/me"): RouteCase(_me_request, _me_check, ALL_200),
-    ("GET", "/audit"): RouteCase(_audit_request, _audit_check, ADMIN_ONLY),
-    ("GET", "/agents"): RouteCase(_agents_request, _agents_check, ADMIN_ONLY),
-    ("GET", "/agents/{name}"): RouteCase(_agent_request, _agent_check, ADMIN_ONLY),
+    ("GET", "/me"): RouteCase(_me_request, _reads_only(_me_check), ALL_200),
+    ("GET", "/audit"): RouteCase(_audit_request, _reads_only(_audit_check), ADMIN_ONLY),
+    ("GET", "/agents"): RouteCase(_agents_request, _reads_only(_agents_check), ADMIN_ONLY),
+    ("GET", "/agents/{name}"): RouteCase(_agent_request, _reads_only(_agent_check), ADMIN_ONLY),
     ("POST", "/hires"): RouteCase(
         _create_hire_request,
-        _create_hire_check,
+        _reads_only(_create_hire_check),
         {Role.HR_ADMIN: 201, Role.HR: 201, Role.MANAGER: 403},
         volatile=frozenset({"id", "created_at"}),
     ),
-    ("GET", "/hires"): RouteCase(_list_hires_request, _list_hires_check, ALL_200),
-    ("GET", "/hires/{hire_id}"): RouteCase(_get_hire_request, _get_hire_check, ALL_200),
-    ("PUT", "/hires/{hire_id}/pii/{field}"): RouteCase(_update_pii_request, _update_pii_check, HR_ONLY),
+    ("GET", "/hires"): RouteCase(_list_hires_request, _reads_only(_list_hires_check), ALL_200),
+    ("GET", "/hires/{hire_id}"): RouteCase(_get_hire_request, _reads_only(_get_hire_check), ALL_200),
+    ("PUT", "/hires/{hire_id}/pii/{field}"): RouteCase(_update_pii_request, _reads_only(_update_pii_check), HR_ONLY),
     ("POST", "/hires/{hire_id}/pii/{field}/reveal"): RouteCase(
-        _reveal_request, _reveal_check, HR_ONLY, volatile=frozenset({"access_id"})
+        _reveal_request, _reads_only(_reveal_check), HR_ONLY, volatile=frozenset({"access_id"})
     ),
-    ("GET", "/pii-access-log"): RouteCase(_access_log_request, _access_log_check, ADMIN_ONLY),
+    ("GET", "/pii-access-log"): RouteCase(_access_log_request, _reads_only(_access_log_check), ADMIN_ONLY),
+    ("POST", "/templates/drafts"): RouteCase(
+        _create_draft_request, _reads_only(_create_draft_check), AUTHORS_CREATE, volatile=DRAFT_VOLATILE
+    ),
+    ("GET", "/templates/drafts"): RouteCase(_list_drafts_request, _reads_only(_list_drafts_check), AUTHORS),
+    ("GET", "/templates/drafts/{draft_id}"): RouteCase(_get_draft_request, _reads_only(_get_draft_check), AUTHORS),
+    ("PUT", "/templates/drafts/{draft_id}"): RouteCase(
+        _put_draft_request, _put_draft_check, AUTHORS, volatile=DRAFT_VOLATILE
+    ),
+    ("POST", "/templates/drafts/{draft_id}/validate"): RouteCase(
+        _validate_request, _reads_only(_validate_check), AUTHORS
+    ),
+    ("POST", "/templates/drafts/{draft_id}/publish"): RouteCase(_publish_request, _publish_check, ADMIN_ONLY),
+    ("GET", "/templates"): RouteCase(_list_templates_request, _reads_only(_list_templates_check), ALL_200),
+    ("GET", "/templates/{key}/versions/{version}"): RouteCase(_version_request, _reads_only(_version_check), ALL_200),
+    ("POST", "/templates/{key}/versions/{version}/archive"): RouteCase(_archive_request, _archive_check, ADMIN_ONLY),
 }
 
 _ROUTE_IDS = [f"{method} {path}" for method, path in ROUTE_CASES]
 
 
 @pytest.mark.parametrize("route", list(ROUTE_CASES), ids=_ROUTE_IDS)
-def test_the_routes_own_cross_tenant_checks(api: TestClient, xt_world: World, route: tuple[str, str]) -> None:
-    ROUTE_CASES[route].check(api, xt_world)
+def test_the_routes_own_cross_tenant_checks(
+    api: TestClient, xt_world: World, unscoped: Unscoped, route: tuple[str, str]
+) -> None:
+    ROUTE_CASES[route].check(api, xt_world, unscoped)
 
 
 @pytest.mark.parametrize("role", list(ACTORS), ids=lambda r: r.value)

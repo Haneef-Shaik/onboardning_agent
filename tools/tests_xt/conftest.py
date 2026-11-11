@@ -41,11 +41,13 @@ from onb_api.auth.passwords import hash_password
 from onb_api.auth.tokens import Principal
 from onb_api.auth.users import NewUser
 from onb_api.hires.service import HireService
+from onb_api.templates import MongoTemplateStore, RegistryValidatorSource, TemplateLifecycle
 from onb_api.testing import TEST_SETTINGS, InMemoryAuditLog
 from onb_contracts.auth import Role
 from onb_contracts.hires import NewHireRequest, PiiField
+from onb_contracts.templates import Template
 from onb_crypto import ORG_KEYS_COLLECTION, Keyring, MasterKey, RepositoryOrgKeyStore, SecretKey
-from onb_data import Actor, ActorType, AuditLog, AuditOutcome, DataStore, connect, tenant_scope
+from onb_data import Actor, ActorType, AuditLog, Auditor, AuditOutcome, DataStore, connect, tenant_scope
 from onb_data.safety_net_pytest import (  # T-2 tenant safety net (PRD §7.9): registers these with pytest
     pytest_configure,
     pytest_sessionfinish,
@@ -207,13 +209,35 @@ async def _seed(store: DataStore) -> None:
             for collection, docs in world.tenant_documents(org_id).items():
                 if docs:
                     await store.tenant(collection).insert_many(docs)
+    await _seed_registry(store)
+    await _seed_templates(store)
     minutes = iter(range(len(world.AUDIT_ROWS)))
     log = AuditLog(store, clock=lambda: T0 + timedelta(minutes=next(minutes)))
     for org_id, actor_type, actor_id, action, target, outcome in world.AUDIT_ROWS:
         actor = Actor.user(actor_id) if actor_type == ActorType.USER else Actor.agent(actor_id)
         with tenant_scope(org_id):
             await log.audit(actor=actor, action=action, target=target, outcome=AuditOutcome(outcome), reason="xt")
-    await _seed_registry(store)
+
+
+def template_lifecycle(store: DataStore, audit: Auditor, registry: AgentRegistry, **options: Any) -> TemplateLifecycle:
+    validators = RegistryValidatorSource.from_config(registry, world.ROOT / "config")
+    return TemplateLifecycle(MongoTemplateStore(store), validators, audit, **options)
+
+
+async def _seed_templates(store: DataStore) -> None:
+    """Each org's drafts and versions (`world.template_drafts`), through the lifecycle itself. Its audit
+    records go to an in-memory log, so the seeded audit totals stay exactly `world.AUDIT_ROWS`."""
+    registry = AgentRegistry(MongoRegistryStore(store), InMemoryAuditLog())
+    for org_id in (world.ORG_A, world.ORG_B):
+        drafts = world.template_drafts(org_id)
+        ids = iter([draft_id for draft_id, _, _ in drafts])
+        lifecycle = template_lifecycle(store, InMemoryAuditLog(), registry, new_draft_id=lambda ids=ids: next(ids))
+        await lifecycle.ensure_indexes()
+        with tenant_scope(org_id):
+            for draft_id, template, publish in drafts:
+                await lifecycle.create_draft(Template.model_validate(template), actor_id="u_xt_seed")
+                if publish:
+                    await lifecycle.publish(draft_id, actor_id="u_xt_seed")
 
 
 async def _seed_hires(store: DataStore) -> dict[str, str]:
@@ -275,7 +299,8 @@ def build_api(store: DataStore) -> FastAPI:
     agents = AgentRegistry(MongoRegistryStore(store), audit)
     users = MongoUserStore(store)
     hires = HireService.build(store, xt_keyring(store), auditor=audit, users=users)
-    return create_app(auth=TEST_SETTINGS, users=users, audit=audit, agents=agents, hires=hires)
+    templates = template_lifecycle(store, audit, agents)
+    return create_app(auth=TEST_SETTINGS, users=users, audit=audit, agents=agents, hires=hires, templates=templates)
 
 
 def xt_keyring(store: DataStore) -> Keyring:
