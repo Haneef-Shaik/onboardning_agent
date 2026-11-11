@@ -129,9 +129,7 @@ def _claims(payload: Mapping[str, Any]) -> AgentClaims:
     scopes = payload["scopes"]
     if not isinstance(scopes, list):
         raise ValueError("agent token scopes must be a list")
-    return AgentClaims(
-        agent=payload["agent"], run_id=payload["run_id"], org_id=payload["org_id"], scopes=tuple(scopes)
-    )
+    return AgentClaims(agent=payload["agent"], run_id=payload["run_id"], org_id=payload["org_id"], scopes=tuple(scopes))
 
 
 def _decode(token: str, key: str, *, verify_exp: bool) -> dict[str, Any]:

@@ -121,11 +121,11 @@ def test_a_short_key_is_refused() -> None:
 
 
 def test_claims_are_validated_at_issue() -> None:
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="malformed"):
         AgentClaims(agent="db agent", run_id="run_1", org_id="org_acme", scopes=())
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="malformed"):
         AgentClaims(agent="db_agent", run_id="run_1", org_id="org/acme", scopes=())
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="malformed"):
         AgentClaims(agent="db_agent", run_id="run_1", org_id="org_acme", scopes=("x y",))
 
 

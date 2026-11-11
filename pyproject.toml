@@ -31,6 +31,7 @@ dev = [
   "pytest-cov>=6.0",
   "ruff>=0.8",
   "testcontainers>=4.10,<5",
+  "types-jsonschema>=4.20",
   "types-pyyaml>=6",
 ]
 
