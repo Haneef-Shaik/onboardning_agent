@@ -5,12 +5,27 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from pathlib import Path
 
-from onb_agents.registry import RegisteredAgent, load_manifests
+from onb_agents.registry import RegisteredAgent, load_manifests, parse_manifest
 from onb_agents.registry.manifest import AgentManifest, CollectionGrant, Limits, ManifestLLM, McpGrant
 from onb_agents.tokens import AgentClaims
 
 ROOT = Path(__file__).resolve().parents[3]
-MANIFESTS = {m.name: m for m in load_manifests(ROOT / "config" / "agents")}
+# A test agent granted every Mongo tool, so each hub tool has an allowed path (validated like any manifest).
+XT_MANIFEST = parse_manifest(
+    {
+        "name": "xt_agent",
+        "purpose": "Cross-tenant and end-to-end tests of every hub tool",
+        "llm": {"alias": "standard"},
+        "mcp": {
+            "mongo": {
+                "tools": ["list_collections", "find", "count", "aggregate", "insert_one", "update_one"],
+                "collections": {"read": ["run_tasks", "new_hires"], "write": ["run_tasks"]},
+            }
+        },
+        "limits": {"max_steps": 8, "max_tokens": 1000, "timeout_s": 60},
+    }
+)
+MANIFESTS = {m.name: m for m in (*load_manifests(ROOT / "config" / "agents"), XT_MANIFEST)}
 NOW = datetime(2026, 11, 11, tzinfo=UTC)
 
 
@@ -48,3 +63,7 @@ def claims(agent: str = "db_agent", *, org: str = "org_acme", scopes: tuple[str,
         grant = MANIFESTS[agent].mcp
         scopes = tuple(f"{server}__{tool}" for server, g in grant.items() for tool in g.tools)
     return AgentClaims(agent=agent, run_id="run_1", org_id=org, scopes=scopes)
+
+
+def xt_agent() -> RegisteredAgent:
+    return registered("xt_agent")
