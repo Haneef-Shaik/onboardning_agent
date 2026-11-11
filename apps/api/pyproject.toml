@@ -10,14 +10,18 @@ dependencies = [
   "pyjwt>=2.9,<3",
   "onb-agents",
   "onb-contracts",
+  "onb-crypto",
   "onb-data",
+  "onb-guardrails",
   "onb-telemetry",
 ]
 
 [tool.uv.sources]
 onb-agents = { workspace = true }
 onb-contracts = { workspace = true }
+onb-crypto = { workspace = true }
 onb-data = { workspace = true }
+onb-guardrails = { workspace = true }
 onb-telemetry = { workspace = true }
 
 [build-system]

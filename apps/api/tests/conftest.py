@@ -7,6 +7,7 @@ environment with `create_app()` start like the real service; the startup tests r
 """
 
 import asyncio
+import json
 import secrets
 from collections.abc import Iterator
 from pathlib import Path
@@ -17,13 +18,16 @@ from fastapi.testclient import TestClient
 from onb_agents.registry import AgentRegistry, load_catalog, load_manifests
 from onb_agents.testing import InMemoryRegistryStore
 from onb_api import create_app
+from onb_api.hires.service import HireService
 from onb_api.testing import TEST_SETTINGS, InMemoryAuditLog, InMemoryUserStore, seeded_store
+from onb_api.testing_mongo import MemoryDatabase, memory_keyring, memory_store
 from onb_data import Actor
 from onb_telemetry.testing import reset_telemetry_globals
 
-__all__ = ["app", "client", "jwt_secret_in_env", "registry", "users"]
+__all__ = ["app", "client", "hire_audit", "hires", "jwt_secret_in_env", "memory_db", "registry", "users"]
 
 CONFIG = Path(__file__).resolve().parents[3] / "config"
+SEED = Path(__file__).resolve().parents[3] / "evals" / "fixtures" / "seed_v1.json"
 
 
 @pytest.fixture(autouse=True)
@@ -46,9 +50,30 @@ def registry() -> AgentRegistry:
 
 
 @pytest.fixture
-def app(users: InMemoryUserStore, registry: AgentRegistry) -> FastAPI:
+def memory_db() -> MemoryDatabase:
+    """The in-memory database under the hire service, with seed_v1's hires of both orgs stored as
+    seeded (their `ptk_seed_*` stand-ins resolve nowhere)."""
+    db = MemoryDatabase()
+    seed = json.loads(SEED.read_text())
+    db["new_hires"].documents = [dict(doc) for doc in seed["new_hires"]]
+    return db
+
+
+@pytest.fixture
+def hire_audit() -> InMemoryAuditLog:
+    return InMemoryAuditLog()
+
+
+@pytest.fixture
+def hires(memory_db: MemoryDatabase, hire_audit: InMemoryAuditLog, users: InMemoryUserStore) -> HireService:
+    store = memory_store(memory_db)
+    return HireService.build(store, memory_keyring(store), auditor=hire_audit, users=users)
+
+
+@pytest.fixture
+def app(users: InMemoryUserStore, registry: AgentRegistry, hires: HireService) -> FastAPI:
     reset_telemetry_globals()
-    return create_app(auth=TEST_SETTINGS, users=users, audit=InMemoryAuditLog(), agents=registry)
+    return create_app(auth=TEST_SETTINGS, users=users, audit=InMemoryAuditLog(), agents=registry, hires=hires)
 
 
 @pytest.fixture

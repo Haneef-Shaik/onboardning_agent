@@ -39,10 +39,23 @@ ROLE_MATRIX: dict[tuple[str, str], dict[Role, int]] = {
     # REG-1: the agent registry is HR_ADMIN only (PRD U8, §10 Registry & audit).
     ("GET", "/agents"): {Role.HR_ADMIN: 200, Role.HR: 403, Role.MANAGER: 403},
     ("GET", "/agents/{name}"): {Role.HR_ADMIN: 200, Role.HR: 403, Role.MANAGER: 403},
+    # HIRE-1 (PRD §3, §7.10, §10 Hires). Routes with a body get none here: a permitted role reaches
+    # validation (422), any other role is refused before it (403).
+    ("POST", "/hires"): {Role.HR_ADMIN: 422, Role.HR: 422, Role.MANAGER: 403},
+    ("GET", "/hires"): ALL_200,
+    ("GET", "/hires/{hire_id}"): ALL_200,  # h_acme_001 is Ravi's report
+    ("PUT", "/hires/{hire_id}/pii/{field}"): {Role.HR_ADMIN: 422, Role.HR: 422, Role.MANAGER: 403},
+    ("POST", "/hires/{hire_id}/pii/{field}/reveal"): {Role.HR_ADMIN: 422, Role.HR: 422, Role.MANAGER: 403},
+    ("GET", "/pii-access-log"): {Role.HR_ADMIN: 200, Role.HR: 403, Role.MANAGER: 403},
 }
 
 # A concrete path for each route with path parameters: an existing record, so HR_ADMIN gets 200.
-SAMPLE_PATHS = {"/agents/{name}": "/agents/db_agent"}
+SAMPLE_PATHS = {
+    "/agents/{name}": "/agents/db_agent",
+    "/hires/{hire_id}": "/hires/h_acme_001",
+    "/hires/{hire_id}/pii/{field}": "/hires/h_acme_001/pii/mobile",
+    "/hires/{hire_id}/pii/{field}/reveal": "/hires/h_acme_001/pii/mobile/reveal",
+}
 
 
 def _routes(app: FastAPI) -> list[APIRoute]:
