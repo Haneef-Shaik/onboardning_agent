@@ -154,6 +154,24 @@ def test_an_upload_whose_audit_fails_leaves_nothing(
         assert memory_db.raw(collection) == [], collection
 
 
+def test_an_upload_whose_audit_and_metadata_undo_both_fail_still_removes_the_bytes(
+    client: TestClient,
+    hire_audit: InMemoryAuditLog,
+    memory_db: MemoryDatabase,
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    async def broken(*_: Any, **__: Any) -> Any:
+        raise RuntimeError("store down")
+
+    monkeypatch.setattr(hire_audit, "audit", broken)
+    monkeypatch.setattr(memory_db[META_COLLECTION], "delete_one", broken)
+    assert _upload(client).status_code == 500
+    assert memory_db.raw(FILES_COLLECTION) == []
+    assert memory_db.raw(CHUNKS_COLLECTION) == []
+    assert "metadata failed: RuntimeError" in caplog.text
+
+
 def test_an_upload_whose_metadata_write_fails_leaves_no_bytes(client: TestClient, memory_db: MemoryDatabase) -> None:
     memory_db[META_COLLECTION].fail_next_insert = RuntimeError("database went away")
     assert _upload(client).status_code == 500

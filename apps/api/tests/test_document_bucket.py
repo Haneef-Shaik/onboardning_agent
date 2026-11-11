@@ -271,6 +271,72 @@ def test_documents_meta_is_scoped_to_the_org(store: DataStore, db: MemoryDatabas
     assert db.raw(META_COLLECTION) == []
 
 
+# --- a malformed stored header or length fails closed, before any decryption ---------------------------------
+
+
+@pytest.mark.parametrize(
+    "change",
+    [
+        {"alg": "A128CBC"},
+        {"nonce": b"short"},
+        {"nonce": None},
+        {"key_purpose": "signing"},
+        {"key_purpose": "nonsense"},
+        {"key_version": "1"},
+        {"key_version": 0},
+        {"type": None},
+        {"media_type": 7},
+    ],
+    ids=[
+        "alg",
+        "nonce-length",
+        "nonce-missing",
+        "purpose-not-encrypting",
+        "purpose-unknown",
+        "version-str",
+        "version-zero",
+        "type-missing",
+        "media-type-not-str",
+    ],
+)
+def test_a_malformed_encryption_header_fails_closed(
+    bucket: DocumentBucket, db: MemoryDatabase, change: dict[str, Any]
+) -> None:
+    stored = _put(bucket)
+    _rewrite(db, FILES_COLLECTION, stored.id, lambda f: {**f, "metadata": {**f["metadata"], **change}})
+    with pytest.raises(DecryptionError):
+        _run(ORG, bucket.read(ORG, hire_id=HIRE, document_id=stored.id))
+
+
+@pytest.mark.parametrize("change", [{"length": 0}, {"length": "12"}, {"chunkSize": 0}, {"chunkSize": None}])
+def test_a_malformed_length_fails_closed(bucket: DocumentBucket, db: MemoryDatabase, change: dict[str, Any]) -> None:
+    stored = _put(bucket)
+    _rewrite(db, FILES_COLLECTION, stored.id, lambda f: {**f, **change})
+    with pytest.raises(DecryptionError, match="malformed length"):
+        _run(ORG, bucket.read(ORG, hire_id=HIRE, document_id=stored.id))
+
+
+def test_a_truncated_chunk_fails_closed_on_the_length(bucket: DocumentBucket, db: MemoryDatabase) -> None:
+    stored = _put(bucket)
+    chunk = next(c for c in db.raw(CHUNKS_COLLECTION) if c["files_id"] == stored.id and c["n"] == 0)
+    _rewrite_chunk(db, stored.id, 0, bytes(chunk["data"])[:-1])
+    with pytest.raises(DecryptionError, match="length mismatch"):
+        _run(ORG, bucket.read(ORG, hire_id=HIRE, document_id=stored.id))
+
+
+def test_a_failed_removal_is_logged_not_raised(
+    bucket: DocumentBucket, db: MemoryDatabase, caplog: pytest.LogCaptureFixture, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    stored = _put(bucket)
+
+    async def broken(*_: Any, **__: Any) -> int:
+        raise RuntimeError("database went away")
+
+    monkeypatch.setattr(db[FILES_COLLECTION], "delete_one", broken)
+    _run(ORG, bucket.delete(stored.id))
+    assert f"document {stored.id} not fully removed: RuntimeError" in caplog.text
+
+
 # --- helpers ----------------------------------------------------------------------------------------------
 
 
