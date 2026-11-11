@@ -31,6 +31,14 @@
     "test": {
       "executor": "@nxlv/python:run-commands",
       "cache": true,
+      "inputs": [
+        "default",
+        "^default",
+        "{workspaceRoot}/apps/mcp-hub/src/**/*",
+        "{workspaceRoot}/apps/mcp-mongo/src/**/*",
+        "{workspaceRoot}/config/agents/**/*",
+        "{workspaceRoot}/config/llm.yaml"
+      ],
       "options": {
         "command": "uv run --frozen pytest libs/py-agents/tests -o cache_dir=.pytest_cache/py-agents --cov=onb_agents --cov-report=term-missing --cov-fail-under=80",
         "cwd": ".",

@@ -31,6 +31,12 @@
     "test": {
       "executor": "@nxlv/python:run-commands",
       "cache": true,
+      "inputs": [
+        "default",
+        "^default",
+        "{workspaceRoot}/evals/datasets/**/*",
+        "{workspaceRoot}/evals/selftest/**/*"
+      ],
       "options": {
         "command": "uv run --frozen pytest libs/py-contracts/tests -o cache_dir=.pytest_cache/py-contracts --cov=onb_contracts --cov-report=term-missing --cov-fail-under=80",
         "cwd": ".",
