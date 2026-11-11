@@ -1,9 +1,13 @@
 # HIRE-2 mutation checks · 2026-11-11 · compose (ob-hire-2)
 
 Runner: `uv run --frozen python docs/evidence/HIRE-2/mutate.py` (each mutant: replace one guard, run the
-named tests with `-x`, record the first failing test, restore the file). 28 mutants, 28 killed.
-U5 survived the first run (the oversized tests overshot by 8 bytes and carried a Content-Length);
-`test_one_byte_past_the_limit_is_refused_when_counting` was added and kills it.
+named tests with `-x`, record the first failing test, restore the file). Final run after the review
+fixes: **34 mutants, 34 killed**.
+
+History: in the first run U5 survived (the oversized tests overshot by 8 bytes and carried a
+Content-Length); `test_one_byte_past_the_limit_is_refused_when_counting` was added and kills it. After the
+review fixes a nonce type guard (R5) survived as an equivalent mutant (`Sealed` already refuses a
+non-bytes nonce once it is passed unconverted), so the redundant guard and R5 were removed.
 
 | Id | Guard broken | Result |
 |----|--------------|--------|
@@ -32,6 +36,12 @@ U5 survived the first run (the oversized tests overshot by 8 bytes and carried a
 | S3 | audit record removed | KILLED by `test_an_upload_is_audited_without_content` |
 | S4 | undo after a failed audit removed | KILLED by `test_an_upload_whose_audit_fails_leaves_nothing` |
 | S5 | MANAGER allowed to upload | KILLED by `test_a_manager_may_not_upload` |
+| R1 | consent looked up for any hire, not this one | KILLED by `test_another_hires_consent_does_not_count` |
+| R2 | consent refusal not audited | KILLED by `test_an_aadhaar_consent_refusal_is_audited_as_denied` |
+| R3 | unknown key version not mapped to DecryptionError | KILLED by `test_document_bucket.py::test_an_unknown_key_version_fails_closed` |
+| R4 | operator document id accepted | KILLED by `test_only_a_document_id_is_looked_up[bad_id0]` |
+| R6 | one failed chunk delete stops the removal | KILLED by `test_a_failed_chunk_removal_still_removes_the_rest` |
+| R7 | non-ASCII digits in Content-Length accepted | KILLED by `test_a_missing_or_malformed_content_length_falls_back_to_counting[\xb2]` |
 | X1 | ROUTE_CASES row renamed away | KILLED by `tools/tests_xt/test_xt_coverage.py::test_every_api_route_has_a_cross_tenant_case` |
 | X2 | foreign hire answers 403 instead of 404 | KILLED by `tools/tests_xt/test_xt_api.py::test_the_routes_own_cross_tenant_checks[POST /hires/{hire_id}/documents]` |
 | X3 | plaintext stored (real Mongo) | KILLED by `apps/api/tests_int/test_mongo_documents.py::test_gridfs_holds_ciphertext_that_opens_only_for_the_hire` |
