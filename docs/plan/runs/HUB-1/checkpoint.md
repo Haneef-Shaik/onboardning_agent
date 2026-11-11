@@ -12,7 +12,7 @@
 6. py-evals runner reads hub `AuditLog` records; ADR 0008.
 
 ## Next
-Handoff written (attempt 1); run the goal-verifier, then board → in review, `make down`.
+Verifier attempt 1: pass (5/5 boxes, gates green). Status: in review, held for Haneef; the orchestrator rebases and merges.
 
 ## Surprises
 - The PRD's PII detectors match digit runs inside ObjectId hex and vault tokens: the scan skips
