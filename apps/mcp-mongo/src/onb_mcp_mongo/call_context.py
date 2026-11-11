@@ -4,6 +4,9 @@ The hub verifies the agent token and the manifest, then sends one short-lived HS
 `X-Onb-Call-Context` header: `org_id`, `agent`, `run_id`, the `tool` being called and the agent's
 read and write collections. A context authorises only the tool it names. It is the only source of
 tenant scope here; tool arguments never carry it.
+
+The audience names the server a context is for (`mcp-mongo` by default, `mcp-mocks` for the mocks,
+MOCK-1), so a context signed for one downstream server never authorises a call on another.
 """
 
 from __future__ import annotations
@@ -43,6 +46,7 @@ MIN_KEY_LENGTH = 32
 _ID = re.compile(r"[A-Za-z0-9_-]{1,128}")
 _AGENT = re.compile(r"[A-Za-z0-9_.-]{1,128}")
 _TOOL = re.compile(r"[a-z][a-z0-9_]{0,63}")
+_AUDIENCE = re.compile(r"[a-z][a-z0-9-]{0,63}")
 COLLECTION_PATTERN = r"^[A-Za-z][A-Za-z0-9_]{0,63}$"
 _COLLECTION = re.compile(COLLECTION_PATTERN)
 _REQUIRED = ["exp", "iat", "iss", "aud", "org_id", "agent", "run_id", "tool", "collections"]
@@ -70,6 +74,11 @@ class CallContext:
 def check_key(key: str) -> None:
     if not isinstance(key, str) or len(key) < MIN_KEY_LENGTH:
         raise ValueError(f"the call-context key must be at least {MIN_KEY_LENGTH} characters")
+
+
+def _check_audience(audience: str) -> None:
+    if not isinstance(audience, str) or not _AUDIENCE.fullmatch(audience):
+        raise ValueError("the call-context audience must be a plain server name such as mcp-mongo")
 
 
 def _collections(value: object) -> frozenset[str]:
@@ -101,17 +110,18 @@ def _from_claims(claims: Mapping[str, Any]) -> CallContext:
     )
 
 
-def verify_call_context(token: str | None, key: str) -> CallContext:
-    """The context in `token`, or `CallContextError`. Only HS256 with `key` is accepted."""
+def verify_call_context(token: str | None, key: str, *, audience: str = AUDIENCE) -> CallContext:
+    """The context in `token`, or `CallContextError`. Only HS256 with `key`, for `audience`, is accepted."""
     check_key(key)
+    _check_audience(audience)
     if not token:
-        raise CallContextError("no call context: mcp-mongo is reached only through the MCP hub")
+        raise CallContextError(f"no call context: {audience} is reached only through the MCP hub")
     try:
         claims = jwt.decode(
             token,
             key,
             algorithms=[ALGORITHM],
-            audience=AUDIENCE,
+            audience=audience,
             issuer=ISSUER,
             leeway=LEEWAY_S,
             options={"require": _REQUIRED},
@@ -125,15 +135,18 @@ def _sorted(names: Iterable[str]) -> list[str]:
     return sorted(names)
 
 
-def sign_call_context(ctx: CallContext, key: str, *, lifetime_s: int = DEFAULT_LIFETIME_S) -> str:
-    """The header value for `ctx`. Used by the hub (HUB-1) and by tests."""
+def sign_call_context(
+    ctx: CallContext, key: str, *, lifetime_s: int = DEFAULT_LIFETIME_S, audience: str = AUDIENCE
+) -> str:
+    """The header value for `ctx`, for the server named by `audience`. Used by the hub (HUB-1) and by tests."""
     check_key(key)
+    _check_audience(audience)
     if not 0 < lifetime_s <= MAX_LIFETIME_S:
         raise ValueError(f"lifetime must be 1..{MAX_LIFETIME_S} seconds")
     now = int(time.time())
     claims = {
         "iss": ISSUER,
-        "aud": AUDIENCE,
+        "aud": audience,
         "iat": now,
         "exp": now + lifetime_s,
         "org_id": ctx.org_id,

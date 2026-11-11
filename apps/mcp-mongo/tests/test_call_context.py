@@ -147,3 +147,26 @@ def test_the_refusal_never_echoes_the_token() -> None:
 def test_readable_collections_include_the_writable_ones() -> None:
     ctx = _context(read=frozenset({"new_hires"}), write=frozenset({"run_tasks"}))
     assert ctx.readable == frozenset({"new_hires", "run_tasks"})
+
+
+# --- MOCK-1: one audience per downstream server ------------------------------------------------------
+
+
+def test_a_context_signed_for_another_server_is_refused_here_and_accepted_there() -> None:
+    """The hub signs each server's contexts for that server's audience (`mcp-mocks`): a mocks context
+    never authorises a call on mcp-mongo, and the reverse."""
+    ctx = _context(tool="create_bitbucket_account", read=frozenset(), write=frozenset())
+    for_mocks = sign_call_context(ctx, KEY, audience="mcp-mocks")
+    with pytest.raises(CallContextError):
+        verify_call_context(for_mocks, KEY)
+    assert verify_call_context(for_mocks, KEY, audience="mcp-mocks") == ctx
+    with pytest.raises(CallContextError):
+        verify_call_context(sign_call_context(ctx, KEY), KEY, audience="mcp-mocks")
+
+
+@pytest.mark.parametrize("audience", ["", "mcp mongo", "MCP-MONGO", "x" * 65])
+def test_an_audience_must_be_a_plain_server_name(audience: str) -> None:
+    with pytest.raises(ValueError, match="audience"):
+        sign_call_context(_context(), KEY, audience=audience)
+    with pytest.raises(ValueError, match="audience"):
+        verify_call_context("token", KEY, audience=audience)
