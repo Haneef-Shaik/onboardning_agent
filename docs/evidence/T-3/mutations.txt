@@ -1,0 +1,109 @@
+## M1 TenantRepository.count drops the org filter (mcp-mongo count/find/aggregate totals)
+libs/py-data/src/onb_data/repository.py
+  - return await self._collection.count_documents(self._filter(query), **session_kwargs())
+  + return await self._collection.count_documents(dict(query or {}), **session_kwargs())
+FAILED tools/tests_xt/test_xt_consumers.py::test_the_probe_consumer_saw_only_org_a
+FAILED tools/tests_xt/test_xt_counts.py::test_mcp_counts_and_find_totals_count_one_org[approvals-org_globex]
+FAILED tools/tests_xt/test_xt_counts.py::test_mcp_counts_and_find_totals_count_one_org[new_hires-org_acme]
+FAILED tools/tests_xt/test_xt_counts.py::test_mcp_counts_and_find_totals_count_one_org[new_hires-org_globex]
+FAILED tools/tests_xt/test_xt_counts.py::test_mcp_counts_and_find_totals_count_one_org[onboarding_runs-org_acme]
+FAILED tools/tests_xt/test_xt_counts.py::test_mcp_counts_and_find_totals_count_one_org[onboarding_runs-org_globex]
+FAILED tools/tests_xt/test_xt_counts.py::test_mcp_counts_and_find_totals_count_one_org[run_tasks-org_acme]
+FAILED tools/tests_xt/test_xt_counts.py::test_mcp_counts_and_find_totals_count_one_org[run_tasks-org_globex]
+FAILED tools/tests_xt/test_xt_mcp.py::test_the_tools_own_cross_tenant_checks[mcp-mongo.count]
+ERROR tools/tests_xt/test_xt_consumers.py::test_a_consumer_handling_an_org_a_event_stays_in_org_a[xt.probe]
+ERROR tools/tests_xt/test_xt_consumers.py::test_the_probe_consumer_saw_only_org_a
+ERROR tools/tests_xt/test_xt_counts.py::test_mcp_counts_and_find_totals_count_one_org[approvals-org_acme]
+ERROR tools/tests_xt/test_xt_counts.py::test_mcp_counts_and_find_totals_count_one_org[approvals-org_globex]
+ERROR tools/tests_xt/test_xt_counts.py::test_mcp_counts_and_find_totals_count_one_org[new_hires-org_acme]
+ERROR tools/tests_xt/test_xt_counts.py::test_mcp_counts_and_find_totals_count_one_org[new_hires-org_globex]
+ERROR tools/tests_xt/test_xt_counts.py::test_mcp_counts_and_find_totals_count_one_org[onboarding_runs-org_acme]
+ERROR tools/tests_xt/test_xt_counts.py::test_mcp_counts_and_find_totals_count_one_org[onboarding_runs-org_globex]
+ERROR tools/tests_xt/test_xt_counts.py::test_mcp_counts_and_find_totals_count_one_org[run_tasks-org_acme]
+ERROR tools/tests_xt/test_xt_counts.py::test_mcp_counts_and_find_totals_count_one_org[run_tasks-org_globex]
+ERROR tools/tests_xt/test_xt_mcp.py::test_the_tools_own_cross_tenant_checks[mcp-mongo.count]
+ERROR tools/tests_xt/test_xt_mcp.py::test_no_org_b_data_reaches_an_org_a_agent[mcp-mongo.count]
+9 failed, 60 passed, 12 errors in 17.45s
+=> KILLED
+
+## M2 the API lets an X-Org-Id header pick the tenant scope
+apps/api/src/onb_api/auth/dependencies.py
+  - with tenant_scope(principal.org_id):
+        yield principal
+  + with tenant_scope(request.headers.get("x-org-id", principal.org_id)):
+        yield principal
+FAILED tools/tests_xt/test_xt_api.py::test_naming_org_b_in_the_request_changes_nothing[GET /me-HR_ADMIN]
+FAILED tools/tests_xt/test_xt_api.py::test_naming_org_b_in_the_request_changes_nothing[GET /me-HR]
+FAILED tools/tests_xt/test_xt_api.py::test_naming_org_b_in_the_request_changes_nothing[GET /me-MANAGER]
+FAILED tools/tests_xt/test_xt_api.py::test_naming_org_b_in_the_request_changes_nothing[GET /audit-HR_ADMIN]
+4 failed, 65 passed in 16.99s
+=> KILLED
+
+## M3 login answers 403 (not 401) for a known email with a wrong password
+apps/api/src/onb_api/auth/routes.py
+  - if user is None or not password_ok:
+        raise unauthenticated()
+  + if user is not None and not password_ok:
+        raise __import__("fastapi").HTTPException(status_code=403)
+  
+FAILED tools/tests_xt/test_xt_api.py::test_the_routes_own_cross_tenant_checks[POST /auth/login]
+1 failed, 68 passed in 16.29s
+=> KILLED
+
+## M4 mcp-mongo find runs in the wrong org's scope
+apps/mcp-mongo/src/onb_mcp_mongo/tools.py
+  - with tenant_scope(ctx.org_id):
+        docs = await store.tenant(collection).find(
+  + with tenant_scope("org_globex" if ctx.org_id == "org_acme" else ctx.org_id):
+        docs = await store.tenant
+FAILED tools/tests_xt/test_xt_counts.py::test_mcp_counts_and_find_totals_count_one_org[approvals-org_acme]
+FAILED tools/tests_xt/test_xt_counts.py::test_mcp_counts_and_find_totals_count_one_org[new_hires-org_acme]
+FAILED tools/tests_xt/test_xt_counts.py::test_mcp_counts_and_find_totals_count_one_org[onboarding_runs-org_acme]
+FAILED tools/tests_xt/test_xt_counts.py::test_mcp_counts_and_find_totals_count_one_org[run_tasks-org_acme]
+FAILED tools/tests_xt/test_xt_mcp.py::test_the_tools_own_cross_tenant_checks[mcp-mongo.find]
+FAILED tools/tests_xt/test_xt_mcp.py::test_no_org_b_data_reaches_an_org_a_agent[mcp-mongo.find]
+6 failed, 63 passed in 17.45s
+=> KILLED
+
+## M8 the audit log total counts every org (AppendOnlyRepository.count drops the org filter)
+libs/py-data/src/onb_data/append_only.py
+  - scoped = scoping.scoped_filter(query, current_tenant().org_id)
+        return await self._collection.count_doc
+  + scoped = dict(query or {})
+        return await self._collection.count_documents(
+FAILED tools/tests_xt/test_xt_api.py::test_the_routes_own_cross_tenant_checks[GET /audit]
+FAILED tools/tests_xt/test_xt_counts.py::test_the_audit_list_total_counts_one_org[org_acme]
+FAILED tools/tests_xt/test_xt_counts.py::test_the_audit_list_total_counts_one_org[org_globex]
+ERROR tools/tests_xt/test_xt_api.py::test_the_routes_own_cross_tenant_checks[GET /audit]
+ERROR tools/tests_xt/test_xt_api.py::test_no_org_b_data_reaches_an_org_a_actor[GET /audit-HR_ADMIN]
+ERROR tools/tests_xt/test_xt_api.py::test_naming_org_b_in_the_request_changes_nothing[GET /audit-HR_ADMIN]
+ERROR tools/tests_xt/test_xt_counts.py::test_the_audit_list_total_counts_one_org[org_acme]
+ERROR tools/tests_xt/test_xt_counts.py::test_the_audit_list_total_counts_one_org[org_globex]
+3 failed, 66 passed, 5 errors in 17.64s
+=> KILLED
+
+## M5 the event worker runs a handler in another org's scope
+libs/py-eventbus/src/onb_eventbus/worker.py
+  - tenant_scope(context.org_id),
+  + tenant_scope("org_globex" if context.org_id == "org_acme" else context.org_id),
+FAILED tools/tests_xt/test_xt_consumers.py::test_a_consumer_handling_an_org_a_event_stays_in_org_a[xt.probe]
+FAILED tools/tests_xt/test_xt_consumers.py::test_the_probe_consumer_saw_only_org_a
+2 failed, 67 passed in 27.37s
+=> KILLED
+
+## M6 a cross-tenant case is deleted (mcp-mongo count)
+tools/tests_xt/test_xt_mcp.py
+  - ("mcp-mongo", "count"): ToolCase({"collection": "run_tasks"}, _count_check),
+  + 
+FAILED tools/tests_xt/test_xt_coverage.py::test_every_mcp_tool_has_a_cross_tenant_case
+1 failed, 65 passed in 23.62s
+=> KILLED
+
+## M7 /me finds the user by id across orgs (the user lookup leaves the token org scope)
+apps/api/src/onb_api/auth/mongo_users.py
+  - doc = await self._store.tenant(USERS).get(user_id)
+  + entry = await self._store.shared(LOGINS).find_one({'user_id': user_id})
+            with __import__('onb_data'
+FAILED tools/tests_xt/test_xt_api.py::test_the_routes_own_cross_tenant_checks[GET /me]
+1 failed, 68 passed in 22.33s
+=> KILLED
