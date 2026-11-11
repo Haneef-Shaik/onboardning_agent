@@ -1187,6 +1187,28 @@ requires-dist = [
 name = "onb-orchestrator"
 version = "0.1.0"
 source = { editable = "apps/orchestrator" }
+dependencies = [
+    { name = "langgraph" },
+    { name = "langgraph-checkpoint" },
+    { name = "onb-agents" },
+    { name = "onb-data" },
+    { name = "onb-eventbus" },
+    { name = "onb-telemetry" },
+    { name = "opentelemetry-api" },
+    { name = "pymongo" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "langgraph", specifier = ">=1.0,<2" },
+    { name = "langgraph-checkpoint", specifier = ">=4,<5" },
+    { name = "onb-agents", editable = "libs/py-agents" },
+    { name = "onb-data", editable = "libs/py-data" },
+    { name = "onb-eventbus", editable = "libs/py-eventbus" },
+    { name = "onb-telemetry", editable = "libs/py-telemetry" },
+    { name = "opentelemetry-api", specifier = ">=1.45,<2" },
+    { name = "pymongo", specifier = ">=4.10,<5" },
+]
 
 [[package]]
 name = "onb-telemetry"

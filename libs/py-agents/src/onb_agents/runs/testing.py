@@ -12,7 +12,7 @@ from typing import Any
 
 from onb_contracts.templates import Template
 
-__all__ = ["DIAMOND_KEY", "diamond_template", "hire_variables_for"]
+__all__ = ["DIAMOND_KEY", "diamond_template", "hire_variables_for", "uneven_diamond_template"]
 
 DIAMOND_KEY = "diamond-test"
 
@@ -55,6 +55,14 @@ def diamond_template(*, version: int = 1, key: str = DIAMOND_KEY, extra_task: bo
             "tasks": tasks,
         }
     )
+
+
+def uneven_diamond_template(*, version: int = 1) -> Template:
+    """`a` fans out to a long branch (`b` → `b2`) and a short one (`c`); `d` joins both, so it must
+    wait for `b2` even though `c` finished a step earlier."""
+    base = diamond_template(version=version).model_dump(mode="json")
+    tasks = [_task("a"), _task("b", "a"), _task("b2", "b"), _task("c", "a"), _task("d", "b2", "c")]
+    return Template.model_validate({**base, "key": "uneven-test", "tasks": tasks})
 
 
 def hire_variables_for(role: str = "engineer") -> dict[str, str]:

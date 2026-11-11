@@ -3,7 +3,22 @@ name = "onb-orchestrator"
 version = "0.1.0"
 description = "Run orchestrator and workers"
 requires-python = ">=3.12,<3.13"
-dependencies = []
+dependencies = [
+  "langgraph>=1.0,<2",
+  "langgraph-checkpoint>=4,<5",
+  "onb-agents",
+  "onb-data",
+  "onb-eventbus",
+  "onb-telemetry",
+  "opentelemetry-api>=1.45,<2",
+  "pymongo>=4.10,<5",
+]
+
+[tool.uv.sources]
+onb-agents = { workspace = true }
+onb-data = { workspace = true }
+onb-eventbus = { workspace = true }
+onb-telemetry = { workspace = true }
 
 [build-system]
 requires = ["hatchling>=1.25"]
