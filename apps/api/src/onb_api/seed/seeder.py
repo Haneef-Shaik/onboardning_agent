@@ -28,7 +28,7 @@ from typing import Any, Final, Literal, Protocol
 
 from onb_agents.registry import AgentRegistry, ToolCatalog
 from onb_agents.registry.manifest import AgentManifest
-from onb_agents.registry.sync import CATALOG_ID
+from onb_agents.registry.sync import CATALOG_ID, SyncChange
 from onb_contracts.auth import Role
 from onb_contracts.template_lifecycle import DraftRecord
 from onb_contracts.templates import Template
@@ -169,7 +169,7 @@ class Seeder:
 
     async def _registry(self, actor: SeedUser) -> list[SeedStep]:
         report = await self._s.registry.sync(self._s.manifests, self._s.catalog, actor=Actor.user(actor.id))
-        steps = [SeedStep(_SYNC_ACTIONS[change.kind], change.target) for change in report.changes]
+        steps = [SeedStep(_sync_action(change), change.target) for change in report.changes]
         steps += [SeedStep("unchanged", f"agent:{name}") for name in report.unchanged]
         if not any(change.kind == "catalog_update" for change in report.changes):
             steps.append(SeedStep("unchanged", f"catalog:{CATALOG_ID}"))
@@ -194,3 +194,10 @@ class Seeder:
 
 def _body(template: Template) -> dict[str, Any]:
     return template.model_dump(mode="json", exclude=set(_LIFECYCLE_FIELDS))
+
+
+def _sync_action(change: SyncChange) -> Action:
+    """A catalog stored for the first time (v1) is created; later catalog versions are updates."""
+    if change.kind == "catalog_update" and change.version == 1:
+        return "created"
+    return _SYNC_ACTIONS[change.kind]

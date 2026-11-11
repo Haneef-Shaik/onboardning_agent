@@ -168,6 +168,8 @@ def test_an_empty_database_gets_the_org_its_keys_the_users_the_registry_and_the_
         "created agent:approvals_agent/v1",
     ]
     assert report.steps[-1].line() == "created template:engineer-india/v1"
+    assert report.steps[-2].line() == "created catalog:tool_catalog/v1"
+    assert report.render().splitlines()[-1] == f"{len(report.steps)} created, 0 unchanged"
     assert report.unchanged == ()
 
 

@@ -67,7 +67,9 @@ MUTATIONS = [
      "SeedStep(_SYNC_ACTIONS[change.kind], change.target)", 'SeedStep("created", change.target)', UNIT),
     ("M24", "spec: a password with surrounding whitespace is accepted", SPEC,
      "if value != value.strip():", "if False:", UNIT),
-    ("M25", "command: a concurrent publish escapes as a traceback", MAIN,
+    ("M26", "registry: a first catalog write is reported as an update", SEEDER,
+     'if change.kind == "catalog_update" and change.version == 1:', "if False:", UNIT + INT),
+    ("M25","command: a concurrent publish escapes as a traceback", MAIN,
      "    LifecycleConflictError,  # another seed", "    # LifecycleConflictError,  # another seed", UNIT),
 ]
 

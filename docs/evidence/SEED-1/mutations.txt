@@ -80,3 +80,9 @@ M12 is an equivalent mutant: a draft is locked as published in the same transact
 template head (TPL-2), so a published draft whose key has no head is unreachable, and `_template`
 returns "unchanged" on the head before `_pending_draft` is consulted. The status check stays as a
 defensive filter.
+
+Added after the catalog-v1 fix (run alone with `mutate.py M26`):
+M26 KILLED · registry: a first catalog write is reported as an update · apps/api/src/onb_api/seed/seeder.py
+    FAILED apps/api/tests/test_seeder.py::test_an_empty_database_gets_the_org_its_keys_the_users_the_registry_and_the_template
+    FAILED apps/api/tests_int/test_mongo_seed.py::test_make_seed_on_an_empty_database_creates_every_listed_record
+Total: 25/26 killed; M12 equivalent (above).

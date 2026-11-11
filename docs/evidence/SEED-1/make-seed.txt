@@ -8,6 +8,10 @@
 # are generated local values in the git-ignored .env. Compose build output is omitted.
 # After both runs: `docker ps -a --filter label=onb.seed-tunnel -q | wc -l` -> 0 (tunnel removed).
 # The record-by-record read-back is tests_int/test_mongo_seed.py (root client, scratch database).
+# Re-run after the review fixes, from `down -v` again, on the tree committed after 0cef4ab (the
+# catalog-v1 fix): both runs exit 0 and their output is byte-identical to the two runs below
+# (`cmp` rc 0); 0 tunnels left. (A re-run on 0cef4ab itself printed `updated catalog:tool_catalog/v1`,
+# a regression `rtk`'s rewritten `diff` hid; it was fixed and caught by test-int and a unit test.)
 
 ## run 1 (exit 0)
 set -a && . ./.env && set +a && scripts/seed.sh
