@@ -181,3 +181,30 @@ def test_denial_messages_never_echo_argument_values() -> None:
     args = {"collection": "approvals", "filter": {"note": "secret-marker"}, "limit": 5}
     found = denial(lambda: authorize(claims(), registered("db_agent"), tool("find"), args))
     assert "secret-marker" not in str(found)
+
+
+def test_the_json_schema_contract_is_enforced_for_a_server_without_its_own_validator() -> None:
+    schema = {
+        "type": "object",
+        "properties": {"hire_id": {"type": "string"}},
+        "required": ["hire_id"],
+        "additionalProperties": False,
+    }
+    laptop = HubTool("mocks", "provision_laptop", "mocks__provision_laptop", "", schema, None, False)
+    agent = registered("provisioning_agent")
+    token = claims("provisioning_agent")
+    for bad in ({}, {"hire_id": 7}, {"hire_id": "h_1", "extra": True}):
+        assert denial(lambda bad=bad: authorize(token, agent, laptop, bad)).reason == "invalid_arguments"
+    assert authorize(token, agent, laptop, {"hire_id": "h_1"}).collection is None
+
+
+@pytest.mark.parametrize(
+    "args",
+    [{"hire_id": "h_1", "meta": {"org_id": "org_globex"}}, {"hire_id": "h_1", "meta": {"move": "$org_id"}}],
+    ids=["key", "field-path"],
+)
+def test_org_id_is_refused_for_a_server_without_its_own_validator(args: dict[str, Any]) -> None:
+    schema = {"type": "object", "properties": {"hire_id": {"type": "string"}, "meta": {"type": "object"}}}
+    laptop = HubTool("mocks", "provision_laptop", "mocks__provision_laptop", "", schema, None, False)
+    found = denial(lambda: authorize(claims("provisioning_agent"), registered("provisioning_agent"), laptop, args))
+    assert found.reason == "org_id_not_allowed"

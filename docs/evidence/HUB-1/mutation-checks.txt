@@ -1,0 +1,69 @@
+M1 CAUGHT: token expiry (libs/py-agents/src/onb_agents/tokens.py)
+    FAILED libs/py-agents/tests/test_tokens.py::test_an_expired_token_is_refused_but_its_genuine_claims_are_kept_for_the_audit
+    FAILED apps/mcp-hub/tests/test_gateway.py::test_an_expired_token_is_denied_with_an_audit_record_and_a_denied_span
+M2 CAUGHT: token lifetime <= 15 min (libs/py-agents/src/onb_agents/tokens.py)
+    FAILED libs/py-agents/tests/test_tokens.py::test_malformed_tokens_are_refused[too-long]
+M3 CAUGHT: expired-token claims kept for audit (libs/py-agents/src/onb_agents/tokens.py)
+    FAILED libs/py-agents/tests/test_tokens.py::test_an_expired_token_is_refused_but_its_genuine_claims_are_kept_for_the_audit
+    FAILED apps/mcp-hub/tests/test_gateway.py::test_an_expired_token_is_denied_with_an_audit_record_and_a_denied_span
+M4 CAUGHT: vault hard deny in arguments (apps/mcp-hub/src/onb_mcp_hub/policy.py)
+    FAILED apps/mcp-hub/tests/test_gateway.py::test_a_vault_collection_under_a_forged_manifest_is_denied_with_an_audit_record_and_a_denied_span
+M5 CAUGHT: forbidden collections dropped from the context (apps/mcp-hub/src/onb_mcp_hub/policy.py)
+    FAILED apps/mcp-hub/tests/test_policy.py::test_a_forged_manifest_never_puts_the_vault_into_the_call_context
+M6 CAUGHT: tool must be in the manifest (apps/mcp-hub/src/onb_mcp_hub/policy.py)
+    FAILED apps/mcp-hub/tests/test_gateway.py::test_a_tool_outside_the_manifest_is_denied_with_an_audit_record_and_a_denied_span
+M7 CAUGHT: tool must be in the token scopes (apps/mcp-hub/src/onb_mcp_hub/policy.py)
+    FAILED apps/mcp-hub/tests/test_policy.py::test_a_tool_outside_the_token_scopes_is_denied
+M8 CAUGHT: collection must be in the manifest (apps/mcp-hub/src/onb_mcp_hub/policy.py)
+    FAILED apps/mcp-hub/tests/test_gateway.py::test_a_collection_outside_the_manifest_is_denied_with_an_audit_record_and_a_denied_span
+M9 CAUGHT: collection must be provisioned (apps/mcp-hub/src/onb_mcp_hub/policy.py)
+    FAILED apps/mcp-hub/tests/test_policy.py::test_a_collection_no_mcp_database_user_holds_is_denied_even_if_the_manifest_lists_it
+M10 CAUGHT: JSON-schema contract (apps/mcp-hub/src/onb_mcp_hub/policy.py)
+    FAILED apps/mcp-hub/tests/test_policy.py::test_the_json_schema_contract_is_enforced_for_a_server_without_its_own_validator
+M11 CAUGHT: org_id never from arguments (apps/mcp-hub/src/onb_mcp_hub/policy.py)
+    FAILED apps/mcp-hub/tests/test_policy.py::test_org_id_is_refused_for_a_server_without_its_own_validator[key]
+M12 CAUGHT: no raw PII in arguments (apps/mcp-hub/src/onb_mcp_hub/policy.py)
+    FAILED apps/mcp-hub/tests/test_review_fixes.py::test_raw_pii_in_arguments_is_denied[mobile-text]
+M13 CAUGHT: requires_approval surfaced (apps/mcp-hub/src/onb_mcp_hub/policy.py)
+    FAILED apps/mcp-hub/tests/test_gateway.py::test_an_approval_rule_is_surfaced_to_the_caller
+M14 CAUGHT: agent record must be the token's agent (apps/mcp-hub/src/onb_mcp_hub/policy.py)
+    FAILED apps/mcp-hub/tests/test_policy.py::test_a_token_for_another_agent_than_the_record_is_denied
+M15 CAUGHT: retired agent grants nothing (apps/mcp-hub/src/onb_mcp_hub/policy.py)
+    FAILED apps/mcp-hub/tests/test_policy.py::test_an_unknown_or_retired_agent_is_denied
+M16 CAUGHT: tenant scope from the token (apps/mcp-hub/src/onb_mcp_hub/gateway.py)
+    FAILED apps/mcp-hub/tests/test_gateway.py::test_an_allowed_call_is_scoped_to_the_token_org_even_when_its_args_name_another_org
+M17 CAUGHT: credential block in responses (apps/mcp-hub/src/onb_mcp_hub/scan.py)
+    FAILED apps/mcp-hub/tests/test_gateway.py::test_a_downstream_credential_in_a_response_never_reaches_the_agent[downstream]
+M18 CAUGHT: PII redaction of responses (apps/mcp-hub/src/onb_mcp_hub/scan.py)
+    FAILED apps/mcp-hub/tests/test_gateway.py::test_a_raw_mobile_in_a_downstream_response_is_redacted_before_it_reaches_the_agent
+M19 CAUGHT: numbers scanned for PII (apps/mcp-hub/src/onb_mcp_hub/scan.py)
+    FAILED apps/mcp-hub/tests/test_review_fixes.py::test_a_number_holding_a_mobile_is_redacted_from_a_response
+M20 CAUGHT: hex-id exemption only under id keys (apps/mcp-hub/src/onb_mcp_hub/pii.py)
+    FAILED apps/mcp-hub/tests/test_review_fixes.py::test_a_hex_string_outside_an_id_key_is_scanned
+M21 CAUGHT: this call's signed context is a secret (apps/mcp-hub/src/onb_mcp_hub/gateway.py)
+    FAILED apps/mcp-hub/tests/test_gateway.py::test_a_downstream_credential_in_a_response_never_reaches_the_agent[context]
+M22 CAUGHT: every denial is audited (apps/mcp-hub/src/onb_mcp_hub/gateway.py)
+    FAILED apps/mcp-hub/tests/test_gateway.py::test_an_expired_token_is_denied_with_an_audit_record_and_a_denied_span
+M23 CAUGHT: every denial has an outcome=denied span (apps/mcp-hub/src/onb_mcp_hub/gateway.py)
+    FAILED apps/mcp-hub/tests/test_gateway.py::test_an_expired_token_is_denied_with_an_audit_record_and_a_denied_span
+M24 CAUGHT: allowed call's audit is fail-closed (apps/mcp-hub/src/onb_mcp_hub/gateway.py)
+    FAILED apps/mcp-hub/tests/test_gateway.py::test_an_allowed_call_whose_audit_fails_returns_no_data
+M25 CAUGHT: unexpected failures audited, never echoed (apps/mcp-hub/src/onb_mcp_hub/gateway.py)
+    FAILED apps/mcp-hub/tests/test_review_fixes.py::test_a_registry_failure_is_audited_traced_and_never_echoed
+M26 CAUGHT: no agent text in audit targets (apps/mcp-hub/src/onb_mcp_hub/gateway.py)
+    FAILED apps/mcp-hub/tests/test_review_fixes.py::test_agent_text_in_a_collection_name_never_reaches_the_audit_or_the_span[Mobile9876543210]
+M27 CAUGHT: agent token reaches the gateway from the header (apps/mcp-hub/src/onb_mcp_hub/server.py)
+    FAILED apps/mcp-hub/tests/test_server.py::test_a_call_over_mcp_carries_the_agent_token_to_the_gateway
+M28 CAUGHT: DNS-rebinding protection (apps/mcp-hub/src/onb_mcp_hub/server.py)
+    FAILED apps/mcp-hub/tests/test_server.py::test_a_request_for_another_host_is_refused
+M29 CAUGHT: eval runner reads hub records (libs/py-evals/src/onb_evals/toolbox.py)
+    FAILED libs/py-evals/tests/test_hub_audit.py::test_hub_records_become_audit_entries_with_the_tool_and_outcome
+M30 CAUGHT: tenant scope from the token (real stack) (apps/mcp-hub/src/onb_mcp_hub/gateway.py)
+    FAILED apps/mcp-hub/tests_int/test_hub_int.py::test_int_an_allowed_call_is_scoped_to_the_token_org_even_when_its_args_name_another_org
+M31 CAUGHT: vault hard deny (real stack) (apps/mcp-hub/src/onb_mcp_hub/policy.py)
+    FAILED apps/mcp-hub/tests_int/test_hub_int.py::test_int_a_vault_name_in_a_pipeline_is_hard_denied_for_a_registered_agent
+M32 CAUGHT: PII redaction (real stack) (apps/mcp-hub/src/onb_mcp_hub/scan.py)
+    FAILED apps/mcp-hub/tests_int/test_hub_int.py::test_int_a_raw_mobile_stored_in_a_tenant_document_is_redacted_before_it_reaches_the_agent
+M33 CAUGHT: credential block (real stack) (apps/mcp-hub/src/onb_mcp_hub/scan.py)
+    FAILED apps/mcp-hub/tests_int/test_hub_int.py::test_int_a_stored_credential_is_withheld_whole
+SUMMARY: 33 of 33 mutations caught

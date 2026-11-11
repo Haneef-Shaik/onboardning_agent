@@ -80,8 +80,9 @@ class Stack:
     telemetry: CapturedTelemetry
 
 
-def _wait_for_ping(client: RootClient, deadline_s: float = 60) -> None:
-    """The image's init step starts a temporary mongod first; wait for the real one to answer."""
+def _wait_for_ping(client: RootClient, deadline_s: float = 180) -> None:
+    """The image's init step starts a temporary mongod first; wait for the real one to answer.
+    Generous: under `make test-int` several suites start containers on one Docker host at once."""
     end = time.monotonic() + deadline_s
     while True:
         try:
