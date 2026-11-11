@@ -1,0 +1,32 @@
+# What `make seed` creates (PRD §7.11; SEED-1). Synthetic data only: no real people or addresses.
+#
+# Passwords never appear here. Each user names the environment variable that holds its password
+# (`password_env`); `make seed` reads it from `.env` (git-ignored) and stores only a bcrypt hash.
+# The first HR_ADMIN is the actor recorded on the registry sync and the template publish audit records.
+# Template paths are relative to this file. Seeding is create-only: a second run changes nothing.
+org:
+  id: org_demo
+  name: Demo Org (synthetic)
+users:
+  - id: u_demo_hradmin
+    email: hr.admin@demo.example
+    name: Asha Menon
+    role: HR_ADMIN
+    password_env: SEED_HR_ADMIN_PASSWORD
+  - id: u_demo_hr
+    email: hr@demo.example
+    name: Vikram Iyer
+    role: HR
+    password_env: SEED_HR_PASSWORD
+  - id: u_demo_mgr_priya
+    email: priya.manager@demo.example
+    name: Priya Nair
+    role: MANAGER
+    password_env: SEED_MANAGER_PASSWORD
+  - id: u_demo_mgr_arjun
+    email: arjun.manager@demo.example
+    name: Arjun Reddy
+    role: MANAGER
+    password_env: SEED_MANAGER_PASSWORD
+templates:
+  - ../templates/engineer-india.yaml
