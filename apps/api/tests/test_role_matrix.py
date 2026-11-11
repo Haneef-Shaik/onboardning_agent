@@ -67,6 +67,8 @@ ROLE_MATRIX: dict[tuple[str, str], dict[Role, int]] = {
     ("GET", "/templates"): ALL_200,
     ("GET", "/templates/{key}/versions/{version}"): ALL_200,
     ("POST", "/templates/{key}/versions/{version}/archive"): {Role.HR_ADMIN: 200, Role.HR: 403, Role.MANAGER: 403},
+    # HIRE-2 (PRD FR-P3, §10 Hires): sent without `type` or a body, a permitted role reaches validation.
+    ("POST", "/hires/{hire_id}/documents"): {Role.HR_ADMIN: 422, Role.HR: 422, Role.MANAGER: 403},
 }
 
 CONFIG = Path(__file__).resolve().parents[3] / "config"
@@ -85,6 +87,7 @@ SAMPLE_PATHS = {
     "/templates/drafts/{draft_id}/publish": f"/templates/drafts/{SAMPLE_DRAFT}/publish",
     "/templates/{key}/versions/{version}": "/templates/engineer-india/versions/1",
     "/templates/{key}/versions/{version}/archive": "/templates/engineer-india/versions/1/archive",
+    "/hires/{hire_id}/documents": "/hires/h_acme_001/documents",
 }
 
 # A valid body for the routes whose permitted roles should succeed (the hire routes are sent none).

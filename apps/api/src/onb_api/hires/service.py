@@ -41,8 +41,6 @@ from onb_crypto import (
     BlindIndexField,
     CryptoError,
     Keyring,
-    KeyVersionConflictError,
-    NoOrgKeysError,
     TokenNotFoundError,
     Vault,
     VaultConflictError,
@@ -58,6 +56,7 @@ from onb_api.auth.users import UserStore
 from onb_api.errors import AppError
 from onb_api.hires import fields
 from onb_api.hires.access_log import AccessQuery, PiiAccessLog
+from onb_api.hires.org_keys import ensure_org_keys
 from onb_api.hires.records import hire_record
 from onb_api.hires.store import EmailTakenError, HireStore, StoredPii
 
@@ -347,13 +346,7 @@ class HireService:
 
     async def _org_keys(self, org_id: str) -> None:
         """The org's keys, made on its first sensitive write; a concurrent maker wins harmlessly."""
-        try:
-            await self._keyring.active(org_id)
-        except NoOrgKeysError:
-            try:
-                await self._keyring.create(org_id)
-            except KeyVersionConflictError:
-                self._keyring.forget(org_id)
+        await ensure_org_keys(self._keyring, org_id)
 
     async def _index(self, org_id: str, field: PiiField, value: str) -> str:
         return await self._keyring.blind_index(org_id, fields.BLIND_INDEXES[field], value)

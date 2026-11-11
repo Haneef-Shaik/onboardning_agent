@@ -21,6 +21,7 @@ from onb_telemetry import init_telemetry
 from onb_api.app import create_app
 from onb_api.auth.mongo_users import MongoUserStore
 from onb_api.auth.settings import AuthSettings, require_env
+from onb_api.documents.service import DocumentService
 from onb_api.health import SERVICE_NAME
 from onb_api.hires.service import HireService
 from onb_api.templates import MongoTemplateStore, RegistryValidatorSource, TemplateLifecycle
@@ -41,4 +42,13 @@ hires = HireService.build(store, keyring, auditor=audit_log, users=users)
 templates = TemplateLifecycle(
     MongoTemplateStore(store), RegistryValidatorSource.from_config(registry, config_dir), audit_log
 )
-app = create_app(auth=auth, users=users, audit=audit_log, agents=registry, hires=hires, templates=templates)
+documents = DocumentService.build(store, keyring, auditor=audit_log)
+app = create_app(
+    auth=auth,
+    users=users,
+    audit=audit_log,
+    agents=registry,
+    hires=hires,
+    templates=templates,
+    documents=documents,
+)

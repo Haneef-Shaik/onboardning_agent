@@ -4,9 +4,10 @@ The app gets the test auth settings, an in-memory user store seeded with both or
 empty in-memory audit log (`audit_log`), an in-memory agent registry synced from `config/agents/`
 (REG-1), the hire service (HIRE-1) over an in-memory database holding seed_v1's hires, with its own
 audit log (`hire_audit`), and the template lifecycle (TPL-2) over an in-memory store, validating
-against that registry and auditing to `audit_log`. `JWT_SECRET` and `PII_MASTER_KEY` are set for
-every test (fresh random values), so tests that build the app from the environment start like the
-real service; the startup tests remove them.
+against that registry and auditing to `audit_log`, and the document service (HIRE-2) over the same
+database, keyring (`keyring`, shared with the hires) and audit log as the hires. `JWT_SECRET` and
+`PII_MASTER_KEY` are set for every test (fresh random values), so tests that build the app from the
+environment start like the real service; the startup tests remove them.
 """
 
 import asyncio
@@ -22,10 +23,12 @@ from fastapi.testclient import TestClient
 from onb_agents.registry import AgentRegistry, load_catalog, load_manifests
 from onb_agents.testing import InMemoryRegistryStore
 from onb_api import create_app
+from onb_api.documents.service import DocumentService
 from onb_api.hires.service import HireService
 from onb_api.templates import RegistryValidatorSource, TemplateLifecycle
 from onb_api.testing import TEST_SETTINGS, InMemoryAuditLog, InMemoryTemplateStore, InMemoryUserStore, seeded_store
 from onb_api.testing_mongo import MemoryDatabase, memory_keyring, memory_store
+from onb_crypto import Keyring
 from onb_data import Actor
 from onb_telemetry.testing import reset_telemetry_globals
 
@@ -33,9 +36,11 @@ __all__ = [
     "app",
     "audit_log",
     "client",
+    "documents",
     "hire_audit",
     "hires",
     "jwt_secret_in_env",
+    "keyring",
     "memory_db",
     "registry",
     "registry_retire",
@@ -101,9 +106,16 @@ def audit_log() -> InMemoryAuditLog:
 
 
 @pytest.fixture
-def hires(memory_db: MemoryDatabase, hire_audit: InMemoryAuditLog, users: InMemoryUserStore) -> HireService:
-    store = memory_store(memory_db)
-    return HireService.build(store, memory_keyring(store), auditor=hire_audit, users=users)
+def keyring(memory_db: MemoryDatabase) -> Keyring:
+    """One keyring (one master key) for the hire and document services, as `onb_api.main` builds them."""
+    return memory_keyring(memory_store(memory_db))
+
+
+@pytest.fixture
+def hires(
+    memory_db: MemoryDatabase, hire_audit: InMemoryAuditLog, users: InMemoryUserStore, keyring: Keyring
+) -> HireService:
+    return HireService.build(memory_store(memory_db), keyring, auditor=hire_audit, users=users)
 
 
 @pytest.fixture
@@ -119,16 +131,29 @@ def templates(
 
 
 @pytest.fixture
+def documents(memory_db: MemoryDatabase, hire_audit: InMemoryAuditLog, keyring: Keyring) -> DocumentService:
+    """HIRE-2: document uploads over the same in-memory database, keyring and audit log as the hires."""
+    return DocumentService.build(memory_store(memory_db), keyring, auditor=hire_audit)
+
+
+@pytest.fixture
 def app(
     users: InMemoryUserStore,
     registry: AgentRegistry,
     audit_log: InMemoryAuditLog,
     hires: HireService,
     templates: TemplateLifecycle,
+    documents: DocumentService,
 ) -> FastAPI:
     reset_telemetry_globals()
     return create_app(
-        auth=TEST_SETTINGS, users=users, audit=audit_log, agents=registry, hires=hires, templates=templates
+        auth=TEST_SETTINGS,
+        users=users,
+        audit=audit_log,
+        agents=registry,
+        hires=hires,
+        templates=templates,
+        documents=documents,
     )
 
 
