@@ -1,5 +1,6 @@
 """`JWT_SECRET` comes from the environment, and the API refuses to start without it (AUTH-1 box 4)."""
 
+import base64
 import os
 import secrets
 import subprocess
@@ -65,7 +66,8 @@ def test_create_app_fails_without_jwt_secret(monkeypatch: pytest.MonkeyPatch) ->
 
 def _start_api(env: dict[str, str]) -> subprocess.CompletedProcess[str]:
     """Import the ASGI entry point the way `uvicorn onb_api.main:app` does, in a clean process."""
-    base = {k: v for k, v in os.environ.items() if k not in {"JWT_SECRET", "MONGO_URI", "MONGO_DATABASE"}}
+    stripped = {"JWT_SECRET", "MONGO_URI", "MONGO_DATABASE", "PII_MASTER_KEY"}
+    base = {k: v for k, v in os.environ.items() if k not in stripped}
     base["OTEL_SDK_DISABLED"] = "true"
     return subprocess.run(
         [sys.executable, "-c", "import onb_api.main"],
@@ -77,7 +79,12 @@ def _start_api(env: dict[str, str]) -> subprocess.CompletedProcess[str]:
     )
 
 
-MONGO_ENV = {"MONGO_URI": "mongodb://127.0.0.1:1/?serverSelectionTimeoutMS=1", "MONGO_DATABASE": "onb"}
+MONGO_ENV = {
+    "MONGO_URI": "mongodb://127.0.0.1:1/?serverSelectionTimeoutMS=1",
+    "MONGO_DATABASE": "onb",
+    # HIRE-1: the vault's master key (PRD §7.10), a fresh one per run.
+    "PII_MASTER_KEY": base64.b64encode(secrets.token_bytes(32)).decode("ascii"),
+}
 
 
 def test_startup_fails_without_jwt_secret() -> None:
@@ -98,6 +105,21 @@ def test_startup_fails_without_the_mongo_settings() -> None:
     result = _start_api({"JWT_SECRET": GOOD_SECRET})
     assert result.returncode != 0
     assert "ConfigError: MONGO_URI is not set" in result.stderr
+
+
+def test_startup_fails_without_the_pii_master_key() -> None:
+    env = {k: v for k, v in MONGO_ENV.items() if k != "PII_MASTER_KEY"}
+    result = _start_api({**env, "JWT_SECRET": GOOD_SECRET})
+    assert result.returncode != 0
+    assert "MasterKeyError: PII_MASTER_KEY is not set" in result.stderr
+
+
+def test_startup_fails_with_a_malformed_pii_master_key() -> None:
+    sentinel = base64.b64encode(secrets.token_bytes(16)).decode("ascii")  # 16 bytes: too short
+    result = _start_api({**MONGO_ENV, "JWT_SECRET": GOOD_SECRET, "PII_MASTER_KEY": sentinel})
+    assert result.returncode != 0
+    assert "PII_MASTER_KEY must be base64 of exactly 32 bytes" in result.stderr
+    assert sentinel not in result.stderr
 
 
 def test_startup_succeeds_with_the_settings() -> None:

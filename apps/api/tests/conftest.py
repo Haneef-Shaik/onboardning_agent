@@ -1,12 +1,15 @@
 """API test fixtures: a client on a fresh app, with no telemetry left over from another test.
 
 The app gets the test auth settings, an in-memory user store seeded with both orgs' users, an
-empty in-memory audit log and an in-memory agent registry synced from `config/agents/` (REG-1).
-`JWT_SECRET` is set for every test (a fresh random value), so tests that build the app from the
-environment with `create_app()` start like the real service; the startup tests remove it.
+empty in-memory audit log, an in-memory agent registry synced from `config/agents/` (REG-1), and
+the hire service (HIRE-1) over an in-memory database holding seed_v1's hires, with its own audit log
+(`hire_audit`). `JWT_SECRET` and `PII_MASTER_KEY` are set for every test (fresh random values), so
+tests that build the app from the environment start like the real service; the startup tests
+remove them.
 """
 
 import asyncio
+import base64
 import json
 import secrets
 from collections.abc import Iterator
@@ -33,6 +36,7 @@ SEED = Path(__file__).resolve().parents[3] / "evals" / "fixtures" / "seed_v1.jso
 @pytest.fixture(autouse=True)
 def jwt_secret_in_env(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("JWT_SECRET", secrets.token_urlsafe(48))
+    monkeypatch.setenv("PII_MASTER_KEY", base64.b64encode(secrets.token_bytes(32)).decode("ascii"))
 
 
 @pytest.fixture
