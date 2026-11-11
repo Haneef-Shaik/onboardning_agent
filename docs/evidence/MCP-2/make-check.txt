@@ -12,7 +12,7 @@ uv run --frozen pytest tools/tests scripts/plan/test_plan.py -q
 ........................................................................ [ 43%]
 ........................................................................ [ 87%]
 .....................                                                         [100%]
-165 passed, 67 subtests passed in 5.43s
+165 passed, 67 subtests passed in 7.15s
 node_modules/.bin/nx run-many -t lint --output-style=static
 
  NX   Running target lint for 17 projects:
@@ -184,9 +184,9 @@ node_modules/.bin/nx run-many -t lint --output-style=static
 
 Nx read the output from the cache instead of running the command for 16 out of 17 tasks.
 
-  Run duration:      436ms
+  Run duration:      554ms
   Cache:             16/17 hit (94%)
-  Critical path:     411ms (1 task)
+  Critical path:     536ms (1 task)
   Recoverable time:  1ms (0% of the run)
 node_modules/.bin/nx run-many -t typecheck --output-style=static
 
@@ -320,10 +320,10 @@ Success: no issues found in 2 source files
 
 Nx read the output from the cache instead of running the command for 16 out of 17 tasks.
 
-  Run duration:      697ms
+  Run duration:      1.0s
   Cache:             16/17 hit (94%)
-  Critical path:     674ms (1 task)
-  Recoverable time:  1ms (0% of the run)
+  Critical path:     998ms (1 task)
+  Recoverable time:  2ms (0% of the run)
 node_modules/.bin/nx run-many -t test --output-style=static
 
  NX   Running target test for 17 projects:
@@ -875,10 +875,10 @@ cachedir: .pytest_cache/mcp-mongo
 rootdir: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-mcp-2
 configfile: pyproject.toml
 plugins: hypothesis-6.170.15, langsmith-0.14.17, cov-7.1.0, anyio-4.16.0
-collected 516 items
+collected 518 items
 
 apps/mcp-mongo/tests/test_call_context.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m [  5%]
-[0m[32m.[0m[32m                                                                        [  6%][0m
+[0m[32m.[0m[32m                                                                        [  5%][0m
 apps/mcp-mongo/tests/test_contracts.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m [ 12%]
 [0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                                                              [ 14%][0m
 apps/mcp-mongo/tests/test_db_users.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m    [ 20%][0m
@@ -891,13 +891,13 @@ apps/mcp-mongo/tests/test_server_validator.py [32m.[0m[32m.[0m[32m.[0m[32
 [0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m            [ 57%][0m
 apps/mcp-mongo/tests/test_spans.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                     [ 60%][0m
 apps/mcp-mongo/tests/test_store_routing.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                     [ 62%][0m
-apps/mcp-mongo/tests/test_tool_surface.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m              [ 65%][0m
+apps/mcp-mongo/tests/test_tool_surface.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m            [ 65%][0m
 apps/mcp-mongo/tests/test_validator.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m [ 72%]
 [0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m [ 86%]
 [0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m          [ 98%][0m
 apps/mcp-mongo/tests/test_validator_properties.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m              [100%][0m
 
-[32m============================= [32m[1m516 passed[0m[32m in 16.69s[0m[32m =============================[0m
+[32m============================= [32m[1m518 passed[0m[32m in 12.46s[0m[32m =============================[0m
 
 
 
@@ -905,9 +905,9 @@ apps/mcp-mongo/tests/test_validator_properties.py [32m.[0m[32m.[0m[32m.[0m
 
 Nx read the output from the cache instead of running the command for 16 out of 17 tasks.
 
-  Run duration:      18.1s
+  Run duration:      13.9s
   Cache:             16/17 hit (94%)
-  Critical path:     18.0s (1 task)
+  Critical path:     13.9s (1 task)
   Recoverable time:  1ms (0% of the run)
 make check: all passed
 exit=0

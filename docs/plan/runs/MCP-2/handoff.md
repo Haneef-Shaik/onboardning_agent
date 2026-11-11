@@ -1,4 +1,23 @@
-# Handoff — MCP-2 · Reject dangerous and cross-tenant queries        attempt 6 · goal/mcp-2-query-validator · see `git log -1` (code at d6948b5)
+# Handoff — MCP-2 · Reject dangerous and cross-tenant queries        attempt 7 (final) · goal/mcp-2-query-validator · see `git log -1` (code at 05dfefa)
+
+**Attempt 7, the last one (the verifier failed attempt 6 on box 4; the orchestrator narrowed the model).**
+The attempt-6 survivors:
+- **A:** `server.py` gained a second `FastMCP` builder, and `main.py` started it with `FastMCP.run` in a thread on port+1. The test patched only `uvicorn.run`, so this listener went unseen.
+- **B:** `build_server` appended a `drop_collection` tool only when the host is non-default **and** the port is default, a combination the two sampled configurations never hit.
+
+The orchestrator **narrowed** the box-4 model rather than extending it (see Decisions forced). Survivor A is in the narrowed model and is closed. Survivor B is out of model by decision and is flagged for SEC-2 under Review findings left open.
+
+Fixed in 05dfefa (`test_tool_surface.py`, tests only):
+1. `test_fastmcp_is_constructed_exactly_once_inside_build_server` resolves `FastMCP` through `server.py`'s imports (any alias) and requires exactly one construction, inside `build_server`. No other module may import `mcp.server` (rule from attempt 6).
+2. `test_nothing_in_the_package_starts_a_server_or_listener_but_mains_uvicorn_run` scans every module, admin code included. It forbids:
+   - calls to `.run`/`.serve`/`.startup`/`.start*`/`.submit`/`.to_thread`/`.run_in_executor`/`create_task`/`run_until_complete`/`start_server`/`create_server`/`bind`/`listen`/`run_*_async`;
+   - bare `Thread`/`Timer`/`Process`/`Server`/`Config`/`*PoolExecutor`;
+   - imports of `threading`/`asyncio`/`anyio`/`socket`/`socketserver`/`multiprocessing`/`concurrent`/`subprocess`/`selectors`/`http.server` and other server stacks;
+   - any `uvicorn` import except `import uvicorn` in `main.py`.
+
+   The single allowed call is `main.py`'s one `uvicorn.run`, whose first argument must be `<the build_server result>.streamable_http_app()`.
+
+Survivor A is mutation **V41**, killed by both new tests. The run also shows 2 errors, which come from the mutant's real second listener starting when the behavioural tests call `main()`. Total: **41 of 41** mutations caught.
 
 **Attempt 6 (verifier failed attempt 5 on box 4, inside the threat model; the orchestrator approved this plan).**
 The attempt-5 survivors were configuration-dependent branches. An aliased `FastMCP` with `Tool.from_function(db_users.run_command)` was served only when:
@@ -105,7 +124,7 @@ It rejects:
 | An injection corpus of 40+ payloads (nested, dotted, unicode, `$where`, `$function`, `$accumulator`, `$expr` with JS, `$lookup`, `$graphLookup`, `$out`, `$merge`, `$unionWith`) is all rejected, each with a named reason (test) | yes | **Corpus:** `apps/mcp-mongo/tests/corpus.py` has **82 payloads**, each with an expected `denial.reason`. `REQUIRED_KINDS` maps every kind the card names to corpus ids. **Validator level:** `test_validator.py::test_every_corpus_payload_is_rejected_with_its_named_reason[*]` passes 82 of 82. **Supporting tests:** `test_the_corpus_has_at_least_40_payloads_with_unique_ids` and `test_the_corpus_covers_every_kind_the_card_names[*]` (12 kinds). **Over MCP with a real client:** `test_server_validator.py::test_every_corpus_payload_is_denied_over_mcp_before_the_driver[*]` passes 82 of 82. Each call is `isError`, the driver gets no calls, and the span has `outcome=denied` and `denial.reason` equal to the expected reason. Command: `uv run --frozen pytest apps/mcp-mongo/tests/test_validator.py apps/mcp-mongo/tests/test_server_validator.py apps/mcp-mongo/tests/test_validator_properties.py apps/mcp-mongo/tests/test_tool_surface.py -v` → `268 passed` (`docs/evidence/MCP-2/box-tests.txt`; it lists 82 PASSED for each corpus test). |
 | A hypothesis test never produces an accepted query containing a forbidden operator | yes | `apps/mcp-mongo/tests/test_validator_properties.py`, 9 properties at 600 examples each. **Random trees:** `test_an_accepted_{filter,pipeline,update,insert}_never_holds_a_forbidden_operator`. Keys mix allowlisted operators, forbidden ones, look-alikes (fullwidth `＄`, Cyrillic `е`, zero-width, soft hyphen, case, padding) and random `$x`. **Grammar-built calls:** `test_a_mutated_{filter,pipeline,update,insert}_*`, where 1 key in 20 is replaced by a dangerous one; acceptance is 76% for find, 41% aggregate, 14% update and 81% insert (statistics in `box-tests.txt`), so the property is not vacuous. **Injection:** `test_a_valid_filter_is_accepted_and_rejected_once_a_forbidden_operator_is_injected` puts each forbidden operator at a random depth and checks both find and `$match`. **Oracle:** every name and dotted segment of an accepted call is checked, after NFKC, against the forbidden set and the allowlists. Per context, filters hold only query and expression operators, inserts no operator, and updates only update operators; `pii` and `org_id` are never written. Result: `600 passing, 0 failing` for each property (`box-tests.txt`). The property tests alone catch 8 of 10 operator and name mutations (`mutation-checks-properties.txt`); the 2 misses only change the reason, see Mutation checks. |
 | An update touching `pii.mobile` and a `$set` of `org_id` are rejected (tests) | yes | **Validator:** `test_validator.py::test_an_update_touching_pii_mobile_is_rejected` (`pii_read_only`); `test_every_update_operator_on_pii_mobile_is_rejected[$set,$unset,$inc,$mul,$min,$max,$push,$addToSet,$pull]`; `test_a_set_of_org_id_is_rejected` and `test_a_set_of_an_org_id_subfield_is_rejected` (`org_id_not_allowed`). **Over MCP:** `test_server_validator.py::test_an_update_touching_pii_mobile_is_denied_over_mcp` (the stored `pii.mobile` is unchanged, the driver gets no calls, `denial.reason=pii_read_only`) and `test_a_set_of_org_id_is_denied_over_mcp` (`org_id` stays `org_a`). **Corpus:** `pii-*` (8 payloads) and `org-*` (10). All PASSED (`box-tests.txt`). |
-| A test asserts no delete, drop, index, admin or `runCommand` tool exists | yes | `apps/mcp-mongo/tests/test_tool_surface.py` has ten tests. **Served tools:** `test_no_delete_drop_index_admin_or_run_command_tool_is_served` checks that `tools/list` over MCP is exactly the six PRD tools, that no name contains delete/remove/drop/index/admin/command/runcommand/eval/rename/replace, and that each tool has `destructiveHint=False`. **Built tools:** `test_the_server_is_built_only_from_the_prd_tools` checks `CONTRACTS` and `HANDLERS`. **What production serves (the primary proof; attempt 5 adds the production path and the route table):** `test_the_app_main_serves_is_exactly_one_mcp_endpoint` requires the app `main()` hands to uvicorn, called bare with env-var config, to be one MCP route at `/mcp` and nothing else. Then `test_the_app_main_serves_lists_exactly_the_prd_tools_over_mcp` captures the exact app `main()` hands to `uvicorn.run`, connects a real MCP client session to it, and asserts `list_tools()` is exactly the six PRD tools, with no forbidden word in any name or description and `destructiveHint=False`. **Who may register:** `test_only_the_server_module_builds_the_mcp_server_or_registers_tools` is the AST rule. **Source scan:** `test_no_source_file_but_the_admin_file_calls_a_delete_drop_index_or_command_method` scans every `*.py` under `src/`, at any depth, except the exact file `src/onb_mcp_mongo/db_users.py` for `.delete_*`, `.drop*`, `.create_index*`, `.command(`, `replace_one`, `bulk_write` and others, and asserts the scanned set covers the whole tool closure. **Admin code unreachable:** `test_the_tool_closure_holds_the_tool_code_and_not_the_admin_code` builds the AST import closure from `server.py`; it must contain every handler's and contract's module (plus tools, policy, validator and validator_rules) and must not contain `db_users`. `test_importing_the_tools_never_loads_the_admin_code` uses a fresh interpreter that imports every closure module and checks `db_users` is not in `sys.modules`. **The exemption itself:** `test_the_admin_exemption_is_exactly_the_provisioning_file` pins it to that one resolved path, and `test_the_package_has_no_subpackages` keeps the import closure complete. **Missing tools:** `test_calling_a_tool_that_does_not_exist_is_an_error` tries `delete_one`, `drop_collection`, `create_index`, `run_command` and `admin_command`. All 10 PASSED (`box-tests.txt`). Mutations V26–V40 fail them; V35, the attempt-3 bypass, is killed only by the behavioural test. |
+| A test asserts no delete, drop, index, admin or `runCommand` tool exists | yes | `apps/mcp-mongo/tests/test_tool_surface.py` has ten tests. **Served tools:** `test_no_delete_drop_index_admin_or_run_command_tool_is_served` checks that `tools/list` over MCP is exactly the six PRD tools, that no name contains delete/remove/drop/index/admin/command/runcommand/eval/rename/replace, and that each tool has `destructiveHint=False`. **Built tools:** `test_the_server_is_built_only_from_the_prd_tools` checks `CONTRACTS` and `HANDLERS`. **What production serves (the primary proof; attempt 5 adds the production path and the route table):** `test_the_app_main_serves_is_exactly_one_mcp_endpoint` requires the app `main()` hands to uvicorn, called bare with env-var config, to be one MCP route at `/mcp` and nothing else. Then `test_the_app_main_serves_lists_exactly_the_prd_tools_over_mcp` captures the exact app `main()` hands to `uvicorn.run`, connects a real MCP client session to it, and asserts `list_tools()` is exactly the six PRD tools, with no forbidden word in any name or description and `destructiveHint=False`. **Who may register:** `test_only_the_server_module_builds_the_mcp_server_or_registers_tools` is the AST rule. **Source scan:** `test_no_source_file_but_the_admin_file_calls_a_delete_drop_index_or_command_method` scans every `*.py` under `src/`, at any depth, except the exact file `src/onb_mcp_mongo/db_users.py` for `.delete_*`, `.drop*`, `.create_index*`, `.command(`, `replace_one`, `bulk_write` and others, and asserts the scanned set covers the whole tool closure. **Admin code unreachable:** `test_the_tool_closure_holds_the_tool_code_and_not_the_admin_code` builds the AST import closure from `server.py`; it must contain every handler's and contract's module (plus tools, policy, validator and validator_rules) and must not contain `db_users`. `test_importing_the_tools_never_loads_the_admin_code` uses a fresh interpreter that imports every closure module and checks `db_users` is not in `sys.modules`. **The exemption itself:** `test_the_admin_exemption_is_exactly_the_provisioning_file` pins it to that one resolved path, and `test_the_package_has_no_subpackages` keeps the import closure complete. **Missing tools:** `test_calling_a_tool_that_does_not_exist_is_an_error` tries `delete_one`, `drop_collection`, `create_index`, `run_command` and `admin_command`. All 10 PASSED (`box-tests.txt`). Mutations V26–V41 fail them; V35, the attempt-3 bypass, is killed only by the behavioural test. |
 
 ## Claims the next goals may rely on
 | Claim | Proved by |
@@ -124,9 +143,9 @@ It rejects:
 ## Gates
 | Gate | Command | Result |
 |------|---------|--------|
-| Check | `rtk proxy make check` (d6948b5) | `make check: all passed`, exit=0. Lint, typecheck and test for 17 projects; mcp-mongo `516 passed` (`docs/evidence/MCP-2/make-check.txt`) |
+| Check | `rtk proxy make check` (05dfefa) | `make check: all passed`, exit=0. Lint, typecheck and test for 17 projects; mcp-mongo `518 passed` (`docs/evidence/MCP-2/make-check.txt`) |
 | Integration | `rtk proxy make test-int` (rebased branch) | exit=0. `12`, `10`, `3`, `28`, `77`, `17`, `8` and `2 passed`; `Successfully ran target test-int for 7 projects` (`docs/evidence/MCP-2/make-test-int.txt`, compose project `ob-mcp-2` on 19500/19501) |
-| Box tests | `uv run --frozen pytest apps/mcp-mongo/tests/test_validator.py …/test_server_validator.py …/test_validator_properties.py …/test_tool_surface.py -v` | `281 passed`; 164 corpus PASSED lines (82 payloads × 2 tests) (`box-tests.txt`) |
+| Box tests | `uv run --frozen pytest apps/mcp-mongo/tests/test_validator.py …/test_server_validator.py …/test_validator_properties.py …/test_tool_surface.py -v` | `283 passed`; 164 corpus PASSED lines (82 payloads × 2 tests) (`box-tests.txt`) |
 | Plan | `python3 scripts/plan/plan.py check` | `plan ok: 67 goals, 34 ledger rows` |
 
 `make test-xt`, evals and contracts-check do not cover this diff or do not exist yet.
@@ -140,7 +159,7 @@ It rejects:
 | MCP-1 | "MCP-2 should cap depth; narrow `_mentions_org`; include sort keys" | Depth is capped and sort and projection keys are checked. `_mentions_org` in `policy.py` was **not** narrowed: it is MCP-1's code, and MCP-3 also edits this app, so it is left for a merge-safe follow-up. It still refuses a value equal to `"org_id"` after the validator accepts it, which is safe |
 
 ## Mutation checks
-**All guards:** `docs/evidence/MCP-2/mutation-checks.txt` (script `docs/evidence/MCP-2/mutate.py`) gives `SUMMARY: 40 of 40 mutations caught, every file restored` (byte-for-byte sha256), run on the rebased branch.
+**All guards:** `docs/evidence/MCP-2/mutation-checks.txt` (script `docs/evidence/MCP-2/mutate.py`) gives `SUMMARY: 41 of 41 mutations caught, every file restored` (byte-for-byte sha256), run on the rebased branch.
 
 | # | Guard broken | Failed |
 |---|--------------|--------|
@@ -185,8 +204,9 @@ It rejects:
 | V38 | P1: aliased FastMCP + `Tool.from_function(db_users.run_command)` served only when the host is not the default | `test_the_app_main_serves_lists_exactly_the_prd_tools_over_mcp[all-non-default]`, `test_only_the_server_module_imports_the_mcp_server_api` |
 | V39 | P2: the same, served only when the port is not the default | the same 2 tests |
 | V40 | P3: the same, served only when an ad-hoc env flag is set | `test_only_the_server_module_imports_the_mcp_server_api`, `test_main_reads_the_environment_only_by_passing_it_to_load_settings` |
+| V41 | Survivor A: a second `FastMCP` (`run_command` over `db_users._auth_info`) built in `server.py` and started by `main.py` with `FastMCP.run` in a thread on port+1 | `test_fastmcp_is_constructed_exactly_once_inside_build_server`, `test_nothing_in_the_package_starts_a_server_or_listener_but_mains_uvicorn_run` |
 
-V28–V40 test the narrowing:
+V28–V41 test the narrowing:
 - A destructive call in any file other than the one admin file fails.
 - The admin module cannot become reachable from a tool, statically or dynamically.
 - Nothing outside `server.py` can register a tool.
@@ -207,6 +227,7 @@ The corpus tests catch both.
 - The tool-surface tests passed from the start: MCP-1 already serves no destructive tool, so they are a guard against regression (V26 and V27 show they bite).
 
 ## Review findings left open
+- **flag for SEC-2 · out of the box-4 model by decision · survivor B (verifier, attempt 6), quoted:** "build_server gains `if host != '127.0.0.1' and port == 8000: tool_list.append(Tool.from_function(_noop, name='drop_collection'))` (a networked host on the default port, arguably the most realistic deployment) → 516 passed. Why missed: the proof samples only two configurations (required-only = default host; all-non-default = port 9001), so any branch on a mixed default/non-default combination is never exercised; the code sits in server.py so neither static rule applies." Box 4 does not guard against this kind of change; code review and SEC-2 must. Suggested SEC-2 check: `build_server` and `main` use host, port and database only as pass-through arguments.
 I ran a code review and a security review (general-purpose agents with reviewer briefs). Neither found a critical or high issue, and the security review found **no bypass** (no JavaScript, no cross-collection or cross-org access, no `pii`/`org_id` write). These were fixed in 839bf45 (rebased hash):
 - Query and condition contexts are now separate.
 - ObjectId is accepted only in value position.
@@ -244,6 +265,22 @@ Left open:
 - **MCP-1 follow-up:** `$date` decoding; narrow `_mentions_org`.
 
 ## Decisions forced (ADRs written)
+**FINAL box-4 model (attempt 7).** The orchestrator decided it as integrator, on Haneef's behalf; he can override it. Box 4 was not converging, so the model is **narrowed, not extended**, and attempt 7 is the last attempt.
+
+The tests guarantee:
+1. The app `main()` serves through the production path exposes exactly one MCP endpoint, and its tools are exactly the six PRD tools, under the required-only and all-non-default configurations. Tests: `test_the_app_main_serves_is_exactly_one_mcp_endpoint[*]` and `test_the_app_main_serves_lists_exactly_the_prd_tools_over_mcp[*]`.
+2. No module except `server.py` imports from `mcp.server` (any alias), and `FastMCP` is constructed exactly once, inside `build_server`. Tests: `test_only_the_server_module_imports_the_mcp_server_api` and `test_fastmcp_is_constructed_exactly_once_inside_build_server`.
+3. Nothing in the package starts a server or listener except `main()` handing that one app to `uvicorn.run`. Test: `test_nothing_in_the_package_starts_a_server_or_listener_but_mains_uvicorn_run`.
+
+**Out of scope, by decision:**
+- code deliberately written to branch on configuration combinations so that it evades the sampled configurations (survivor B);
+- code written to defeat these exact static rules.
+
+That is the job of code review and SEC-2. Not added, by decision: the 8-configuration product, and a host/port pass-through rule.
+
+Kept as further layers: the environment-only-via-`load_settings` rule, and the source scan with the exact-path `db_users.py` exemption.
+
+### Superseded: threat model for attempts 5–6
 **Box 4 threat model (attempt 5).** The orchestrator confirmed it as integrator, on Haneef's behalf; he can override it.
 
 Box 4 guards against a forbidden (delete/drop/index/admin/runCommand) tool being served by any **ordinary route**:

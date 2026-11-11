@@ -11,21 +11,21 @@ docker compose up -d --wait --build
 #2 DONE 0.0s
 
 #3 [internal] load metadata for docker.io/otel/opentelemetry-collector-contrib:0.165.0@sha256:e40d61f10c9a617cca1ffd1be4d7e2b3a4b0f0001798ff07e58cabe82e618cea
-#3 DONE 0.0s
+#3 DONE 0.1s
 
 #4 [internal] load metadata for docker.io/library/alpine:3.24.4@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf
-#4 DONE 0.0s
+#4 DONE 0.1s
 
 #5 [internal] load .dockerignore
 #5 transferring context: 2B done
 #5 DONE 0.0s
 
 #6 [stage-1 1/3] FROM docker.io/library/alpine:3.24.4@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf
-#6 resolve docker.io/library/alpine:3.24.4@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf 0.0s done
+#6 resolve docker.io/library/alpine:3.24.4@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf done
 #6 DONE 0.0s
 
 #7 [upstream 1/1] FROM docker.io/otel/opentelemetry-collector-contrib:0.165.0@sha256:e40d61f10c9a617cca1ffd1be4d7e2b3a4b0f0001798ff07e58cabe82e618cea
-#7 resolve docker.io/otel/opentelemetry-collector-contrib:0.165.0@sha256:e40d61f10c9a617cca1ffd1be4d7e2b3a4b0f0001798ff07e58cabe82e618cea 0.0s done
+#7 resolve docker.io/otel/opentelemetry-collector-contrib:0.165.0@sha256:e40d61f10c9a617cca1ffd1be4d7e2b3a4b0f0001798ff07e58cabe82e618cea done
 #7 DONE 0.0s
 
 #8 [stage-1 2/3] RUN adduser -D -H -u 10001 otel
@@ -35,12 +35,12 @@ docker compose up -d --wait --build
 #9 CACHED
 
 #10 exporting to image
+#10 exporting layers
 #10 exporting layers done
 #10 exporting manifest sha256:7bb5588cc874b37cd917b901696f8c5f72f3bcc898919b5b2f90381f16fd896e done
 #10 exporting config sha256:f97791923837bdfdcbd8758b26f351d52fd3195842b1bc2ea64cab7a986917e4 done
-#10 exporting attestation manifest sha256:66e32b40967dd26740c903543f6c58bb28760999d6df191dfe9fecb7635ff94c done
-#10 exporting manifest list sha256:b6c358d9e5f2bd333e0e926c75d9729b451b08e94d062544fe39e5900d835f2d done
-#10 naming to docker.io/onb/otel-collector:0.165.0
+#10 exporting attestation manifest sha256:6cb588b3673b31efd32de7b1b9d196006bf7373e2c6e81df649bbb7c45af5137 done
+#10 exporting manifest list sha256:b5a89fd14cdd310f9843061a1583f0d1e37a6f621bf4533c77b91fc36016f62d done
 #10 naming to docker.io/onb/otel-collector:0.165.0 done
 #10 unpacking to docker.io/onb/otel-collector:0.165.0 done
 #10 DONE 0.0s
@@ -48,20 +48,20 @@ docker compose up -d --wait --build
 #11 resolving provenance for metadata file
 #11 DONE 0.0s
  Image onb/otel-collector:0.165.0 Built 
- Network ob-mcp-2_backend Creating 
  Network ob-mcp-2_edge Creating 
  Network ob-mcp-2_backend Creating 
  Network ob-mcp-2_edge Creating 
+ Network ob-mcp-2_backend Creating 
  Network ob-mcp-2_edge Created 
  Network ob-mcp-2_edge Created 
  Network ob-mcp-2_backend Created 
  Network ob-mcp-2_backend Created 
- Container ob-mcp-2-jaeger-1 Creating 
  Container ob-mcp-2-mongo-1 Creating 
- Container ob-mcp-2-mongo-1 Created 
+ Container ob-mcp-2-jaeger-1 Creating 
  Container ob-mcp-2-jaeger-1 Created 
  Container ob-mcp-2-otel-collector-1 Creating 
  Container ob-mcp-2-caddy-1 Creating 
+ Container ob-mcp-2-mongo-1 Created 
  Container ob-mcp-2-otel-collector-1 Created 
  Container ob-mcp-2-caddy-1 Created 
  Container ob-mcp-2-mongo-1 Starting 
@@ -76,10 +76,10 @@ docker compose up -d --wait --build
  Container ob-mcp-2-caddy-1 Starting 
  Container ob-mcp-2-otel-collector-1 Started 
  Container ob-mcp-2-caddy-1 Started 
+ Container ob-mcp-2-mongo-1 Waiting 
  Container ob-mcp-2-otel-collector-1 Waiting 
  Container ob-mcp-2-jaeger-1 Waiting 
  Container ob-mcp-2-caddy-1 Waiting 
- Container ob-mcp-2-mongo-1 Waiting 
  Container ob-mcp-2-mongo-1 Healthy 
  Container ob-mcp-2-jaeger-1 Healthy 
  Container ob-mcp-2-otel-collector-1 Healthy 
@@ -88,7 +88,7 @@ set -a && . ./.env && set +a && \
 	uv run --frozen pytest tools/tests_int -q -o cache_dir=.pytest_cache/tools-int && \
 	node_modules/.bin/nx run-many -t test-int --output-style=static
 ............                                                             [100%]
-12 passed in 4.94s
+12 passed in 5.31s
 
  NX   Running target test-int for 7 projects:
 
@@ -101,47 +101,6 @@ set -a && . ./.env && set +a && \
 - api
 
 
-
-> nx run py-crypto:test-int
-
-[2m> [22muv run --frozen pytest libs/py-crypto/tests_int -o cache_dir=.pytest_cache/py-crypto-int
-
-[1m============================= test session starts ==============================[0m
-platform darwin -- Python 3.12.13, pytest-9.2.0, pluggy-1.7.0
-cachedir: .pytest_cache/py-crypto-int
-rootdir: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-mcp-2
-configfile: pyproject.toml
-plugins: hypothesis-6.170.15, langsmith-0.14.17, cov-7.1.0, anyio-4.16.0
-collected 10 items
-
-libs/py-crypto/tests_int/test_grants_mongo.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                       [ 40%][0m
-libs/py-crypto/tests_int/test_org_keys_mongo.py [32m.[0m[32m.[0m[32m                       [ 60%][0m
-libs/py-crypto/tests_int/test_vault_mongo.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                        [100%][0m
-
-[32m============================== [32m[1m10 passed[0m[32m in 5.04s[0m[32m ==============================[0m
-
-> nx run py-telemetry:test-int
-
-[2m> [22muv run --frozen pytest libs/py-telemetry/tests_int -o cache_dir=.pytest_cache/py-telemetry-int -rA -s
-
-[1m============================= test session starts ==============================[0m
-platform darwin -- Python 3.12.13, pytest-9.2.0, pluggy-1.7.0
-cachedir: .pytest_cache/py-telemetry-int
-rootdir: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-mcp-2
-configfile: pyproject.toml
-plugins: hypothesis-6.170.15, langsmith-0.14.17, cov-7.1.0, anyio-4.16.0
-collected 3 items
-
-libs/py-telemetry/tests_int/test_jaeger_roundtrip.py 
-Jaeger returned trace bbd883a0da986d1ce0dfbd515bc4bdd2 for service f4-probe-70d3ef49: [('f4-probe-70d3ef49', 'onb_telemetry', 'f4.resumed-after-wait'), ('f4-probe-70d3ef49', 'opentelemetry.instrumentation.fastapi', 'GET /ping'), ('f4-probe-70d3ef49', 'opentelemetry.instrumentation.fastapi', 'GET /ping http send')]
-[32m.[0m[32m.[0m[32m.[0m
-
-==================================== PASSES ====================================
-[36m[1m=========================== short test summary info ============================[0m
-[32mPASSED[0m libs/py-telemetry/tests_int/test_jaeger_roundtrip.py::[1mtest_fastapi_span_is_returned_by_jaeger_through_the_collector[0m
-[32mPASSED[0m libs/py-telemetry/tests_int/test_jaeger_roundtrip.py::[1mtest_jaeger_lists_the_probe_service[0m
-[32mPASSED[0m libs/py-telemetry/tests_int/test_jaeger_roundtrip.py::[1mtest_pymongo_commands_get_spans[0m
-[32m============================== [32m[1m3 passed[0m[32m in 5.10s[0m[32m ===============================[0m
 
 > nx run py-data:test-int
 
@@ -159,7 +118,48 @@ libs/py-data/tests_int/test_compose_mongo_transaction.py [32m.[0m[32m.[0m[3
 libs/py-data/tests_int/test_tenant_repository.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m    [ 85%][0m
 libs/py-data/tests_int/test_transactions_and_queue.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m               [100%][0m
 
-[32m============================== [32m[1m28 passed[0m[32m in 5.29s[0m[32m ==============================[0m
+[32m============================== [32m[1m28 passed[0m[32m in 3.84s[0m[32m ==============================[0m
+
+> nx run py-crypto:test-int
+
+[2m> [22muv run --frozen pytest libs/py-crypto/tests_int -o cache_dir=.pytest_cache/py-crypto-int
+
+[1m============================= test session starts ==============================[0m
+platform darwin -- Python 3.12.13, pytest-9.2.0, pluggy-1.7.0
+cachedir: .pytest_cache/py-crypto-int
+rootdir: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-mcp-2
+configfile: pyproject.toml
+plugins: hypothesis-6.170.15, langsmith-0.14.17, cov-7.1.0, anyio-4.16.0
+collected 10 items
+
+libs/py-crypto/tests_int/test_grants_mongo.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                       [ 40%][0m
+libs/py-crypto/tests_int/test_org_keys_mongo.py [32m.[0m[32m.[0m[32m                       [ 60%][0m
+libs/py-crypto/tests_int/test_vault_mongo.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                        [100%][0m
+
+[32m============================== [32m[1m10 passed[0m[32m in 4.38s[0m[32m ==============================[0m
+
+> nx run py-telemetry:test-int
+
+[2m> [22muv run --frozen pytest libs/py-telemetry/tests_int -o cache_dir=.pytest_cache/py-telemetry-int -rA -s
+
+[1m============================= test session starts ==============================[0m
+platform darwin -- Python 3.12.13, pytest-9.2.0, pluggy-1.7.0
+cachedir: .pytest_cache/py-telemetry-int
+rootdir: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-mcp-2
+configfile: pyproject.toml
+plugins: hypothesis-6.170.15, langsmith-0.14.17, cov-7.1.0, anyio-4.16.0
+collected 3 items
+
+libs/py-telemetry/tests_int/test_jaeger_roundtrip.py 
+Jaeger returned trace 381e406ccadfa3cd50e4edb70a911dc7 for service f4-probe-f89c7788: [('f4-probe-f89c7788', 'onb_telemetry', 'f4.resumed-after-wait'), ('f4-probe-f89c7788', 'opentelemetry.instrumentation.fastapi', 'GET /ping'), ('f4-probe-f89c7788', 'opentelemetry.instrumentation.fastapi', 'GET /ping http send')]
+[32m.[0m[32m.[0m[32m.[0m
+
+==================================== PASSES ====================================
+[36m[1m=========================== short test summary info ============================[0m
+[32mPASSED[0m libs/py-telemetry/tests_int/test_jaeger_roundtrip.py::[1mtest_fastapi_span_is_returned_by_jaeger_through_the_collector[0m
+[32mPASSED[0m libs/py-telemetry/tests_int/test_jaeger_roundtrip.py::[1mtest_jaeger_lists_the_probe_service[0m
+[32mPASSED[0m libs/py-telemetry/tests_int/test_jaeger_roundtrip.py::[1mtest_pymongo_commands_get_spans[0m
+[32m============================== [32m[1m3 passed[0m[32m in 4.82s[0m[32m ===============================[0m
 
 > nx run mcp-mongo:test-int
 
@@ -177,7 +177,7 @@ apps/mcp-mongo/tests_int/test_db_users_int.py [32m.[0m[32m.[0m[32m.[0m[32
 [0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                                        [ 76%][0m
 apps/mcp-mongo/tests_int/test_mcp_mongo_int.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m        [100%][0m
 
-[32m============================== [32m[1m77 passed[0m[32m in 9.78s[0m[32m ==============================[0m
+[32m============================= [32m[1m77 passed[0m[32m in 10.67s[0m[32m ==============================[0m
 
 > nx run py-eventbus:test-int
 
@@ -193,7 +193,7 @@ collected 17 items
 
 libs/py-eventbus/tests_int/test_bus_against_mongo.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m   [100%][0m
 
-[32m============================= [32m[1m17 passed[0m[32m in 12.19s[0m[32m ==============================[0m
+[32m============================= [32m[1m17 passed[0m[32m in 14.10s[0m[32m ==============================[0m
 
 > nx run api:test-int
 
@@ -209,7 +209,7 @@ collected 8 items
 
 apps/api/tests_int/test_mongo_login.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                          [100%][0m
 
-[32m============================== [32m[1m8 passed[0m[32m in 1.72s[0m[32m ===============================[0m
+[32m============================== [32m[1m8 passed[0m[32m in 2.53s[0m[32m ===============================[0m
 
 > nx run py-evals:test-int
 
@@ -226,19 +226,19 @@ collected 2 items
 libs/py-evals/tests_int/test_fixture_mongo.py [32m.[0m[32m                          [ 50%][0m
 libs/py-evals/tests_int/test_selftest.py [32m.[0m[32m                               [100%][0m
 
-[32m============================== [32m[1m2 passed[0m[32m in 42.55s[0m[32m ==============================[0m
+[32m============================== [32m[1m2 passed[0m[32m in 41.15s[0m[32m ==============================[0m
 
 
 
  NX   Successfully ran target test-int for 7 projects
 
 
-  Run duration:      50.6s
+  Run duration:      47.6s
   Cache:             0/7 hit (0%)
-  Critical path:     44.1s (1 task)
-  Recoverable time:  6.5s (13% of the run)
+  Critical path:     42.4s (1 task)
+  Recoverable time:  5.2s (11% of the run)
 
   Recommendations:
     - Speed up or split the longest tasks on the critical path:
-        py-evals:test-int    44.1s
+        py-evals:test-int    42.4s
 exit=0
