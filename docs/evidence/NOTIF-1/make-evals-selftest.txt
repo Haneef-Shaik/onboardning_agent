@@ -1,0 +1,268 @@
+infra/mongo/gen-keyfile.sh
+gen-keyfile: keeping existing infra/mongo/keyfile
+docker compose up -d --wait --build
+ Image onb/otel-collector:0.165.0 Building 
+#1 [internal] load local bake definitions
+#1 reading from stdin 653B done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 578B 0.0s done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/alpine:3.24.4@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf
+#3 DONE 0.0s
+
+#4 [internal] load metadata for docker.io/otel/opentelemetry-collector-contrib:0.165.0@sha256:e40d61f10c9a617cca1ffd1be4d7e2b3a4b0f0001798ff07e58cabe82e618cea
+#4 DONE 0.0s
+
+#5 [internal] load .dockerignore
+#5 transferring context: 2B done
+#5 DONE 0.0s
+
+#6 [upstream 1/1] FROM docker.io/otel/opentelemetry-collector-contrib:0.165.0@sha256:e40d61f10c9a617cca1ffd1be4d7e2b3a4b0f0001798ff07e58cabe82e618cea
+#6 resolve docker.io/otel/opentelemetry-collector-contrib:0.165.0@sha256:e40d61f10c9a617cca1ffd1be4d7e2b3a4b0f0001798ff07e58cabe82e618cea 0.0s done
+#6 DONE 0.0s
+
+#7 [stage-1 1/3] FROM docker.io/library/alpine:3.24.4@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf
+#7 resolve docker.io/library/alpine:3.24.4@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf 0.0s done
+#7 DONE 0.0s
+
+#8 [stage-1 2/3] RUN adduser -D -H -u 10001 otel
+#8 CACHED
+
+#9 [stage-1 3/3] COPY --from=upstream /otelcol-contrib /otelcol-contrib
+#9 CACHED
+
+#10 exporting to image
+#10 exporting layers done
+#10 exporting manifest sha256:48b749a28421bf87d287dc899b069af09121b8e504444bc0c592219f8745dc2e done
+#10 exporting config sha256:99141a211180a0ae4c253759503f4f848511e04b9be404e1b2675b359732a299 done
+#10 exporting attestation manifest sha256:7d23c73847877944098e249ef97f3f07020bc18cdbf87c5847947357ec355706 0.0s done
+#10 exporting manifest list sha256:dfd5d9382add932eb400c251e524db583ffdfd82b42b6ecabc57c07b51c0fe8a done
+#10 naming to docker.io/onb/otel-collector:0.165.0 done
+#10 unpacking to docker.io/onb/otel-collector:0.165.0 done
+#10 DONE 0.1s
+
+#11 resolving provenance for metadata file
+#11 DONE 0.1s
+ Image onb/otel-collector:0.165.0 Built 
+ Container ob-notif-1-otel-collector-1 Running 
+ Container ob-notif-1-jaeger-1 Running 
+ Container ob-notif-1-caddy-1 Running 
+ Container ob-notif-1-mongo-1 Running 
+ Container ob-notif-1-jaeger-1 Waiting 
+ Container ob-notif-1-jaeger-1 Waiting 
+ Container ob-notif-1-jaeger-1 Healthy 
+ Container ob-notif-1-jaeger-1 Healthy 
+ Container ob-notif-1-caddy-1 Waiting 
+ Container ob-notif-1-mongo-1 Waiting 
+ Container ob-notif-1-otel-collector-1 Waiting 
+ Container ob-notif-1-jaeger-1 Waiting 
+ Container ob-notif-1-otel-collector-1 Healthy 
+ Container ob-notif-1-jaeger-1 Healthy 
+ Container ob-notif-1-mongo-1 Healthy 
+ Container ob-notif-1-caddy-1 Healthy 
+set -a && . ./.env && set +a && \
+	LLM_CONNECTOR=fake OTEL_TRACES_EXPORTER="${OTEL_TRACES_EXPORTER:-none}" \
+	uv run --frozen pytest libs/py-evals/tests_int/test_selftest.py -q -s -o cache_dir=.pytest_cache/py-evals-selftest
+F
+=================================== FAILURES ===================================
+_______ test_make_evals_selftest_passes_all_27_cases_and_records_the_run _______
+
+self = AsyncConnection(<pymongo.network_layer.AsyncNetworkingInterface object at 0x10d67b140>) CLOSED at 4520525504
+request_id = 858395005
+
+    async def receive_message(self, request_id: Optional[int]) -> _OpMsg:
+        """Receive a raw BSON message or raise ConnectionFailure.
+    
+        If any exception is raised, the socket is closed.
+        """
+        try:
+>           return await async_receive_message(self, request_id, self.max_message_size)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.venv/lib/python3.12/site-packages/pymongo/asynchronous/pool.py:455: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/pymongo/network_layer.py:719: in async_receive_message
+    data, op_code = read_task.result()
+                    ^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <pymongo.network_layer.PyMongoProtocol object at 0x10d779f70>
+request_id = 858395005, max_message_size = 48000000
+
+    async def read(self, request_id: Optional[int], max_message_size: int) -> tuple[bytes, int]:
+        """Read a single MongoDB Wire Protocol message from this connection."""
+        if self.transport:
+            try:
+                self.transport.resume_reading()
+            # Known bug in SSL Protocols, fixed in Python 3.11: https://github.com/python/cpython/issues/89322
+            except AttributeError:
+                raise OSError("connection is already closed") from None
+        self._max_message_size = max_message_size
+        if self._done_messages:
+            message = await self._done_messages.popleft()
+        else:
+            if self.transport and self.transport.is_closing():
+                raise OSError("connection is already closed")
+            read_waiter = asyncio.get_running_loop().create_future()
+            self._pending_messages.append(read_waiter)
+            try:
+                message = await read_waiter
+            finally:
+                if read_waiter in self._done_messages:
+                    self._done_messages.remove(read_waiter)
+        if message:
+            op_code, compressor_id, response_to, data = message
+            # No request_id for exhaust cursor "getMore".
+            if request_id is not None:
+                if request_id != response_to:
+                    raise ProtocolError(
+                        f"Got response id {response_to!r} but expected {request_id!r}"
+                    )
+            if compressor_id is not None:
+                data = decompress(data, compressor_id, self._max_message_size - 16)
+            return data, op_code
+>       raise OSError("connection closed")
+E       OSError: connection closed
+
+.venv/lib/python3.12/site-packages/pymongo/network_layer.py:527: OSError
+
+The above exception was the direct cause of the following exception:
+
+mongo_uri = 'mongodb://root:2239581c3b18324be2429fff51f7fd54@127.0.0.1:63396/?authSource=admin&directConnection=true'
+root_client = MongoClient(host=['127.0.0.1:63396'], document_class=dict, tz_aware=False, connect=True, authsource='admin', directconnection=True, serverselectiontimeoutms=10000)
+capsys = <_pytest.capture.CaptureFixture object at 0x10c0be5d0>
+unscoped = <bound method TenantCommandListener.allowing_unscoped of <onb_data.safety_net.TenantCommandListener object at 0x10b3fd1c0>>
+
+    def test_make_evals_selftest_passes_all_27_cases_and_records_the_run(
+        mongo_uri: str, root_client: MongoClient[dict[str, Any]], capsys: pytest.CaptureFixture[str], unscoped: Unscoped
+    ) -> None:
+        results_db = f"onb_evalresults_{secrets.token_hex(4)}"
+        env = {**os.environ, ENV_MONGO_URI: mongo_uri, ENV_RESULTS_DATABASE: results_db, ENV_RESULTS_ORG: RESULTS_ORG}
+        try:
+            with captured_telemetry() as telemetry:
+>               code = main(["selftest", "--repeat", "3"], env=env)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+libs/py-evals/tests_int/test_selftest.py:46: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+libs/py-evals/src/onb_evals/cli.py:158: in main
+    outcome = asyncio.run(_dispatch(args, environment, spans))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Users/Adya/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/asyncio/runners.py:195: in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+/Users/Adya/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/asyncio/runners.py:118: in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Users/Adya/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/asyncio/base_events.py:691: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+libs/py-evals/src/onb_evals/cli.py:119: in _dispatch
+    return await run_selftest(
+libs/py-evals/src/onb_evals/session.py:193: in run_selftest
+    results = await runner(lambda c: ScriptedLLM(runtime, scripts[c.id])).run(cases, repeat=repeat, run_id=run_id)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+libs/py-evals/src/onb_evals/runner.py:97: in run
+    reps = tuple([await self._repetition(case, rep, run_id) for rep in range(repeat)])
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+libs/py-evals/src/onb_evals/runner.py:105: in _repetition
+    ran = await self._execute(case, repetition, run_id)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+libs/py-evals/src/onb_evals/runner.py:123: in _execute
+    fixture = await load_fixture(store, self._seed)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+libs/py-evals/src/onb_evals/fixture.py:77: in load_fixture
+    vault = await seed_vault(store, orgs, seed["pii_vault_plain"])
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+libs/py-evals/src/onb_evals/vault_seed.py:87: in seed_vault
+    await ensure_vault_indexes(store)
+libs/py-crypto/src/onb_crypto/vault_indexes.py:21: in ensure_vault_indexes
+    await store.ensure_index(
+libs/py-data/src/onb_data/store.py:155: in ensure_index
+    return await self._database[coll].create_index(spec, **options)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/pymongo/asynchronous/collection.py:2373: in create_index
+    return (await self._create_indexes([index], session, **cmd_options))[0]
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/pymongo/_csot.py:116: in csot_wrapper
+    return await func(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/pymongo/asynchronous/collection.py:2253: in _create_indexes
+    return await self.database.client._retryable_write(
+.venv/lib/python3.12/site-packages/pymongo/asynchronous/mongo_client.py:2159: in _retryable_write
+    return await self._retry_with_session(retryable, func, s, bulk, operation, operation_id)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/pymongo/asynchronous/mongo_client.py:2029: in _retry_with_session
+    return await self._retry_internal(
+.venv/lib/python3.12/site-packages/pymongo/_csot.py:116: in csot_wrapper
+    return await func(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/pymongo/asynchronous/mongo_client.py:2069: in _retry_internal
+    return await _ClientConnectionRetryable(
+.venv/lib/python3.12/site-packages/pymongo/asynchronous/mongo_client.py:2958: in run
+    res = await self._read() if self._is_read else await self._write()
+                                                   ^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/pymongo/asynchronous/mongo_client.py:3173: in _write
+    return await self._func(self._session, conn, self._retryable)  # type: ignore
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/pymongo/asynchronous/collection.py:2243: in inner
+    await self._command(
+.venv/lib/python3.12/site-packages/pymongo/asynchronous/collection.py:598: in _command
+    return await conn.command(
+.venv/lib/python3.12/site-packages/pymongo/asynchronous/helpers.py:50: in inner
+    return await func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/pymongo/asynchronous/pool.py:430: in command
+    await self._raise_connection_failure(error)
+.venv/lib/python3.12/site-packages/pymongo/asynchronous/pool.py:578: in _raise_connection_failure
+    raise error
+.venv/lib/python3.12/site-packages/pymongo/asynchronous/pool.py:405: in command
+    return await run_command(
+.venv/lib/python3.12/site-packages/pymongo/asynchronous/command_runner.py:440: in run_command
+    docs, _, _ = await _run_command(
+.venv/lib/python3.12/site-packages/pymongo/asynchronous/command_runner.py:192: in _run_command
+    reply = await conn.receive_message(request_id)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/pymongo/asynchronous/pool.py:458: in receive_message
+    await self._raise_connection_failure(error)
+.venv/lib/python3.12/site-packages/pymongo/asynchronous/pool.py:576: in _raise_connection_failure
+    _raise_connection_failure(self.address, error, timeout_details=details)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+address = ('127.0.0.1', 63396), error = OSError('connection closed')
+msg_prefix = None, timeout_details = {'connectTimeoutMS': 20000.0}
+
+    def _raise_connection_failure(
+        address: Any,
+        error: Exception,
+        msg_prefix: Optional[str] = None,
+        timeout_details: Optional[dict[str, float]] = None,
+    ) -> NoReturn:
+        """Convert a socket.error to ConnectionFailure and raise it."""
+        host, port = address
+        # If connecting to a Unix socket, port will be None.
+        if port is not None:
+            msg = f"{host}:{port}: {error}"
+        else:
+            msg = f"{host}: {error}"
+        if msg_prefix:
+            msg = msg_prefix + msg
+        if "configured timeouts" not in msg:
+            msg += format_timeout_details(timeout_details)
+        if isinstance(error, socket.timeout) or (
+            isinstance(error, SSLErrors) and "timed out" in str(error)
+        ):
+            raise NetworkTimeout(msg) from error
+        else:
+>           raise AutoReconnect(msg) from error
+E           pymongo.errors.AutoReconnect: 127.0.0.1:63396: connection closed (configured timeouts: connectTimeoutMS: 20000.0ms)
+
+.venv/lib/python3.12/site-packages/pymongo/pool_shared.py:169: AutoReconnect
+=========================== short test summary info ============================
+FAILED libs/py-evals/tests_int/test_selftest.py::test_make_evals_selftest_passes_all_27_cases_and_records_the_run
+1 failed in 98.22s (0:01:38)
+make: *** [evals-selftest] Error 1
+exit 2
