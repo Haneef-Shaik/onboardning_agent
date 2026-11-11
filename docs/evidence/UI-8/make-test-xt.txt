@@ -11,21 +11,21 @@ docker compose up -d --wait --build
 #2 DONE 0.0s
 
 #3 [internal] load metadata for docker.io/otel/opentelemetry-collector-contrib:0.165.0@sha256:e40d61f10c9a617cca1ffd1be4d7e2b3a4b0f0001798ff07e58cabe82e618cea
-#3 DONE 0.0s
+#3 DONE 0.1s
 
 #4 [internal] load metadata for docker.io/library/alpine:3.24.4@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf
-#4 DONE 0.0s
+#4 DONE 0.1s
 
 #5 [internal] load .dockerignore
 #5 transferring context: 2B done
 #5 DONE 0.0s
 
 #6 [upstream 1/1] FROM docker.io/otel/opentelemetry-collector-contrib:0.165.0@sha256:e40d61f10c9a617cca1ffd1be4d7e2b3a4b0f0001798ff07e58cabe82e618cea
-#6 resolve docker.io/otel/opentelemetry-collector-contrib:0.165.0@sha256:e40d61f10c9a617cca1ffd1be4d7e2b3a4b0f0001798ff07e58cabe82e618cea done
+#6 resolve docker.io/otel/opentelemetry-collector-contrib:0.165.0@sha256:e40d61f10c9a617cca1ffd1be4d7e2b3a4b0f0001798ff07e58cabe82e618cea 0.0s done
 #6 DONE 0.0s
 
 #7 [stage-1 1/3] FROM docker.io/library/alpine:3.24.4@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf
-#7 resolve docker.io/library/alpine:3.24.4@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf done
+#7 resolve docker.io/library/alpine:3.24.4@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf 0.0s done
 #7 DONE 0.0s
 
 #8 [stage-1 2/3] RUN adduser -D -H -u 10001 otel
@@ -36,40 +36,41 @@ docker compose up -d --wait --build
 
 #10 exporting to image
 #10 exporting layers done
-#10 exporting manifest sha256:14af97b5e302fea5ff472166b01ca46840a20f5c9f120da3dbd61f9939a54d33 done
+#10 exporting manifest sha256:14af97b5e302fea5ff472166b01ca46840a20f5c9f120da3dbd61f9939a54d33 0.0s done
 #10 exporting config sha256:dc4a421b1f5c4a3185546db69ed8ed403964aef463fdb176d876358273acd7b3 done
-#10 exporting attestation manifest sha256:8da60b0b47caec886c2cdfc3306795d34f4e1238102c5d208a8e35859386317a done
-#10 exporting manifest list sha256:9b499d11b826c1705891f34faf896514d8046da7e8ca602a19ac927ff4cd3db9 done
-#10 naming to docker.io/onb/otel-collector:0.165.0 done
-#10 unpacking to docker.io/onb/otel-collector:0.165.0 done
-#10 DONE 0.0s
+#10 exporting attestation manifest sha256:4d5e117a7b58f1dca9f93a73491c74b6efd7354d9e710d198f3968a90788b067 0.0s done
+#10 exporting manifest list sha256:27a3f1d815ea5006c9e42c635bf313d8413ff06218c8c31b2acaffc7e8b83b02 0.0s done
+#10 naming to docker.io/onb/otel-collector:0.165.0
+#10 naming to docker.io/onb/otel-collector:0.165.0 0.0s done
+#10 unpacking to docker.io/onb/otel-collector:0.165.0 0.1s done
+#10 DONE 0.4s
 
 #11 resolving provenance for metadata file
-#11 DONE 0.1s
+#11 DONE 0.3s
  Image onb/otel-collector:0.165.0 Built 
- Container ob-ui-8-mongo-1 Running 
- Container ob-ui-8-otel-collector-1 Running 
  Container ob-ui-8-jaeger-1 Running 
  Container ob-ui-8-caddy-1 Running 
+ Container ob-ui-8-mongo-1 Running 
+ Container ob-ui-8-otel-collector-1 Running 
  Container ob-ui-8-jaeger-1 Waiting 
  Container ob-ui-8-jaeger-1 Waiting 
  Container ob-ui-8-jaeger-1 Healthy 
  Container ob-ui-8-jaeger-1 Healthy 
- Container ob-ui-8-otel-collector-1 Waiting 
  Container ob-ui-8-jaeger-1 Waiting 
  Container ob-ui-8-caddy-1 Waiting 
  Container ob-ui-8-mongo-1 Waiting 
- Container ob-ui-8-mongo-1 Healthy 
- Container ob-ui-8-jaeger-1 Healthy 
+ Container ob-ui-8-otel-collector-1 Waiting 
  Container ob-ui-8-otel-collector-1 Healthy 
+ Container ob-ui-8-jaeger-1 Healthy 
  Container ob-ui-8-caddy-1 Healthy 
+ Container ob-ui-8-mongo-1 Healthy 
 set -a && . ./.env && set +a && \
 	uv run --frozen pytest tools/tests_xt -q -o cache_dir=.pytest_cache/tests-xt && \
 	node_modules/.bin/nx run-many -t test-xt --output-style=static
-........................................................................ [ 48%]
-........................................................................ [ 96%]
-......                                                                   [100%]
-cross-tenant surface: 14 API routes, 8 MCP tools, 0 event consumers
+........................................................................ [ 33%]
+........................................................................ [ 67%]
+.....................................................................    [100%]
+cross-tenant surface: 23 API routes, 8 MCP tools, 0 event consumers
   route    GET    /agents
   route    GET    /agents/{name}
   route    GET    /audit
@@ -80,10 +81,19 @@ cross-tenant surface: 14 API routes, 8 MCP tools, 0 event consumers
   route    GET    /hires/{hire_id}
   route    GET    /me
   route    GET    /pii-access-log
+  route    GET    /templates
+  route    GET    /templates/drafts
+  route    GET    /templates/drafts/{draft_id}
+  route    GET    /templates/{key}/versions/{version}
   route    POST   /auth/login
   route    POST   /hires
   route    POST   /hires/{hire_id}/pii/{field}/reveal
+  route    POST   /templates/drafts
+  route    POST   /templates/drafts/{draft_id}/publish
+  route    POST   /templates/drafts/{draft_id}/validate
+  route    POST   /templates/{key}/versions/{version}/archive
   route    PUT    /hires/{hire_id}/pii/{field}
+  route    PUT    /templates/drafts/{draft_id}
   tool     mcp-mocks.create_bitbucket_account
   tool     mcp-mocks.provision_laptop
   tool     mcp-mongo.aggregate
@@ -92,7 +102,7 @@ cross-tenant surface: 14 API routes, 8 MCP tools, 0 event consumers
   tool     mcp-mongo.insert_one
   tool     mcp-mongo.list_collections
   tool     mcp-mongo.update_one
-150 passed in 88.65s (0:01:28)
+213 passed in 345.08s (0:05:45)
 
  NX   Running target test-xt for project mcp-hub:
 
@@ -117,15 +127,15 @@ make test-xt: hub tools covered: mocks__create_bitbucket_account, mocks__provisi
 ..........
 apps/mcp-hub/tests_int/test_safety_net_guard.py ..
 
-============================== 12 passed in 4.69s ==============================
+============================= 12 passed in 10.88s ==============================
 
 
 
  NX   Successfully ran target test-xt for project mcp-hub
 
 
-  Run duration:      6.0s
+  Run duration:      13.0s
   Cache:             0/1 hit (0%)
-  Critical path:     6.0s (1 task)
+  Critical path:     13.0s (1 task)
   Recoverable time:  <1ms
 exit 0

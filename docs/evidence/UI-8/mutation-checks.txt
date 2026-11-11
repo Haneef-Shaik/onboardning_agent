@@ -31,8 +31,8 @@ M8 CAUGHT · the admin section sits behind the nav-table guard · apps/web/src/A
 M9 CAUGHT · the PII access log never renders the vault token · apps/web/src/admin/PiiAccessPage.tsx
     FAIL  src/admin/AdminSection.test.tsx > Admin section > shows the PII access log masked, and never the vault token
 M10 CAUGHT · an agent's page lists its recent denials (Playwright) · apps/web/src/admin/AgentPage.tsx
-    ✘  2 [chromium] › apps/web/e2e/admin.spec.ts:85:1 › an agent's page shows its connector, model, allowed tools and recent denials from the audit log (6.0s)
+    ✘  3 [chromium] › apps/web/e2e/admin.spec.ts:85:1 › an agent's page shows its connector, model, allowed tools and recent denials from the audit log (6.4s)
 M11 CAUGHT · the agent page shows the resolved model, not the alias (Playwright) · apps/web/src/admin/AgentsPage.tsx
-    ✘  1 [chromium] › apps/web/e2e/admin.spec.ts:44:1 › HR_ADMIN opens each admin view and sees seeded data (5.9s)
-    ✘  4 [chromium] › apps/web/e2e/admin.spec.ts:85:1 › an agent's page shows its connector, model, allowed tools and recent denials from the audit log (5.9s)
+    ✘  1 [chromium] › apps/web/e2e/admin.spec.ts:44:1 › HR_ADMIN opens each admin view and sees seeded data (6.1s)
+    ✘  2 [chromium] › apps/web/e2e/admin.spec.ts:85:1 › an agent's page shows its connector, model, allowed tools and recent denials from the audit log (6.1s)
 SUMMARY: 13 of 13 mutations caught

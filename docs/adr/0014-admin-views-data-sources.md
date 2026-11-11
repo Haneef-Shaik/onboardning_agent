@@ -25,7 +25,7 @@ and eval runs. Three questions were open:
    each `AgentRecord` gains `resolved_llm: {connector, model, alias, source} | null` from
    `onb_llm.resolve_llm(config, manifest=manifest.llm).task_record()`, the same record a task stores.
    Provider params (region, guardrail, fake script) are never part of it. `onb_api.main` loads
-   `config/llm.yaml` with the process environment at startup and fails fast (`LLMConfigError`) when it
+   `$CONFIG_DIR/llm.yaml` (TPL-2's required `CONFIG_DIR`) with the process environment at startup and fails fast (`LLMConfigError`) when it
    does not resolve, like every other service that reads it. Without a config (tests, the OpenAPI
    export) the field is `null` and the UI falls back to the manifest's own choice.
    No org override store exists yet; when one does, pass it to `resolve_llm` here too.
@@ -43,7 +43,7 @@ sub-nav (Agents, Audit log, PII access log, Eval runs). The PII access log shows
 ## Consequences
 
 - The API now needs the LLM environment (`LLM_CONNECTOR`, `LLM_MODEL_*`) at startup, as the workers do.
-  `.env.example` already lists them. The dev API must start from the repository root (relative path).
+  `.env.example` already lists them. It reads `llm.yaml` from `CONFIG_DIR`, like the template validator.
 - One misconfigured alias in a manifest makes `GET /agents` answer 500 (as one malformed registry record
   already does, REG-1). Left as is: a misconfiguration should be loud; REG-1's sync could validate the
   alias against llm.yaml.
