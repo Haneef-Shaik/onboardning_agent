@@ -1,4 +1,4 @@
-"""The runner reads the MCP hub's audit records (HUB-1, ADR 0008) as well as the stand-in's."""
+"""The runner reads the MCP hub's audit records (HUB-1, ADR 0006) as well as the stand-in's."""
 
 from __future__ import annotations
 

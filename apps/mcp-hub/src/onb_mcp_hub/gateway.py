@@ -10,7 +10,7 @@ denial, `denial.reason`. Every call whose org is known (a genuine token, expired
 audit record written through `AuditLog.audit(...)`: actor `agent:<name>`, action `mcp.tool_call`,
 target `tool:<server>.<tool>[/<collection>]`, outcome `success` | `denied` | `failed`, reason the
 denial code (or `pii_redacted`). A forged token's org claim is unverified, so its denial is a span
-and a log line only (ADR 0008).
+and a log line only (ADR 0006).
 
 The audit is fail-closed: an allowed call whose record cannot be written returns no data. Messages
 to the agent and span attributes never carry argument values, downstream messages or credentials.

@@ -28,7 +28,7 @@ from onb_evals.tokens import TokenMap
 __all__ = ["AUDIT_COLLECTION", "AUDIT_QUERIES", "TOOL_NAMES", "ToolBox", "ToolDeniedError", "audit_from_documents"]
 
 AUDIT_COLLECTION: Final = "audit_log"
-# The hub's records (`AuditLog` shape, action `mcp.tool_call`, ADR 0008) and this stand-in's (`kind: mcp_call`).
+# The hub's records (`AuditLog` shape, action `mcp.tool_call`, ADR 0006) and this stand-in's (`kind: mcp_call`).
 HUB_AUDIT_ACTION: Final = "mcp.tool_call"
 AUDIT_QUERIES: Final = ({"kind": "mcp_call"}, {"action": HUB_AUDIT_ACTION})
 _HUB_OUTCOMES: Final = {"success": ToolOutcome.ALLOWED, "denied": ToolOutcome.DENIED, "failed": ToolOutcome.ERROR}
@@ -213,7 +213,7 @@ def _hub_tool(target: str) -> str:
 
 
 def _hub_entry(doc: Mapping[str, Any]) -> AuditEntry:
-    """A hub record. It holds no arguments or result orgs (ADR 0008): the hub scopes every call to the
+    """A hub record. It holds no arguments or result orgs (ADR 0006): the hub scopes every call to the
     token's org, and the record lives in that org."""
     return AuditEntry(
         org_id=str(doc.get("org_id")),

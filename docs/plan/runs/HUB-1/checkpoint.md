@@ -9,7 +9,7 @@
 4. `onb_mcp_hub.gateway` + `downstream` + `server` + `settings` + `main`: full pipeline over MCP.
 5. `apps/mcp-hub/tests_int`: testcontainers Mongo, real mcp-mongo with MCP-3 users, real registry
    and `AuditLog`; `test_hub_xt.py` = cross-tenant case per hub tool; `make test-xt` target.
-6. py-evals runner reads hub `AuditLog` records; ADR 0008.
+6. py-evals runner reads hub `AuditLog` records; ADR 0006.
 
 ## Next
 Verifier attempt 1: pass (5/5 boxes, gates green). Status: in review, held for Haneef; the orchestrator rebases and merges.

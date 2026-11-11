@@ -1,4 +1,4 @@
-# ADR 0008 — MCP hub: agent tokens, the tool-call audit record, and hub tool names
+# ADR 0006 — MCP hub: agent tokens, the tool-call audit record, and hub tool names
 
 - **Status:** accepted (HUB-1), 2026-11-11
 - **Goal:** HUB-1 · PRD §5.2, §7.4, §7.9, FR-A2; AUD-1 and EVAL-1 handoffs
