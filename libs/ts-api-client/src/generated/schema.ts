@@ -72,6 +72,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/evals/runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Eval Runs */
+        get: operations["listEvalRuns"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/evals/runs/{run_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Eval Run */
+        get: operations["getEvalRun"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/health": {
         parameters: {
             query?: never;
@@ -410,6 +444,7 @@ export interface components {
             purpose: string;
             /** Requires Approval */
             requires_approval: string[];
+            resolved_llm?: components["schemas"]["AgentResolvedLLM"] | null;
             /** Sha256 */
             sha256: string;
             /** Tools */
@@ -421,6 +456,24 @@ export interface components {
             updated_at: string;
             /** Version */
             version: number;
+        };
+        /**
+         * AgentResolvedLLM
+         * @description The connector and model the agent runs on: its manifest's choice resolved through llm.yaml and
+         *     the environment (UI-8, FR-A2). Provider params are never part of it.
+         */
+        AgentResolvedLLM: {
+            /** Alias */
+            alias: string | null;
+            /** Connector */
+            connector: string;
+            /** Model */
+            model: string;
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "manifest" | "org_override" | "default";
         };
         /**
          * AgentsEnvelope
@@ -645,6 +698,157 @@ export interface components {
         ErrorEnvelope: {
             /** Data */
             data: null;
+            error: components["schemas"]["ErrorBody"] | null;
+            /** @default {} */
+            meta: components["schemas"]["Meta"];
+            /** Success */
+            success: boolean;
+        };
+        /** EvalCaseSummary */
+        EvalCaseSummary: {
+            /** Agent */
+            agent: string;
+            /** Case Id */
+            case_id: string;
+            /** Category */
+            category: string;
+            /** Passes */
+            passes: number;
+            /** Repetitions */
+            repetitions: number;
+        };
+        /** EvalGate */
+        EvalGate: {
+            /** Agent */
+            agent: string;
+            /** Detail */
+            detail: string;
+            /** Name */
+            name: string;
+            /** Passed */
+            passed: boolean;
+        };
+        /**
+         * EvalMetrics
+         * @description One (agent, category) group. Rates are 0..1, or null when the group has nothing to rate.
+         */
+        EvalMetrics: {
+            /** Avg Steps */
+            avg_steps: number;
+            /** Avg Tokens */
+            avg_tokens: number;
+            /** Cases */
+            cases: number;
+            /** P50 Latency Ms */
+            p50_latency_ms: number;
+            /** P95 Latency Ms */
+            p95_latency_ms: number;
+            /** Pass At 1 */
+            pass_at_1: number | null;
+            /** Pass Hat K */
+            pass_hat_k: number | null;
+            /** Repetitions */
+            repetitions: number;
+            /** Tool Call Accuracy */
+            tool_call_accuracy: number | null;
+        };
+        /**
+         * EvalRun
+         * @description One run in full: `metrics[agent][category]`, the gates, and each case's passes.
+         */
+        EvalRun: {
+            /** Agent */
+            agent: string;
+            /** All Cases Passed */
+            all_cases_passed: boolean;
+            /** Cases */
+            cases: components["schemas"]["EvalCaseSummary"][];
+            /** Dataset */
+            dataset: string;
+            /**
+             * Finished At
+             * Format: date-time
+             */
+            finished_at: string;
+            /** Fixture */
+            fixture: string;
+            /** Gates */
+            gates: components["schemas"]["EvalGate"][];
+            /** Id */
+            id: string;
+            /** Llm */
+            llm: string;
+            /** Metrics */
+            metrics: {
+                [key: string]: {
+                    [key: string]: components["schemas"]["EvalMetrics"];
+                };
+            };
+            /** Mode */
+            mode: string;
+            /** Passed */
+            passed: boolean;
+            /** Repeat */
+            repeat: number;
+            /**
+             * Started At
+             * Format: date-time
+             */
+            started_at: string;
+        };
+        /**
+         * EvalRunEnvelope
+         * @description One eval run.
+         */
+        EvalRunEnvelope: {
+            data: components["schemas"]["EvalRun"] | null;
+            error: components["schemas"]["ErrorBody"] | null;
+            /** @default {} */
+            meta: components["schemas"]["Meta"];
+            /** Success */
+            success: boolean;
+        };
+        /**
+         * EvalRunSummary
+         * @description A run in the list: what was evaluated and whether its gates passed.
+         */
+        EvalRunSummary: {
+            /** Agent */
+            agent: string;
+            /** All Cases Passed */
+            all_cases_passed: boolean;
+            /** Dataset */
+            dataset: string;
+            /**
+             * Finished At
+             * Format: date-time
+             */
+            finished_at: string;
+            /** Fixture */
+            fixture: string;
+            /** Id */
+            id: string;
+            /** Llm */
+            llm: string;
+            /** Mode */
+            mode: string;
+            /** Passed */
+            passed: boolean;
+            /** Repeat */
+            repeat: number;
+            /**
+             * Started At
+             * Format: date-time
+             */
+            started_at: string;
+        };
+        /**
+         * EvalRunsEnvelope
+         * @description The org's eval runs, newest first, paged.
+         */
+        EvalRunsEnvelope: {
+            /** Data */
+            data: components["schemas"]["EvalRunSummary"][] | null;
             error: components["schemas"]["ErrorBody"] | null;
             /** @default {} */
             meta: components["schemas"]["Meta"];
@@ -1320,6 +1524,70 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TokenEnvelope"];
+                };
+            };
+            /** @description Error, in the envelope */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    listEvalRuns: {
+        parameters: {
+            query?: {
+                agent?: string | null;
+                page?: number;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EvalRunsEnvelope"];
+                };
+            };
+            /** @description Error, in the envelope */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    getEvalRun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EvalRunEnvelope"];
                 };
             };
             /** @description Error, in the envelope */

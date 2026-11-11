@@ -41,6 +41,7 @@ from onb_api.auth.passwords import hash_password
 from onb_api.auth.tokens import Principal
 from onb_api.auth.users import NewUser
 from onb_api.documents.service import DocumentService
+from onb_api.evals.store import EvalRunStore
 from onb_api.hires.service import HireService
 from onb_api.templates import MongoTemplateStore, RegistryValidatorSource, TemplateLifecycle
 from onb_api.testing import TEST_SETTINGS, InMemoryAuditLog
@@ -56,6 +57,7 @@ from onb_data.safety_net_pytest import (  # T-2 tenant safety net (PRD §7.9): r
     tenant_safety_net_guard,
     unscoped,
 )
+from onb_evals.results import record_run
 from onb_mcp_mocks.server import AUDIENCE as MOCKS_AUDIENCE
 from onb_mcp_mocks.server import build_server as build_mocks_server
 from onb_mcp_mocks.store import InMemoryIdempotencyStore
@@ -218,6 +220,7 @@ async def _seed(store: DataStore) -> None:
         actor = Actor.user(actor_id) if actor_type == ActorType.USER else Actor.agent(actor_id)
         with tenant_scope(org_id):
             await log.audit(actor=actor, action=action, target=target, outcome=AuditOutcome(outcome), reason="xt")
+    await _seed_eval_runs(store)
 
 
 def template_lifecycle(store: DataStore, audit: Auditor, registry: AgentRegistry, **options: Any) -> TemplateLifecycle:
@@ -239,6 +242,47 @@ async def _seed_templates(store: DataStore) -> None:
                 await lifecycle.create_draft(Template.model_validate(template), actor_id="u_xt_seed")
                 if publish:
                     await lifecycle.publish(draft_id, actor_id="u_xt_seed")
+
+
+def eval_report(run_id: str, agent: str, started: datetime) -> dict[str, Any]:
+    """UI-8: a harness report with the fields `record_run` stores; the agent's name runs through it."""
+    group = {
+        "cases": 1,
+        "repetitions": 3,
+        "pass_at_1": 1.0,
+        "pass_at_1_exact": "1",
+        "pass_hat_k": 1.0,
+        "pass_hat_k_exact": "1",
+        "tool_call_accuracy": 1.0,
+        "avg_steps": 2.0,
+        "p50_latency_ms": 10.0,
+        "p95_latency_ms": 12.0,
+        "avg_tokens": 100.0,
+    }
+    return {
+        "run_id": run_id,
+        "mode": "full",
+        "started_at": started.isoformat(),
+        "finished_at": (started + timedelta(minutes=3)).isoformat(),
+        "agent": agent,
+        "llm": "standard",
+        "dataset": "onboarding_agents_v1.jsonl",
+        "fixture": "seed_v1",
+        "repeat": 3,
+        "passed": True,
+        "all_cases_passed": True,
+        "metrics": {agent: {"all": group}},
+        "gates": [{"name": "pass_hat_k", "agent": agent, "passed": True, "detail": "100.0% >= 50.0%"}],
+        "cases": [
+            {"case_id": f"{agent}-001", "agent": agent, "category": "happy", "repetitions": [{"passed": True}] * 3}
+        ],
+    }
+
+
+async def _seed_eval_runs(store: DataStore) -> None:
+    """UI-8: each org's eval runs (`world.EVAL_RUNS`), through the harness's own writer."""
+    for minutes, (org_id, run_id, agent) in enumerate(world.EVAL_RUNS):
+        await record_run(store, org_id, eval_report(run_id, agent, T0 + timedelta(minutes=minutes)))
 
 
 async def _seed_hires(store: DataStore) -> dict[str, str]:
@@ -303,6 +347,7 @@ def build_api(store: DataStore) -> FastAPI:
     hires = HireService.build(store, keyring, auditor=audit, users=users)
     templates = template_lifecycle(store, audit, agents)
     documents = DocumentService.build(store, keyring, auditor=audit)
+    evals = EvalRunStore(store)
     return create_app(
         auth=TEST_SETTINGS,
         users=users,
@@ -311,6 +356,7 @@ def build_api(store: DataStore) -> FastAPI:
         hires=hires,
         templates=templates,
         documents=documents,
+        evals=evals,
     )
 
 

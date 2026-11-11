@@ -43,6 +43,21 @@ AUDIT_ROWS: tuple[tuple[str, str, str, str, str, str], ...] = (
     (ORG_B, "user", "u_globex_hr1", "pii.reveal", "hire:h_globex_001/ifsc", "success"),
 )
 
+# UI-8: eval runs stored by the harness's writer, (org, run id, agent). B has 3, A has 2, and B's agent
+# name and run ids occur nowhere in A's data.
+EVAL_RUNS: tuple[tuple[str, str, str], ...] = (
+    (ORG_A, "evr_20261101T080000Z_acac0001", "db_agent"),
+    (ORG_A, "evr_20261102T080000Z_acac0002", "run_assistant"),
+    (ORG_B, "evr_20261101T090000Z_6b6b0001", "globex_eval_agent"),
+    (ORG_B, "evr_20261102T090000Z_6b6b0002", "globex_eval_agent"),
+    (ORG_B, "evr_20261103T090000Z_6b6b0003", "db_agent"),
+)
+
+
+def eval_runs(org_id: str) -> list[tuple[str, str, str]]:
+    return [row for row in EVAL_RUNS if row[0] == org_id]
+
+
 # Shortest string treated as a marker: shorter ones ("HR", "done") occur everywhere by chance.
 _MIN_MARKER = 6
 
@@ -179,6 +194,7 @@ def _org_strings(org_id: str) -> set[str]:
         audit_rows(org_id),
         xt_vault_strings(org_id),
         templates,
+        eval_runs(org_id),
     ]
     return {s for s in _strings(sources) if len(s) >= _MIN_MARKER}
 

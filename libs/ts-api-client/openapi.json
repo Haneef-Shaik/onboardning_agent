@@ -232,6 +232,16 @@
             "title": "Requires Approval",
             "type": "array"
           },
+          "resolved_llm": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AgentResolvedLLM"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "sha256": {
             "title": "Sha256",
             "type": "string"
@@ -268,6 +278,48 @@
           "updated_at"
         ],
         "title": "AgentRecord",
+        "type": "object"
+      },
+      "AgentResolvedLLM": {
+        "additionalProperties": false,
+        "description": "The connector and model the agent runs on: its manifest's choice resolved through llm.yaml and\nthe environment (UI-8, FR-A2). Provider params are never part of it.",
+        "properties": {
+          "alias": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Alias"
+          },
+          "connector": {
+            "title": "Connector",
+            "type": "string"
+          },
+          "model": {
+            "title": "Model",
+            "type": "string"
+          },
+          "source": {
+            "enum": [
+              "manifest",
+              "org_override",
+              "default"
+            ],
+            "title": "Source",
+            "type": "string"
+          }
+        },
+        "required": [
+          "connector",
+          "model",
+          "alias",
+          "source"
+        ],
+        "title": "AgentResolvedLLM",
         "type": "object"
       },
       "AgentsEnvelope": {
@@ -899,6 +951,394 @@
           "meta"
         ],
         "title": "ErrorEnvelope",
+        "type": "object"
+      },
+      "EvalCaseSummary": {
+        "additionalProperties": false,
+        "properties": {
+          "agent": {
+            "title": "Agent",
+            "type": "string"
+          },
+          "case_id": {
+            "title": "Case Id",
+            "type": "string"
+          },
+          "category": {
+            "title": "Category",
+            "type": "string"
+          },
+          "passes": {
+            "title": "Passes",
+            "type": "integer"
+          },
+          "repetitions": {
+            "title": "Repetitions",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "case_id",
+          "agent",
+          "category",
+          "passes",
+          "repetitions"
+        ],
+        "title": "EvalCaseSummary",
+        "type": "object"
+      },
+      "EvalGate": {
+        "additionalProperties": false,
+        "properties": {
+          "agent": {
+            "title": "Agent",
+            "type": "string"
+          },
+          "detail": {
+            "title": "Detail",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "passed": {
+            "title": "Passed",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "name",
+          "agent",
+          "passed",
+          "detail"
+        ],
+        "title": "EvalGate",
+        "type": "object"
+      },
+      "EvalMetrics": {
+        "additionalProperties": false,
+        "description": "One (agent, category) group. Rates are 0..1, or null when the group has nothing to rate.",
+        "properties": {
+          "avg_steps": {
+            "title": "Avg Steps",
+            "type": "number"
+          },
+          "avg_tokens": {
+            "title": "Avg Tokens",
+            "type": "number"
+          },
+          "cases": {
+            "title": "Cases",
+            "type": "integer"
+          },
+          "p50_latency_ms": {
+            "title": "P50 Latency Ms",
+            "type": "number"
+          },
+          "p95_latency_ms": {
+            "title": "P95 Latency Ms",
+            "type": "number"
+          },
+          "pass_at_1": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pass At 1"
+          },
+          "pass_hat_k": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pass Hat K"
+          },
+          "repetitions": {
+            "title": "Repetitions",
+            "type": "integer"
+          },
+          "tool_call_accuracy": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tool Call Accuracy"
+          }
+        },
+        "required": [
+          "cases",
+          "repetitions",
+          "pass_at_1",
+          "pass_hat_k",
+          "tool_call_accuracy",
+          "avg_steps",
+          "p50_latency_ms",
+          "p95_latency_ms",
+          "avg_tokens"
+        ],
+        "title": "EvalMetrics",
+        "type": "object"
+      },
+      "EvalRun": {
+        "additionalProperties": false,
+        "description": "One run in full: `metrics[agent][category]`, the gates, and each case's passes.",
+        "properties": {
+          "agent": {
+            "title": "Agent",
+            "type": "string"
+          },
+          "all_cases_passed": {
+            "title": "All Cases Passed",
+            "type": "boolean"
+          },
+          "cases": {
+            "items": {
+              "$ref": "#/components/schemas/EvalCaseSummary"
+            },
+            "title": "Cases",
+            "type": "array"
+          },
+          "dataset": {
+            "title": "Dataset",
+            "type": "string"
+          },
+          "finished_at": {
+            "format": "date-time",
+            "title": "Finished At",
+            "type": "string"
+          },
+          "fixture": {
+            "title": "Fixture",
+            "type": "string"
+          },
+          "gates": {
+            "items": {
+              "$ref": "#/components/schemas/EvalGate"
+            },
+            "title": "Gates",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "llm": {
+            "title": "Llm",
+            "type": "string"
+          },
+          "metrics": {
+            "additionalProperties": {
+              "additionalProperties": {
+                "$ref": "#/components/schemas/EvalMetrics"
+              },
+              "type": "object"
+            },
+            "title": "Metrics",
+            "type": "object"
+          },
+          "mode": {
+            "title": "Mode",
+            "type": "string"
+          },
+          "passed": {
+            "title": "Passed",
+            "type": "boolean"
+          },
+          "repeat": {
+            "title": "Repeat",
+            "type": "integer"
+          },
+          "started_at": {
+            "format": "date-time",
+            "title": "Started At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "mode",
+          "agent",
+          "llm",
+          "dataset",
+          "fixture",
+          "repeat",
+          "passed",
+          "all_cases_passed",
+          "started_at",
+          "finished_at",
+          "metrics",
+          "gates",
+          "cases"
+        ],
+        "title": "EvalRun",
+        "type": "object"
+      },
+      "EvalRunEnvelope": {
+        "additionalProperties": false,
+        "description": "One eval run.",
+        "properties": {
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EvalRun"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "error": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ErrorBody"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta",
+            "default": {}
+          },
+          "success": {
+            "title": "Success",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "success",
+          "data",
+          "error",
+          "meta"
+        ],
+        "title": "EvalRunEnvelope",
+        "type": "object"
+      },
+      "EvalRunSummary": {
+        "additionalProperties": false,
+        "description": "A run in the list: what was evaluated and whether its gates passed.",
+        "properties": {
+          "agent": {
+            "title": "Agent",
+            "type": "string"
+          },
+          "all_cases_passed": {
+            "title": "All Cases Passed",
+            "type": "boolean"
+          },
+          "dataset": {
+            "title": "Dataset",
+            "type": "string"
+          },
+          "finished_at": {
+            "format": "date-time",
+            "title": "Finished At",
+            "type": "string"
+          },
+          "fixture": {
+            "title": "Fixture",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "llm": {
+            "title": "Llm",
+            "type": "string"
+          },
+          "mode": {
+            "title": "Mode",
+            "type": "string"
+          },
+          "passed": {
+            "title": "Passed",
+            "type": "boolean"
+          },
+          "repeat": {
+            "title": "Repeat",
+            "type": "integer"
+          },
+          "started_at": {
+            "format": "date-time",
+            "title": "Started At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "mode",
+          "agent",
+          "llm",
+          "dataset",
+          "fixture",
+          "repeat",
+          "passed",
+          "all_cases_passed",
+          "started_at",
+          "finished_at"
+        ],
+        "title": "EvalRunSummary",
+        "type": "object"
+      },
+      "EvalRunsEnvelope": {
+        "additionalProperties": false,
+        "description": "The org's eval runs, newest first, paged.",
+        "properties": {
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/EvalRunSummary"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ErrorBody"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta",
+            "default": {}
+          },
+          "success": {
+            "title": "Success",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "success",
+          "data",
+          "error",
+          "meta"
+        ],
+        "title": "EvalRunsEnvelope",
         "type": "object"
       },
       "Health": {
@@ -2856,6 +3296,135 @@
         "summary": "Login",
         "tags": [
           "auth"
+        ]
+      }
+    },
+    "/evals/runs": {
+      "get": {
+        "operationId": "listEvalRuns",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "agent",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "pattern": "^[a-z][a-z0-9_]{0,63}$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Agent"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "maximum": 10001,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvalRunsEnvelope"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error, in the envelope"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Eval Runs",
+        "tags": [
+          "evals"
+        ]
+      }
+    },
+    "/evals/runs/{run_id}": {
+      "get": {
+        "operationId": "getEvalRun",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "maxLength": 64,
+              "pattern": "^evr_[0-9]{8}T[0-9]{6}Z_[0-9a-f]{8}$",
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvalRunEnvelope"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error, in the envelope"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Eval Run",
+        "tags": [
+          "evals"
         ]
       }
     },

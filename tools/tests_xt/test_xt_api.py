@@ -48,6 +48,7 @@ from .world import (
     audit_rows,
     base_template,
     email_of,
+    eval_runs,
     template_drafts,
     tenant_documents,
     without_volatile,
@@ -619,6 +620,59 @@ def _read_scan(xt: World, org_id: str, hire_id: str, document_id: str) -> bytes 
     return asyncio.run(main())
 
 
+# --- GET /evals/runs, GET /evals/runs/{run_id} (UI-8) ---------------------------------------------------
+# Each org has its own eval runs (`world.EVAL_RUNS`, B holds more). Org B's run id answers exactly like
+# a run id nobody has: 404, never 403; filtering on org B's agent finds what an unknown agent finds.
+
+MISSING_EVAL_RUN = "evr_20261109T090000Z_00000000"
+
+
+def _eval_runs_request(_: World, role: Role) -> Request:
+    return {"method": "GET", "url": "/evals/runs", "headers": bearer(_token(role)), "params": {"limit": 100}}
+
+
+def _eval_runs_check(client: TestClient, _: World) -> None:
+    admin = bearer(_token(Role.HR_ADMIN))
+    body = client.get("/evals/runs", params={"limit": 100}, headers=admin).json()
+    a_ids = [run_id for _, run_id, _ in reversed(eval_runs(ORG_A))]  # newest first
+    assert [r["id"] for r in body["data"]] == a_ids
+    assert body["meta"]["page"]["total"] == len(eval_runs(ORG_A))
+    # Filtering on org B's agent finds exactly what an agent nobody has finds; on a name both orgs
+    # use, only org A's run.
+    foreign = client.get("/evals/runs", params={"agent": "globex_eval_agent"}, headers=admin)
+    missing = client.get("/evals/runs", params={"agent": "nobody_xt_agent"}, headers=admin)
+    assert foreign.json()["data"] == []
+    assert_indistinguishable(seen(foreign), seen(missing), "GET /evals/runs?agent=<org B's>")
+    shared = client.get("/evals/runs", params={"agent": "db_agent"}, headers=admin).json()["data"]
+    assert [r["id"] for r in shared] == [run_id for _, run_id, agent in eval_runs(ORG_A) if agent == "db_agent"]
+    # Paging past org A's runs finds nothing, not org B's.
+    deeper = client.get("/evals/runs", params={"page": 2, "limit": len(eval_runs(ORG_A))}, headers=admin)
+    assert deeper.json()["data"] == []
+    # And org B's admin, symmetrically, sees only org B's runs.
+    b_body = client.get("/evals/runs", params={"limit": 100}, headers=bearer(token_for(*B_ADMIN))).json()
+    assert {r["id"] for r in b_body["data"]} == {run_id for _, run_id, _ in eval_runs(ORG_B)}
+
+
+def _eval_run_request(_: World, role: Role) -> Request:
+    run_id = eval_runs(ORG_A)[0][1]
+    return {"method": "GET", "url": f"/evals/runs/{run_id}", "headers": bearer(_token(role))}
+
+
+def _eval_run_check(client: TestClient, _: World) -> None:
+    admin = bearer(_token(Role.HR_ADMIN))
+    own_id = eval_runs(ORG_A)[0][1]
+    own = client.get(f"/evals/runs/{own_id}", headers=admin)
+    assert own.status_code == 200, own.text
+    assert own.json()["data"]["id"] == own_id
+    missing = client.get(f"/evals/runs/{MISSING_EVAL_RUN}", headers=admin)
+    for _, foreign_id, _ in eval_runs(ORG_B):
+        foreign = client.get(f"/evals/runs/{foreign_id}", headers=admin)
+        assert foreign.status_code == 404, foreign.json()
+        assert_indistinguishable(seen(foreign), seen(missing), "GET /evals/runs/{id} of org B")
+    # Org B's admin cannot read org A's run either.
+    assert client.get(f"/evals/runs/{own_id}", headers=bearer(token_for(*B_ADMIN))).status_code == 404
+
+
 ALL_200: Mapping[Role, int] = dict.fromkeys(ACTORS, 200)
 ADMIN_ONLY: Mapping[Role, int] = {Role.HR_ADMIN: 200, Role.HR: 403, Role.MANAGER: 403}
 HR_ONLY: Mapping[Role, int] = {Role.HR_ADMIN: 200, Role.HR: 200, Role.MANAGER: 403}
@@ -668,6 +722,8 @@ ROUTE_CASES: Mapping[tuple[str, str], RouteCase] = {
         {Role.HR_ADMIN: 201, Role.HR: 201, Role.MANAGER: 403},
         volatile=frozenset({"id", "uploaded_at"}),
     ),
+    ("GET", "/evals/runs"): RouteCase(_eval_runs_request, _reads_only(_eval_runs_check), ADMIN_ONLY),
+    ("GET", "/evals/runs/{run_id}"): RouteCase(_eval_run_request, _reads_only(_eval_run_check), ADMIN_ONLY),
 }
 
 _ROUTE_IDS = [f"{method} {path}" for method, path in ROUTE_CASES]
