@@ -8,7 +8,7 @@ reveal one field with a reason (Aadhaar: HR_ADMIN only), each reveal written to 
 Routes: `POST /hires`, `GET /hires`, `GET /hires/{hire_id}`, `PUT /hires/{hire_id}/pii/{field}`,
 `POST /hires/{hire_id}/pii/{field}/reveal`, `GET /pii-access-log`. Code: `apps/api/src/onb_api/hires/`,
 contracts `libs/py-contracts/src/onb_contracts/hires.py`, wiring `app.py`/`main.py`, `partial=` in
-`libs/py-data/src/onb_data/store.py`. Decisions: `docs/adr/0008-hire-pii-masks-keys-and-dedupe.md`.
+`libs/py-data/src/onb_data/store.py`. Decisions: `docs/adr/0007-hire-pii-masks-keys-and-dedupe.md`.
 
 ## Done when
 | Box | Met | Evidence |
@@ -79,7 +79,7 @@ contracts `libs/py-contracts/src/onb_contracts/hires.py`, wiring `app.py`/`main.
 - **PII-2:** a `put` that does not supersede until the caller commits (or a restore) would close the outage gap above.
 
 ## Decisions forced (ADRs written)
-- `docs/adr/0008-hire-pii-masks-keys-and-dedupe.md`: masks stored at write time; org keys on first sensitive write; partial `{org_id, email_hash}` index; Aadhaar consent / alternative-ID type only; free text redacted before storage.
+- `docs/adr/0007-hire-pii-masks-keys-and-dedupe.md`: masks stored at write time; org keys on first sensitive write; partial `{org_id, email_hash}` index; Aadhaar consent / alternative-ID type only; free text redacted before storage.
 - Open decision left with Haneef (not touched): ADR 0004 cross-org unique *user* emails. Hire emails are per-org (this goal) and do not depend on it.
 
 ## Traps hit

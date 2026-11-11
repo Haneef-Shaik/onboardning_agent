@@ -11,7 +11,7 @@
 - **Reveal** (HR/HR_ADMIN; Aadhaar HR_ADMIN only): with a reason, one field. The value leaves only
   after its `pii_access_log` entry and its audit record are written (fail closed).
 
-Org keys are made on the first sensitive write of an org (ADR 0008). Logs carry ids, fields and
+Org keys are made on the first sensitive write of an org (ADR 0007). Logs carry ids, fields and
 tokens only; never values, notes or reasons.
 """
 
