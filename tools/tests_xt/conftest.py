@@ -142,6 +142,16 @@ class World:
     def store(self) -> DataStore:
         return connect(self.uri, self.database, app_name="xt")
 
+    def org_b_snapshot(self, unscoped: Unscoped) -> dict[str, list[dict[str, Any]]]:
+        """Every org-B document in every collection, read as root: the before/after of a case."""
+        with unscoped("root snapshot of org B's documents, to prove an org-A call changed none of them"):
+            snapshot = {
+                name: sorted(self.root_db[name].find({"org_id": world.ORG_B}), key=repr)
+                for name in sorted(self.root_db.list_collection_names())
+            }
+        # A collection org A's call created holds no org-B document: only non-empty ones compare.
+        return {name: docs for name, docs in snapshot.items() if docs}
+
 
 async def _seed(store: DataStore) -> None:
     users = MongoUserStore(store)
@@ -241,11 +251,15 @@ def mcp_mongo(mongo_uri: str, database_name: str) -> Iterator[McpServer]:
 
 def pytest_terminal_summary(terminalreporter: pytest.TerminalReporter) -> None:
     """Box 1: the run lists every route (and tool and consumer) it covered."""
-    offline = connect("mongodb://127.0.0.1:1", "xt_listing")  # lazy: never connects
-    routes = api_routes(build_api(offline))
-    tools = mcp_tools(offline, MCP_CONTEXT_KEY)
-    consumers = platform_consumers(PLATFORM_SUBSCRIPTIONS)
     write = terminalreporter.write_line
+    offline = connect("mongodb://127.0.0.1:1", "xt_listing")  # lazy: never connects
+    try:
+        routes = api_routes(build_api(offline))
+        tools = mcp_tools(offline, MCP_CONTEXT_KEY)
+        consumers = platform_consumers(PLATFORM_SUBSCRIPTIONS)
+    except Exception as exc:  # never hide the run's own failures behind the listing's
+        write(f"cross-tenant surface: could not be listed ({type(exc).__name__})", red=True)
+        return
     write(f"cross-tenant surface: {len(routes)} API routes, {len(tools)} MCP tools, {len(consumers)} event consumers")
     for method, path in routes:
         write(f"  route    {method:6} {path}")

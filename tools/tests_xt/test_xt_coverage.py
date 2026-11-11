@@ -11,6 +11,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
+from fastapi import APIRouter, FastAPI, WebSocket
 from onb_data import DataStore, connect
 from onb_data.safety_net import TenantCommandListener
 from onb_data.safety_net_pytest import GUARD_FIXTURE
@@ -19,7 +20,9 @@ from pymongo import monitoring
 from .conftest import MCP_CONTEXT_KEY, build_api
 from .surface import (
     BUS_MODULES,
+    DOCS_PATHS,
     MCP_SERVER_MODULES,
+    NOT_AN_API_ROUTE,
     PLATFORM_SUBSCRIPTIONS,
     api_routes,
     mcp_tools,
@@ -85,6 +88,39 @@ def test_a_route_added_without_a_case_is_uncovered(offline: DataStore) -> None:
         return {}
 
     assert uncovered(api_routes(app), ROUTE_CASES) == [("GET", "/xt-dummy")]
+
+
+def test_routes_are_listed_by_the_path_they_are_served_at(offline: DataStore) -> None:
+    """Two routers with prefixes may both declare `/{id}`: each is its own route, under its prefix."""
+    app = build_api(offline)
+    for prefix in ("/hires", "/runs"):
+        router = APIRouter(prefix=prefix)
+
+        @router.get("/{item_id}")
+        async def item(item_id: str) -> dict[str, str]:
+            return {}
+
+        app.include_router(router)
+    assert uncovered(api_routes(app), ROUTE_CASES) == [("GET", "/hires/{item_id}"), ("GET", "/runs/{item_id}")]
+
+
+def test_a_route_that_is_not_an_api_route_is_uncovered(offline: DataStore) -> None:
+    app = build_api(offline)
+
+    @app.websocket("/xt-socket")
+    async def socket(websocket: WebSocket) -> None:
+        await websocket.close()
+
+    app.mount("/xt-static", FastAPI())
+    assert uncovered(api_routes(app), ROUTE_CASES) == [
+        (NOT_AN_API_ROUTE, "/xt-socket"),
+        (NOT_AN_API_ROUTE, "/xt-static"),
+    ]
+
+
+def test_the_docs_routes_are_not_surface(offline: DataStore) -> None:
+    paths = {path for _, path in api_routes(build_api(offline))}
+    assert paths.isdisjoint(DOCS_PATHS)
 
 
 def test_the_scan_finds_a_constructor_call(tmp_path: Path) -> None:

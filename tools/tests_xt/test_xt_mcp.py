@@ -17,7 +17,7 @@ import pytest
 
 from .conftest import McpServer, Unscoped, World
 from .mcp_client import READ, WRITE, Outcome, call
-from .world import ORG_A, ORG_B, TENANT_SEED, Seen, assert_indistinguishable, assert_no_leak, tenant_documents
+from .world import ORG_A, ORG_B, Seen, assert_indistinguishable, assert_no_leak, tenant_documents
 
 Args = dict[str, Any]
 Call = Callable[[str, Args], Outcome]  # (tool, args) -> outcome, as an org-A agent
@@ -28,14 +28,6 @@ MISSING_HIRE, MISSING_RUN = "h_nobody_xt", "run_nobody_xt"
 
 def _seen(outcome: Outcome) -> Seen:
     return Seen(int(outcome.error), outcome.data if not outcome.error else outcome.text)
-
-
-def _org_b_snapshot(xt: World, unscoped: Unscoped) -> dict[str, list[dict[str, Any]]]:
-    with unscoped("root snapshot of org B's documents, to prove an org-A call changed none of them"):
-        return {
-            name: sorted(xt.root_db[name].find({"org_id": ORG_B}), key=repr)
-            for name in (*TENANT_SEED, "users", "audit_log")
-        }
 
 
 @dataclass(frozen=True)
@@ -71,6 +63,12 @@ def _find_check(agent: Call, _: World, __: Unscoped) -> None:
     assert_indistinguishable(_seen(foreign), _seen(missing), "find by org B's id")
     by_field = agent("find", {"collection": "run_tasks", "filter": {"run_id": B_RUN}, "limit": 100})
     assert by_field.ok()["documents"] == []
+    for collection in sorted(READ):
+        named = agent("find", {"collection": collection, "filter": {"org_id": ORG_B}, "limit": 100})
+        assert named.error, named.data
+        assert_no_leak(named.text, "find naming org B in the filter")
+    by_expr = {"$expr": {"$eq": ["$org_id", ORG_B]}}
+    assert agent("find", {"collection": "new_hires", "filter": by_expr, "limit": 100}).ok()["documents"] == []
 
 
 # --- count -----------------------------------------------------------------------------------------------
@@ -83,6 +81,10 @@ def _count_check(agent: Call, _: World, __: Unscoped) -> None:
     missing = agent("count", {"collection": "new_hires", "filter": {"_id": MISSING_HIRE}})
     assert foreign.ok() == {"count": 0}
     assert_indistinguishable(_seen(foreign), _seen(missing), "count of org B's id")
+    named = agent("count", {"collection": "new_hires", "filter": {"$or": [{"org_id": ORG_B}]}})
+    assert named.error, named.data
+    by_expr = {"$expr": {"$eq": ["$org_id", ORG_B]}}
+    assert agent("count", {"collection": "new_hires", "filter": by_expr}).ok() == {"count": 0}
 
 
 # --- aggregate -------------------------------------------------------------------------------------------
@@ -96,10 +98,26 @@ def _aggregate_check(agent: Call, _: World, __: Unscoped) -> None:
     foreign = agent("aggregate", {"collection": "run_tasks", "pipeline": [{"$match": {"run_id": B_RUN}}]})
     missing = agent("aggregate", {"collection": "run_tasks", "pipeline": [{"$match": {"run_id": MISSING_RUN}}]})
     assert_indistinguishable(_seen(foreign), _seen(missing), "aggregate over org B's run")
+    named = agent("aggregate", {"collection": "run_tasks", "pipeline": [{"$match": {"org_id": ORG_B}}]})
+    assert named.error, named.data
+    by_org = agent("aggregate", {"collection": "run_tasks", "pipeline": [{"$group": {"_id": "$org_id"}}]})
+    assert by_org.ok()["documents"] == [{"_id": ORG_A}]
     # Stages that read another collection would leave the org's scope: refused.
     for stage in (
         {"$lookup": {"from": "new_hires", "localField": "run_id", "foreignField": "_id", "as": "x"}},
+        {
+            "$graphLookup": {
+                "from": "new_hires",
+                "startWith": "$run_id",
+                "connectFromField": "_id",
+                "connectToField": "_id",
+                "as": "x",
+            }
+        },
         {"$unionWith": {"coll": "new_hires"}},
+        {"$facet": {"x": [{"$lookup": {"from": "new_hires", "localField": "_id", "foreignField": "_id", "as": "y"}}]}},
+        {"$out": "xt_out"},
+        {"$merge": {"into": "xt_out"}},
     ):
         refused = agent("aggregate", {"collection": "run_tasks", "pipeline": [stage]})
         assert refused.error, refused.text
@@ -119,6 +137,11 @@ def _insert_one_check(agent: Call, xt: World, unscoped: Unscoped) -> None:
     assert "org_id" in refused.text
     with unscoped("root read-back proves the refused insert wrote nothing in any org"):
         assert xt.root_db["run_tasks"].count_documents({"task_id": "xt_b"}) == 0
+    # `_id` is unique across every org: choosing org B's id must answer exactly like a fresh one.
+    taken = agent("insert_one", {"collection": "approvals", "document": {"_id": "appr_globex_xt", "status": "x"}})
+    fresh = agent("insert_one", {"collection": "approvals", "document": {"_id": "appr_nobody_xt", "status": "x"}})
+    assert taken.error
+    assert_indistinguishable(_seen(taken), _seen(fresh), "insert_one with org B's _id")
 
 
 # --- update_one ------------------------------------------------------------------------------------------
@@ -163,29 +186,29 @@ def _agent(request: pytest.FixtureRequest, server: str) -> Call:
 def test_the_tools_own_cross_tenant_checks(
     request: pytest.FixtureRequest, xt_world: World, unscoped: Unscoped, key: tuple[str, str]
 ) -> None:
-    before = _org_b_snapshot(xt_world, unscoped)
+    before = xt_world.org_b_snapshot(unscoped)
     TOOL_CASES[key].check(_agent(request, key[0]), xt_world, unscoped)
-    assert _org_b_snapshot(xt_world, unscoped) == before
+    assert xt_world.org_b_snapshot(unscoped) == before
 
 
 @pytest.mark.parametrize("key", list(TOOL_CASES), ids=_TOOL_IDS)
 def test_no_org_b_data_reaches_an_org_a_agent(
     request: pytest.FixtureRequest, xt_world: World, unscoped: Unscoped, key: tuple[str, str]
 ) -> None:
-    before = _org_b_snapshot(xt_world, unscoped)
+    before = xt_world.org_b_snapshot(unscoped)
     outcome = _agent(request, key[0])(key[1], TOOL_CASES[key].args)
     outcome.ok()
     assert_no_leak(repr(outcome.data) + outcome.text, f"{key[0]}.{key[1]}")
-    assert _org_b_snapshot(xt_world, unscoped) == before
+    assert xt_world.org_b_snapshot(unscoped) == before
 
 
 @pytest.mark.parametrize("key", list(TOOL_CASES), ids=_TOOL_IDS)
 def test_an_org_id_argument_naming_org_b_is_refused(
     request: pytest.FixtureRequest, xt_world: World, unscoped: Unscoped, key: tuple[str, str]
 ) -> None:
-    before = _org_b_snapshot(xt_world, unscoped)
+    before = xt_world.org_b_snapshot(unscoped)
     outcome = _agent(request, key[0])(key[1], {**TOOL_CASES[key].args, "org_id": ORG_B})
     assert outcome.error, outcome.data
     assert "org_id" in outcome.text
     assert_no_leak(outcome.text, f"{key[0]}.{key[1]} refusing org_id")
-    assert _org_b_snapshot(xt_world, unscoped) == before
+    assert xt_world.org_b_snapshot(unscoped) == before

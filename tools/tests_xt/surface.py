@@ -63,14 +63,24 @@ _SOURCE_GLOBS = ("apps/*/src/**/*.py", "libs/*/src/**/*.py")
 _NOT_PRODUCTION = ("libs/py-eventbus/src/",)
 
 
+# FastAPI's own documentation routes: they serve no tenant data.
+DOCS_PATHS = frozenset({"/openapi.json", "/docs", "/docs/oauth2-redirect", "/redoc"})
+# The key a route gets when it is not an `APIRoute` (a websocket, a mount, a raw Starlette route):
+# no case can match it, so such a route always fails the coverage check until the suite learns it.
+NOT_AN_API_ROUTE = "NOT-AN-API-ROUTE"
+
+
 def api_routes(app: FastAPI) -> list[tuple[str, str]]:
-    """Every (method, path) the app serves, sorted. HEAD/OPTIONS that Starlette adds are not routes."""
-    keys = {
-        (method, context.original_route.path)
-        for context in iter_route_contexts(app.routes)
-        if isinstance(context.original_route, APIRoute)
-        for method in context.original_route.methods or ()
-    }
+    """Every (method, path) the app serves, sorted, with the path as served (router prefixes included).
+
+    A route that is not an `APIRoute` (other than the docs) is listed as (`NOT_AN_API_ROUTE`, path)."""
+    keys: set[tuple[str, str]] = set()
+    for context in iter_route_contexts(app.routes):
+        route, path = context.original_route, context.path or repr(context.original_route)
+        if isinstance(route, APIRoute):
+            keys.update((method, path) for method in route.methods or ())
+        elif path not in DOCS_PATHS:
+            keys.add((NOT_AN_API_ROUTE, path))
     return sorted(keys)
 
 

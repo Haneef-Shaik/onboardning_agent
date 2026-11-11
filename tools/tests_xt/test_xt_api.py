@@ -66,6 +66,9 @@ class RouteCase:
     """The ordinary request an org-A actor with this role makes."""
     check: Callable[[TestClient, World], None]
     """The route's own cross-tenant assertions."""
+    expected: Mapping[Role, int]
+    """The status each org-A role gets for `request`: the generic checks hold it to that, so a check
+    that only ever compared two refusals cannot pass for a role that should succeed."""
     volatile: frozenset[str] = field(default=frozenset())
     """Fields of `data` that differ on every call by design (a fresh token)."""
 
@@ -94,12 +97,14 @@ def _login_request(xt: World, role: Role) -> Request:
 
 def _login_check(client: TestClient, xt: World) -> None:
     # Logging in as an org-A user yields an org-A token, whatever org the body names.
-    for body in (_login_request(xt, Role.HR)["json"], {**_login_request(xt, Role.HR)["json"], "org_id": ORG_B}):
-        response = client.post("/auth/login", json=body)
-        if response.status_code == 200:
-            assert read_token(response.json()["data"]["access_token"], TEST_SETTINGS).org_id == ORG_A
-        else:
-            assert response.status_code == 422, response.text
+    plain = client.post("/auth/login", json=_login_request(xt, Role.HR)["json"])
+    assert plain.status_code == 200, plain.text
+    assert read_token(plain.json()["data"]["access_token"], TEST_SETTINGS).org_id == ORG_A
+    steered = client.post("/auth/login", json={**_login_request(xt, Role.HR)["json"], "org_id": ORG_B})
+    if steered.status_code == 200:
+        assert read_token(steered.json()["data"]["access_token"], TEST_SETTINGS).org_id == ORG_A
+    else:
+        assert steered.status_code == 422, steered.text
     # An org-B email with a wrong password answers exactly like an email nobody has.
     foreign = client.post("/auth/login", json={"email": email_of("u_globex_hr1"), "password": "not-the-password"})
     missing = client.post("/auth/login", json={"email": email_of("u_nobody_xt"), "password": "not-the-password"})
@@ -156,13 +161,16 @@ def _audit_check(client: TestClient, _: World) -> None:
     assert {r["org_id"] for r in b_body["data"]} == {ORG_B}
 
 
+ALL_200: Mapping[Role, int] = dict.fromkeys(ACTORS, 200)
+ADMIN_ONLY: Mapping[Role, int] = {Role.HR_ADMIN: 200, Role.HR: 403, Role.MANAGER: 403}
+
 ROUTE_CASES: Mapping[tuple[str, str], RouteCase] = {
-    ("GET", "/health"): RouteCase(_health_request, _health_check),
+    ("GET", "/health"): RouteCase(_health_request, _health_check, ALL_200),
     ("POST", "/auth/login"): RouteCase(
-        _login_request, _login_check, volatile=frozenset({"access_token", "expires_at"})
+        _login_request, _login_check, ALL_200, volatile=frozenset({"access_token", "expires_at"})
     ),
-    ("GET", "/me"): RouteCase(_me_request, _me_check),
-    ("GET", "/audit"): RouteCase(_audit_request, _audit_check),
+    ("GET", "/me"): RouteCase(_me_request, _me_check, ALL_200),
+    ("GET", "/audit"): RouteCase(_audit_request, _audit_check, ADMIN_ONLY),
 }
 
 _ROUTE_IDS = [f"{method} {path}" for method, path in ROUTE_CASES]
@@ -179,7 +187,7 @@ def test_no_org_b_data_reaches_an_org_a_actor(
     api: TestClient, xt_world: World, route: tuple[str, str], role: Role
 ) -> None:
     response = api.request(**ROUTE_CASES[route].request(xt_world, role))
-    assert response.status_code < 500, response.text
+    assert response.status_code == ROUTE_CASES[route].expected[role], response.text
     assert_no_leak(response.text, f"{route} as {role.value}")
     assert_no_leak(repr(sorted(response.headers.items())), f"{route} headers as {role.value}")
 
@@ -192,6 +200,7 @@ def test_naming_org_b_in_the_request_changes_nothing(
     case = ROUTE_CASES[route]
     request = case.request(xt_world, role)
     baseline = seen(api.request(**request), volatile=case.volatile)
+    assert baseline.status == case.expected[role], baseline
     params = {**request.get("params", {}), **dict.fromkeys(ORG_PARAMS, ORG_B)}
     headers = {**request.get("headers", {}), **dict.fromkeys(ORG_HEADERS, ORG_B)}
     steered = seen(api.request(**{**request, "params": params, "headers": headers}), volatile=case.volatile)

@@ -6,11 +6,13 @@ does, from RUN-1 on), so the generic check also runs on `xt.probe`, a consumer o
 reads and writes through the store like a real one. That keeps the check itself exercised until the
 first real consumer arrives.
 
-The generic check publishes one org-A event, runs a worker over the real handler and asserts:
-* the handler ran inside org A's tenant context, and its `JobContext` says org A;
-* org B's documents are unchanged;
-* the same idempotency key in org B is a new event, not a duplicate (no inference through the
-  per-org unique index).
+The generic check, over the real handler:
+1. One org-A event, one worker run: the handler ran inside org A's tenant context, its `JobContext`
+   says org A, and no org-B document (in any collection) changed.
+2. The same idempotency key in org B is a new event, not a duplicate (no inference through the
+   per-org unique index).
+3. Org A and org B jobs queued together on one worker: every handler call runs in the org of its own
+   job, so no tenant context or cached state carries over from the previous job.
 """
 
 from __future__ import annotations
@@ -25,8 +27,10 @@ from onb_data import DataStore, current_tenant, tenant_scope
 from onb_eventbus import Handler, JobContext, MongoEventBus
 
 from .conftest import Unscoped, World
-from .test_xt_mcp import _org_b_snapshot
 from .world import ORG_A, ORG_B, tenant_documents
+
+# (tenant context during the handler, the job's org) for each handler call, in order.
+Observed = list[tuple[str, str]]
 
 
 @dataclass(frozen=True)
@@ -55,70 +59,68 @@ PROBE = "xt.probe"
 PROBE_CASE = ConsumerCase("xt.probed", lambda org: {"run_id": f"run_xt_{org}"}, _probe)
 
 
-@dataclass
-class _Observed:
-    tenants: list[str]
-    job_orgs: list[str]
-
-
-def _observing(handler: Handler, observed: _Observed) -> Handler:
+def _observing(handler: Handler, observed: Observed) -> Handler:
     async def handle(job: JobContext) -> None:
-        observed.tenants.append(current_tenant().org_id)
-        observed.job_orgs.append(job.org_id)
+        observed.append((current_tenant().org_id, job.org_id))
         await handler(job)
 
     return handle
 
 
-async def _publish_and_handle(xt: World, consumer: str, case: ConsumerCase, observed: _Observed) -> None:
-    store = xt.store()
-    try:
-        bus = MongoEventBus(store, subscriptions={case.event_type: [consumer]})
-        await bus.ensure_indexes()
-        with tenant_scope(ORG_A):
-            published = await bus.publish(case.event_type, case.payload(ORG_A), idempotency_key=f"xt-{consumer}")
-        assert not published.duplicate
-        worker = bus.worker({consumer: _observing(case.handler(store), observed)})
-        processed = await worker.run_once()
-        assert processed is not None
-        assert processed.job_id in published.job_ids
-        assert await worker.run_once() is None
-    finally:
-        await store.close()
+async def _publish(bus: MongoEventBus, case: ConsumerCase, org: str, key: str) -> tuple[str, ...]:
+    with tenant_scope(org):
+        published = await bus.publish(case.event_type, case.payload(org), idempotency_key=key)
+    assert not published.duplicate, f"{org}: idempotency key {key!r} collided with another org's event"
+    return published.job_ids
 
 
-async def _publish_same_key_in_org_b(xt: World, consumer: str, case: ConsumerCase) -> bool:
-    store = xt.store()
-    try:
-        bus = MongoEventBus(store, subscriptions={case.event_type: [consumer]})
-        with tenant_scope(ORG_B):
-            published = await bus.publish(case.event_type, case.payload(ORG_B), idempotency_key=f"xt-{consumer}")
-        return published.duplicate
-    finally:
-        await store.close()
+async def _drain(bus: MongoEventBus, store: DataStore, consumer: str, case: ConsumerCase) -> Observed:
+    observed: Observed = []
+    worker = bus.worker({consumer: _observing(case.handler(store), observed)})
+    while await worker.run_once() is not None:
+        pass
+    return observed
 
 
 def assert_consumer_stays_in_its_org(xt: World, unscoped: Unscoped, consumer: str, case: ConsumerCase) -> None:
-    before = _org_b_snapshot(xt, unscoped)
-    observed = _Observed([], [])
-    asyncio.run(_publish_and_handle(xt, consumer, case, observed))
-    assert observed.tenants == [ORG_A]
-    assert observed.job_orgs == [ORG_A]
-    assert _org_b_snapshot(xt, unscoped) == before, f"{consumer}: handling an org-A event changed org B"
-    assert asyncio.run(_publish_same_key_in_org_b(xt, consumer, case)) is False, "the idempotency key leaks"
+    subscriptions = {case.event_type: [consumer]}
+
+    async def one_org_a_event() -> Observed:
+        store = xt.store()
+        try:
+            bus = MongoEventBus(store, subscriptions=subscriptions)
+            await bus.ensure_indexes()
+            await _publish(bus, case, ORG_A, f"xt-{consumer}")
+            return await _drain(bus, store, consumer, case)
+        finally:
+            await store.close()
+
+    async def interleaved() -> Observed:
+        store = xt.store()
+        try:
+            bus = MongoEventBus(store, subscriptions=subscriptions)
+            await _publish(bus, case, ORG_B, f"xt-{consumer}")  # same key as org A's first event
+            await _publish(bus, case, ORG_A, f"xt-{consumer}-2")
+            await _publish(bus, case, ORG_B, f"xt-{consumer}-2")
+            return await _drain(bus, store, consumer, case)
+        finally:
+            await store.close()
+
+    before = xt.org_b_snapshot(unscoped)
+    assert asyncio.run(one_org_a_event()) == [(ORG_A, ORG_A)]
+    assert xt.org_b_snapshot(unscoped) == before, f"{consumer}: handling an org-A event changed org B"
+    mixed = asyncio.run(interleaved())
+    assert all(tenant == job_org for tenant, job_org in mixed), f"{consumer}: a handler ran in another org: {mixed}"
+    assert sorted(job_org for _, job_org in mixed) == [ORG_A, ORG_B, ORG_B]
 
 
-_CASES = {**CONSUMER_CASES, PROBE: PROBE_CASE}
-
-
-@pytest.mark.parametrize("consumer", list(_CASES))
+@pytest.mark.parametrize("consumer", [*CONSUMER_CASES, PROBE])
 def test_a_consumer_handling_an_org_a_event_stays_in_org_a(xt_world: World, unscoped: Unscoped, consumer: str) -> None:
-    assert_consumer_stays_in_its_org(xt_world, unscoped, consumer, _CASES[consumer])
-
-
-def test_the_probe_consumer_saw_only_org_a(xt_world: World, unscoped: Unscoped) -> None:
-    """What the probe read and wrote: org A's hire count, stored in org A only."""
-    assert_consumer_stays_in_its_org(xt_world, unscoped, PROBE, PROBE_CASE)
-    with unscoped("root read-back of the probe's writes in every org"):
-        written = [(d["org_id"], d["hires_seen"]) for d in xt_world.root_db["xt_probe"].find()]
-    assert written == [(ORG_A, len(tenant_documents(ORG_A)["new_hires"]))]
+    case = CONSUMER_CASES.get(consumer, PROBE_CASE)
+    assert_consumer_stays_in_its_org(xt_world, unscoped, consumer, case)
+    if consumer == PROBE:
+        # What the probe read and wrote: each org's own hire count, stored in that org only.
+        with unscoped("root read-back of the probe's writes in every org"):
+            written = sorted((d["org_id"], d["hires_seen"]) for d in xt_world.root_db["xt_probe"].find())
+        own = {org: len(tenant_documents(org)["new_hires"]) for org in (ORG_A, ORG_B)}
+        assert written == sorted([(ORG_A, own[ORG_A]), (ORG_A, own[ORG_A]), (ORG_B, own[ORG_B]), (ORG_B, own[ORG_B])])

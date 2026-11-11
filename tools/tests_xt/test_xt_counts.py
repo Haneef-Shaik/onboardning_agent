@@ -62,6 +62,6 @@ def test_mcp_counts_and_find_totals_count_one_org(
 def test_both_orgs_have_data_in_the_counted_collections() -> None:
     """Guards the counts above: they prove nothing if org B had no documents to leak."""
     assert len(audit_rows(ORG_B)) > len(audit_rows(ORG_A)) > 0
-    for collection in ("new_hires", "onboarding_runs", "run_tasks"):
+    for collection in sorted(READ):
         assert tenant_documents(ORG_A)[collection]
         assert tenant_documents(ORG_B)[collection]

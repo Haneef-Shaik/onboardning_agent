@@ -11,7 +11,7 @@ OUT = ROOT / "docs/evidence/T-3/mutations.txt"
 
 MUTATIONS = [
     (
-        "M1 audit total counts every org (TenantRepository.count drops the org filter)",
+        "M1 TenantRepository.count drops the org filter (mcp-mongo count/find/aggregate totals)",
         "libs/py-data/src/onb_data/repository.py",
         "        return await self._collection.count_documents(self._filter(query), **session_kwargs())",
         "        return await self._collection.count_documents(dict(query or {}), **session_kwargs())",
@@ -56,12 +56,24 @@ MUTATIONS = [
         "",
     ),
     (
-        "M7 /me finds the user by id across orgs (AUDIT: user lookup not scoped to the token's org)",
+        "M7 /me finds the user by id across orgs (the user lookup leaves the token org scope)",
         "apps/api/src/onb_api/auth/mongo_users.py",
         "            doc = await self._store.tenant(USERS).get(user_id)",
         "            entry = await self._store.shared(LOGINS).find_one({'user_id': user_id})\n"
         "            with __import__('onb_data').tenant_scope(entry['org_id'] if entry else current_tenant().org_id):\n"
         "                doc = await self._store.tenant(USERS).get(user_id)",
+    ),
+    (
+        "M9 the route enumerator keys routes by their path inside the router (prefix dropped)",
+        "tools/tests_xt/surface.py",
+        "route, path = context.original_route, context.path or repr(context.original_route)",
+        'route, path = context.original_route, getattr(context.original_route, "path", "")',
+    ),
+    (
+        "M10 the event worker keeps the first job's tenant for every later job",
+        "libs/py-eventbus/src/onb_eventbus/worker.py",
+        "            tenant_scope(context.org_id),",
+        "            tenant_scope(self.__dict__.setdefault('_xt_first_org', context.org_id)),",
     ),
 ]
 

@@ -2,7 +2,8 @@
 libs/py-data/src/onb_data/repository.py
   - return await self._collection.count_documents(self._filter(query), **session_kwargs())
   + return await self._collection.count_documents(dict(query or {}), **session_kwargs())
-FAILED tools/tests_xt/test_xt_consumers.py::test_the_probe_consumer_saw_only_org_a
+FAILED tools/tests_xt/test_xt_consumers.py::test_a_consumer_handling_an_org_a_event_stays_in_org_a[xt.probe]
+FAILED tools/tests_xt/test_xt_counts.py::test_mcp_counts_and_find_totals_count_one_org[approvals-org_acme]
 FAILED tools/tests_xt/test_xt_counts.py::test_mcp_counts_and_find_totals_count_one_org[approvals-org_globex]
 FAILED tools/tests_xt/test_xt_counts.py::test_mcp_counts_and_find_totals_count_one_org[new_hires-org_acme]
 FAILED tools/tests_xt/test_xt_counts.py::test_mcp_counts_and_find_totals_count_one_org[new_hires-org_globex]
@@ -12,7 +13,6 @@ FAILED tools/tests_xt/test_xt_counts.py::test_mcp_counts_and_find_totals_count_o
 FAILED tools/tests_xt/test_xt_counts.py::test_mcp_counts_and_find_totals_count_one_org[run_tasks-org_globex]
 FAILED tools/tests_xt/test_xt_mcp.py::test_the_tools_own_cross_tenant_checks[mcp-mongo.count]
 ERROR tools/tests_xt/test_xt_consumers.py::test_a_consumer_handling_an_org_a_event_stays_in_org_a[xt.probe]
-ERROR tools/tests_xt/test_xt_consumers.py::test_the_probe_consumer_saw_only_org_a
 ERROR tools/tests_xt/test_xt_counts.py::test_mcp_counts_and_find_totals_count_one_org[approvals-org_acme]
 ERROR tools/tests_xt/test_xt_counts.py::test_mcp_counts_and_find_totals_count_one_org[approvals-org_globex]
 ERROR tools/tests_xt/test_xt_counts.py::test_mcp_counts_and_find_totals_count_one_org[new_hires-org_acme]
@@ -23,7 +23,7 @@ ERROR tools/tests_xt/test_xt_counts.py::test_mcp_counts_and_find_totals_count_on
 ERROR tools/tests_xt/test_xt_counts.py::test_mcp_counts_and_find_totals_count_one_org[run_tasks-org_globex]
 ERROR tools/tests_xt/test_xt_mcp.py::test_the_tools_own_cross_tenant_checks[mcp-mongo.count]
 ERROR tools/tests_xt/test_xt_mcp.py::test_no_org_b_data_reaches_an_org_a_agent[mcp-mongo.count]
-9 failed, 60 passed, 12 errors in 17.45s
+10 failed, 61 passed, 11 errors in 15.12s
 => KILLED
 
 ## M2 the API lets an X-Org-Id header pick the tenant scope
@@ -36,7 +36,7 @@ FAILED tools/tests_xt/test_xt_api.py::test_naming_org_b_in_the_request_changes_n
 FAILED tools/tests_xt/test_xt_api.py::test_naming_org_b_in_the_request_changes_nothing[GET /me-HR]
 FAILED tools/tests_xt/test_xt_api.py::test_naming_org_b_in_the_request_changes_nothing[GET /me-MANAGER]
 FAILED tools/tests_xt/test_xt_api.py::test_naming_org_b_in_the_request_changes_nothing[GET /audit-HR_ADMIN]
-4 failed, 65 passed in 16.99s
+4 failed, 67 passed in 16.15s
 => KILLED
 
 ## M3 login answers 403 (not 401) for a known email with a wrong password
@@ -47,7 +47,7 @@ apps/api/src/onb_api/auth/routes.py
         raise __import__("fastapi").HTTPException(status_code=403)
   
 FAILED tools/tests_xt/test_xt_api.py::test_the_routes_own_cross_tenant_checks[POST /auth/login]
-1 failed, 68 passed in 16.29s
+1 failed, 70 passed in 16.77s
 => KILLED
 
 ## M4 mcp-mongo find runs in the wrong org's scope
@@ -62,7 +62,7 @@ FAILED tools/tests_xt/test_xt_counts.py::test_mcp_counts_and_find_totals_count_o
 FAILED tools/tests_xt/test_xt_counts.py::test_mcp_counts_and_find_totals_count_one_org[run_tasks-org_acme]
 FAILED tools/tests_xt/test_xt_mcp.py::test_the_tools_own_cross_tenant_checks[mcp-mongo.find]
 FAILED tools/tests_xt/test_xt_mcp.py::test_no_org_b_data_reaches_an_org_a_agent[mcp-mongo.find]
-6 failed, 63 passed in 17.45s
+6 failed, 65 passed in 16.14s
 => KILLED
 
 ## M8 the audit log total counts every org (AppendOnlyRepository.count drops the org filter)
@@ -79,7 +79,7 @@ ERROR tools/tests_xt/test_xt_api.py::test_no_org_b_data_reaches_an_org_a_actor[G
 ERROR tools/tests_xt/test_xt_api.py::test_naming_org_b_in_the_request_changes_nothing[GET /audit-HR_ADMIN]
 ERROR tools/tests_xt/test_xt_counts.py::test_the_audit_list_total_counts_one_org[org_acme]
 ERROR tools/tests_xt/test_xt_counts.py::test_the_audit_list_total_counts_one_org[org_globex]
-3 failed, 66 passed, 5 errors in 17.64s
+3 failed, 68 passed, 5 errors in 16.39s
 => KILLED
 
 ## M5 the event worker runs a handler in another org's scope
@@ -87,8 +87,7 @@ libs/py-eventbus/src/onb_eventbus/worker.py
   - tenant_scope(context.org_id),
   + tenant_scope("org_globex" if context.org_id == "org_acme" else context.org_id),
 FAILED tools/tests_xt/test_xt_consumers.py::test_a_consumer_handling_an_org_a_event_stays_in_org_a[xt.probe]
-FAILED tools/tests_xt/test_xt_consumers.py::test_the_probe_consumer_saw_only_org_a
-2 failed, 67 passed in 27.37s
+1 failed, 70 passed in 18.06s
 => KILLED
 
 ## M6 a cross-tenant case is deleted (mcp-mongo count)
@@ -96,7 +95,7 @@ tools/tests_xt/test_xt_mcp.py
   - ("mcp-mongo", "count"): ToolCase({"collection": "run_tasks"}, _count_check),
   + 
 FAILED tools/tests_xt/test_xt_coverage.py::test_every_mcp_tool_has_a_cross_tenant_case
-1 failed, 65 passed in 23.62s
+1 failed, 67 passed in 17.02s
 => KILLED
 
 ## M7 /me finds the user by id across orgs (the user lookup leaves the token org scope)
@@ -105,5 +104,20 @@ apps/api/src/onb_api/auth/mongo_users.py
   + entry = await self._store.shared(LOGINS).find_one({'user_id': user_id})
             with __import__('onb_data'
 FAILED tools/tests_xt/test_xt_api.py::test_the_routes_own_cross_tenant_checks[GET /me]
-1 failed, 68 passed in 22.33s
+1 failed, 70 passed in 19.33s
+=> KILLED
+
+## M9 the route enumerator keys routes by their path inside the router (prefix dropped)
+tools/tests_xt/surface.py
+  - route, path = context.original_route, context.path or repr(context.original_route)
+  + route, path = context.original_route, getattr(context.original_route, "path", "")
+71 passed in 20.51s
+=> SURVIVED
+
+## M10 the event worker keeps the first job's tenant for every later job
+libs/py-eventbus/src/onb_eventbus/worker.py
+  - tenant_scope(context.org_id),
+  + tenant_scope(self.__dict__.setdefault('_xt_first_org', context.org_id)),
+FAILED tools/tests_xt/test_xt_consumers.py::test_a_consumer_handling_an_org_a_event_stays_in_org_a[xt.probe]
+1 failed, 70 passed in 17.50s
 => KILLED

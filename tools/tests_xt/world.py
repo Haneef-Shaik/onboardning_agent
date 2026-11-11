@@ -58,10 +58,28 @@ def email_of(user_id: str) -> str:
     return f"{user_id}@example.com"
 
 
+# seed_v1 gives org B no approval; one is added here so every counted collection can show a leak.
+EXTRA_DOCUMENTS: dict[str, tuple[dict[str, Any], ...]] = {
+    "approvals": (
+        {
+            "_id": "appr_globex_xt",
+            "org_id": ORG_B,
+            "run_id": "run_globex_001",
+            "task_id": "manager_approval",
+            "approver_id": "u_globex_mgr1",
+            "status": "pending",
+        },
+    ),
+}
+
+
 def tenant_documents(org_id: str) -> dict[str, list[dict[str, Any]]]:
-    """The seed's tenant documents of one org, by collection (with `org_id`, as stored)."""
+    """The seed's tenant documents of one org (plus `EXTRA_DOCUMENTS`), by collection, as stored."""
     data = seed()
-    return {name: [doc for doc in data[name] if doc["org_id"] == org_id] for name in TENANT_SEED}
+    return {
+        name: [doc for doc in (*data[name], *EXTRA_DOCUMENTS.get(name, ())) if doc["org_id"] == org_id]
+        for name in TENANT_SEED
+    }
 
 
 def audit_rows(org_id: str) -> list[tuple[str, str, str, str, str, str]]:
@@ -81,8 +99,13 @@ def _strings(value: object) -> Iterator[str]:
 
 
 def _org_strings(org_id: str) -> set[str]:
+    data = seed()
     users = [{**u, "email": email_of(u["_id"])} for u in seed_users() if u["org_id"] == org_id]
-    return {s for s in _strings([org_id, users, tenant_documents(org_id), audit_rows(org_id)]) if len(s) >= _MIN_MARKER}
+    # The org's name and its raw sensitive values: a reveal or document route must never show B's.
+    org = [o for o in data["orgs"] if o["_id"] == org_id]
+    vault = [v for v in data["pii_vault_plain"] if v["org_id"] == org_id]
+    sources = [org_id, org, users, vault, tenant_documents(org_id), audit_rows(org_id)]
+    return {s for s in _strings(sources) if len(s) >= _MIN_MARKER}
 
 
 def b_markers() -> frozenset[str]:
