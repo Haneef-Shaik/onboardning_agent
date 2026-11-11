@@ -1,0 +1,21 @@
+
+==================================== ERRORS ====================================
+__________ ERROR collecting libs/py-agents/tests/test_dag_compiler.py __________
+ImportError while importing test module '/Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-dag-1/libs/py-agents/tests/test_dag_compiler.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+libs/py-agents/tests/test_dag_compiler.py:17: in <module>
+    from onb_agents.dag import CompiledDag, CompileError, CompileReason, compile_dag
+E   ModuleNotFoundError: No module named 'onb_agents.dag'
+_________ ERROR collecting libs/py-agents/tests/test_dag_properties.py _________
+ImportError while importing test module '/Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-dag-1/libs/py-agents/tests/test_dag_properties.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+libs/py-agents/tests/test_dag_properties.py:20: in <module>
+    from onb_agents.dag import CompiledDag, CompileError, CompileReason, compile_dag
+E   ModuleNotFoundError: No module named 'onb_agents.dag'
+=========================== short test summary info ============================
+ERROR libs/py-agents/tests/test_dag_compiler.py
+ERROR libs/py-agents/tests/test_dag_properties.py
+!!!!!!!!!!!!!!!!!!! Interrupted: 2 errors during collection !!!!!!!!!!!!!!!!!!!!
+2 errors in 1.07s
