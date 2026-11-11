@@ -199,7 +199,7 @@ def test_a_different_version_gives_a_different_hash() -> None:
     assert first.hash != second.hash
 
 
-SEED_ENGINEER_HASH = "sha256:d814ca2bb552ca60a583bd1f50b196a9456a4f2ce2f2621a86b1407b55f2351e"
+SEED_ENGINEER_HASH = "sha256:60d3083444ec9d691c2e33661db1707f507cd7fd55ff00c4f857d5020d13a520"
 
 
 def test_the_hash_is_stable_across_runs(template: Template) -> None:

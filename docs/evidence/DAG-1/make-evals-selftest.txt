@@ -1,0 +1,113 @@
+infra/mongo/gen-keyfile.sh
+gen-keyfile: wrote infra/mongo/keyfile
+docker compose up -d --wait --build
+ Image onb/otel-collector:0.165.0 Building 
+#1 [internal] load local bake definitions
+#1 reading from stdin 647B done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 578B done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/alpine:3.24.4@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf
+#3 DONE 0.1s
+
+#4 [internal] load metadata for docker.io/otel/opentelemetry-collector-contrib:0.165.0@sha256:e40d61f10c9a617cca1ffd1be4d7e2b3a4b0f0001798ff07e58cabe82e618cea
+#4 DONE 0.1s
+
+#5 [internal] load .dockerignore
+#5 transferring context: 2B done
+#5 DONE 0.0s
+
+#6 [stage-1 1/3] FROM docker.io/library/alpine:3.24.4@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf
+#6 resolve docker.io/library/alpine:3.24.4@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf 0.0s done
+#6 DONE 0.0s
+
+#7 [upstream 1/1] FROM docker.io/otel/opentelemetry-collector-contrib:0.165.0@sha256:e40d61f10c9a617cca1ffd1be4d7e2b3a4b0f0001798ff07e58cabe82e618cea
+#7 resolve docker.io/otel/opentelemetry-collector-contrib:0.165.0@sha256:e40d61f10c9a617cca1ffd1be4d7e2b3a4b0f0001798ff07e58cabe82e618cea 0.0s done
+#7 DONE 0.0s
+
+#8 [stage-1 2/3] RUN adduser -D -H -u 10001 otel
+#8 CACHED
+
+#9 [stage-1 3/3] COPY --from=upstream /otelcol-contrib /otelcol-contrib
+#9 CACHED
+
+#10 exporting to image
+#10 exporting layers
+#10 exporting layers done
+#10 exporting manifest sha256:5f83bad56ef7d2aaf84a5302b50c47679f9aa6cb917593fdd1f752dd56b027c6 done
+#10 exporting config sha256:32251766c8c7c33ff4724cf62992ed8226b150acbd3657f0cb2abc2f0fb5555d done
+#10 exporting attestation manifest sha256:540f88b248d50fd87078126522a3b562310d690fb8a83d1658cabb98bc5f3a81 done
+#10 exporting manifest list sha256:be1cb2020e02962d89148e462591ae6818a781c2a71c1ec9907b831d3e57c839 done
+#10 naming to docker.io/onb/otel-collector:0.165.0 done
+#10 unpacking to docker.io/onb/otel-collector:0.165.0 done
+#10 DONE 0.1s
+
+#11 resolving provenance for metadata file
+#11 DONE 0.0s
+ Image onb/otel-collector:0.165.0 Built 
+ Volume ob-dag-1_mongo_data Creating 
+ Volume ob-dag-1_mongo_config Creating 
+ Volume ob-dag-1_caddy_config Creating 
+ Volume ob-dag-1_caddy_data Creating 
+ Network ob-dag-1_edge Creating 
+ Volume ob-dag-1_mongo_config Creating 
+ Volume ob-dag-1_caddy_data Creating 
+ Network ob-dag-1_edge Creating 
+ Volume ob-dag-1_caddy_config Creating 
+ Volume ob-dag-1_mongo_data Creating 
+ Network ob-dag-1_backend Creating 
+ Network ob-dag-1_backend Creating 
+ Volume ob-dag-1_mongo_config Created 
+ Volume ob-dag-1_mongo_config Created 
+ Volume ob-dag-1_caddy_config Created 
+ Volume ob-dag-1_caddy_config Created 
+ Volume ob-dag-1_caddy_data Created 
+ Volume ob-dag-1_caddy_data Created 
+ Volume ob-dag-1_mongo_data Created 
+ Volume ob-dag-1_mongo_data Created 
+ Network ob-dag-1_backend Created 
+ Network ob-dag-1_backend Created 
+ Container ob-dag-1-mongo-1 Creating 
+ Container ob-dag-1-jaeger-1 Creating 
+ Network ob-dag-1_edge Created 
+ Network ob-dag-1_edge Created 
+ Container ob-dag-1-jaeger-1 Created 
+ Container ob-dag-1-caddy-1 Creating 
+ Container ob-dag-1-otel-collector-1 Creating 
+ Container ob-dag-1-mongo-1 Created 
+ Container ob-dag-1-otel-collector-1 Created 
+ Container ob-dag-1-caddy-1 Created 
+ Container ob-dag-1-mongo-1 Starting 
+ Container ob-dag-1-jaeger-1 Starting 
+ Container ob-dag-1-mongo-1 Started 
+ Container ob-dag-1-jaeger-1 Started 
+ Container ob-dag-1-jaeger-1 Waiting 
+ Container ob-dag-1-jaeger-1 Waiting 
+ Container ob-dag-1-jaeger-1 Healthy 
+ Container ob-dag-1-otel-collector-1 Starting 
+ Container ob-dag-1-jaeger-1 Healthy 
+ Container ob-dag-1-caddy-1 Starting 
+ Container ob-dag-1-otel-collector-1 Started 
+ Container ob-dag-1-caddy-1 Started 
+ Container ob-dag-1-caddy-1 Waiting 
+ Container ob-dag-1-mongo-1 Waiting 
+ Container ob-dag-1-otel-collector-1 Waiting 
+ Container ob-dag-1-jaeger-1 Waiting 
+ Container ob-dag-1-jaeger-1 Healthy 
+ Container ob-dag-1-otel-collector-1 Healthy 
+ Container ob-dag-1-caddy-1 Healthy 
+ Container ob-dag-1-mongo-1 Healthy 
+set -a && . ./.env && set +a && \
+	LLM_CONNECTOR=fake OTEL_TRACES_EXPORTER="${OTEL_TRACES_EXPORTER:-none}" \
+	uv run --frozen pytest libs/py-evals/tests_int/test_selftest.py -q -s -o cache_dir=.pytest_cache/py-evals-selftest
+selftest evr_20261111T053324Z_b4954b5a: 27 cases x 3, all cases passed: True, gates: PASS, controls caught 8/8
+report: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-dag-1/evals/reports/20261111T053324Z-all-fake_eval-scripted.json
+report: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-dag-1/evals/reports/20261111T053324Z-all-fake_eval-scripted.md
+eval_runs: evr_20261111T053324Z_b4954b5a
+result: PASS
+
+.
+1 passed in 34.54s

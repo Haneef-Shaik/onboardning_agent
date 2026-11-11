@@ -23,9 +23,15 @@
    variable that is missing when a condition or SLA reads it, a variable of the wrong type (enum outside
    its values, a date not in `YYYY-MM-DD` form, a bool as a number, NaN), a condition that cannot be
    parsed or decided, an SLA on a non-date variable or outside the calendar, and inputs JSON cannot
-   carry. An undecidable condition is never read as false. Variables the template does not declare are
+   carry. An undecidable condition is never read as false. Because a published `Template` can be
+   built without publish-time validation, the compiler also refuses comparisons the evaluator would
+   decide only by kind (`role == 1`, `level == true`, `role == level`), date comparisons with a literal
+   that is not a real `YYYY-MM-DD` date (dates compare as text), non-boolean conditions (`when: role`),
+   and a template that fails its own schema (`model_construct`). A skipped task's `sla.due` must still
+   resolve: a template that reads a date the hire lacks fails whole, never per branch. Variables the template does not declare are
    ignored: a hire record holds more than the template reads.
-4. **The DAG hash.** `sha256:` plus the SHA-256 of the canonical JSON of the compiled DAG (template key,
+4. **The DAG hash.** `sha256:` plus the SHA-256 of the canonical JSON of the compiled DAG (compiler
+   version `COMPILER_VERSION`, bumped whenever the document changes shape; template key,
    version, topological order, and every task's template fields, status, skip reason and due date),
    with sorted keys, no spaces, ASCII only and no NaN. The same template version and the same values of
    the variables it reads give the same hash in any process. The hash covers the compiled result, not

@@ -17,10 +17,10 @@ from onb_contracts.templates import Template, Variable
 
 from .errors import CompileError, CompileReason
 
-__all__ = ["HireValue", "as_date", "hire_values"]
+__all__ = ["ISO_DATE", "HireValue", "as_date", "hire_values"]
 
 HireValue = str | int | float | bool
-_ISO_DATE: Final = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2}")
+ISO_DATE: Final = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2}")
 _MAX_TEXT: Final = 512
 
 
@@ -53,7 +53,7 @@ def _enum(variable: Variable, value: object) -> HireValue | None:
 def _date(_: Variable, value: object) -> HireValue | None:
     if type(value) is date:  # a datetime is a date subclass, and not a date here
         return value.isoformat()
-    if isinstance(value, str) and _ISO_DATE.fullmatch(value):
+    if isinstance(value, str) and ISO_DATE.fullmatch(value):
         try:
             return date.fromisoformat(value).isoformat()
         except ValueError:

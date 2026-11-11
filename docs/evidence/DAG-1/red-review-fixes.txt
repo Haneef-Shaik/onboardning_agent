@@ -1,0 +1,272 @@
+FFFFFFFFFFF.....F.....F                                                  [100%]
+=================================== FAILURES ===================================
+_________ test_a_comparison_across_types_fails_the_compile[role == 1] __________
+
+condition = 'role == 1'
+
+    @pytest.mark.parametrize(
+        "condition",
+        [
+            "role == 1",
+            "role != 1",
+            "role in [1, 2]",
+            "level == 'three'",
+            "remote == 1",
+            "level == true",
+            "role == level",
+            "remote != role",
+        ],
+    )
+    def test_a_comparison_across_types_fails_the_compile(condition: str) -> None:
+>       with pytest.raises(CompileError) as caught:
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE CompileError
+
+libs/py-agents/tests/test_dag_review_fixes.py:61: Failed
+_________ test_a_comparison_across_types_fails_the_compile[role != 1] __________
+
+condition = 'role != 1'
+
+    @pytest.mark.parametrize(
+        "condition",
+        [
+            "role == 1",
+            "role != 1",
+            "role in [1, 2]",
+            "level == 'three'",
+            "remote == 1",
+            "level == true",
+            "role == level",
+            "remote != role",
+        ],
+    )
+    def test_a_comparison_across_types_fails_the_compile(condition: str) -> None:
+>       with pytest.raises(CompileError) as caught:
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE CompileError
+
+libs/py-agents/tests/test_dag_review_fixes.py:61: Failed
+_______ test_a_comparison_across_types_fails_the_compile[role in [1, 2]] _______
+
+condition = 'role in [1, 2]'
+
+    @pytest.mark.parametrize(
+        "condition",
+        [
+            "role == 1",
+            "role != 1",
+            "role in [1, 2]",
+            "level == 'three'",
+            "remote == 1",
+            "level == true",
+            "role == level",
+            "remote != role",
+        ],
+    )
+    def test_a_comparison_across_types_fails_the_compile(condition: str) -> None:
+>       with pytest.raises(CompileError) as caught:
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE CompileError
+
+libs/py-agents/tests/test_dag_review_fixes.py:61: Failed
+______ test_a_comparison_across_types_fails_the_compile[level == 'three'] ______
+
+condition = "level == 'three'"
+
+    @pytest.mark.parametrize(
+        "condition",
+        [
+            "role == 1",
+            "role != 1",
+            "role in [1, 2]",
+            "level == 'three'",
+            "remote == 1",
+            "level == true",
+            "role == level",
+            "remote != role",
+        ],
+    )
+    def test_a_comparison_across_types_fails_the_compile(condition: str) -> None:
+>       with pytest.raises(CompileError) as caught:
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE CompileError
+
+libs/py-agents/tests/test_dag_review_fixes.py:61: Failed
+________ test_a_comparison_across_types_fails_the_compile[remote == 1] _________
+
+condition = 'remote == 1'
+
+    @pytest.mark.parametrize(
+        "condition",
+        [
+            "role == 1",
+            "role != 1",
+            "role in [1, 2]",
+            "level == 'three'",
+            "remote == 1",
+            "level == true",
+            "role == level",
+            "remote != role",
+        ],
+    )
+    def test_a_comparison_across_types_fails_the_compile(condition: str) -> None:
+>       with pytest.raises(CompileError) as caught:
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE CompileError
+
+libs/py-agents/tests/test_dag_review_fixes.py:61: Failed
+_______ test_a_comparison_across_types_fails_the_compile[level == true] ________
+
+condition = 'level == true'
+
+    @pytest.mark.parametrize(
+        "condition",
+        [
+            "role == 1",
+            "role != 1",
+            "role in [1, 2]",
+            "level == 'three'",
+            "remote == 1",
+            "level == true",
+            "role == level",
+            "remote != role",
+        ],
+    )
+    def test_a_comparison_across_types_fails_the_compile(condition: str) -> None:
+>       with pytest.raises(CompileError) as caught:
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE CompileError
+
+libs/py-agents/tests/test_dag_review_fixes.py:61: Failed
+_______ test_a_comparison_across_types_fails_the_compile[role == level] ________
+
+condition = 'role == level'
+
+    @pytest.mark.parametrize(
+        "condition",
+        [
+            "role == 1",
+            "role != 1",
+            "role in [1, 2]",
+            "level == 'three'",
+            "remote == 1",
+            "level == true",
+            "role == level",
+            "remote != role",
+        ],
+    )
+    def test_a_comparison_across_types_fails_the_compile(condition: str) -> None:
+>       with pytest.raises(CompileError) as caught:
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE CompileError
+
+libs/py-agents/tests/test_dag_review_fixes.py:61: Failed
+_______ test_a_comparison_across_types_fails_the_compile[remote != role] _______
+
+condition = 'remote != role'
+
+    @pytest.mark.parametrize(
+        "condition",
+        [
+            "role == 1",
+            "role != 1",
+            "role in [1, 2]",
+            "level == 'three'",
+            "remote == 1",
+            "level == true",
+            "role == level",
+            "remote != role",
+        ],
+    )
+    def test_a_comparison_across_types_fails_the_compile(condition: str) -> None:
+>       with pytest.raises(CompileError) as caught:
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE CompileError
+
+libs/py-agents/tests/test_dag_review_fixes.py:61: Failed
+_ test_a_date_compared_with_a_non_iso_literal_fails_the_compile[start_date >= '2026-1-5'] _
+
+condition = "start_date >= '2026-1-5'"
+
+    @pytest.mark.parametrize("condition", ["start_date >= '2026-1-5'", "start_date == '01/12/2026'", "start_date < '2026-13-01'"])
+    def test_a_date_compared_with_a_non_iso_literal_fails_the_compile(condition: str) -> None:
+>       with pytest.raises(CompileError) as caught:
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE CompileError
+
+libs/py-agents/tests/test_dag_review_fixes.py:69: Failed
+_ test_a_date_compared_with_a_non_iso_literal_fails_the_compile[start_date == '01/12/2026'] _
+
+condition = "start_date == '01/12/2026'"
+
+    @pytest.mark.parametrize("condition", ["start_date >= '2026-1-5'", "start_date == '01/12/2026'", "start_date < '2026-13-01'"])
+    def test_a_date_compared_with_a_non_iso_literal_fails_the_compile(condition: str) -> None:
+>       with pytest.raises(CompileError) as caught:
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE CompileError
+
+libs/py-agents/tests/test_dag_review_fixes.py:69: Failed
+_ test_a_date_compared_with_a_non_iso_literal_fails_the_compile[start_date < '2026-13-01'] _
+
+condition = "start_date < '2026-13-01'"
+
+    @pytest.mark.parametrize("condition", ["start_date >= '2026-1-5'", "start_date == '01/12/2026'", "start_date < '2026-13-01'"])
+    def test_a_date_compared_with_a_non_iso_literal_fails_the_compile(condition: str) -> None:
+>       with pytest.raises(CompileError) as caught:
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE CompileError
+
+libs/py-agents/tests/test_dag_review_fixes.py:69: Failed
+___________________ test_an_unvalidated_template_is_refused ____________________
+
+    def test_an_unvalidated_template_is_refused() -> None:
+        template = Template.model_construct(key="engineer-india", version=1, status="published", variables=(), tasks=())
+        with pytest.raises(CompileError) as caught:
+>           compile_dag(template, hire())
+
+libs/py-agents/tests/test_dag_review_fixes.py:92: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+libs/py-agents/src/onb_agents/dag/compiler.py:117: in compile_dag
+    order = _order(template)
+            ^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+template = Template(key='engineer-india', name=None, version=1, status='published', variables=(), tasks=())
+
+    def _order(template: Template) -> tuple[str, ...]:
+        edges = {task.id: task.depends_on for task in template.tasks}
+        for task in template.tasks:
+            for dependency in task.depends_on:
+                if dependency not in edges:
+                    raise CompileError(CompileReason.UNKNOWN_DEPENDENCY, f"depends on unknown task {dependency}", task.id)
+        order = graph.topological_order(edges)
+        if not order:
+>           loop = graph.cycles(edges)[0]
+                   ^^^^^^^^^^^^^^^^^^^^^^
+E           IndexError: list index out of range
+
+libs/py-agents/src/onb_agents/dag/compiler.py:143: IndexError
+___________________ test_the_hash_names_the_compiler_version ___________________
+
+    def test_the_hash_names_the_compiler_version() -> None:
+        document = compile_dag(Template.model_validate(seed_data()), hire()).document()
+>       assert document["compiler"] == 1
+               ^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'compiler'
+
+libs/py-agents/tests/test_dag_review_fixes.py:109: KeyError
+=========================== short test summary info ============================
+FAILED libs/py-agents/tests/test_dag_review_fixes.py::test_a_comparison_across_types_fails_the_compile[role == 1]
+FAILED libs/py-agents/tests/test_dag_review_fixes.py::test_a_comparison_across_types_fails_the_compile[role != 1]
+FAILED libs/py-agents/tests/test_dag_review_fixes.py::test_a_comparison_across_types_fails_the_compile[role in [1, 2]]
+FAILED libs/py-agents/tests/test_dag_review_fixes.py::test_a_comparison_across_types_fails_the_compile[level == 'three']
+FAILED libs/py-agents/tests/test_dag_review_fixes.py::test_a_comparison_across_types_fails_the_compile[remote == 1]
+FAILED libs/py-agents/tests/test_dag_review_fixes.py::test_a_comparison_across_types_fails_the_compile[level == true]
+FAILED libs/py-agents/tests/test_dag_review_fixes.py::test_a_comparison_across_types_fails_the_compile[role == level]
+FAILED libs/py-agents/tests/test_dag_review_fixes.py::test_a_comparison_across_types_fails_the_compile[remote != role]
+FAILED libs/py-agents/tests/test_dag_review_fixes.py::test_a_date_compared_with_a_non_iso_literal_fails_the_compile[start_date >= '2026-1-5']
+FAILED libs/py-agents/tests/test_dag_review_fixes.py::test_a_date_compared_with_a_non_iso_literal_fails_the_compile[start_date == '01/12/2026']
+FAILED libs/py-agents/tests/test_dag_review_fixes.py::test_a_date_compared_with_a_non_iso_literal_fails_the_compile[start_date < '2026-13-01']
+FAILED libs/py-agents/tests/test_dag_review_fixes.py::test_an_unvalidated_template_is_refused
+FAILED libs/py-agents/tests/test_dag_review_fixes.py::test_the_hash_names_the_compiler_version
+13 failed, 10 passed in 0.35s

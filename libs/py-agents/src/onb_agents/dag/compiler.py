@@ -24,20 +24,24 @@ import hashlib
 import json
 from collections.abc import Collection, Mapping
 from dataclasses import dataclass
-from typing import Any, Literal
+from typing import Any, Final, Literal
 
 from onb_contracts.templates import Template, TemplateTask
 from onb_guardrails.pii import redact
+from pydantic import ValidationError
 
 from onb_agents.templates import ExpressionError, graph, parse_when
 
+from .conditions import check_condition
 from .errors import CompileError, CompileReason
 from .sla import resolve_due
 from .variables import HireValue, hire_values
 
-__all__ = ["CompiledDag", "CompiledTask", "TaskStatus", "compile_dag"]
+__all__ = ["COMPILER_VERSION", "CompiledDag", "CompiledTask", "TaskStatus", "compile_dag"]
 
 TaskStatus = Literal["pending", "skipped"]
+# Part of every hash: bump it when the compiled document changes shape, so old and new hashes differ.
+COMPILER_VERSION: Final = 1
 
 
 @dataclass(frozen=True, slots=True)
@@ -96,6 +100,7 @@ class CompiledDag:
 
     def document(self, *, include_hash: bool = True) -> dict[str, Any]:
         document: dict[str, Any] = {
+            "compiler": COMPILER_VERSION,
             "template_key": self.template_key,
             "template_version": self.template_version,
             "order": list(self.order),
@@ -129,6 +134,10 @@ def _published_version(template: object) -> int:
         raise CompileError(CompileReason.NOT_PUBLISHED, "only a validated, published template version compiles")
     if template.status != "published" or template.version is None:
         raise CompileError(CompileReason.NOT_PUBLISHED, f"template {template.key} is not a published version")
+    try:  # a Template built with `model_construct` skipped every schema check
+        Template.model_validate(template.model_dump())
+    except ValidationError:
+        raise CompileError(CompileReason.NOT_PUBLISHED, "the template does not pass its schema") from None
     return template.version
 
 
@@ -146,7 +155,7 @@ def _order(template: Template) -> tuple[str, ...]:
 
 
 def _compile_task(template: Template, task: TemplateTask, values: Mapping[str, HireValue]) -> CompiledTask:
-    skip_reason = _skip_reason(task, values)
+    skip_reason = _skip_reason(template, task, values)
     due = resolve_due(task.sla, template, values, task.id) if task.sla is not None else None
     return CompiledTask(
         task=task.model_copy(deep=True),
@@ -156,7 +165,7 @@ def _compile_task(template: Template, task: TemplateTask, values: Mapping[str, H
     )
 
 
-def _skip_reason(task: TemplateTask, values: Mapping[str, HireValue]) -> str | None:
+def _skip_reason(template: Template, task: TemplateTask, values: Mapping[str, HireValue]) -> str | None:
     """`None` when the task runs; the reason when its `when` is false. Undecidable fails the compile."""
     if task.when is None:
         return None
@@ -167,6 +176,7 @@ def _skip_reason(task: TemplateTask, values: Mapping[str, HireValue]) -> str | N
     for name in sorted(condition.names):
         if name not in values:
             raise CompileError(CompileReason.MISSING_VARIABLE, f"when reads {name}, which the hire lacks", task.id)
+    check_condition(condition, template, values, task.id)
     try:
         holds = condition.evaluate(values)
     except ExpressionError as error:

@@ -1,5 +1,5 @@
 M1 killed    a false `when` never skips (box 1)
-    failed: test_sales_variables_mark_bitbucket_access_skipped_with_a_reason, test_a_skipped_task_stays_in_the_dag_with_its_edges, test_a_designer_keeps_security_training_and_skips_bitbucket, test_a_dependent_of_a_skipped_task_is_not_blocked (+2 more)
+    failed: test_sales_variables_mark_bitbucket_access_skipped_with_a_reason, test_a_skipped_task_stays_in_the_dag_with_its_edges, test_a_designer_keeps_security_training_and_skips_bitbucket, test_a_dependent_of_a_skipped_task_is_not_blocked (+4 more)
 M2 killed    skipped tasks block their dependents (box 2)
     failed: test_a_dependent_of_a_skipped_task_is_not_blocked, test_every_compiled_graph_is_acyclic_and_skipped_tasks_never_block
 M3 killed    skipped tasks are offered as ready (boxes 1, 2)
@@ -25,7 +25,7 @@ M12 killed    an SLA on a non-date variable is not refused
 M13 killed    an SLA date outside the calendar crashes instead of failing closed
     failed: test_a_due_date_outside_the_calendar_fails_the_compile
 M14 killed    an undecidable condition reads as false
-    failed: test_a_condition_that_cannot_be_decided_fails_the_compile
+    failed: test_a_condition_that_is_not_true_or_false_fails_the_compile[role], test_a_condition_that_is_not_true_or_false_fails_the_compile[level], test_a_condition_that_is_not_true_or_false_fails_the_compile[role or remote]
 M15 killed    a missing variable is not named as missing
     failed: test_a_missing_variable_fails_the_compile[role]
 M16 killed    an unpublished template compiles
@@ -33,15 +33,15 @@ M16 killed    an unpublished template compiles
 M17 killed    a datetime passes as a date
     failed: test_a_variable_of_the_wrong_type_fails_the_compile[start_date-value7]
 M18 killed    enum membership is not checked
-    failed: test_a_variable_of_the_wrong_type_fails_the_compile[role-astronaut]
+    failed: test_a_variable_of_the_wrong_type_fails_the_compile[role-astronaut], test_a_bad_variable_message_never_echoes_the_value[role-zz-sentinel-4242]
 M19 killed    a bool passes as a number
     failed: test_boolean_and_number_variables_are_strict[variable1-3-True]
 M20 killed    a non-finite number passes
     failed: test_boolean_and_number_variables_are_strict[variable2-2.5-nan]
 M21 killed    a bool check accepts anything
-    failed: test_boolean_and_number_variables_are_strict[variable0-True-1]
+    failed: test_boolean_and_number_variables_are_strict[variable0-True-1], test_a_bad_variable_message_never_echoes_the_value[remote-zz-sentinel-4242]
 M22 killed    a text check accepts anything
-    failed: test_a_variable_of_the_wrong_type_fails_the_compile[location-7]
+    failed: test_a_variable_of_the_wrong_type_fails_the_compile[location-7], test_a_bad_variable_message_never_echoes_the_value[location-4242]
 M23 killed    a non-mapping of variables is accepted
     failed: test_variables_must_be_a_mapping
 M24 killed    compiled tasks share the template's inputs dict
@@ -58,6 +58,20 @@ M29 killed    the YYYY-MM-DD pattern is not enforced
     failed: test_a_variable_of_the_wrong_type_fails_the_compile[start_date-20261201], test_a_variable_of_the_wrong_type_fails_the_compile[start_date-2026-W48-2]
 M30 killed    a missing SLA variable is not named as missing
     failed: test_a_missing_variable_fails_the_compile[start_date]
+M31 killed    a literal of another kind is compared anyway
+    failed: test_a_comparison_across_types_fails_the_compile[role == 1], test_a_comparison_across_types_fails_the_compile[role != 1], test_a_comparison_across_types_fails_the_compile[role in [1, 2]], test_a_comparison_across_types_fails_the_compile[level == 'three'] (+2 more)
+M32 killed    two variables of different kinds are compared anyway
+    failed: test_a_comparison_across_types_fails_the_compile[role == level], test_a_comparison_across_types_fails_the_compile[remote != role]
+M33 killed    a date is compared with a non-ISO literal
+    failed: test_a_date_compared_with_a_non_iso_literal_fails_the_compile[start_date >= '2026-1-5'], test_a_date_compared_with_a_non_iso_literal_fails_the_compile[start_date == '01/12/2026'], test_a_date_compared_with_a_non_iso_literal_fails_the_compile[start_date < '2026-13-01']
+M34 killed    an invalid ISO-shaped date literal passes
+    failed: test_a_date_compared_with_a_non_iso_literal_fails_the_compile[start_date < '2026-13-01']
+M35 killed    a template built with model_construct compiles
+    failed: test_an_unvalidated_template_is_refused
+M36 killed    the hash leaves out the compiler version
+    failed: test_the_hash_is_stable_across_runs, test_the_hash_names_the_compiler_version
+M37 killed    a non-boolean condition is not refused
+    failed: test_a_condition_that_is_not_true_or_false_fails_the_compile[role], test_a_condition_that_is_not_true_or_false_fails_the_compile[level], test_a_condition_that_is_not_true_or_false_fails_the_compile[role or remote]
 
 source diff after all mutations: 0 files differ
-mutations: 30, killed: 30, survivors: none
+mutations: 37, killed: 37, survivors: none

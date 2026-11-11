@@ -14,9 +14,13 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[3]
 SRC = REPO / "libs/py-agents/src/onb_agents/dag"
-TESTS = ["libs/py-agents/tests/test_dag_compiler.py", "libs/py-agents/tests/test_dag_properties.py"]
+TESTS = [
+    "libs/py-agents/tests/test_dag_compiler.py",
+    "libs/py-agents/tests/test_dag_properties.py",
+    "libs/py-agents/tests/test_dag_review_fixes.py",
+]
 
-C, V, S = SRC / "compiler.py", SRC / "variables.py", SRC / "sla.py"
+C, V, S, K = SRC / "compiler.py", SRC / "variables.py", SRC / "sla.py", SRC / "conditions.py"
 
 MUTATIONS: list[tuple[str, str, Path, str, str]] = [
     (
@@ -184,7 +188,7 @@ MUTATIONS: list[tuple[str, str, Path, str, str]] = [
         "M29",
         "the YYYY-MM-DD pattern is not enforced",
         V,
-        "if isinstance(value, str) and _ISO_DATE.fullmatch(value):",
+        "if isinstance(value, str) and ISO_DATE.fullmatch(value):",
         "if isinstance(value, str):",
     ),
     (
@@ -193,6 +197,44 @@ MUTATIONS: list[tuple[str, str, Path, str, str]] = [
         S,
         '        raise CompileError(CompileReason.MISSING_VARIABLE, f"sla.due reads {name}, which the hire lacks", task_id)',
         "        pass",
+    ),
+    # Review fixes (test_dag_review_fixes.py)
+    (
+        "M31",
+        "a literal of another kind is compared anyway",
+        K,
+        "        if _kind(values[name]) != _kind(literal):\n",
+        "        if False:\n",
+    ),
+    (
+        "M32",
+        "two variables of different kinds are compared anyway",
+        K,
+        "        if _kind(values[left]) != _kind(values[right]):\n",
+        "        if False:\n",
+    ),
+    (
+        "M33",
+        "a date is compared with a non-ISO literal",
+        K,
+        'if variable is not None and variable.type == "date" and not _iso_date(str(literal)):',
+        "if False:",
+    ),
+    ("M34", "an invalid ISO-shaped date literal passes", K, "        date.fromisoformat(value)\n", "        pass\n"),
+    (
+        "M35",
+        "a template built with model_construct compiles",
+        C,
+        "        Template.model_validate(template.model_dump())\n",
+        "        pass\n",
+    ),
+    ("M36", "the hash leaves out the compiler version", C, '            "compiler": COMPILER_VERSION,\n', ""),
+    (
+        "M37",
+        "a non-boolean condition is not refused",
+        C,
+        '        raise CompileError(CompileReason.BAD_CONDITION, f"when cannot be decided ({error})", task.id) from None',
+        "        holds = bool(task.when)",
     ),
 ]
 
@@ -212,7 +254,7 @@ def run_tests() -> tuple[int, list[str]]:
 
 def main() -> int:
     survivors: list[str] = []
-    originals = {path: path.read_text() for path in (C, V, S)}
+    originals = {path: path.read_text() for path in (C, V, S, K)}
     for ident, what, path, old, new in MUTATIONS:
         source = originals[path]
         if source.count(old) != 1:
