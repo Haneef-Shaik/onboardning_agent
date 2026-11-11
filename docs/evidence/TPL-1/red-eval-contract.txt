@@ -1,0 +1,3 @@
+FAILED libs/py-evals/tests/test_template_contract.py::test_the_template_contract_is_the_real_template_schema
+FAILED libs/py-evals/tests/test_template_contract.py::test_a_change_request_adds_tasks_of_the_real_task_schema
+2 failed in 0.11s
