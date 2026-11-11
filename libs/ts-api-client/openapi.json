@@ -1,6 +1,24 @@
 {
   "components": {
     "schemas": {
+      "AadhaarConsentInput": {
+        "additionalProperties": false,
+        "description": "The hire's consent to store their Aadhaar, and for what (PRD §7.10 Aadhaar, Retention).",
+        "properties": {
+          "purpose": {
+            "maxLength": 500,
+            "minLength": 1,
+            "pattern": "\\S",
+            "title": "Purpose",
+            "type": "string"
+          }
+        },
+        "required": [
+          "purpose"
+        ],
+        "title": "AadhaarConsentInput",
+        "type": "object"
+      },
       "AgentCollections": {
         "additionalProperties": false,
         "properties": {
@@ -297,6 +315,16 @@
         ],
         "title": "AgentsEnvelope",
         "type": "object"
+      },
+      "AlternativeIdType": {
+        "description": "The ID a hire may give instead of Aadhaar (PRD §7.10 Aadhaar). Only the type is recorded here;\nthe document itself is an encrypted upload (HIRE-2).",
+        "enum": [
+          "passport",
+          "voter_id",
+          "driving_licence"
+        ],
+        "title": "AlternativeIdType",
+        "type": "string"
       },
       "AuditActor": {
         "additionalProperties": false,
@@ -615,6 +643,300 @@
         "title": "HealthEnvelope",
         "type": "object"
       },
+      "HireEnvelope": {
+        "additionalProperties": false,
+        "description": "One hire, masked.",
+        "properties": {
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HireRecord"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "error": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ErrorBody"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta",
+            "default": {}
+          },
+          "success": {
+            "title": "Success",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "success",
+          "data",
+          "error",
+          "meta"
+        ],
+        "title": "HireEnvelope",
+        "type": "object"
+      },
+      "HireIdProof": {
+        "additionalProperties": false,
+        "properties": {
+          "aadhaar_consent": {
+            "title": "Aadhaar Consent",
+            "type": "boolean"
+          },
+          "alternative_id": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AlternativeIdType"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "aadhaar_consent",
+          "alternative_id"
+        ],
+        "title": "HireIdProof",
+        "type": "object"
+      },
+      "HirePiiInput": {
+        "additionalProperties": false,
+        "description": "The sensitive values given at creation. Email is required: hires are deduplicated by it.",
+        "properties": {
+          "aadhaar": {
+            "anyOf": [
+              {
+                "maxLength": 254,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Aadhaar"
+          },
+          "account_holder_name": {
+            "anyOf": [
+              {
+                "maxLength": 254,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Account Holder Name"
+          },
+          "bank_account": {
+            "anyOf": [
+              {
+                "maxLength": 254,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bank Account"
+          },
+          "email": {
+            "maxLength": 254,
+            "minLength": 3,
+            "title": "Email",
+            "type": "string"
+          },
+          "ifsc": {
+            "anyOf": [
+              {
+                "maxLength": 254,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ifsc"
+          },
+          "mobile": {
+            "anyOf": [
+              {
+                "maxLength": 254,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mobile"
+          },
+          "pan": {
+            "anyOf": [
+              {
+                "maxLength": 254,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pan"
+          }
+        },
+        "required": [
+          "email"
+        ],
+        "title": "HirePiiInput",
+        "type": "object"
+      },
+      "HireRecord": {
+        "additionalProperties": false,
+        "description": "A hire as every role sees it: sensitive fields masked (FR-P1), keyed by field.",
+        "properties": {
+          "created_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "created_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created By"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "id_proof": {
+            "$ref": "#/components/schemas/HireIdProof"
+          },
+          "location": {
+            "title": "Location",
+            "type": "string"
+          },
+          "manager_id": {
+            "title": "Manager Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "notes": {
+            "title": "Notes",
+            "type": "string"
+          },
+          "pii": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "propertyNames": {
+              "$ref": "#/components/schemas/PiiField"
+            },
+            "title": "Pii",
+            "type": "object"
+          },
+          "role": {
+            "title": "Role",
+            "type": "string"
+          },
+          "start_date": {
+            "format": "date",
+            "title": "Start Date",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "role",
+          "location",
+          "start_date",
+          "manager_id",
+          "notes",
+          "pii",
+          "id_proof",
+          "created_by",
+          "created_at"
+        ],
+        "title": "HireRecord",
+        "type": "object"
+      },
+      "HiresEnvelope": {
+        "additionalProperties": false,
+        "description": "One page of hires, masked; `meta.page` has the total.",
+        "properties": {
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/HireRecord"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ErrorBody"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta",
+            "default": {}
+          },
+          "success": {
+            "title": "Success",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "success",
+          "data",
+          "error",
+          "meta"
+        ],
+        "title": "HiresEnvelope",
+        "type": "object"
+      },
       "LoginRequest": {
         "additionalProperties": false,
         "properties": {
@@ -745,6 +1067,82 @@
         "title": "Meta",
         "type": "object"
       },
+      "NewHireRequest": {
+        "additionalProperties": false,
+        "description": "`POST /hires`. An Aadhaar needs `aadhaar_consent`; a hire who declines gives `alternative_id`.",
+        "properties": {
+          "aadhaar_consent": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AadhaarConsentInput"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "alternative_id": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AlternativeIdType"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "location": {
+            "maxLength": 100,
+            "minLength": 1,
+            "pattern": "\\S",
+            "title": "Location",
+            "type": "string"
+          },
+          "manager_id": {
+            "pattern": "^[A-Za-z0-9_.:-]{1,128}$",
+            "title": "Manager Id",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 200,
+            "minLength": 1,
+            "pattern": "\\S",
+            "title": "Name",
+            "type": "string"
+          },
+          "notes": {
+            "default": "",
+            "maxLength": 1000,
+            "title": "Notes",
+            "type": "string"
+          },
+          "pii": {
+            "$ref": "#/components/schemas/HirePiiInput"
+          },
+          "role": {
+            "maxLength": 100,
+            "minLength": 1,
+            "pattern": "\\S",
+            "title": "Role",
+            "type": "string"
+          },
+          "start_date": {
+            "format": "date",
+            "title": "Start Date",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "role",
+          "location",
+          "start_date",
+          "manager_id",
+          "pii"
+        ],
+        "title": "NewHireRequest",
+        "type": "object"
+      },
       "PageMeta": {
         "additionalProperties": false,
         "properties": {
@@ -771,6 +1169,317 @@
           "limit"
         ],
         "title": "PageMeta",
+        "type": "object"
+      },
+      "PiiAccessActor": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "type": {
+            "$ref": "#/components/schemas/PiiAccessActorType"
+          }
+        },
+        "required": [
+          "type",
+          "id"
+        ],
+        "title": "PiiAccessActor",
+        "type": "object"
+      },
+      "PiiAccessActorType": {
+        "enum": [
+          "user",
+          "service"
+        ],
+        "title": "PiiAccessActorType",
+        "type": "string"
+      },
+      "PiiAccessEnvelope": {
+        "additionalProperties": false,
+        "description": "One page of the org's PII access log, newest first; `meta.page` has the total.",
+        "properties": {
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/PiiAccessRecord"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ErrorBody"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta",
+            "default": {}
+          },
+          "success": {
+            "title": "Success",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "success",
+          "data",
+          "error",
+          "meta"
+        ],
+        "title": "PiiAccessEnvelope",
+        "type": "object"
+      },
+      "PiiAccessKind": {
+        "enum": [
+          "reveal",
+          "resolve"
+        ],
+        "title": "PiiAccessKind",
+        "type": "string"
+      },
+      "PiiAccessRecord": {
+        "additionalProperties": false,
+        "description": "One entry of `pii_access_log` (FR-P5): who saw which field of which hire, masked, and why.",
+        "properties": {
+          "actor": {
+            "$ref": "#/components/schemas/PiiAccessActor"
+          },
+          "at": {
+            "format": "date-time",
+            "title": "At",
+            "type": "string"
+          },
+          "field": {
+            "$ref": "#/components/schemas/PiiField"
+          },
+          "hire_id": {
+            "title": "Hire Id",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/PiiAccessKind"
+          },
+          "masked": {
+            "title": "Masked",
+            "type": "string"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Id"
+          },
+          "sink": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sink"
+          },
+          "task_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Task Id"
+          },
+          "token": {
+            "title": "Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "actor",
+          "hire_id",
+          "field",
+          "token",
+          "masked",
+          "reason",
+          "sink",
+          "run_id",
+          "task_id",
+          "at"
+        ],
+        "title": "PiiAccessRecord",
+        "type": "object"
+      },
+      "PiiField": {
+        "description": "The sensitive fields of a hire (PRD §7.10). Document scans are HIRE-2's.",
+        "enum": [
+          "mobile",
+          "email",
+          "aadhaar",
+          "pan",
+          "bank_account",
+          "ifsc",
+          "account_holder_name"
+        ],
+        "title": "PiiField",
+        "type": "string"
+      },
+      "PiiUpdateRequest": {
+        "additionalProperties": false,
+        "description": "`PUT /hires/{id}/pii/{field}`: a new value (a new vault version and token, FR-P4).",
+        "properties": {
+          "aadhaar_consent": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AadhaarConsentInput"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "value": {
+            "maxLength": 254,
+            "minLength": 1,
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "value"
+        ],
+        "title": "PiiUpdateRequest",
+        "type": "object"
+      },
+      "RevealEnvelope": {
+        "additionalProperties": false,
+        "description": "A revealed value. Not cached (`Cache-Control: no-store`).",
+        "properties": {
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RevealedValue"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "error": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ErrorBody"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta",
+            "default": {}
+          },
+          "success": {
+            "title": "Success",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "success",
+          "data",
+          "error",
+          "meta"
+        ],
+        "title": "RevealEnvelope",
+        "type": "object"
+      },
+      "RevealRequest": {
+        "additionalProperties": false,
+        "description": "`POST /hires/{id}/pii/{field}/reveal`: the reason is mandatory (FR-P2).",
+        "properties": {
+          "reason": {
+            "maxLength": 500,
+            "minLength": 1,
+            "pattern": "\\S",
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "reason"
+        ],
+        "title": "RevealRequest",
+        "type": "object"
+      },
+      "RevealedValue": {
+        "additionalProperties": false,
+        "description": "One revealed value; the UI hides it again after `expires_in_seconds`.",
+        "properties": {
+          "access_id": {
+            "title": "Access Id",
+            "type": "string"
+          },
+          "expires_in_seconds": {
+            "title": "Expires In Seconds",
+            "type": "integer"
+          },
+          "field": {
+            "$ref": "#/components/schemas/PiiField"
+          },
+          "hire_id": {
+            "title": "Hire Id",
+            "type": "string"
+          },
+          "value": {
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "hire_id",
+          "field",
+          "value",
+          "access_id",
+          "expires_in_seconds"
+        ],
+        "title": "RevealedValue",
         "type": "object"
       },
       "Role": {
@@ -1203,6 +1912,295 @@
         ]
       }
     },
+    "/hires": {
+      "get": {
+        "operationId": "listHires",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "maximum": 10001,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HiresEnvelope"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error, in the envelope"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Hires",
+        "tags": [
+          "hires"
+        ]
+      },
+      "post": {
+        "operationId": "createHire",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewHireRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HireEnvelope"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error, in the envelope"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create Hire",
+        "tags": [
+          "hires"
+        ]
+      }
+    },
+    "/hires/{hire_id}": {
+      "get": {
+        "operationId": "getHire",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "hire_id",
+            "required": true,
+            "schema": {
+              "maxLength": 66,
+              "pattern": "^h_[A-Za-z0-9_]{1,64}$",
+              "title": "Hire Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HireEnvelope"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error, in the envelope"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Hire",
+        "tags": [
+          "hires"
+        ]
+      }
+    },
+    "/hires/{hire_id}/pii/{field}": {
+      "put": {
+        "operationId": "updateHirePii",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "hire_id",
+            "required": true,
+            "schema": {
+              "maxLength": 66,
+              "pattern": "^h_[A-Za-z0-9_]{1,64}$",
+              "title": "Hire Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "field",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/PiiField"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PiiUpdateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HireEnvelope"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error, in the envelope"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Update Hire Pii",
+        "tags": [
+          "hires"
+        ]
+      }
+    },
+    "/hires/{hire_id}/pii/{field}/reveal": {
+      "post": {
+        "operationId": "revealHirePii",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "hire_id",
+            "required": true,
+            "schema": {
+              "maxLength": 66,
+              "pattern": "^h_[A-Za-z0-9_]{1,64}$",
+              "title": "Hire Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "field",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/PiiField"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RevealRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RevealEnvelope"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error, in the envelope"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Reveal Hire Pii",
+        "tags": [
+          "hires"
+        ]
+      }
+    },
     "/me": {
       "get": {
         "operationId": "getMe",
@@ -1236,6 +2234,118 @@
         "summary": "Me",
         "tags": [
           "auth"
+        ]
+      }
+    },
+    "/pii-access-log": {
+      "get": {
+        "operationId": "listPiiAccessLog",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "hire_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 66,
+                  "pattern": "^h_[A-Za-z0-9_]{1,64}$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Hire Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "field",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/PiiField"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Field"
+            }
+          },
+          {
+            "in": "query",
+            "name": "kind",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/PiiAccessKind"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kind"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "maximum": 10001,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PiiAccessEnvelope"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error, in the envelope"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Pii Access Log",
+        "tags": [
+          "hires"
         ]
       }
     }

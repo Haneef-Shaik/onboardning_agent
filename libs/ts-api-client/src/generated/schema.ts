@@ -89,6 +89,75 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/hires": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Hires */
+        get: operations["listHires"];
+        put?: never;
+        /** Create Hire */
+        post: operations["createHire"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/hires/{hire_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Hire */
+        get: operations["getHire"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/hires/{hire_id}/pii/{field}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Update Hire Pii */
+        put: operations["updateHirePii"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/hires/{hire_id}/pii/{field}/reveal": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reveal Hire Pii */
+        post: operations["revealHirePii"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/me": {
         parameters: {
             query?: never;
@@ -106,10 +175,35 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/pii-access-log": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Pii Access Log */
+        get: operations["listPiiAccessLog"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * AadhaarConsentInput
+         * @description The hire's consent to store their Aadhaar, and for what (PRD §7.10 Aadhaar, Retention).
+         */
+        AadhaarConsentInput: {
+            /** Purpose */
+            purpose: string;
+        };
         /** AgentCollections */
         AgentCollections: {
             /** Read */
@@ -203,6 +297,13 @@ export interface components {
             /** Success */
             success: boolean;
         };
+        /**
+         * AlternativeIdType
+         * @description The ID a hire may give instead of Aadhaar (PRD §7.10 Aadhaar). Only the type is recorded here;
+         *     the document itself is an encrypted upload (HIRE-2).
+         * @enum {string}
+         */
+        AlternativeIdType: "passport" | "voter_id" | "driving_licence";
         /** AuditActor */
         AuditActor: {
             /** Id */
@@ -315,6 +416,89 @@ export interface components {
             /** Success */
             success: boolean;
         };
+        /**
+         * HireEnvelope
+         * @description One hire, masked.
+         */
+        HireEnvelope: {
+            data: components["schemas"]["HireRecord"] | null;
+            error: components["schemas"]["ErrorBody"] | null;
+            /** @default {} */
+            meta: components["schemas"]["Meta"];
+            /** Success */
+            success: boolean;
+        };
+        /** HireIdProof */
+        HireIdProof: {
+            /** Aadhaar Consent */
+            aadhaar_consent: boolean;
+            alternative_id: components["schemas"]["AlternativeIdType"] | null;
+        };
+        /**
+         * HirePiiInput
+         * @description The sensitive values given at creation. Email is required: hires are deduplicated by it.
+         */
+        HirePiiInput: {
+            /** Aadhaar */
+            aadhaar?: string | null;
+            /** Account Holder Name */
+            account_holder_name?: string | null;
+            /** Bank Account */
+            bank_account?: string | null;
+            /** Email */
+            email: string;
+            /** Ifsc */
+            ifsc?: string | null;
+            /** Mobile */
+            mobile?: string | null;
+            /** Pan */
+            pan?: string | null;
+        };
+        /**
+         * HireRecord
+         * @description A hire as every role sees it: sensitive fields masked (FR-P1), keyed by field.
+         */
+        HireRecord: {
+            /** Created At */
+            created_at: string | null;
+            /** Created By */
+            created_by: string | null;
+            /** Id */
+            id: string;
+            id_proof: components["schemas"]["HireIdProof"];
+            /** Location */
+            location: string;
+            /** Manager Id */
+            manager_id: string;
+            /** Name */
+            name: string;
+            /** Notes */
+            notes: string;
+            /** Pii */
+            pii: {
+                [key: string]: string;
+            };
+            /** Role */
+            role: string;
+            /**
+             * Start Date
+             * Format: date
+             */
+            start_date: string;
+        };
+        /**
+         * HiresEnvelope
+         * @description One page of hires, masked; `meta.page` has the total.
+         */
+        HiresEnvelope: {
+            /** Data */
+            data: components["schemas"]["HireRecord"][] | null;
+            error: components["schemas"]["ErrorBody"] | null;
+            /** @default {} */
+            meta: components["schemas"]["Meta"];
+            /** Success */
+            success: boolean;
+        };
         /** LoginRequest */
         LoginRequest: {
             /** Email */
@@ -352,6 +536,33 @@ export interface components {
             /** Trace Id */
             trace_id: string | null;
         };
+        /**
+         * NewHireRequest
+         * @description `POST /hires`. An Aadhaar needs `aadhaar_consent`; a hire who declines gives `alternative_id`.
+         */
+        NewHireRequest: {
+            aadhaar_consent?: components["schemas"]["AadhaarConsentInput"] | null;
+            alternative_id?: components["schemas"]["AlternativeIdType"] | null;
+            /** Location */
+            location: string;
+            /** Manager Id */
+            manager_id: string;
+            /** Name */
+            name: string;
+            /**
+             * Notes
+             * @default
+             */
+            notes: string;
+            pii: components["schemas"]["HirePiiInput"];
+            /** Role */
+            role: string;
+            /**
+             * Start Date
+             * Format: date
+             */
+            start_date: string;
+        };
         /** PageMeta */
         PageMeta: {
             /** Limit */
@@ -360,6 +571,115 @@ export interface components {
             page: number;
             /** Total */
             total: number;
+        };
+        /** PiiAccessActor */
+        PiiAccessActor: {
+            /** Id */
+            id: string;
+            type: components["schemas"]["PiiAccessActorType"];
+        };
+        /**
+         * PiiAccessActorType
+         * @enum {string}
+         */
+        PiiAccessActorType: "user" | "service";
+        /**
+         * PiiAccessEnvelope
+         * @description One page of the org's PII access log, newest first; `meta.page` has the total.
+         */
+        PiiAccessEnvelope: {
+            /** Data */
+            data: components["schemas"]["PiiAccessRecord"][] | null;
+            error: components["schemas"]["ErrorBody"] | null;
+            /** @default {} */
+            meta: components["schemas"]["Meta"];
+            /** Success */
+            success: boolean;
+        };
+        /**
+         * PiiAccessKind
+         * @enum {string}
+         */
+        PiiAccessKind: "reveal" | "resolve";
+        /**
+         * PiiAccessRecord
+         * @description One entry of `pii_access_log` (FR-P5): who saw which field of which hire, masked, and why.
+         */
+        PiiAccessRecord: {
+            actor: components["schemas"]["PiiAccessActor"];
+            /**
+             * At
+             * Format: date-time
+             */
+            at: string;
+            field: components["schemas"]["PiiField"];
+            /** Hire Id */
+            hire_id: string;
+            /** Id */
+            id: string;
+            kind: components["schemas"]["PiiAccessKind"];
+            /** Masked */
+            masked: string;
+            /** Reason */
+            reason: string | null;
+            /** Run Id */
+            run_id: string | null;
+            /** Sink */
+            sink: string | null;
+            /** Task Id */
+            task_id: string | null;
+            /** Token */
+            token: string;
+        };
+        /**
+         * PiiField
+         * @description The sensitive fields of a hire (PRD §7.10). Document scans are HIRE-2's.
+         * @enum {string}
+         */
+        PiiField: "mobile" | "email" | "aadhaar" | "pan" | "bank_account" | "ifsc" | "account_holder_name";
+        /**
+         * PiiUpdateRequest
+         * @description `PUT /hires/{id}/pii/{field}`: a new value (a new vault version and token, FR-P4).
+         */
+        PiiUpdateRequest: {
+            aadhaar_consent?: components["schemas"]["AadhaarConsentInput"] | null;
+            /** Value */
+            value: string;
+        };
+        /**
+         * RevealEnvelope
+         * @description A revealed value. Not cached (`Cache-Control: no-store`).
+         */
+        RevealEnvelope: {
+            data: components["schemas"]["RevealedValue"] | null;
+            error: components["schemas"]["ErrorBody"] | null;
+            /** @default {} */
+            meta: components["schemas"]["Meta"];
+            /** Success */
+            success: boolean;
+        };
+        /**
+         * RevealRequest
+         * @description `POST /hires/{id}/pii/{field}/reveal`: the reason is mandatory (FR-P2).
+         */
+        RevealRequest: {
+            /** Reason */
+            reason: string;
+        };
+        /**
+         * RevealedValue
+         * @description One revealed value; the UI hides it again after `expires_in_seconds`.
+         */
+        RevealedValue: {
+            /** Access Id */
+            access_id: string;
+            /** Expires In Seconds */
+            expires_in_seconds: number;
+            field: components["schemas"]["PiiField"];
+            /** Hire Id */
+            hire_id: string;
+            /** Value */
+            value: string;
         };
         /**
          * Role
@@ -564,6 +884,174 @@ export interface operations {
             };
         };
     };
+    listHires: {
+        parameters: {
+            query?: {
+                page?: number;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HiresEnvelope"];
+                };
+            };
+            /** @description Error, in the envelope */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    createHire: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NewHireRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HireEnvelope"];
+                };
+            };
+            /** @description Error, in the envelope */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    getHire: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                hire_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HireEnvelope"];
+                };
+            };
+            /** @description Error, in the envelope */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    updateHirePii: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                hire_id: string;
+                field: components["schemas"]["PiiField"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PiiUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HireEnvelope"];
+                };
+            };
+            /** @description Error, in the envelope */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    revealHirePii: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                hire_id: string;
+                field: components["schemas"]["PiiField"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RevealRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RevealEnvelope"];
+                };
+            };
+            /** @description Error, in the envelope */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
     getMe: {
         parameters: {
             query?: never;
@@ -580,6 +1068,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MeEnvelope"];
+                };
+            };
+            /** @description Error, in the envelope */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    listPiiAccessLog: {
+        parameters: {
+            query?: {
+                hire_id?: string | null;
+                field?: components["schemas"]["PiiField"] | null;
+                kind?: components["schemas"]["PiiAccessKind"] | null;
+                page?: number;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PiiAccessEnvelope"];
                 };
             };
             /** @description Error, in the envelope */
