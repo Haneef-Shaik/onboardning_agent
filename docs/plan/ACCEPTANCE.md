@@ -39,7 +39,7 @@ a result is malformed.
 | U5 | Manager approves/rejects from the web inbox or the Telegram mock with an AI-prepared summary | HIL-1, NOTIF-1, UI-6, E2E-1 | MS-6 | open |
 | U6 | HR asks "why is Priya's onboarding stuck?" and gets a grounded answer | CHAT-1, UI-7 | MS-5 | open |
 | U7 | HR_ADMIN opens a run's trace and sees every agent, LLM and tool call | F-4, RUN-3, UI-5, DEMO-1 | MS-6 | open |
-| U8 | HR_ADMIN sees which agent may access which MCP tools | REG-1, HUB-1, UI-8 | MS-5 | open |
+| U8 | HR_ADMIN sees which agent may access which MCP tools | REG-1, HUB-1, UI-8 | MS-5 | pass · 2026-11-11 · compose · docs/evidence/UI-8/playwright-via-caddy.txt |
 | U9 | Manager proposes a template change that HR can adopt | TB-2, UI-3, E2E-1 | MS-6 | open |
 | U10 | HR_ADMIN switches an agent's model/connector via configuration | LLM-1, DEMO-1 | MS-6 | open |
 

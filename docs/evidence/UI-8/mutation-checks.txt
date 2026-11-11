@@ -1,0 +1,38 @@
+M1 CAUGHT · eval routes are HR_ADMIN only · apps/api/src/onb_api/evals/routes.py
+    FAILED apps/api/tests/test_evals_route.py::test_eval_runs_are_hr_admin_only[hr-/evals/runs/evr_20261102T090000Z_0000aaa1]
+    FAILED apps/api/tests/test_evals_route.py::test_eval_runs_are_hr_admin_only[hr-/evals/runs]
+    FAILED apps/api/tests/test_evals_route.py::test_hr_and_managers_are_refused_before_the_store_is_read
+    FAILED apps/api/tests/test_role_matrix.py::test_role_matrix[GET /evals/runs-HR]
+    FAILED apps/api/tests/test_role_matrix.py::test_role_matrix[GET /evals/runs/{run_id}-HR]
+M2 CAUGHT · another org's run is 404 like a missing one · apps/api/src/onb_api/evals/routes.py
+    FAILED apps/api/tests/test_evals_route.py::test_another_orgs_run_is_not_found_like_a_missing_one
+M3 CAUGHT · the list honours the agent filter · apps/api/src/onb_api/evals/store.py
+    FAILED apps/api/tests/test_evals_route.py::test_the_list_filters_by_agent_and_pages
+M4 CAUGHT · runs come newest first · apps/api/src/onb_api/evals/store.py
+    FAILED apps/api/tests/test_evals_route.py::test_hr_admin_lists_the_orgs_runs_newest_first
+    FAILED apps/api/tests/test_evals_route.py::test_the_list_filters_by_agent_and_pages
+M5 CAUGHT · agent records carry the resolved connector and model · apps/api/src/onb_api/agents/routes.py
+    FAILED apps/api/tests/test_agents_route.py::test_each_agent_shows_the_connector_and_model_it_resolves_to
+    FAILED apps/api/tests/test_agents_route.py::test_the_resolved_model_follows_the_environment
+M6 CAUGHT · provider params never reach the response · apps/api/src/onb_api/agents/routes.py
+    FAILED apps/api/tests/test_agents_route.py::test_each_agent_shows_the_connector_and_model_it_resolves_to
+    FAILED apps/api/tests/test_agents_route.py::test_provider_params_never_reach_the_response
+    FAILED apps/api/tests/test_agents_route.py::test_the_resolved_model_follows_the_environment
+M12 CAUGHT · one unresolvable manifest leaves that agent unresolved, not the list failed · apps/api/src/onb_api/agents/routes.py
+    FAILED apps/api/tests/test_agents_route.py::test_an_alias_llm_yaml_lacks_leaves_that_agent_unresolved
+M13 CAUGHT · apps never import the eval harness (the API tests write the stored shape themselves) · apps/api/tests/test_role_matrix.py
+    FAILED libs/py-evals/tests/test_harness_boundary.py::test_no_app_or_other_library_imports_the_harness
+M7 CAUGHT · recent denials ask the audit log for this agent's denied tool calls · apps/web/src/admin/adminApi.ts
+    FAIL  src/admin/AdminSection.test.tsx > Admin section > shows an agent's connector, model, allowed tools and recent denials from the audit log
+M8 CAUGHT · the admin section sits behind the nav-table guard · apps/web/src/App.tsx
+    FAIL  src/App.test.tsx > App > refuses a section the role does not have, even by direct URL
+    FAIL  src/admin/AdminSection.test.tsx > Admin section > refuses u_acme_hr1@example.com every admin view without calling an admin route
+    FAIL  src/admin/AdminSection.test.tsx > Admin section > refuses u_acme_mgr_ravi@example.com every admin view without calling an admin route
+M9 CAUGHT · the PII access log never renders the vault token · apps/web/src/admin/PiiAccessPage.tsx
+    FAIL  src/admin/AdminSection.test.tsx > Admin section > shows the PII access log masked, and never the vault token
+M10 CAUGHT · an agent's page lists its recent denials (Playwright) · apps/web/src/admin/AgentPage.tsx
+    ✘  2 [chromium] › apps/web/e2e/admin.spec.ts:85:1 › an agent's page shows its connector, model, allowed tools and recent denials from the audit log (6.0s)
+M11 CAUGHT · the agent page shows the resolved model, not the alias (Playwright) · apps/web/src/admin/AgentsPage.tsx
+    ✘  1 [chromium] › apps/web/e2e/admin.spec.ts:44:1 › HR_ADMIN opens each admin view and sees seeded data (5.9s)
+    ✘  4 [chromium] › apps/web/e2e/admin.spec.ts:85:1 › an agent's page shows its connector, model, allowed tools and recent denials from the audit log (5.9s)
+SUMMARY: 13 of 13 mutations caught

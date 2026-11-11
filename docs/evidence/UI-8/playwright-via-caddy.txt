@@ -1,0 +1,18 @@
+[WebServer] (!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+[WebServer]   - import "./aliases" without a file extension (apps/web/vite.config.ts:4:25). Add the file extension
+[WebServer] Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+Running 9 tests using 5 workers
+
+  ✓  2 [chromium] › apps/web/e2e/smoke.spec.ts:49:3 › HR_ADMIN signs in and sees the HR_ADMIN nav (1.5s)
+  ✓  3 [chromium] › apps/web/e2e/admin.spec.ts:121:3 › u_acme_mgr_ravi@example.com is refused every admin view and every admin route (1.6s)
+  ✓  5 [chromium] › apps/web/e2e/admin.spec.ts:121:3 › u_acme_hr1@example.com is refused every admin view and every admin route (1.6s)
+  ✓  1 [chromium] › apps/web/e2e/admin.spec.ts:85:1 › an agent's page shows its connector, model, allowed tools and recent denials from the audit log (1.6s)
+  ✓  4 [chromium] › apps/web/e2e/admin.spec.ts:44:1 › HR_ADMIN opens each admin view and sees seeded data (2.0s)
+  ✓  6 [chromium] › apps/web/e2e/smoke.spec.ts:49:3 › HR signs in and sees the HR nav (770ms)
+  ✓  8 [chromium] › apps/web/e2e/smoke.spec.ts:79:1 › a wrong password shows the login error and does not sign in (805ms)
+  ✓  7 [chromium] › apps/web/e2e/smoke.spec.ts:49:3 › MANAGER signs in and sees the MANAGER nav (887ms)
+  ✓  9 [chromium] › apps/web/e2e/smoke.spec.ts:86:1 › a reload signs the user out: the token is in memory only (937ms)
+
+  9 passed (4.6s)
+exit 0
