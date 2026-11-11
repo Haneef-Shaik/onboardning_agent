@@ -157,7 +157,7 @@ class FakeModels:
         self.capture = InputCapture()
         self.built: list[ScriptedChatModel] = []
 
-    def __call__(self, manifest: AgentManifest) -> ModelChoice:
+    def __call__(self, manifest: AgentManifest, task: object = None) -> ModelChoice:
         selection = LLMSelection(
             alias=manifest.llm.alias,
             connector=manifest.llm.connector,

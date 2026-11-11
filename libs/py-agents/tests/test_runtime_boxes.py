@@ -125,7 +125,7 @@ def test_box1_a_tool_the_agent_was_never_given_is_still_sent_to_the_hub_and_deni
     model = _UnboundCaller(turns=turns)
     stack = HubStack({"db_agent": DB})
 
-    result = run(stack, lambda _m: ModelChoice(record={"connector": "test"}, model=model), DB, task())
+    result = run(stack, lambda _m, _t: ModelChoice(record={"connector": "test"}, model=model), DB, task())
 
     tools = [(s.name, s.outcome, s.reason) for s in result.trajectory if s.kind == "tool"]
     assert tools == [("mongo__insert_one", "denied", "tool_not_in_manifest"), ("mongo__drop", "denied", "unknown_tool")]

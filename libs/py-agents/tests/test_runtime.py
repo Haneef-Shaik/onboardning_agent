@@ -194,7 +194,9 @@ def test_a_task_over_its_time_limit_fails_with_a_timeout(tmp_path: Path) -> None
     result = asyncio.run(runner.run(quick, task()))
 
     assert result.failure is not None
-    assert (result.outcome, result.failure.kind, result.failure.reason) == ("failed", "timeout", "seconds 1")
+    assert (result.outcome, result.failure.kind) == ("failed", "timeout")
+    assert result.failure.reason.startswith("seconds ")
+    assert result.failure.reason.endswith("/1")
     assert [s.kind for s in result.trajectory] == ["llm"]  # stopped inside the tool round
 
 
@@ -276,7 +278,7 @@ def test_the_task_input_reaches_the_model_delimited_and_ids_only_in_the_instruct
 
 def test_runtime_models_resolves_the_manifest_model_through_llm_1(tmp_path: Path) -> None:
     fake = FakeModels([], tmp_path)
-    choice = runtime_models(fake.runtime)(MANIFESTS["templates_agent"])
+    choice = runtime_models(fake.runtime)(MANIFESTS["templates_agent"], task())
     assert choice.record["alias"] == "fast"
     assert choice.record["model"] == "fake-fast"
 
@@ -300,9 +302,12 @@ def test_the_result_serialises_without_secrets(tmp_path: Path) -> None:
 def test_a_failed_result_never_carries_a_partial_output(tmp_path: Path) -> None:
     """A failure that lands after the contract validated (a time limit hit as the graph closes) still
     reports no output: a failed task is never mistaken for an answer."""
-    from onb_agents.runtime.runner import Failure, ModelChoice, _Ended, _result
+    from onb_agents.runtime.runner import Failure, ModelChoice, _Ended, _Prepared, _result
+    from onb_guardrails import GuardContext
 
     ended = _Ended(state={"output": {"status": "ok", "answer": {}}, "trajectory": []}, failure=Failure("timeout", "x"))
     choice = ModelChoice(record={}, model=FakeModels([], tmp_path).runtime.chat_model_for()[1])
-    result = _result(DB, task(), choice, Budget(BudgetLimits()), ended, contract_for("db_agent"))
+    context = GuardContext(agent="db_agent", run_id="run_1", task_id="t1")
+    prepared = _Prepared(DB, contract_for("db_agent"), task(), "t", choice, (), Budget(BudgetLimits()), context)
+    result = _result(prepared, ended)
     assert (result.outcome, result.output, result.failure) == ("failed", None, Failure("timeout", "x"))
