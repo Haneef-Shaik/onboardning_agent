@@ -87,7 +87,7 @@ def test_int_a_vault_collection_under_a_forged_manifest_is_denied_with_an_audit_
     # hard deny of the vault (unit test `..._forged_manifest_...`) stands behind it.
     found = trail(stack, run_id, "org_acme")
     assert found.attrs["outcome"] == "denied"
-    assert found.attrs["denial.reason"] in {"manifest_invalid", "vault_denied"}
+    assert found.attrs["denial.reason"] == "manifest_invalid"
     [record] = found.records
     assert (record.outcome, record.target) == (AuditOutcome.DENIED, "tool:mongo.find/pii_vault")
     assert result.structuredContent is None  # nothing from the collection came back

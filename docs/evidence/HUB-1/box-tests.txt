@@ -1,0 +1,54 @@
+== box 1-4, unit (in-memory audit log, in-memory span exporter)
+============================= test session starts ==============================
+collecting ... collected 23 items
+
+apps/mcp-hub/tests/test_gateway.py::test_an_expired_token_is_denied_with_an_audit_record_and_a_denied_span PASSED [  4%]
+apps/mcp-hub/tests/test_gateway.py::test_a_tool_outside_the_manifest_is_denied_with_an_audit_record_and_a_denied_span PASSED [  8%]
+apps/mcp-hub/tests/test_gateway.py::test_a_collection_outside_the_manifest_is_denied_with_an_audit_record_and_a_denied_span PASSED [ 13%]
+apps/mcp-hub/tests/test_gateway.py::test_a_vault_collection_under_a_forged_manifest_is_denied_with_an_audit_record_and_a_denied_span PASSED [ 17%]
+apps/mcp-hub/tests/test_policy.py::test_a_vault_collection_under_a_forged_manifest_is_hard_denied[org_keys] PASSED [ 21%]
+apps/mcp-hub/tests/test_policy.py::test_a_vault_collection_under_a_forged_manifest_is_hard_denied[pii_access_log] PASSED [ 26%]
+apps/mcp-hub/tests/test_policy.py::test_a_vault_collection_under_a_forged_manifest_is_hard_denied[pii_vault] PASSED [ 30%]
+apps/mcp-hub/tests/test_policy.py::test_a_vault_collection_under_a_forged_manifest_is_hard_denied[pii_vault_aadhaar] PASSED [ 34%]
+apps/mcp-hub/tests/test_policy.py::test_a_vault_collection_under_a_forged_manifest_is_hard_denied[users] PASSED [ 39%]
+apps/mcp-hub/tests/test_gateway.py::test_an_allowed_call_is_scoped_to_the_token_org_even_when_its_args_name_another_org PASSED [ 43%]
+apps/mcp-hub/tests/test_server.py::test_end_to_end_the_driver_sees_only_the_token_org PASSED [ 47%]
+apps/mcp-hub/tests/test_gateway.py::test_a_raw_mobile_in_a_downstream_response_is_redacted_before_it_reaches_the_agent PASSED [ 52%]
+apps/mcp-hub/tests/test_server.py::test_end_to_end_a_raw_mobile_from_mcp_mongo_is_redacted PASSED [ 56%]
+apps/mcp-hub/tests/test_scan.py::test_a_raw_mobile_number_is_redacted_from_structured_and_text_content[9876543210] PASSED [ 60%]
+apps/mcp-hub/tests/test_scan.py::test_a_raw_mobile_number_is_redacted_from_structured_and_text_content[+91 98765 43210] PASSED [ 65%]
+apps/mcp-hub/tests/test_scan.py::test_a_raw_mobile_number_is_redacted_from_structured_and_text_content[98765-43210] PASSED [ 69%]
+apps/mcp-hub/tests/test_scan.py::test_a_raw_mobile_number_is_redacted_from_structured_and_text_content[0 9876543210] PASSED [ 73%]
+apps/mcp-hub/tests/test_gateway.py::test_a_downstream_credential_in_a_response_never_reaches_the_agent[downstream] PASSED [ 78%]
+apps/mcp-hub/tests/test_gateway.py::test_a_downstream_credential_in_a_response_never_reaches_the_agent[context] PASSED [ 82%]
+apps/mcp-hub/tests/test_gateway.py::test_a_downstream_credential_in_a_response_never_reaches_the_agent[token_key] PASSED [ 86%]
+apps/mcp-hub/tests/test_server.py::test_end_to_end_credentials_are_injected_by_the_hub_and_never_returned PASSED [ 91%]
+apps/mcp-hub/tests/test_review_fixes.py::test_an_echoed_call_context_is_withheld_even_though_it_shares_nothing_with_the_key PASSED [ 95%]
+apps/mcp-hub/tests/test_main.py::test_the_gateway_main_builds_holds_every_credential_it_must_never_return PASSED [100%]
+
+============================== 23 passed in 0.34s ==============================
+============================= test session starts ==============================
+collecting ... collected 1 item
+
+libs/py-agents/tests/test_tokens.py::test_the_agent_side_config_holds_only_the_hub_url_and_the_agent_token PASSED [100%]
+
+============================== 1 passed in 0.06s ===============================
+== box 1-4, integration (testcontainers MongoDB, real mcp-mongo with MCP-3 users, real registry and AuditLog)
+============================= test session starts ==============================
+collecting ... collected 12 items
+
+apps/mcp-hub/tests_int/test_hub_int.py::test_int_an_expired_token_is_denied_with_an_audit_record_and_a_denied_span PASSED [  8%]
+apps/mcp-hub/tests_int/test_hub_int.py::test_int_a_tool_outside_the_manifest_is_denied_with_an_audit_record_and_a_denied_span PASSED [ 16%]
+apps/mcp-hub/tests_int/test_hub_int.py::test_int_a_collection_outside_the_manifest_is_denied_with_an_audit_record_and_a_denied_span PASSED [ 25%]
+apps/mcp-hub/tests_int/test_hub_int.py::test_int_a_vault_collection_under_a_forged_manifest_is_denied_with_an_audit_record_and_a_denied_span PASSED [ 33%]
+apps/mcp-hub/tests_int/test_hub_int.py::test_int_a_vault_name_in_a_pipeline_is_hard_denied_for_a_registered_agent PASSED [ 41%]
+apps/mcp-hub/tests_int/test_hub_int.py::test_int_an_allowed_call_is_scoped_to_the_token_org_even_when_its_args_name_another_org PASSED [ 50%]
+apps/mcp-hub/tests_int/test_hub_int.py::test_int_an_update_naming_another_orgs_document_matches_nothing PASSED [ 58%]
+apps/mcp-hub/tests_int/test_hub_int.py::test_int_an_org_id_in_the_arguments_is_denied PASSED [ 66%]
+apps/mcp-hub/tests_int/test_hub_int.py::test_int_a_raw_mobile_stored_in_a_tenant_document_is_redacted_before_it_reaches_the_agent PASSED [ 75%]
+apps/mcp-hub/tests_int/test_hub_int.py::test_int_downstream_credentials_never_appear_in_responses_or_agent_side_config PASSED [ 83%]
+apps/mcp-hub/tests_int/test_hub_int.py::test_int_a_stored_credential_is_withheld_whole PASSED [ 91%]
+apps/mcp-hub/tests_int/test_hub_int.py::test_int_the_agent_token_never_reaches_mcp_mongo PASSED [100%]
+
+============================== 12 passed in 4.14s ==============================
+exit=0
