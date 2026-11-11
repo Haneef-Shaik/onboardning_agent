@@ -73,8 +73,9 @@ class Downstream:
         return (self.credential,)
 
     async def call(
-        self, tool: HubTool, args: Mapping[str, Any], context: CallContext
+        self, tool: HubTool, args: Mapping[str, Any], context: CallContext, *, grant: str | None = None
     ) -> tuple[CallToolResult, tuple[str, ...]]:
+        # NOTIF-1: the hub hands a sink the PII grant; these tests' Mongo tools never get one.
         self.sent.append((tool.name, dict(args), context))
         payload = {"documents": self.documents, "count": len(self.documents)}
         result = CallToolResult(
