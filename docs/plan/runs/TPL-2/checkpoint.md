@@ -16,9 +16,11 @@ Branch `goal/tpl-2-template-lifecycle`. Compose project `ob-tpl-2` (Caddy 18800/
    148 passed.
 
 ## Next
-- Done through gates; handoff written (attempt 1). Next: goal-verifier, then board `in review`, `make down`.
-- Reviews fixed (security H1 body/inputs caps; code-review L5/L7/L8, M1/M2); mutations 32/32.
+- Attempt 1: verifier pass at 667b563.
+- Attempt 2: rebased onto main at 397df21 (HIRE-1 + MOCK-1), keeping both sides. Gates re-run green (check with
+  test-xt 196, test-int, contracts-check, evals-selftest) and mutations still 32/32.
+- Next: the attempt-2 verifier, then the board to `in review`, then `make down`.
 
 ## Surprises
-- Worktree guard: helper scripts go in the job tmp folder; no inline `.env` sourcing (use tmp/withenv.sh).
-- Async Mongo client is loop-bound: seed through a separate store.
+- Worktree guard: helper scripts go in the job tmp folder; don't source `.env` inline (use tmp/withenv.sh).
+- An async Mongo client is bound to one event loop: seed through a separate store.

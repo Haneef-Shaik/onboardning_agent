@@ -38,9 +38,8 @@ docker compose up -d --wait --build
 #10 exporting layers done
 #10 exporting manifest sha256:3de9ddec1ccf228eb4019977700fb760038d766ab8f4bab4698392f4b364f45d done
 #10 exporting config sha256:3796d1e7c364eaade9fbd2780a5a837c4367123b6867d6c0e8194f7e6ca13394 done
-#10 exporting attestation manifest sha256:ae49b8a80878f4b1b6129399a5eb1cdb440d00050a6fd0c65da2629e68228743 done
-#10 exporting manifest list sha256:8d0c5106748b3b369ee05a9051f6b4e6632270fa1ffb81c41ca110984b6a8127
-#10 exporting manifest list sha256:8d0c5106748b3b369ee05a9051f6b4e6632270fa1ffb81c41ca110984b6a8127 0.0s done
+#10 exporting attestation manifest sha256:5b1fe4ff8f17d40e1046b78c1a4dbbe4a7ac80c0254c48beaeb308b59f03ebae done
+#10 exporting manifest list sha256:6404bf591f60d6f030201111fc12b6f412807eafbad00f7494e22f09d7818e2f done
 #10 naming to docker.io/onb/otel-collector:0.165.0 done
 #10 unpacking to docker.io/onb/otel-collector:0.165.0 done
 #10 DONE 0.0s
@@ -48,31 +47,31 @@ docker compose up -d --wait --build
 #11 resolving provenance for metadata file
 #11 DONE 0.0s
  Image onb/otel-collector:0.165.0 Built 
+ Container ob-tpl-2-otel-collector-1 Running 
  Container ob-tpl-2-jaeger-1 Running 
  Container ob-tpl-2-caddy-1 Running 
  Container ob-tpl-2-mongo-1 Running 
- Container ob-tpl-2-otel-collector-1 Running 
  Container ob-tpl-2-jaeger-1 Waiting 
  Container ob-tpl-2-jaeger-1 Waiting 
  Container ob-tpl-2-jaeger-1 Healthy 
  Container ob-tpl-2-jaeger-1 Healthy 
- Container ob-tpl-2-caddy-1 Waiting 
- Container ob-tpl-2-mongo-1 Waiting 
  Container ob-tpl-2-otel-collector-1 Waiting 
  Container ob-tpl-2-jaeger-1 Waiting 
- Container ob-tpl-2-otel-collector-1 Healthy 
- Container ob-tpl-2-jaeger-1 Healthy 
- Container ob-tpl-2-caddy-1 Healthy 
+ Container ob-tpl-2-caddy-1 Waiting 
+ Container ob-tpl-2-mongo-1 Waiting 
  Container ob-tpl-2-mongo-1 Healthy 
+ Container ob-tpl-2-jaeger-1 Healthy 
+ Container ob-tpl-2-otel-collector-1 Healthy 
+ Container ob-tpl-2-caddy-1 Healthy 
 set -a && . ./.env && set +a && \
 	LLM_CONNECTOR=fake OTEL_TRACES_EXPORTER="${OTEL_TRACES_EXPORTER:-none}" \
 	uv run --frozen pytest libs/py-evals/tests_int/test_selftest.py -q -s -o cache_dir=.pytest_cache/py-evals-selftest
-selftest evr_20261111T061642Z_fa295cdf: 27 cases x 3, all cases passed: True, gates: PASS, controls caught 8/8
-report: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-tpl-2/evals/reports/20261111T061642Z-all-fake_eval-scripted.json
-report: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-tpl-2/evals/reports/20261111T061642Z-all-fake_eval-scripted.md
-eval_runs: evr_20261111T061642Z_fa295cdf
+selftest evr_20261111T063800Z_7b598d10: 27 cases x 3, all cases passed: True, gates: PASS, controls caught 8/8
+report: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-tpl-2/evals/reports/20261111T063800Z-all-fake_eval-scripted.json
+report: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-tpl-2/evals/reports/20261111T063800Z-all-fake_eval-scripted.md
+eval_runs: evr_20261111T063800Z_7b598d10
 result: PASS
 
 .
-1 passed in 33.24s
+1 passed in 28.83s
 exit=0
