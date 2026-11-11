@@ -124,6 +124,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/hires/{hire_id}/documents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Upload Hire Document */
+        post: operations["uploadHireDocument"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/hires/{hire_id}/pii/{field}": {
         parameters: {
             query?: never;
@@ -489,6 +506,43 @@ export interface components {
             /** Success */
             success: boolean;
         };
+        /**
+         * DocumentMeta
+         * @description A scan as anyone sees it (FR-P3): `documents_meta` holds exactly this, plus `org_id`.
+         */
+        DocumentMeta: {
+            /** Hire Id */
+            hire_id: string;
+            /** Id */
+            id: string;
+            type: components["schemas"]["DocumentType"];
+            /**
+             * Uploaded At
+             * Format: date-time
+             */
+            uploaded_at: string;
+            /** Verified */
+            verified: boolean;
+        };
+        /**
+         * DocumentMetaEnvelope
+         * @description One uploaded scan's metadata.
+         */
+        DocumentMetaEnvelope: {
+            data: components["schemas"]["DocumentMeta"] | null;
+            error: components["schemas"]["ErrorBody"] | null;
+            /** @default {} */
+            meta: components["schemas"]["Meta"];
+            /** Success */
+            success: boolean;
+        };
+        /**
+         * DocumentType
+         * @description What a scan shows: Aadhaar or PAN (PRD FR-P3), or the alternative ID a hire gives instead of
+         *     Aadhaar (`hires.AlternativeIdType`).
+         * @enum {string}
+         */
+        DocumentType: "aadhaar" | "pan" | "passport" | "voter_id" | "driving_licence";
         /**
          * DraftCreate
          * @description `POST /templates/drafts`: a new draft from a template body.
@@ -1391,6 +1445,46 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HireEnvelope"];
+                };
+            };
+            /** @description Error, in the envelope */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    uploadHireDocument: {
+        parameters: {
+            query: {
+                type: components["schemas"]["DocumentType"];
+            };
+            header?: never;
+            path: {
+                hire_id: string;
+            };
+            cookie?: never;
+        };
+        /** @description The scan's bytes */
+        requestBody: {
+            content: {
+                "application/pdf": string;
+                "image/jpeg": string;
+                "image/png": string;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentMetaEnvelope"];
                 };
             };
             /** @description Error, in the envelope */

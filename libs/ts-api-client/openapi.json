@@ -500,6 +500,95 @@
         "title": "AuditRecordsEnvelope",
         "type": "object"
       },
+      "DocumentMeta": {
+        "additionalProperties": false,
+        "description": "A scan as anyone sees it (FR-P3): `documents_meta` holds exactly this, plus `org_id`.",
+        "properties": {
+          "hire_id": {
+            "title": "Hire Id",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "type": {
+            "$ref": "#/components/schemas/DocumentType"
+          },
+          "uploaded_at": {
+            "format": "date-time",
+            "title": "Uploaded At",
+            "type": "string"
+          },
+          "verified": {
+            "title": "Verified",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "hire_id",
+          "type",
+          "uploaded_at",
+          "verified"
+        ],
+        "title": "DocumentMeta",
+        "type": "object"
+      },
+      "DocumentMetaEnvelope": {
+        "additionalProperties": false,
+        "description": "One uploaded scan's metadata.",
+        "properties": {
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DocumentMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "error": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ErrorBody"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta",
+            "default": {}
+          },
+          "success": {
+            "title": "Success",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "success",
+          "data",
+          "error",
+          "meta"
+        ],
+        "title": "DocumentMetaEnvelope",
+        "type": "object"
+      },
+      "DocumentType": {
+        "description": "What a scan shows: Aadhaar or PAN (PRD FR-P3), or the alternative ID a hire gives instead of\nAadhaar (`hires.AlternativeIdType`).",
+        "enum": [
+          "aadhaar",
+          "pan",
+          "passport",
+          "voter_id",
+          "driving_licence"
+        ],
+        "title": "DocumentType",
+        "type": "string"
+      },
       "DraftCreate": {
         "additionalProperties": false,
         "description": "`POST /templates/drafts`: a new draft from a template body.",
@@ -2953,6 +3042,87 @@
         "summary": "Get Hire",
         "tags": [
           "hires"
+        ]
+      }
+    },
+    "/hires/{hire_id}/documents": {
+      "post": {
+        "operationId": "uploadHireDocument",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "hire_id",
+            "required": true,
+            "schema": {
+              "maxLength": 66,
+              "pattern": "^h_[A-Za-z0-9_]{1,64}$",
+              "title": "Hire Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "type",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/DocumentType"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/pdf": {
+              "schema": {
+                "format": "binary",
+                "type": "string"
+              }
+            },
+            "image/jpeg": {
+              "schema": {
+                "format": "binary",
+                "type": "string"
+              }
+            },
+            "image/png": {
+              "schema": {
+                "format": "binary",
+                "type": "string"
+              }
+            }
+          },
+          "description": "The scan's bytes",
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentMetaEnvelope"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error, in the envelope"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Upload Hire Document",
+        "tags": [
+          "documents"
         ]
       }
     },
