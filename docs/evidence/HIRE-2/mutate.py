@@ -33,7 +33,7 @@ MUTANTS = [
     ("U2", D + "upload.py", "    if not data.startswith(_SIGNATURES[media_type]):", "    if False:", [ROUTE_T, "-k", "not_the_declared_type"]),
     ("U3", D + "upload.py", "        if len(received) + len(chunk) > limit:\n            raise _too_large(limit)\n", "", [ROUTE_T, "-k", "oversized_stream or understated"]),
     ("U4", D + "upload.py", "    if declared is not None and declared > limit:\n        raise _too_large(limit)\n", "", [ROUTE_T, "-k", "overstated"]),
-    ("U5", D + "upload.py", "        if len(received) + len(chunk) > limit:", "        if len(received) + len(chunk) > limit + 1:", [ROUTE_T, "-k", "oversized_scan_is_refused"]),
+    ("U5", D + "upload.py", "        if len(received) + len(chunk) > limit:", "        if len(received) + len(chunk) > limit + 1:", [ROUTE_T, "-k", "oversized_scan_is_refused or one_byte_past"]),
     ("U6", D + "upload.py", "    if not data:\n        raise AppError(ErrorCode.VALIDATION_ERROR, details=(ErrorDetail(field=\"body\", issue=\"The document is empty\"),))\n", "", [ROUTE_T, "-k", "empty_scan"]),
     ("U7", D + "service.py", "        max_bytes: int = MAX_DOCUMENT_BYTES,", "        max_bytes: int = MAX_DOCUMENT_BYTES * 2,", [ROUTE_T, "-k", "oversized_scan_is_refused"]),
     # Box 3: documents_meta holds only ids, type, uploaded_at, verified

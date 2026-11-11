@@ -242,6 +242,22 @@ def test_an_overstated_content_length_is_refused_before_reading(declared: str) -
     assert read == []  # refused on the header, before the body was read
 
 
+def test_one_byte_past_the_limit_is_refused_when_counting() -> None:
+    """The counted limit is exact: `limit` bytes pass, `limit + 1` do not (no Content-Length to go by)."""
+
+    def body(size: int) -> AsyncIterator[bytes]:
+        async def chunks() -> AsyncIterator[bytes]:
+            yield bytes(size - 1)
+            yield b"\x00"
+
+        return chunks()
+
+    assert asyncio.run(read_capped(body(10), declared_length=None, limit=10)) == bytes(10)
+    with pytest.raises(AppError) as refused:
+        asyncio.run(read_capped(body(11), declared_length=None, limit=10))
+    assert refused.value.code is ErrorCode.PAYLOAD_TOO_LARGE
+
+
 @pytest.mark.parametrize("declared", [None, "", "abc", "-5"])
 def test_a_missing_or_malformed_content_length_falls_back_to_counting(declared: str | None) -> None:
     async def body() -> AsyncIterator[bytes]:
