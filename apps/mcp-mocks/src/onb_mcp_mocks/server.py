@@ -48,13 +48,16 @@ def _header(context: Context[Any, Any, Any] | None) -> str | None:
     return headers.get(HEADER) if headers is not None else None
 
 
+def _location(err: Any) -> str:
+    loc = [str(part) for part in err["loc"]]
+    if err["type"] == "extra_forbidden" and loc and loc[-1] != "org_id":
+        loc[-1] = "<extra>"  # an agent-invented key is not echoed; org_id is named so the agent learns
+    return ".".join(loc) or "<args>"
+
+
 def _validation_message(exc: ValidationError) -> str:
-    """Field paths and error types only: submitted values (and invented keys) are never echoed."""
-    issues = ", ".join(
-        f"{'<extra>' if err['type'] == 'extra_forbidden' else '.'.join(str(p) for p in err['loc']) or '<args>'}"
-        f" ({err['type']})"
-        for err in exc.errors()
-    )
+    """Field paths and error types only: submitted values are never echoed (as in mcp-mongo)."""
+    issues = ", ".join(f"{_location(err)} ({err['type']})" for err in exc.errors())
     return f"invalid arguments: {issues}"
 
 

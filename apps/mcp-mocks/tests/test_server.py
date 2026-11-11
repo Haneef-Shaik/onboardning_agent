@@ -141,3 +141,13 @@ def test_a_full_store_is_an_internal_error_without_detail(telemetry: CapturedTel
 def test_the_server_needs_a_long_enough_key() -> None:
     with pytest.raises(ValueError, match="32"):
         build_server(InMemoryIdempotencyStore(), "short")
+
+
+def test_an_org_id_argument_is_named_in_the_refusal_but_other_invented_keys_are_not() -> None:
+    """Like mcp-mongo: the agent learns that org_id is never an argument; other invented keys stay unechoed."""
+    store = InMemoryIdempotencyStore()
+    named = _call(store, "provision_laptop", {**LAPTOP_ARGS, "org_id": "org_b"})
+    assert "org_id (extra_forbidden)" in _text(named)
+    invented = _call(store, "provision_laptop", {**LAPTOP_ARGS, "smuggled_key": "x"})
+    assert "smuggled_key" not in _text(invented)
+    assert "<extra> (extra_forbidden)" in _text(invented)

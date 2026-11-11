@@ -12,7 +12,7 @@ import httpx
 from mcp import ClientSession
 from mcp.client.streamable_http import streamable_http_client
 from mcp.types import CallToolResult
-from onb_mcp_mongo.call_context import HEADER, CallContext, sign_call_context
+from onb_mcp_mongo.call_context import AUDIENCE, HEADER, CallContext, sign_call_context
 
 # The collections an agent of the suite may read and write through mcp-mongo.
 READ = frozenset({"new_hires", "onboarding_runs", "run_tasks", "approvals"})
@@ -42,11 +42,12 @@ def _outcome(result: CallToolResult) -> Outcome:
     return Outcome(bool(result.isError), result.structuredContent, text)
 
 
-def call(url: str, key: str, org_id: str, tool: str, args: dict[str, Any]) -> Outcome:
+def call(url: str, key: str, org_id: str, tool: str, args: dict[str, Any], *, audience: str = AUDIENCE) -> Outcome:
     async def sign(request: httpx.Request) -> None:
         body = json.loads(request.content or b"{}")
         if isinstance(body, dict) and body.get("method") == "tools/call":
-            request.headers[HEADER] = sign_call_context(_context(org_id, body["params"]["name"]), key)
+            context = _context(org_id, body["params"]["name"])
+            request.headers[HEADER] = sign_call_context(context, key, audience=audience)
 
     async def main() -> Outcome:
         async with (

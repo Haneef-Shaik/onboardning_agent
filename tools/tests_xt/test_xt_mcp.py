@@ -1,7 +1,8 @@
 """Every MCP tool: an org-A agent cannot read, list, update or infer org-B data (PRD §7.9 Testing, §7.5).
 
-mcp-mongo runs over HTTP on loopback against the seeded scratch database; each call carries a
-hub-style call context for org A. `TOOL_CASES` has one row per (server, tool) the servers list;
+mcp-mongo runs over HTTP on loopback against the seeded scratch database, and mcp-mocks (MOCK-1)
+over its in-memory idempotency store; each call carries a hub-style call context for org A, signed
+with that server's own key for its own audience. `TOOL_CASES` has one row per (server, tool) the servers list;
 `test_xt_coverage.py` fails the run when a tool has no row. Every row also gets the generic checks:
 its ordinary call returns none of org B's strings, and an `org_id` argument naming org B is refused
 without echoing anything of org B. Org B's documents are compared before and after every case.
@@ -9,9 +10,10 @@ without echoing anything of org B. Org B's documents are compared before and aft
 
 from __future__ import annotations
 
+import secrets
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Protocol
 
 import pytest
 
@@ -20,7 +22,13 @@ from .mcp_client import READ, WRITE, Outcome, call
 from .world import ORG_A, ORG_B, Seen, assert_indistinguishable, assert_no_leak, tenant_documents
 
 Args = dict[str, Any]
-Call = Callable[[str, Args], Outcome]  # (tool, args) -> outcome, as an org-A agent
+
+
+class Call(Protocol):
+    """(tool, args) -> outcome, as an org-A agent (or, where a case needs it, as `org`)."""
+
+    def __call__(self, tool: str, args: Args, org: str = ORG_A) -> Outcome: ...
+
 
 B_HIRE, B_RUN = "h_globex_001", "run_globex_001"
 MISSING_HIRE, MISSING_RUN = "h_nobody_xt", "run_nobody_xt"
@@ -173,7 +181,40 @@ def _update_one_check(agent: Call, _: World, __: Unscoped) -> None:
     assert "org_id" in refused.text
 
 
+# --- mcp-mocks (MOCK-1): tenant state is the idempotency store, keyed by org --------------------------
+
+MOCK_HIRE = "65f0aaaabbbbccccddddeeee"
+BITBUCKET_ARGS: Args = {"task_id": "65f0a1b2c3d4e5f6a7b8c9d0", "hire_id": MOCK_HIRE, "workspace": "xt-eng"}
+LAPTOP_ARGS: Args = {
+    "task_id": "65f0a1b2c3d4e5f6a7b8c9d1",
+    "hire_id": MOCK_HIRE,
+    "profile": "standard",
+    "office": "xt-office",
+}
+
+
+def _mock_check(tool: str, args: Args, id_field: str) -> Callable[[Call, World, Unscoped], None]:
+    """Org B uses an idempotency key first. Org A's call with the same key gets a record of its own,
+    sees nothing of B's, and B's record answers exactly as before."""
+
+    def check(agent: Call, _: World, __: Unscoped) -> None:
+        task = {**args, "task_id": secrets.token_hex(12)}
+        b_first = agent(tool, task, org=ORG_B).ok()
+        a_result = agent(tool, task)
+        a_seen = repr(a_result.ok()) + a_result.text
+        assert a_result.ok()[id_field] != b_first[id_field]
+        assert b_first[id_field] not in a_seen
+        assert agent(tool, task).ok() == a_result.ok()  # A's replay answers A's record
+        assert agent(tool, task, org=ORG_B).ok() == b_first  # B's record is unchanged
+
+    return check
+
+
 TOOL_CASES: Mapping[tuple[str, str], ToolCase] = {
+    ("mcp-mocks", "create_bitbucket_account"): ToolCase(
+        BITBUCKET_ARGS, _mock_check("create_bitbucket_account", BITBUCKET_ARGS, "account_id")
+    ),
+    ("mcp-mocks", "provision_laptop"): ToolCase(LAPTOP_ARGS, _mock_check("provision_laptop", LAPTOP_ARGS, "order_id")),
     ("mcp-mongo", "list_collections"): ToolCase({}, _list_collections_check),
     ("mcp-mongo", "find"): ToolCase({"collection": "new_hires", "filter": {}, "limit": 100}, _find_check),
     ("mcp-mongo", "count"): ToolCase({"collection": "run_tasks"}, _count_check),
@@ -187,13 +228,17 @@ TOOL_CASES: Mapping[tuple[str, str], ToolCase] = {
     ),
 }
 
-_SERVERS: Mapping[str, str] = {"mcp-mongo": "mcp_mongo"}  # server name -> its conftest fixture
+_SERVERS: Mapping[str, str] = {"mcp-mongo": "mcp_mongo", "mcp-mocks": "mcp_mocks"}  # server -> its fixture
 _TOOL_IDS = [f"{server}.{tool}" for server, tool in TOOL_CASES]
 
 
 def _agent(request: pytest.FixtureRequest, server: str) -> Call:
     mcp: McpServer = request.getfixturevalue(_SERVERS[server])
-    return lambda tool, args: call(mcp.url, mcp.key, ORG_A, tool, args)
+
+    def agent(tool: str, args: Args, org: str = ORG_A) -> Outcome:
+        return call(mcp.url, mcp.key, org, tool, args, audience=mcp.audience)
+
+    return agent
 
 
 @pytest.mark.parametrize("key", list(TOOL_CASES), ids=_TOOL_IDS)

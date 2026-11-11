@@ -53,6 +53,10 @@ from onb_data.safety_net_pytest import (  # T-2 tenant safety net (PRD §7.9): r
     tenant_safety_net_guard,
     unscoped,
 )
+from onb_mcp_mocks.server import AUDIENCE as MOCKS_AUDIENCE
+from onb_mcp_mocks.server import build_server as build_mocks_server
+from onb_mcp_mocks.store import InMemoryIdempotencyStore
+from onb_mcp_mongo.call_context import AUDIENCE as MONGO_AUDIENCE
 from onb_mcp_mongo.server import build_server
 from pymongo import MongoClient
 from pymongo.database import Database
@@ -68,6 +72,7 @@ SOCAT_IMAGE = "alpine/socat:1.8.1.3@sha256:e8a6e8868a8e6e01d9c2c321a8f8d4474d2d7
 # Its own label key, so another suite's stale-tunnel cleanup never removes this one.
 TUNNEL_LABEL_KEY = "onb.test.xt-mongo-tunnel"
 MCP_CONTEXT_KEY = secrets.token_urlsafe(48)
+MOCKS_CONTEXT_KEY = secrets.token_urlsafe(48)  # its own key, as deployed
 PASSWORD = secrets.token_urlsafe(12)
 T0 = datetime(2026, 11, 1, 8, 0, tzinfo=UTC)
 # HIRE-1: the vault's master key for this run (random, never a fixed secret).
@@ -291,6 +296,7 @@ def api(xt_world: World) -> Iterator[TestClient]:
 class McpServer:
     url: str
     key: str = field(repr=False)
+    audience: str = MONGO_AUDIENCE
 
 
 def _free_port() -> int:
@@ -300,24 +306,36 @@ def _free_port() -> int:
         return port
 
 
-@pytest.fixture(scope="session")
-def mcp_mongo(mongo_uri: str, database_name: str) -> Iterator[McpServer]:
-    port = _free_port()
-    server = build_server(connect(mongo_uri, database_name, app_name="xt-mcp-mongo"), MCP_CONTEXT_KEY, port=port)
-    config = uvicorn.Config(server.streamable_http_app(), host="127.0.0.1", port=port, log_level="warning")
-    uv_server = uvicorn.Server(config)
+def _serve(app: Any, port: int, name: str) -> Iterator[None]:
+    uv_server = uvicorn.Server(uvicorn.Config(app, host="127.0.0.1", port=port, log_level="warning"))
     thread = threading.Thread(target=uv_server.run, daemon=True)
     thread.start()
     end = time.monotonic() + 15
     while not uv_server.started:
         if time.monotonic() > end or not thread.is_alive():
-            pytest.fail("mcp-mongo did not start")
+            pytest.fail(f"{name} did not start")
         time.sleep(0.05)
     try:
-        yield McpServer(f"http://127.0.0.1:{port}/mcp", MCP_CONTEXT_KEY)
+        yield
     finally:
         uv_server.should_exit = True
         thread.join(timeout=10)
+
+
+@pytest.fixture(scope="session")
+def mcp_mongo(mongo_uri: str, database_name: str) -> Iterator[McpServer]:
+    port = _free_port()
+    server = build_server(connect(mongo_uri, database_name, app_name="xt-mcp-mongo"), MCP_CONTEXT_KEY, port=port)
+    for _ in _serve(server.streamable_http_app(), port, "mcp-mongo"):
+        yield McpServer(f"http://127.0.0.1:{port}/mcp", MCP_CONTEXT_KEY)
+
+
+@pytest.fixture(scope="session")
+def mcp_mocks() -> Iterator[McpServer]:
+    port = _free_port()
+    server = build_mocks_server(InMemoryIdempotencyStore(), MOCKS_CONTEXT_KEY, port=port)
+    for _ in _serve(server.streamable_http_app(), port, "mcp-mocks"):
+        yield McpServer(f"http://127.0.0.1:{port}/mcp", MOCKS_CONTEXT_KEY, MOCKS_AUDIENCE)
 
 
 # --- the covered surface, printed at the end of the run --------------------------------------------------

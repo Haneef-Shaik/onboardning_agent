@@ -30,6 +30,8 @@ from fastapi import FastAPI
 from fastapi.routing import APIRoute, iter_route_contexts
 from mcp.server.fastmcp import FastMCP
 from onb_data import DataStore
+from onb_mcp_mocks.server import build_server as build_mocks_server
+from onb_mcp_mocks.store import InMemoryIdempotencyStore
 from onb_mcp_mongo.server import build_server
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -51,12 +53,19 @@ def _mcp_mongo(store: DataStore, context_key: str) -> FastMCP:
     return build_server(store, context_key)
 
 
-# Every MCP server the platform runs, by name, built over a store. HUB-1 adds the hub; the mocks add
-# theirs (and their tools then need cases).
-MCP_SERVERS: Mapping[str, Callable[[DataStore, str], FastMCP]] = {"mcp-mongo": _mcp_mongo}
+def _mcp_mocks(_: DataStore, context_key: str) -> FastMCP:
+    """mcp-mocks keeps its tenant state in its own idempotency store, not MongoDB (MOCK-1)."""
+    return build_mocks_server(InMemoryIdempotencyStore(), context_key)
+
+
+# Every MCP server the platform runs, by name, built over a store. The hub is a low-level `Server`
+# with its own cross-tenant cases (apps/mcp-hub/tests_int/test_hub_xt.py::HUB_TOOL_CASES).
+MCP_SERVERS: Mapping[str, Callable[[DataStore, str], FastMCP]] = {"mcp-mongo": _mcp_mongo, "mcp-mocks": _mcp_mocks}
 
 # Production modules that build an MCP server (`FastMCP(...)`), relative to the repo root.
-MCP_SERVER_MODULES: frozenset[str] = frozenset({"apps/mcp-mongo/src/onb_mcp_mongo/server.py"})
+MCP_SERVER_MODULES: frozenset[str] = frozenset(
+    {"apps/mcp-mongo/src/onb_mcp_mongo/server.py", "apps/mcp-mocks/src/onb_mcp_mocks/server.py"}
+)
 
 # Production code lives here; tests, the py-eventbus library itself and its docstrings do not count.
 _SOURCE_GLOBS = ("apps/*/src/**/*.py", "libs/*/src/**/*.py")
