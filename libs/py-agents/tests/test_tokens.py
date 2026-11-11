@@ -101,7 +101,7 @@ def test_malformed_tokens_are_refused(claims: dict[str, object], reason: str) ->
 
 
 def test_the_none_algorithm_is_refused() -> None:
-    token = jwt.encode(_base(), key=None, algorithm="none")
+    token = jwt.encode(_base(), key="", algorithm="none")
     with pytest.raises(AgentTokenError):
         verify_agent_token(token, KEY)
 
