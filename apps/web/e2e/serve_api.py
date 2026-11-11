@@ -17,14 +17,13 @@ import os
 import sys
 
 import uvicorn
+from admin_seed import admin_services
 from onb_api.app import create_app
 from onb_api.auth.passwords import hash_password
 from onb_api.auth.settings import AuthSettings, require_env
 from onb_api.auth.users import NewUser
 from onb_api.testing import SEED_USERS, InMemoryUserStore, email_of
 from onb_data import tenant_scope
-
-from admin_seed import admin_services
 
 HOST = "127.0.0.1"
 BCRYPT_ROUNDS = 4  # test speed; the production default stays 12

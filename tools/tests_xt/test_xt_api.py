@@ -665,7 +665,7 @@ def _eval_run_check(client: TestClient, _: World) -> None:
     assert own.status_code == 200, own.text
     assert own.json()["data"]["id"] == own_id
     missing = client.get(f"/evals/runs/{MISSING_EVAL_RUN}", headers=admin)
-    for _, foreign_id, _ in eval_runs(ORG_B):
+    for _org, foreign_id, _agent in eval_runs(ORG_B):
         foreign = client.get(f"/evals/runs/{foreign_id}", headers=admin)
         assert foreign.status_code == 404, foreign.json()
         assert_indistinguishable(seen(foreign), seen(missing), "GET /evals/runs/{id} of org B")
