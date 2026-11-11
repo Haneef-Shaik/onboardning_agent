@@ -258,7 +258,7 @@ def test_one_byte_past_the_limit_is_refused_when_counting() -> None:
     assert refused.value.code is ErrorCode.PAYLOAD_TOO_LARGE
 
 
-@pytest.mark.parametrize("declared", [None, "", "abc", "-5"])
+@pytest.mark.parametrize("declared", [None, "", "abc", "-5", "\u00b2"])
 def test_a_missing_or_malformed_content_length_falls_back_to_counting(declared: str | None) -> None:
     async def body() -> AsyncIterator[bytes]:
         yield b"abc"
@@ -344,6 +344,33 @@ def test_an_aadhaar_scan_needs_the_hires_aadhaar_consent(client: TestClient) -> 
     assert response.json()["error"]["details"] == [
         {"field": "query.type", "issue": "This hire has not consented to storing an Aadhaar"}
     ]
+
+
+def test_an_aadhaar_consent_refusal_is_audited_as_denied(client: TestClient, hire_audit: InMemoryAuditLog) -> None:
+    _upload(client, document_type="aadhaar")
+    with tenant_scope("org_acme"):
+        entries = asyncio.run(hire_audit.list(AuditQuery(), page=1, limit=50)).entries
+    assert [(e.action, e.target, e.outcome, e.reason) for e in entries] == [
+        ("document.upload", f"hire:{HIRE}/document", AuditOutcome.DENIED, "no aadhaar consent")
+    ]
+
+
+def test_a_consent_flag_forged_on_the_hire_does_not_open_the_gate(
+    client: TestClient, memory_db: MemoryDatabase
+) -> None:
+    """`new_hires` is agent-writable through mcp-mongo; the gate reads the vault's `pii_consent` instead."""
+    hires = memory_db["new_hires"]
+    hires.documents = [
+        {**h, "id_proof": {"aadhaar_consent": True, "alternative_id": None}} if h["_id"] == HIRE else h
+        for h in hires.documents
+    ]
+    assert _upload(client, document_type="aadhaar").status_code == 422
+    assert memory_db.raw(CHUNKS_COLLECTION) == []
+
+
+def test_another_hires_consent_does_not_count(client: TestClient) -> None:
+    _hire_with_aadhaar(client)  # a different hire consents
+    assert _upload(client, document_type="aadhaar").status_code == 422
 
 
 def test_an_aadhaar_scan_of_a_consenting_hire_is_stored_under_the_aadhaar_key(

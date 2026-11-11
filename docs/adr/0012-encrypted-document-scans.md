@@ -25,8 +25,10 @@
    decryption. No record signature is added: unlike a vault record, there is no token to re-point, and
    the AEAD already covers every field a reader trusts.
 3. **Aadhaar scans use the org's Aadhaar key** (`KeyPurpose.AADHAAR`), like the Aadhaar number; other
-   scans use the data key. An Aadhaar scan is accepted only for a hire whose `id_proof.aadhaar_consent`
-   is true (consent is captured with the number, ADR 0007); a hire who declined gives an alternative ID,
+   scans use the data key. An Aadhaar scan is accepted only for a hire with an Aadhaar consent record in
+   the vault's `pii_consent` (written with the Aadhaar number, ADR 0007); a refusal is audited `denied`.
+   The gate deliberately does not read `new_hires.id_proof.aadhaar_consent`: `new_hires` is writable by
+   agents through mcp-mongo, `pii_consent` by no MCP user. A hire who declined gives an alternative ID,
    whose scan types (`passport`, `voter_id`, `driving_licence`) are accepted alongside `aadhaar`, `pan`.
 4. **`documents_meta` is exactly `{_id, org_id, hire_id, type, uploaded_at, verified}`.** No file name,
    size, media type, digest or token. The media type needed to decrypt lives in the encrypted bucket's
@@ -43,7 +45,10 @@
 7. **Order and undo:** chunks, then the files document, then `documents_meta`, then the audit record
    (`document.upload`, target `hire:<id>/document/<doc id>`). If the metadata or the audit write fails,
    everything written for the upload is removed (AUD-1) and the request fails. Agents never see a
-   `documents_meta` record whose bytes are missing.
+   `documents_meta` record whose bytes are missing. The undo is in-process: a crash between the bucket
+   write and the metadata write leaves ciphertext with no `documents_meta` (still encrypted, still
+   org-scoped). No transaction is used because the unit-test store has no client; an orphan sweep
+   (files documents with no metadata) belongs with PII-5's purge.
 
 ## Consequences
 

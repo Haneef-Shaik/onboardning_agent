@@ -41,7 +41,7 @@ MUTANTS = [
     ("M2", D + "meta.py", "                \"verified\": record.verified,\n", "", [ROUTE_T, "-k", "documents_meta_holds_only"]),
     # Who may upload, to which hire, audit
     ("S1", D + "service.py", "        if hire is None:\n            raise AppError(ErrorCode.NOT_FOUND)\n", "", [ROUTE_T, "-k", "another_orgs_hire"]),
-    ("S2", D + "service.py", "        if document_type is DocumentType.AADHAAR and not _has_aadhaar_consent(hire):", "        if False:", [ROUTE_T, "-k", "needs_the_hires_aadhaar_consent"]),
+    ("S2", D + "service.py", "        if document_type is DocumentType.AADHAAR and not await self._consents.has_aadhaar_consent(hire_id):", "        if False:", [ROUTE_T, "-k", "needs_the_hires_aadhaar_consent"]),
     ("S3", D + "service.py", "            await self._audit(principal, f\"hire:{hire_id}/document/{stored.id}\")\n", "", [ROUTE_T, "-k", "audited_without_content"]),
     ("S4", D + "service.py", "        except BaseException:\n            await self._undo(stored.id)\n            raise\n", "        except BaseException:\n            raise\n", [ROUTE_T, "-k", "audit_fails_leaves_nothing"]),
     ("S5", D + "routes.py", "Hr = Annotated[Principal, Depends(require_role(Role.HR, Role.HR_ADMIN))]", "Hr = Annotated[Principal, Depends(require_role(Role.HR, Role.HR_ADMIN, Role.MANAGER))]", [ROUTE_T, "-k", "manager_may_not"]),

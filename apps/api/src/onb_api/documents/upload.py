@@ -57,7 +57,7 @@ def _too_large(limit: int) -> AppError:
 
 
 def _declared(value: str | None) -> int | None:
-    if value is None or not value.isdigit():
+    if value is None or not (value.isascii() and value.isdigit()):
         return None
     return int(value)
 

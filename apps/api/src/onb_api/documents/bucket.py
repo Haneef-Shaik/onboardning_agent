@@ -21,14 +21,14 @@ database a driver-level GridFS bucket needs (ADR 0012). No file name or plaintex
 from __future__ import annotations
 
 import logging
-import math
+import re
 import secrets
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Final
+from typing import Any, Final, TypeGuard
 
-from onb_contracts.documents import DocumentType
-from onb_crypto import DecryptionError, KeyPurpose, Keyring, Sealed, associated_data
+from onb_contracts.documents import DOCUMENT_ID_PATTERN, DocumentType
+from onb_crypto import DecryptionError, KeyPurpose, Keyring, Sealed, UnknownKeyVersionError, associated_data
 from onb_data import DataStore, TenantRepository
 
 __all__ = [
@@ -49,6 +49,7 @@ CHUNKS_COLLECTION: Final = f"{BUCKET}.chunks"
 CHUNK_SIZE: Final = 255 * 1024  # GridFS's default chunk size
 ALG: Final = "A256GCM"
 _BINDING_LABEL: Final = "onb.document.v1"
+_DOCUMENT_ID: Final = re.compile(DOCUMENT_ID_PATTERN)
 
 
 class DocumentNotFoundError(LookupError):
@@ -102,13 +103,12 @@ class DocumentBucket:
         media_type: str,
         data: bytes,
         now: datetime,
-        document_id: str | None = None,
     ) -> StoredDocument:
         """Encrypt `data` bound to the hire and store it. Chunks first, the files document last, so a
         files document always has its chunks; a failure removes what was written and re-raises."""
         if not data:
             raise ValueError("a document needs at least one byte")
-        doc_id = document_id or new_document_id()
+        doc_id = new_document_id()
         purpose = _purpose(document_type)
         bound = _binding(org_id, hire_id, doc_id, document_type.value, media_type)
         sealed = await self._keyring.encrypt(org_id, data, associated_data=bound, purpose=purpose)
@@ -145,31 +145,50 @@ class DocumentBucket:
     async def read(self, org_id: str, *, hire_id: str, document_id: str) -> bytes:
         """The plaintext, only for the hire it was uploaded for. `DocumentNotFoundError` when this org has
         no such document for this hire; `DecryptionError` when anything stored was changed."""
-        files = await self._files().find_one({"_id": document_id, "metadata.hire_id": hire_id})
+        files = await self._files().find_one({"_id": _checked_id(document_id), "metadata.hire_id": hire_id})
         if files is None:
             raise DocumentNotFoundError(f"no document {document_id} for hire {hire_id}")
         sealed, purpose, document_type, media_type = _sealed_header(files)
         chunks = await self._chunks().find({"files_id": document_id}, sort=[("n", 1)])
         ciphertext = _joined(chunks, files)
         bound = _binding(org_id, hire_id, document_id, document_type, media_type)
-        return await self._keyring.decrypt(
-            org_id,
-            Sealed(sealed.key_version, sealed.nonce, ciphertext),
-            associated_data=bound,
-            purpose=purpose,
-        )
+        try:
+            return await self._keyring.decrypt(
+                org_id,
+                Sealed(sealed.key_version, sealed.nonce, ciphertext),
+                associated_data=bound,
+                purpose=purpose,
+            )
+        except UnknownKeyVersionError:
+            raise _refused(document_id, "unknown key version") from None
 
     async def delete(self, document_id: str) -> None:
-        await self._remove(document_id)
+        await self._remove(_checked_id(document_id))
 
     async def _remove(self, document_id: str) -> None:
-        """Delete the files document and every chunk (best effort: a failure is logged)."""
+        """Delete every chunk, then the files document; each step on its own, so one failure does not
+        leave the rest behind (best effort: failures are logged)."""
+        try:
+            chunks = await self._chunks().find({"files_id": document_id}, projection={"_id": 1})
+        except Exception as error:
+            log.error("document %s chunks not listed for removal: %s", document_id, type(error).__name__)
+            chunks = []
+        for chunk in chunks:
+            try:
+                await self._chunks().delete_one({"_id": chunk["_id"]})
+            except Exception as error:
+                log.error("document %s chunk not removed: %s", document_id, type(error).__name__)
         try:
             await self._files().delete_one({"_id": document_id})
-            for chunk in await self._chunks().find({"files_id": document_id}, projection={"_id": 1}):
-                await self._chunks().delete_one({"_id": chunk["_id"]})
         except Exception as error:
             log.error("document %s not fully removed: %s", document_id, type(error).__name__)
+
+
+def _checked_id(document_id: object) -> str:
+    """A server-made document id; anything else (an operator, another shape) finds nothing."""
+    if not isinstance(document_id, str) or not _DOCUMENT_ID.fullmatch(document_id):
+        raise DocumentNotFoundError("not a document id")
+    return document_id
 
 
 def _refused(document_id: object, why: str) -> DecryptionError:
@@ -182,9 +201,12 @@ def _sealed_header(files: dict[str, Any]) -> tuple[Sealed, KeyPurpose, str, str]
     meta = files.get("metadata")
     if not isinstance(meta, dict) or meta.get("alg") != ALG:
         raise _refused(files.get("_id"), "malformed metadata")
+    nonce = meta.get("nonce")
+    if not isinstance(nonce, bytes):  # never bytes(<int>): that would allocate, not refuse
+        raise _refused(files.get("_id"), "malformed encryption header")
     try:
         purpose = KeyPurpose(str(meta.get("key_purpose")))
-        sealed = Sealed(meta.get("key_version"), bytes(meta.get("nonce")), b"")  # type: ignore[arg-type]  # checked by Sealed
+        sealed = Sealed(meta.get("key_version"), nonce, b"")  # type: ignore[arg-type]  # checked by Sealed
     except (TypeError, ValueError):
         raise _refused(files.get("_id"), "malformed encryption header") from None
     document_type, media_type = meta.get("type"), meta.get("media_type")
@@ -196,11 +218,16 @@ def _sealed_header(files: dict[str, Any]) -> tuple[Sealed, KeyPurpose, str, str]
 def _joined(chunks: list[dict[str, Any]], files: dict[str, Any]) -> bytes:
     """The ciphertext from contiguous chunks 0..k-1 whose total is the recorded length."""
     length, chunk_size = files.get("length"), files.get("chunkSize")
-    if not isinstance(length, int) or not isinstance(chunk_size, int) or length < 1 or chunk_size < 1:
+    if not _positive_int(length) or not _positive_int(chunk_size):
         raise _refused(files.get("_id"), "malformed length")
-    if [c.get("n") for c in chunks] != list(range(math.ceil(length / chunk_size))):
+    expected = -(-length // chunk_size)  # ceiling, in integers
+    if len(chunks) != expected or [c.get("n") for c in chunks] != list(range(expected)):
         raise _refused(files.get("_id"), "missing or duplicated chunks")
     data = b"".join(bytes(c.get("data") or b"") for c in chunks)
     if len(data) != length:
         raise _refused(files.get("_id"), "length mismatch")
     return data
+
+
+def _positive_int(value: object) -> TypeGuard[int]:
+    return isinstance(value, int) and not isinstance(value, bool) and value >= 1

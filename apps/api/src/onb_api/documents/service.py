@@ -2,11 +2,11 @@
 
 An upload (HR/HR_ADMIN) is checked in this order, nothing stored until every check passes:
 allowed media type (422) → the hire is the caller org's (404 otherwise, like a missing one) → an Aadhaar
-scan needs the hire's recorded Aadhaar consent (422) → at most `max_bytes` (413) → the bytes carry the
-declared type's signature (422). Then the scan is encrypted bound to the hire into the bucket, its
-`documents_meta` record is written, and the upload is audited. If the metadata or the audit record
-cannot be written, everything written for it is removed (AUD-1: a change that cannot be audited is not
-made) and the request fails.
+scan needs the vault's consent record for the hire's Aadhaar (422, audited DENIED) → at most
+`max_bytes` (413) → the bytes carry the declared type's signature (422). Then the scan is encrypted
+bound to the hire into the bucket, its `documents_meta` record is written, and the upload is audited.
+If the metadata or the audit record cannot be written, everything written for it is removed (AUD-1: a
+change that cannot be audited is not made) and the request fails.
 
 The answer, like `documents_meta`, is metadata only. No route returns the bytes; `read` serves the
 service's own callers (tests now, a later audited download).
@@ -19,15 +19,15 @@ from __future__ import annotations
 import logging
 from collections.abc import AsyncIterator, Callable
 from datetime import UTC, datetime
-from typing import Any, Final
+from typing import Final
 
 from onb_contracts import ErrorCode, ErrorDetail
 from onb_contracts.documents import MAX_DOCUMENT_BYTES, DocumentMeta, DocumentType
-from onb_crypto import Keyring
+from onb_crypto import CONSENT_COLLECTION, Keyring
 from onb_data import Actor, Auditor, AuditOutcome, DataStore
 
 from onb_api.auth.tokens import Principal
-from onb_api.documents.bucket import DocumentBucket, new_document_id
+from onb_api.documents.bucket import DocumentBucket
 from onb_api.documents.meta import DocumentMetaStore
 from onb_api.documents.upload import check_content, media_type_of, read_capped
 from onb_api.errors import AppError
@@ -45,6 +45,20 @@ def _utcnow() -> datetime:
     return datetime.now(UTC)
 
 
+class VaultConsents:
+    """The vault's own consent records (`pii_consent`), written with an Aadhaar value (PII-2, ADR 0007).
+    The gate for an Aadhaar scan reads these, not the hire's `id_proof` flag: `new_hires` is writable by
+    agents through mcp-mongo, `pii_consent` by no MCP user."""
+
+    def __init__(self, store: DataStore) -> None:
+        self._store = store
+
+    async def has_aadhaar_consent(self, hire_id: str) -> bool:
+        query = {"subject.type": "new_hire", "subject.id": hire_id, "field": "aadhaar"}
+        count: int = await self._store.tenant(CONSENT_COLLECTION).count(query)
+        return count > 0
+
+
 class DocumentService:
     def __init__(
         self,
@@ -52,6 +66,7 @@ class DocumentService:
         hires: HireStore,
         bucket: DocumentBucket,
         meta: DocumentMetaStore,
+        consents: VaultConsents,
         keyring: Keyring,
         auditor: Auditor,
         max_bytes: int = MAX_DOCUMENT_BYTES,
@@ -60,6 +75,7 @@ class DocumentService:
         self._hires = hires
         self.bucket = bucket
         self.meta = meta
+        self._consents = consents
         self._keyring = keyring
         self._auditor = auditor
         self._max_bytes = max_bytes
@@ -72,6 +88,7 @@ class DocumentService:
             hires=HireStore(data),
             bucket=DocumentBucket(data, keyring),
             meta=DocumentMetaStore(data),
+            consents=VaultConsents(data),
             keyring=keyring,
             auditor=auditor,
         )
@@ -94,7 +111,8 @@ class DocumentService:
         hire = await self._hires.get(hire_id)
         if hire is None:
             raise AppError(ErrorCode.NOT_FOUND)
-        if document_type is DocumentType.AADHAAR and not _has_aadhaar_consent(hire):
+        if document_type is DocumentType.AADHAAR and not await self._consents.has_aadhaar_consent(hire_id):
+            await self._audit(principal, f"hire:{hire_id}/document", AuditOutcome.DENIED, "no aadhaar consent")
             raise AppError(ErrorCode.VALIDATION_ERROR, details=(_NO_AADHAAR_CONSENT,))
         data = await read_capped(body, declared_length=content_length, limit=self._max_bytes)
         check_content(media_type, data)
@@ -108,11 +126,10 @@ class DocumentService:
             media_type=media_type,
             data=data,
             now=now,
-            document_id=new_document_id(),
         )
         try:
             record = await self.meta.add(document_id=stored.id, hire_id=hire_id, document_type=document_type, now=now)
-            await self._audit(principal, f"hire:{hire_id}/document/{stored.id}")
+            await self._audit(principal, f"hire:{hire_id}/document/{stored.id}", AuditOutcome.SUCCESS)
         except BaseException:
             await self._undo(stored.id)
             raise
@@ -123,9 +140,9 @@ class DocumentService:
         """The plaintext of one scan, only for the hire it was uploaded for (see `DocumentBucket.read`)."""
         return await self.bucket.read(org_id, hire_id=hire_id, document_id=document_id)
 
-    async def _audit(self, principal: Principal, target: str) -> None:
+    async def _audit(self, principal: Principal, target: str, outcome: AuditOutcome, reason: str | None = None) -> None:
         await self._auditor.audit(
-            actor=Actor.user(principal.user_id), action="document.upload", target=target, outcome=AuditOutcome.SUCCESS
+            actor=Actor.user(principal.user_id), action="document.upload", target=target, outcome=outcome, reason=reason
         )
 
     async def _undo(self, document_id: str) -> None:
@@ -139,8 +156,3 @@ class DocumentService:
     def _now(self) -> datetime:
         now = self._clock()
         return now.replace(microsecond=now.microsecond // 1000 * 1000)
-
-
-def _has_aadhaar_consent(hire: dict[str, Any]) -> bool:
-    proof = hire.get("id_proof")
-    return isinstance(proof, dict) and proof.get("aadhaar_consent") is True

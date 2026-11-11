@@ -294,6 +294,7 @@ def test_documents_meta_is_scoped_to_the_org(store: DataStore, db: MemoryDatabas
         {"alg": "A128CBC"},
         {"nonce": b"short"},
         {"nonce": None},
+        {"nonce": 10**12},
         {"key_purpose": "signing"},
         {"key_purpose": "nonsense"},
         {"key_version": "1"},
@@ -305,6 +306,7 @@ def test_documents_meta_is_scoped_to_the_org(store: DataStore, db: MemoryDatabas
         "alg",
         "nonce-length",
         "nonce-missing",
+        "nonce-int",
         "purpose-not-encrypting",
         "purpose-unknown",
         "version-str",
@@ -318,11 +320,36 @@ def test_a_malformed_encryption_header_fails_closed(
 ) -> None:
     stored = _put(bucket)
     _rewrite(db, FILES_COLLECTION, stored.id, lambda f: {**f, "metadata": {**f["metadata"], **change}})
-    with pytest.raises(DecryptionError):
+    with pytest.raises(DecryptionError, match="malformed"):
         _run(ORG, bucket.read(ORG, hire_id=HIRE, document_id=stored.id))
 
 
-@pytest.mark.parametrize("change", [{"length": 0}, {"length": "12"}, {"chunkSize": 0}, {"chunkSize": None}])
+def test_an_unknown_key_version_fails_closed(bucket: DocumentBucket, db: MemoryDatabase) -> None:
+    stored = _put(bucket)
+    _rewrite(db, FILES_COLLECTION, stored.id, lambda f: {**f, "metadata": {**f["metadata"], "key_version": 99}})
+    with pytest.raises(DecryptionError, match="unknown key version"):
+        _run(ORG, bucket.read(ORG, hire_id=HIRE, document_id=stored.id))
+
+
+@pytest.mark.parametrize("bad_id", [{"$ne": "x"}, "doc_short", "x" * 28, None])
+def test_only_a_document_id_is_looked_up(bucket: DocumentBucket, bad_id: Any) -> None:
+    _put(bucket)
+    with pytest.raises(LookupError):
+        _run(ORG, bucket.read(ORG, hire_id=HIRE, document_id=bad_id))
+    with pytest.raises(LookupError):
+        _run(ORG, bucket.delete(bad_id))
+
+
+def test_a_huge_tampered_length_fails_closed_without_allocating(bucket: DocumentBucket, db: MemoryDatabase) -> None:
+    stored = _put(bucket)
+    _rewrite(db, FILES_COLLECTION, stored.id, lambda f: {**f, "length": 2**62, "chunkSize": 1})
+    with pytest.raises(DecryptionError, match="missing or duplicated chunks"):
+        _run(ORG, bucket.read(ORG, hire_id=HIRE, document_id=stored.id))
+
+
+@pytest.mark.parametrize(
+    "change", [{"length": 0}, {"length": "12"}, {"length": True}, {"chunkSize": 0}, {"chunkSize": None}]
+)
 def test_a_malformed_length_fails_closed(bucket: DocumentBucket, db: MemoryDatabase, change: dict[str, Any]) -> None:
     stored = _put(bucket)
     _rewrite(db, FILES_COLLECTION, stored.id, lambda f: {**f, **change})
@@ -349,6 +376,42 @@ def test_a_failed_removal_is_logged_not_raised(
     monkeypatch.setattr(db[FILES_COLLECTION], "delete_one", broken)
     _run(ORG, bucket.delete(stored.id))
     assert f"document {stored.id} not fully removed: RuntimeError" in caplog.text
+    assert db.raw(CHUNKS_COLLECTION) == []  # the chunks went first, each on its own
+
+
+def test_a_failed_chunk_removal_still_removes_the_rest(
+    bucket: DocumentBucket, db: MemoryDatabase, caplog: pytest.LogCaptureFixture, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    stored = _put(bucket)
+    chunks = db[CHUNKS_COLLECTION]
+    real_delete = chunks.delete_one
+    calls: list[int] = []
+
+    async def first_fails(query: Any, **kwargs: Any) -> Any:
+        calls.append(1)
+        if len(calls) == 1:
+            raise RuntimeError("blip")
+        return await real_delete(query, **kwargs)
+
+    monkeypatch.setattr(chunks, "delete_one", first_fails)
+    _run(ORG, bucket.delete(stored.id))
+    assert len(db.raw(CHUNKS_COLLECTION)) == 1
+    assert db.raw(FILES_COLLECTION) == []
+    assert f"document {stored.id} chunk not removed: RuntimeError" in caplog.text
+
+
+def test_a_failed_chunk_listing_still_removes_the_files_document(
+    bucket: DocumentBucket, db: MemoryDatabase, caplog: pytest.LogCaptureFixture, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    stored = _put(bucket)
+
+    def broken(*_: Any, **__: Any) -> Any:
+        raise RuntimeError("blip")
+
+    monkeypatch.setattr(db[CHUNKS_COLLECTION], "find", broken)
+    _run(ORG, bucket.delete(stored.id))
+    assert db.raw(FILES_COLLECTION) == []
+    assert f"document {stored.id} chunks not listed for removal: RuntimeError" in caplog.text
 
 
 # --- helpers ----------------------------------------------------------------------------------------------
