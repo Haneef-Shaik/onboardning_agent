@@ -1,0 +1,46 @@
+# SEED-1 · `make seed` on an empty database, then again (boxes 1 and 2)
+#
+# Date: 2026-11-11T07:12Z. Environment: compose (Docker Desktop, macOS), project ob-seed-1,
+# branch goal/seed-1-make-seed @ e212223.
+# Method: `docker compose -p ob-seed-1 down -v` (this stack's volumes only, so MongoDB starts empty),
+# then `make seed` twice (`make seed` runs `make up` first). MONGO_URI is empty in .env, so
+# scripts/seed.sh used the loopback tunnel; MONGO_DATABASE=onboarding. Passwords and PII_MASTER_KEY
+# are generated local values in the git-ignored .env. Compose build output is omitted.
+# After both runs: `docker ps -a --filter label=onb.seed-tunnel -q | wc -l` -> 0 (tunnel removed).
+# The record-by-record read-back is tests_int/test_mongo_seed.py (root client, scratch database).
+
+## run 1 (exit 0)
+set -a && . ./.env && set +a && scripts/seed.sh
+created org:org_demo
+created org_keys:org_demo/v1
+created user:u_demo_hradmin (HR_ADMIN)
+created user:u_demo_hr (HR)
+created user:u_demo_mgr_priya (MANAGER)
+created user:u_demo_mgr_arjun (MANAGER)
+created agent:approvals_agent/v1
+created agent:db_agent/v1
+created agent:provisioning_agent/v1
+created agent:run_assistant/v1
+created agent:template_builder/v1
+created agent:templates_agent/v1
+created catalog:tool_catalog/v1
+created template:engineer-india/v1
+14 created, 0 unchanged
+
+## run 2 (exit 0)
+set -a && . ./.env && set +a && scripts/seed.sh
+unchanged org:org_demo
+unchanged org_keys:org_demo/v1
+unchanged user:u_demo_hradmin (HR_ADMIN)
+unchanged user:u_demo_hr (HR)
+unchanged user:u_demo_mgr_priya (MANAGER)
+unchanged user:u_demo_mgr_arjun (MANAGER)
+unchanged agent:approvals_agent
+unchanged agent:db_agent
+unchanged agent:provisioning_agent
+unchanged agent:run_assistant
+unchanged agent:template_builder
+unchanged agent:templates_agent
+unchanged catalog:tool_catalog
+unchanged template:engineer-india/v1
+0 created, 14 unchanged

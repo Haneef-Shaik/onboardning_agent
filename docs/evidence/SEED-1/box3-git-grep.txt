@@ -1,0 +1,56 @@
+$ git rev-parse --short HEAD
+e212223
+
+$ git grep -nE 'SEED_[A-Z0-9_]*PASSWORD[[:space:]]*[=:][[:space:]]*[^[:space:]]'   # a seed password variable given a value, in any tracked file
+exit=1 (1 = no match)
+
+$ git grep -nE 'SEED_[A-Z0-9_]*PASSWORD' -- ':!docs'   # every tracked mention (names only, outside docs)
+.env.example:50:SEED_HR_ADMIN_PASSWORD=
+.env.example:51:SEED_HR_PASSWORD=
+.env.example:52:SEED_MANAGER_PASSWORD=
+apps/api/tests/test_seed_command.py:22:    "SEED_HR_ADMIN_PASSWORD": "admin-pass-0123456789",
+apps/api/tests/test_seed_command.py:23:    "SEED_HR_PASSWORD": "hr-pass-0123456789",
+apps/api/tests/test_seed_command.py:24:    "SEED_MANAGER_PASSWORD": "manager-pass-0123456789",
+apps/api/tests/test_seed_command.py:42:@pytest.mark.parametrize("missing", ["SEED_HR_PASSWORD", "PII_MASTER_KEY", "MONGO_URI", "MONGO_DATABASE"])
+apps/api/tests/test_seed_spec.py:21:    "SEED_HR_ADMIN_PASSWORD": "admin-pass-0123456789",
+apps/api/tests/test_seed_spec.py:22:    "SEED_HR_PASSWORD": "hr-pass-0123456789",
+apps/api/tests/test_seed_spec.py:23:    "SEED_MANAGER_PASSWORD": "manager-pass-0123456789",
+apps/api/tests/test_seed_spec.py:48:    assert passwords["u_demo_hradmin"] == GOOD_ENV["SEED_HR_ADMIN_PASSWORD"]
+apps/api/tests/test_seed_spec.py:49:    assert passwords["u_demo_mgr_priya"] == GOOD_ENV["SEED_MANAGER_PASSWORD"]
+apps/api/tests/test_seed_spec.py:63:    assert GOOD_ENV["SEED_HR_ADMIN_PASSWORD"] not in repr(plan)
+apps/api/tests/test_seed_spec.py:64:    assert GOOD_ENV["SEED_HR_ADMIN_PASSWORD"] not in repr(plan.users[0])
+apps/api/tests/test_seed_spec.py:75:    with pytest.raises(SeedConfigError, match="SEED_HR_PASSWORD is not set"):
+apps/api/tests/test_seed_spec.py:76:        load_seed(SEED_FILE, {**GOOD_ENV, "SEED_HR_PASSWORD": "   "})
+apps/api/tests/test_seed_spec.py:81:    with pytest.raises(SeedConfigError, match="SEED_HR_PASSWORD") as caught:
+apps/api/tests/test_seed_spec.py:82:        load_seed(SEED_FILE, {**GOOD_ENV, "SEED_HR_PASSWORD": short})
+apps/api/tests/test_seed_spec.py:88:    with pytest.raises(SeedConfigError, match="SEED_HR_PASSWORD") as caught:
+apps/api/tests/test_seed_spec.py:89:        load_seed(SEED_FILE, {**GOOD_ENV, "SEED_HR_PASSWORD": long})
+apps/api/tests/test_seeder.py:35:    "SEED_HR_ADMIN_PASSWORD": "admin-pass-0123456789",
+apps/api/tests/test_seeder.py:36:    "SEED_HR_PASSWORD": "hr-pass-0123456789",
+apps/api/tests/test_seeder.py:37:    "SEED_MANAGER_PASSWORD": "manager-pass-0123456789",
+apps/api/tests/test_seeder.py:283:    rotated = load_seed(CONFIG / "seed.yaml", {**ENV, "SEED_HR_PASSWORD": "a-new-password-987654"})
+apps/api/tests/test_seeder.py:288:    assert verify_password(ENV["SEED_HR_PASSWORD"], record.password_hash, rounds=ROUNDS)
+apps/api/tests_int/test_mongo_seed.py:39:    "SEED_HR_ADMIN_PASSWORD": secrets.token_urlsafe(18),
+apps/api/tests_int/test_mongo_seed.py:40:    "SEED_HR_PASSWORD": secrets.token_urlsafe(18),
+apps/api/tests_int/test_mongo_seed.py:41:    "SEED_MANAGER_PASSWORD": secrets.token_urlsafe(18),
+apps/api/tests_int/test_mongo_seed.py:44:    "u_demo_hradmin": ("hr.admin@demo.example", "HR_ADMIN", "SEED_HR_ADMIN_PASSWORD"),
+apps/api/tests_int/test_mongo_seed.py:45:    "u_demo_hr": ("hr@demo.example", "HR", "SEED_HR_PASSWORD"),
+apps/api/tests_int/test_mongo_seed.py:46:    "u_demo_mgr_priya": ("priya.manager@demo.example", "MANAGER", "SEED_MANAGER_PASSWORD"),
+apps/api/tests_int/test_mongo_seed.py:47:    "u_demo_mgr_arjun": ("arjun.manager@demo.example", "MANAGER", "SEED_MANAGER_PASSWORD"),
+config/seed.yaml:15:    password_env: SEED_HR_ADMIN_PASSWORD
+config/seed.yaml:20:    password_env: SEED_HR_PASSWORD
+config/seed.yaml:25:    password_env: SEED_MANAGER_PASSWORD
+config/seed.yaml:30:    password_env: SEED_MANAGER_PASSWORD
+
+$ git grep -niE '^[[:space:]]*-?[[:space:]]*password[[:space:]]*:' -- config templates   # a password field in config or templates
+exit=1 (1 = no match)
+
+# the values in this worktree's .env (generated locally) appear in no tracked file:
+SEED_HR_ADMIN_PASSWORD: value set=yes, in no tracked file
+SEED_HR_PASSWORD: value set=yes, in no tracked file
+SEED_MANAGER_PASSWORD: value set=yes, in no tracked file
+
+$ git check-ignore -v .env
+.gitignore:2:.env	.env
+$ git ls-files .env | wc -l
+       0
