@@ -75,6 +75,7 @@ OPERATIONS: dict[str, Callable[[TenantRepository], Awaitable[object]]] = {
     "update_by_id": lambda r: r.update_by_id("a1", {"$set": {"name": "x"}}),
     "delete_one": lambda r: r.delete_one({"_id": "a1"}),
     "delete_by_id": lambda r: r.delete_by_id("a1"),
+    "delete_many": lambda r: r.delete_many({"name": "Asha"}),  # NOTIF-1
     "aggregate": lambda r: r.aggregate([]),
     "count": lambda r: r.count(),
 }
