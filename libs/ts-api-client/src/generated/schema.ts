@@ -192,6 +192,127 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/templates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Templates */
+        get: operations["listTemplates"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/templates/drafts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Drafts */
+        get: operations["listTemplateDrafts"];
+        put?: never;
+        /** Create Draft */
+        post: operations["createTemplateDraft"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/templates/drafts/{draft_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Draft */
+        get: operations["getTemplateDraft"];
+        /** Save Draft */
+        put: operations["saveTemplateDraft"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/templates/drafts/{draft_id}/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Publish Draft */
+        post: operations["publishTemplateDraft"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/templates/drafts/{draft_id}/validate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Validate Draft */
+        post: operations["validateTemplateDraft"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/templates/{key}/versions/{version}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Version */
+        get: operations["getTemplateVersion"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/templates/{key}/versions/{version}/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Archive Version */
+        post: operations["archiveTemplateVersion"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -304,6 +425,19 @@ export interface components {
          * @enum {string}
          */
         AlternativeIdType: "passport" | "voter_id" | "driving_licence";
+        /**
+         * Approver
+         * @description Who decides an approval task: a `user_ref` variable, a platform role, or one user id.
+         */
+        Approver: {
+            /** Ref */
+            ref: string;
+            /**
+             * Rule
+             * @enum {string}
+             */
+            rule: "variable" | "role" | "user";
+        };
         /** AuditActor */
         AuditActor: {
             /** Id */
@@ -349,6 +483,75 @@ export interface components {
         AuditRecordsEnvelope: {
             /** Data */
             data: components["schemas"]["AuditRecord"][] | null;
+            error: components["schemas"]["ErrorBody"] | null;
+            /** @default {} */
+            meta: components["schemas"]["Meta"];
+            /** Success */
+            success: boolean;
+        };
+        /**
+         * DraftCreate
+         * @description `POST /templates/drafts`: a new draft from a template body.
+         */
+        DraftCreate: {
+            template: components["schemas"]["Template"];
+        };
+        /** DraftEnvelope */
+        DraftEnvelope: {
+            data: components["schemas"]["DraftRecord"] | null;
+            error: components["schemas"]["ErrorBody"] | null;
+            /** @default {} */
+            meta: components["schemas"]["Meta"];
+            /** Success */
+            success: boolean;
+        };
+        /** DraftRecord */
+        DraftRecord: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Created By */
+            created_by: string;
+            /** Id */
+            id: string;
+            /** Issues */
+            issues: components["schemas"]["TemplateIssue"][];
+            /** Key */
+            key: string;
+            /** Published Version */
+            published_version: number | null;
+            /** Revision */
+            revision: number;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "draft" | "published";
+            template: components["schemas"]["Template"];
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Updated By */
+            updated_by: string;
+        };
+        /**
+         * DraftUpdate
+         * @description `PUT /templates/drafts/{id}`: the whole new body. With `revision`, the save applies only to that
+         *     revision (409 otherwise), so two editors cannot overwrite each other unseen.
+         */
+        DraftUpdate: {
+            /** Revision */
+            revision?: number | null;
+            template: components["schemas"]["Template"];
+        };
+        /** DraftsEnvelope */
+        DraftsEnvelope: {
+            /** Data */
+            data: components["schemas"]["DraftRecord"][] | null;
             error: components["schemas"]["ErrorBody"] | null;
             /** @default {} */
             meta: components["schemas"]["Meta"];
@@ -499,6 +702,7 @@ export interface components {
             /** Success */
             success: boolean;
         };
+        JsonValue: unknown;
         /** LoginRequest */
         LoginRequest: {
             /** Email */
@@ -571,6 +775,16 @@ export interface components {
             page: number;
             /** Total */
             total: number;
+        };
+        /**
+         * PiiAccess
+         * @description The vault fields a task may resolve, and the one sink that resolves them (PRD §7.10).
+         */
+        PiiAccess: {
+            /** Fields */
+            fields: string[];
+            /** Sink */
+            sink: string;
         };
         /** PiiAccessActor */
         PiiAccessActor: {
@@ -686,6 +900,201 @@ export interface components {
          * @enum {string}
          */
         Role: "HR_ADMIN" | "HR" | "MANAGER";
+        /**
+         * Sla
+         * @description `due` is a date variable with an optional offset: `start_date - 7d`, `start_date + 48h`.
+         */
+        Sla: {
+            /** Due */
+            due: string;
+        };
+        /**
+         * Template
+         * @description A template draft or version: variables and a task graph (`depends_on` edges).
+         */
+        Template: {
+            /** Key */
+            key: string;
+            /** Name */
+            name?: string | null;
+            /**
+             * Status
+             * @default draft
+             * @enum {string}
+             */
+            status: "draft" | "published" | "archived";
+            /** Tasks */
+            tasks: components["schemas"]["TemplateTask"][];
+            /**
+             * Variables
+             * @default []
+             */
+            variables: components["schemas"]["Variable"][];
+            /** Version */
+            version?: number | null;
+        };
+        /**
+         * TemplateIssue
+         * @description One FR-T3 problem: the rule, the task it is about (or none) and a message without raw values.
+         */
+        TemplateIssue: {
+            /** Message */
+            message: string;
+            /** Rule */
+            rule: string;
+            /** Task Id */
+            task_id: string | null;
+        };
+        /** TemplateSummariesEnvelope */
+        TemplateSummariesEnvelope: {
+            /** Data */
+            data: components["schemas"]["TemplateSummary"][] | null;
+            error: components["schemas"]["ErrorBody"] | null;
+            /** @default {} */
+            meta: components["schemas"]["Meta"];
+            /** Success */
+            success: boolean;
+        };
+        /**
+         * TemplateSummary
+         * @description `GET /templates`: one row per template key, with every version's status.
+         */
+        TemplateSummary: {
+            /** Key */
+            key: string;
+            /** Latest Version */
+            latest_version: number;
+            /** Name */
+            name: string | null;
+            /** Versions */
+            versions: components["schemas"]["TemplateVersionSummary"][];
+        };
+        /**
+         * TemplateTask
+         * @description One node of the template graph. `inputs` reach the task's agent, so they are LLM-visible.
+         */
+        TemplateTask: {
+            /** Action */
+            action: string;
+            /** Agent */
+            agent: string;
+            approver?: components["schemas"]["Approver"] | null;
+            /**
+             * Depends On
+             * @default []
+             */
+            depends_on: string[];
+            /** Id */
+            id: string;
+            /** Inputs */
+            inputs?: {
+                [key: string]: components["schemas"]["JsonValue"];
+            };
+            pii_access?: components["schemas"]["PiiAccess"] | null;
+            /**
+             * Requires Approval
+             * @default false
+             */
+            requires_approval: boolean;
+            sla?: components["schemas"]["Sla"] | null;
+            /** Sla Hours */
+            sla_hours?: number | null;
+            /** Title */
+            title: string;
+            /**
+             * Tools
+             * @default []
+             */
+            tools: string[];
+            /**
+             * Type
+             * @default action
+             * @enum {string}
+             */
+            type: "action" | "approval";
+            /** When */
+            when?: string | null;
+        };
+        /**
+         * TemplateValidation
+         * @description `POST /templates/drafts/{id}/validate`: the report against the current registry.
+         */
+        TemplateValidation: {
+            /** Issues */
+            issues: components["schemas"]["TemplateIssue"][];
+            /** Ok */
+            ok: boolean;
+            /** Order */
+            order: string[];
+        };
+        /** TemplateValidationEnvelope */
+        TemplateValidationEnvelope: {
+            data: components["schemas"]["TemplateValidation"] | null;
+            error: components["schemas"]["ErrorBody"] | null;
+            /** @default {} */
+            meta: components["schemas"]["Meta"];
+            /** Success */
+            success: boolean;
+        };
+        /** TemplateVersionEnvelope */
+        TemplateVersionEnvelope: {
+            data: components["schemas"]["TemplateVersionRecord"] | null;
+            error: components["schemas"]["ErrorBody"] | null;
+            /** @default {} */
+            meta: components["schemas"]["Meta"];
+            /** Success */
+            success: boolean;
+        };
+        /**
+         * TemplateVersionRecord
+         * @description One published version: its key, its immutable body and where it came from.
+         */
+        TemplateVersionRecord: {
+            /** Archived At */
+            archived_at: string | null;
+            /** Archived By */
+            archived_by: string | null;
+            /** Draft Id */
+            draft_id: string;
+            /** Key */
+            key: string;
+            /**
+             * Published At
+             * Format: date-time
+             */
+            published_at: string;
+            /** Published By */
+            published_by: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "published" | "archived";
+            template: components["schemas"]["Template"];
+            /** Version */
+            version: number;
+        };
+        /** TemplateVersionSummary */
+        TemplateVersionSummary: {
+            /** Archived At */
+            archived_at: string | null;
+            /** Archived By */
+            archived_by: string | null;
+            /**
+             * Published At
+             * Format: date-time
+             */
+            published_at: string;
+            /** Published By */
+            published_by: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "published" | "archived";
+            /** Version */
+            version: number;
+        };
         /** Token */
         Token: {
             /** Access Token */
@@ -713,6 +1122,21 @@ export interface components {
             meta: components["schemas"]["Meta"];
             /** Success */
             success: boolean;
+        };
+        /**
+         * Variable
+         * @description A hire variable the template reads (`role`, `start_date`, `manager_id`...).
+         */
+        Variable: {
+            /** Name */
+            name: string;
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "string" | "enum" | "date" | "user_ref" | "number" | "boolean";
+            /** Values */
+            values?: string[] | null;
         };
     };
     responses: never;
@@ -1103,6 +1527,289 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PiiAccessEnvelope"];
+                };
+            };
+            /** @description Error, in the envelope */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    listTemplates: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TemplateSummariesEnvelope"];
+                };
+            };
+            /** @description Error, in the envelope */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    listTemplateDrafts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DraftsEnvelope"];
+                };
+            };
+            /** @description Error, in the envelope */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    createTemplateDraft: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DraftCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DraftEnvelope"];
+                };
+            };
+            /** @description Error, in the envelope */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    getTemplateDraft: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                draft_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DraftEnvelope"];
+                };
+            };
+            /** @description Error, in the envelope */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    saveTemplateDraft: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                draft_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DraftUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DraftEnvelope"];
+                };
+            };
+            /** @description Error, in the envelope */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    publishTemplateDraft: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                draft_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TemplateVersionEnvelope"];
+                };
+            };
+            /** @description Error, in the envelope */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    validateTemplateDraft: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                draft_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TemplateValidationEnvelope"];
+                };
+            };
+            /** @description Error, in the envelope */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    getTemplateVersion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                key: string;
+                version: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TemplateVersionEnvelope"];
+                };
+            };
+            /** @description Error, in the envelope */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    archiveTemplateVersion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                key: string;
+                version: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TemplateVersionEnvelope"];
                 };
             };
             /** @description Error, in the envelope */

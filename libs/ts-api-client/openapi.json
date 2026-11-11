@@ -326,6 +326,32 @@
         "title": "AlternativeIdType",
         "type": "string"
       },
+      "Approver": {
+        "additionalProperties": false,
+        "description": "Who decides an approval task: a `user_ref` variable, a platform role, or one user id.",
+        "properties": {
+          "ref": {
+            "pattern": "^[A-Za-z0-9_:-]{1,128}$",
+            "title": "Ref",
+            "type": "string"
+          },
+          "rule": {
+            "enum": [
+              "variable",
+              "role",
+              "user"
+            ],
+            "title": "Rule",
+            "type": "string"
+          }
+        },
+        "required": [
+          "rule",
+          "ref"
+        ],
+        "title": "Approver",
+        "type": "object"
+      },
       "AuditActor": {
         "additionalProperties": false,
         "properties": {
@@ -472,6 +498,211 @@
           "meta"
         ],
         "title": "AuditRecordsEnvelope",
+        "type": "object"
+      },
+      "DraftCreate": {
+        "additionalProperties": false,
+        "description": "`POST /templates/drafts`: a new draft from a template body.",
+        "properties": {
+          "template": {
+            "$ref": "#/components/schemas/Template"
+          }
+        },
+        "required": [
+          "template"
+        ],
+        "title": "DraftCreate",
+        "type": "object"
+      },
+      "DraftEnvelope": {
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DraftRecord"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "error": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ErrorBody"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta",
+            "default": {}
+          },
+          "success": {
+            "title": "Success",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "success",
+          "data",
+          "error",
+          "meta"
+        ],
+        "title": "DraftEnvelope",
+        "type": "object"
+      },
+      "DraftRecord": {
+        "additionalProperties": false,
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "created_by": {
+            "title": "Created By",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "issues": {
+            "items": {
+              "$ref": "#/components/schemas/TemplateIssue"
+            },
+            "title": "Issues",
+            "type": "array"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "published_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Published Version"
+          },
+          "revision": {
+            "title": "Revision",
+            "type": "integer"
+          },
+          "status": {
+            "enum": [
+              "draft",
+              "published"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "template": {
+            "$ref": "#/components/schemas/Template"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "updated_by": {
+            "title": "Updated By",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "key",
+          "revision",
+          "status",
+          "template",
+          "issues",
+          "published_version",
+          "created_by",
+          "created_at",
+          "updated_by",
+          "updated_at"
+        ],
+        "title": "DraftRecord",
+        "type": "object"
+      },
+      "DraftUpdate": {
+        "additionalProperties": false,
+        "description": "`PUT /templates/drafts/{id}`: the whole new body. With `revision`, the save applies only to that\nrevision (409 otherwise), so two editors cannot overwrite each other unseen.",
+        "properties": {
+          "revision": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revision"
+          },
+          "template": {
+            "$ref": "#/components/schemas/Template"
+          }
+        },
+        "required": [
+          "template"
+        ],
+        "title": "DraftUpdate",
+        "type": "object"
+      },
+      "DraftsEnvelope": {
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/DraftRecord"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ErrorBody"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta",
+            "default": {}
+          },
+          "success": {
+            "title": "Success",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "success",
+          "data",
+          "error",
+          "meta"
+        ],
+        "title": "DraftsEnvelope",
         "type": "object"
       },
       "ErrorBody": {
@@ -937,6 +1168,7 @@
         "title": "HiresEnvelope",
         "type": "object"
       },
+      "JsonValue": {},
       "LoginRequest": {
         "additionalProperties": false,
         "properties": {
@@ -1169,6 +1401,33 @@
           "limit"
         ],
         "title": "PageMeta",
+        "type": "object"
+      },
+      "PiiAccess": {
+        "additionalProperties": false,
+        "description": "The vault fields a task may resolve, and the one sink that resolves them (PRD §7.10).",
+        "properties": {
+          "fields": {
+            "items": {
+              "pattern": "^[a-z][a-z0-9_]{0,63}$",
+              "type": "string"
+            },
+            "maxItems": 50,
+            "minItems": 1,
+            "title": "Fields",
+            "type": "array"
+          },
+          "sink": {
+            "pattern": "^[a-z][a-z0-9_]{0,31}(\\.[a-z][a-z0-9_]{0,31}){1,3}$",
+            "title": "Sink",
+            "type": "string"
+          }
+        },
+        "required": [
+          "fields",
+          "sink"
+        ],
+        "title": "PiiAccess",
         "type": "object"
       },
       "PiiAccessActor": {
@@ -1491,6 +1750,590 @@
         "title": "Role",
         "type": "string"
       },
+      "Sla": {
+        "additionalProperties": false,
+        "description": "`due` is a date variable with an optional offset: `start_date - 7d`, `start_date + 48h`.",
+        "properties": {
+          "due": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Due",
+            "type": "string"
+          }
+        },
+        "required": [
+          "due"
+        ],
+        "title": "Sla",
+        "type": "object"
+      },
+      "Template": {
+        "additionalProperties": false,
+        "description": "A template draft or version: variables and a task graph (`depends_on` edges).",
+        "properties": {
+          "key": {
+            "pattern": "^[a-z][a-z0-9_-]{0,63}$",
+            "title": "Key",
+            "type": "string"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "status": {
+            "default": "draft",
+            "enum": [
+              "draft",
+              "published",
+              "archived"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "tasks": {
+            "items": {
+              "$ref": "#/components/schemas/TemplateTask"
+            },
+            "maxItems": 100,
+            "minItems": 1,
+            "title": "Tasks",
+            "type": "array"
+          },
+          "variables": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Variable"
+            },
+            "maxItems": 50,
+            "title": "Variables",
+            "type": "array"
+          },
+          "version": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Version"
+          }
+        },
+        "required": [
+          "key",
+          "tasks"
+        ],
+        "title": "Template",
+        "type": "object"
+      },
+      "TemplateIssue": {
+        "additionalProperties": false,
+        "description": "One FR-T3 problem: the rule, the task it is about (or none) and a message without raw values.",
+        "properties": {
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "rule": {
+            "title": "Rule",
+            "type": "string"
+          },
+          "task_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Task Id"
+          }
+        },
+        "required": [
+          "rule",
+          "task_id",
+          "message"
+        ],
+        "title": "TemplateIssue",
+        "type": "object"
+      },
+      "TemplateSummariesEnvelope": {
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/TemplateSummary"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ErrorBody"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta",
+            "default": {}
+          },
+          "success": {
+            "title": "Success",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "success",
+          "data",
+          "error",
+          "meta"
+        ],
+        "title": "TemplateSummariesEnvelope",
+        "type": "object"
+      },
+      "TemplateSummary": {
+        "additionalProperties": false,
+        "description": "`GET /templates`: one row per template key, with every version's status.",
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "latest_version": {
+            "title": "Latest Version",
+            "type": "integer"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "versions": {
+            "items": {
+              "$ref": "#/components/schemas/TemplateVersionSummary"
+            },
+            "title": "Versions",
+            "type": "array"
+          }
+        },
+        "required": [
+          "key",
+          "name",
+          "latest_version",
+          "versions"
+        ],
+        "title": "TemplateSummary",
+        "type": "object"
+      },
+      "TemplateTask": {
+        "additionalProperties": false,
+        "description": "One node of the template graph. `inputs` reach the task's agent, so they are LLM-visible.",
+        "properties": {
+          "action": {
+            "pattern": "^[a-z][a-z0-9_]{0,63}$",
+            "title": "Action",
+            "type": "string"
+          },
+          "agent": {
+            "pattern": "^[a-z][a-z0-9_]{0,63}$",
+            "title": "Agent",
+            "type": "string"
+          },
+          "approver": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Approver"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "depends_on": {
+            "default": [],
+            "items": {
+              "pattern": "^[a-z][a-z0-9_]{0,63}$",
+              "type": "string"
+            },
+            "maxItems": 50,
+            "title": "Depends On",
+            "type": "array"
+          },
+          "id": {
+            "pattern": "^[a-z][a-z0-9_]{0,63}$",
+            "title": "Id",
+            "type": "string"
+          },
+          "inputs": {
+            "patternProperties": {
+              "^[A-Za-z][A-Za-z0-9_-]{0,63}$": {
+                "$ref": "#/components/schemas/JsonValue"
+              }
+            },
+            "title": "Inputs",
+            "type": "object"
+          },
+          "pii_access": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PiiAccess"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "requires_approval": {
+            "default": false,
+            "title": "Requires Approval",
+            "type": "boolean"
+          },
+          "sla": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Sla"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "sla_hours": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "maximum": 8760.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sla Hours"
+          },
+          "title": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          },
+          "tools": {
+            "default": [],
+            "items": {
+              "pattern": "^[a-z][a-z0-9_]{0,63}(\\.[a-z][a-z0-9_]{0,63})?$",
+              "type": "string"
+            },
+            "maxItems": 50,
+            "title": "Tools",
+            "type": "array"
+          },
+          "type": {
+            "default": "action",
+            "enum": [
+              "action",
+              "approval"
+            ],
+            "title": "Type",
+            "type": "string"
+          },
+          "when": {
+            "anyOf": [
+              {
+                "maxLength": 512,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "When"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "agent",
+          "action"
+        ],
+        "title": "TemplateTask",
+        "type": "object"
+      },
+      "TemplateValidation": {
+        "additionalProperties": false,
+        "description": "`POST /templates/drafts/{id}/validate`: the report against the current registry.",
+        "properties": {
+          "issues": {
+            "items": {
+              "$ref": "#/components/schemas/TemplateIssue"
+            },
+            "title": "Issues",
+            "type": "array"
+          },
+          "ok": {
+            "title": "Ok",
+            "type": "boolean"
+          },
+          "order": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Order",
+            "type": "array"
+          }
+        },
+        "required": [
+          "ok",
+          "issues",
+          "order"
+        ],
+        "title": "TemplateValidation",
+        "type": "object"
+      },
+      "TemplateValidationEnvelope": {
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TemplateValidation"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "error": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ErrorBody"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta",
+            "default": {}
+          },
+          "success": {
+            "title": "Success",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "success",
+          "data",
+          "error",
+          "meta"
+        ],
+        "title": "TemplateValidationEnvelope",
+        "type": "object"
+      },
+      "TemplateVersionEnvelope": {
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TemplateVersionRecord"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "error": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ErrorBody"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta",
+            "default": {}
+          },
+          "success": {
+            "title": "Success",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "success",
+          "data",
+          "error",
+          "meta"
+        ],
+        "title": "TemplateVersionEnvelope",
+        "type": "object"
+      },
+      "TemplateVersionRecord": {
+        "additionalProperties": false,
+        "description": "One published version: its key, its immutable body and where it came from.",
+        "properties": {
+          "archived_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Archived At"
+          },
+          "archived_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Archived By"
+          },
+          "draft_id": {
+            "title": "Draft Id",
+            "type": "string"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "published_at": {
+            "format": "date-time",
+            "title": "Published At",
+            "type": "string"
+          },
+          "published_by": {
+            "title": "Published By",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "published",
+              "archived"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "template": {
+            "$ref": "#/components/schemas/Template"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "version",
+          "status",
+          "published_at",
+          "published_by",
+          "archived_at",
+          "archived_by",
+          "key",
+          "template",
+          "draft_id"
+        ],
+        "title": "TemplateVersionRecord",
+        "type": "object"
+      },
+      "TemplateVersionSummary": {
+        "additionalProperties": false,
+        "properties": {
+          "archived_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Archived At"
+          },
+          "archived_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Archived By"
+          },
+          "published_at": {
+            "format": "date-time",
+            "title": "Published At",
+            "type": "string"
+          },
+          "published_by": {
+            "title": "Published By",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "published",
+              "archived"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "version",
+          "status",
+          "published_at",
+          "published_by",
+          "archived_at",
+          "archived_by"
+        ],
+        "title": "TemplateVersionSummary",
+        "type": "object"
+      },
       "Token": {
         "additionalProperties": false,
         "properties": {
@@ -1557,6 +2400,52 @@
           "meta"
         ],
         "title": "TokenEnvelope",
+        "type": "object"
+      },
+      "Variable": {
+        "additionalProperties": false,
+        "description": "A hire variable the template reads (`role`, `start_date`, `manager_id`...).",
+        "properties": {
+          "name": {
+            "pattern": "^[a-z][a-z0-9_]{0,63}$",
+            "title": "Name",
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "string",
+              "enum",
+              "date",
+              "user_ref",
+              "number",
+              "boolean"
+            ],
+            "title": "Type",
+            "type": "string"
+          },
+          "values": {
+            "anyOf": [
+              {
+                "items": {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "maxItems": 50,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Values"
+          }
+        },
+        "required": [
+          "name",
+          "type"
+        ],
+        "title": "Variable",
         "type": "object"
       }
     },
@@ -2346,6 +3235,446 @@
         "summary": "List Pii Access Log",
         "tags": [
           "hires"
+        ]
+      }
+    },
+    "/templates": {
+      "get": {
+        "operationId": "listTemplates",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TemplateSummariesEnvelope"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error, in the envelope"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Templates",
+        "tags": [
+          "templates"
+        ]
+      }
+    },
+    "/templates/drafts": {
+      "get": {
+        "operationId": "listTemplateDrafts",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DraftsEnvelope"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error, in the envelope"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Drafts",
+        "tags": [
+          "templates"
+        ]
+      },
+      "post": {
+        "operationId": "createTemplateDraft",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DraftCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DraftEnvelope"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error, in the envelope"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create Draft",
+        "tags": [
+          "templates"
+        ]
+      }
+    },
+    "/templates/drafts/{draft_id}": {
+      "get": {
+        "operationId": "getTemplateDraft",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "draft_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "pattern": "^tdr_[0-9a-f]{32}$",
+              "title": "Draft Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DraftEnvelope"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error, in the envelope"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Draft",
+        "tags": [
+          "templates"
+        ]
+      },
+      "put": {
+        "operationId": "saveTemplateDraft",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "draft_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "pattern": "^tdr_[0-9a-f]{32}$",
+              "title": "Draft Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DraftUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DraftEnvelope"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error, in the envelope"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Save Draft",
+        "tags": [
+          "templates"
+        ]
+      }
+    },
+    "/templates/drafts/{draft_id}/publish": {
+      "post": {
+        "operationId": "publishTemplateDraft",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "draft_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "pattern": "^tdr_[0-9a-f]{32}$",
+              "title": "Draft Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TemplateVersionEnvelope"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error, in the envelope"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Publish Draft",
+        "tags": [
+          "templates"
+        ]
+      }
+    },
+    "/templates/drafts/{draft_id}/validate": {
+      "post": {
+        "operationId": "validateTemplateDraft",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "draft_id",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "pattern": "^tdr_[0-9a-f]{32}$",
+              "title": "Draft Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TemplateValidationEnvelope"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error, in the envelope"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Validate Draft",
+        "tags": [
+          "templates"
+        ]
+      }
+    },
+    "/templates/{key}/versions/{version}": {
+      "get": {
+        "operationId": "getTemplateVersion",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "key",
+            "required": true,
+            "schema": {
+              "maxLength": 64,
+              "pattern": "^[a-z][a-z0-9_-]{0,63}$",
+              "title": "Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "version",
+            "required": true,
+            "schema": {
+              "maximum": 1000000,
+              "minimum": 1,
+              "title": "Version",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TemplateVersionEnvelope"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error, in the envelope"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Version",
+        "tags": [
+          "templates"
+        ]
+      }
+    },
+    "/templates/{key}/versions/{version}/archive": {
+      "post": {
+        "operationId": "archiveTemplateVersion",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "key",
+            "required": true,
+            "schema": {
+              "maxLength": 64,
+              "pattern": "^[a-z][a-z0-9_-]{0,63}$",
+              "title": "Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "version",
+            "required": true,
+            "schema": {
+              "maximum": 1000000,
+              "minimum": 1,
+              "title": "Version",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TemplateVersionEnvelope"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error, in the envelope"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Archive Version",
+        "tags": [
+          "templates"
         ]
       }
     }
