@@ -12,7 +12,7 @@ export NX_TUI := false
 COMPOSE := docker compose
 ENV_FILE := .env
 
-.PHONY: bootstrap check plan-check env-check tooling-test contracts contracts-check lint typecheck test test-int test-xt evals-selftest fmt up down logs llm-health
+.PHONY: bootstrap check plan-check env-check tooling-test contracts contracts-check lint typecheck test test-int test-xt evals-selftest seed fmt up down logs llm-health
 
 ## Install the pinned toolchains: one uv virtualenv at the root, and node_modules.
 bootstrap:
@@ -79,6 +79,12 @@ evals-selftest: up
 	set -a && . ./$(ENV_FILE) && set +a && \
 	LLM_CONNECTOR=fake OTEL_TRACES_EXPORTER="$${OTEL_TRACES_EXPORTER:-none}" \
 	uv run --frozen pytest libs/py-evals/tests_int/test_selftest.py -q -s -o cache_dir=.pytest_cache/py-evals-selftest
+
+## Seed data (PRD §7.11, SEED-1): config/seed.yaml's org with its keys, HR_ADMIN, HR and manager users,
+## the agent registry (config/agents) and the published seed template. Create-only: a second run changes
+## nothing. Passwords come from the SEED_*_PASSWORD variables in .env; scripts/seed.sh reaches Mongo.
+seed: up
+	set -a && . ./$(ENV_FILE) && set +a && scripts/seed.sh
 
 ## Base stack (PRD §7.11): mongo (replica set, auth, keyfile), otel-collector, jaeger, caddy.
 ## `.env` names the compose file, project and profile, so plain `docker compose …` works too once

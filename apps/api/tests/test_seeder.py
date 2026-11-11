@@ -229,6 +229,7 @@ def test_a_second_run_changes_nothing(plan: SeedPlan) -> None:
         "org_keys:org_demo/v1",
         *(s.target for s in first.steps[2:6]),
         *(f"agent:{m.name}" for m in sorted(load_manifests(CONFIG / "agents"), key=lambda m: m.name)),
+        "catalog:tool_catalog",
         "template:engineer-india/v1",
     ]
     assert second.render().endswith(f"0 created, {len(second.steps)} unchanged")

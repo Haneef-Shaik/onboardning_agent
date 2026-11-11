@@ -28,6 +28,7 @@ from typing import Any, Final, Protocol
 
 from onb_agents.registry import AgentRegistry, ToolCatalog
 from onb_agents.registry.manifest import AgentManifest
+from onb_agents.registry.sync import CATALOG_ID
 from onb_contracts.auth import Role
 from onb_contracts.template_lifecycle import DraftRecord
 from onb_contracts.templates import Template
@@ -153,8 +154,11 @@ class Seeder:
 
     async def _registry(self, actor: SeedUser) -> list[SeedStep]:
         report = await self._s.registry.sync(self._s.manifests, self._s.catalog, actor=Actor.user(actor.id))
-        created = [SeedStep(created=True, target=change.target) for change in report.changes]
-        return created + [SeedStep(created=False, target=f"agent:{name}") for name in report.unchanged]
+        steps = [SeedStep(created=True, target=change.target) for change in report.changes]
+        steps += [SeedStep(created=False, target=f"agent:{name}") for name in report.unchanged]
+        if not any(change.kind == "catalog_update" for change in report.changes):
+            steps.append(SeedStep(created=False, target=f"catalog:{CATALOG_ID}"))
+        return steps
 
     async def _template(self, template: Template, actor: SeedUser) -> SeedStep:
         current = next((t for t in await self._s.templates.list_templates() if t.key == template.key), None)
