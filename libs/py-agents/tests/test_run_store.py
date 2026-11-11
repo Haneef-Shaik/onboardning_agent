@@ -8,8 +8,7 @@ bus, transactions and replica set are proved in `apps/orchestrator/tests_int`.
 from __future__ import annotations
 
 import asyncio
-from collections.abc import Awaitable, Callable, Coroutine, Mapping
-from dataclasses import dataclass, field
+from collections.abc import Coroutine
 from datetime import UTC, datetime
 from typing import Any
 
@@ -31,11 +30,10 @@ from onb_agents.runs import (
     run_records,
     started_key,
 )
-from onb_agents.runs.testing import diamond_template, hire_variables_for
+from onb_agents.runs.testing import OutboxStandIn, diamond_template, hire_variables_for
 from onb_api.testing_mongo import MemoryDatabase, memory_store
 from onb_data import Actor, AuditOutcome, AuditQuery, NoTenantContextError, tenant_scope
 from onb_data.testing import InMemoryAuditLog
-from onb_eventbus import EventBus, Handler, PublishResult, Worker
 
 NOW = datetime(2026, 11, 11, 9, 30, tzinfo=UTC)
 LATER = datetime(2026, 11, 11, 9, 31, tzinfo=UTC)
@@ -43,40 +41,6 @@ LATER = datetime(2026, 11, 11, 9, 31, tzinfo=UTC)
 
 def run[T](coroutine: Coroutine[Any, Any, T]) -> T:
     return asyncio.run(coroutine)
-
-
-@dataclass
-class RecordingBus(EventBus):
-    """Runs `change` and records the publish; a key seen before in the org is a duplicate (no change)."""
-
-    published: list[dict[str, Any]] = field(default_factory=list)
-    fail_after_change: bool = False
-
-    async def publish(
-        self,
-        event_type: str,
-        payload: Mapping[str, Any],
-        *,
-        idempotency_key: str,
-        run_id: str | None = None,
-        change: Callable[[], Awaitable[None]] | None = None,
-    ) -> PublishResult:
-        if any(p["idempotency_key"] == idempotency_key for p in self.published):
-            return PublishResult(event_id="ev_dup", duplicate=True, job_ids=())
-        if change is not None:
-            await change()
-        if self.fail_after_change:
-            raise RuntimeError("the event write failed")
-        self.published.append(
-            {"type": event_type, "payload": dict(payload), "idempotency_key": idempotency_key, "run_id": run_id}
-        )
-        return PublishResult(event_id=f"ev_{len(self.published)}", duplicate=False, job_ids=("job_1",))
-
-    def worker(self, handlers: Mapping[str, Handler], *, worker_id: str | None = None) -> Worker:
-        raise NotImplementedError
-
-    def consumers(self) -> tuple[str, ...]:
-        return (START_RUN,)
 
 
 def _store(db: MemoryDatabase | None = None) -> RunStore:
@@ -211,13 +175,13 @@ def test_a_run_moves_only_along_its_state_machine() -> None:
 # --- the starter ----------------------------------------------------------------------------------
 
 
-def _starter(store: RunStore, bus: RecordingBus, audit: InMemoryAuditLog) -> RunStarter:
+def _starter(store: RunStore, bus: OutboxStandIn, audit: InMemoryAuditLog) -> RunStarter:
     return RunStarter(store, bus, audit, clock=lambda: NOW, new_id=lambda: "run_fixed")
 
 
 def test_starting_a_run_writes_it_through_the_outbox_with_a_fixed_key_and_audits_it() -> None:
     db = MemoryDatabase()
-    store, bus, audit = _store(db), RecordingBus(), InMemoryAuditLog()
+    store, bus, audit = _store(db), OutboxStandIn(), InMemoryAuditLog()
 
     async def go() -> None:
         with tenant_scope("org_a"):
@@ -236,6 +200,7 @@ def test_starting_a_run_writes_it_through_the_outbox_with_a_fixed_key_and_audits
     run(go())
     assert bus.published == [
         {
+            "org_id": "org_a",
             "type": RUN_STARTED,
             "payload": {"run_id": "run_fixed"},
             "idempotency_key": "run:run_fixed:started",
@@ -248,7 +213,7 @@ def test_starting_a_run_writes_it_through_the_outbox_with_a_fixed_key_and_audits
 
 def test_a_template_that_does_not_compile_starts_nothing() -> None:
     db = MemoryDatabase()
-    store, bus, audit = _store(db), RecordingBus(), InMemoryAuditLog()
+    store, bus, audit = _store(db), OutboxStandIn(), InMemoryAuditLog()
     archived = diamond_template().model_copy(update={"status": "archived"})
 
     async def go() -> None:
@@ -271,7 +236,7 @@ def test_a_template_that_does_not_compile_starts_nothing() -> None:
 
 
 def test_the_traceparent_of_the_request_is_stored_on_the_run() -> None:
-    store, bus, audit = _store(), RecordingBus(), InMemoryAuditLog()
+    store, bus, audit = _store(), OutboxStandIn(), InMemoryAuditLog()
     traceparent = "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
     starter = RunStarter(store, bus, audit, clock=lambda: NOW, new_id=lambda: "run_t", traceparent=lambda: traceparent)
 

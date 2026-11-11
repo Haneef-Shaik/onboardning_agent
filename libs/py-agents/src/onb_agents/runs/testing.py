@@ -8,11 +8,17 @@ that must not block.
 
 from __future__ import annotations
 
+from collections.abc import Awaitable, Callable, Mapping
+from dataclasses import dataclass, field
 from typing import Any
 
 from onb_contracts.templates import Template
+from onb_data import current_tenant
+from onb_eventbus import EventBus, Handler, PublishResult, Worker
 
-__all__ = ["DIAMOND_KEY", "diamond_template", "hire_variables_for", "uneven_diamond_template"]
+from .events import SUBSCRIPTIONS
+
+__all__ = ["DIAMOND_KEY", "OutboxStandIn", "diamond_template", "hire_variables_for", "uneven_diamond_template"]
 
 DIAMOND_KEY = "diamond-test"
 
@@ -67,3 +73,47 @@ def uneven_diamond_template(*, version: int = 1) -> Template:
 
 def hire_variables_for(role: str = "engineer") -> dict[str, str]:
     return {"role": role, "location": "Testville", "start_date": "2026-12-01", "manager_id": "u_test_manager"}
+
+
+@dataclass
+class OutboxStandIn(EventBus):
+    """An event bus for unit tests: runs `change`, then keeps the event, without a transaction (the
+    real outbox, one transaction on a replica set, is EVT-1's and the integration tests'). A key the
+    org already published is a duplicate and writes nothing, `change` included, like the real bus.
+    `fail_after_change` makes the event write fail after `change` ran."""
+
+    published: list[dict[str, Any]] = field(default_factory=list)
+    fail_after_change: bool = False
+
+    async def publish(
+        self,
+        event_type: str,
+        payload: Mapping[str, Any],
+        *,
+        idempotency_key: str,
+        run_id: str | None = None,
+        change: Callable[[], Awaitable[None]] | None = None,
+    ) -> PublishResult:
+        org_id = current_tenant().org_id
+        if any(p["org_id"] == org_id and p["idempotency_key"] == idempotency_key for p in self.published):
+            return PublishResult(event_id="ev_duplicate", duplicate=True)
+        if change is not None:
+            await change()
+        if self.fail_after_change:
+            raise RuntimeError("the event write failed")
+        self.published.append(
+            {
+                "org_id": org_id,
+                "type": event_type,
+                "payload": dict(payload),
+                "idempotency_key": idempotency_key,
+                "run_id": run_id,
+            }
+        )
+        return PublishResult(event_id=f"ev_{len(self.published)}", duplicate=False, job_ids=("job_1",))
+
+    def worker(self, handlers: Mapping[str, Handler], *, worker_id: str | None = None) -> Worker:
+        raise NotImplementedError("the stand-in has no queue; integration tests use the real bus")
+
+    def consumers(self) -> tuple[str, ...]:
+        return tuple(sorted({c for names in SUBSCRIPTIONS.values() for c in names}))

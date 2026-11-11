@@ -8,8 +8,8 @@ driver. The same flow through the real bus on the compose replica set is in `tes
 from __future__ import annotations
 
 import asyncio
-from collections.abc import Awaitable, Callable, Coroutine, Mapping
-from dataclasses import dataclass, field
+from collections.abc import Coroutine, Mapping
+from dataclasses import dataclass
 from datetime import datetime
 from types import MappingProxyType
 from typing import Any
@@ -24,12 +24,12 @@ from onb_agents.runs import (
     TaskState,
     thread_id,
 )
-from onb_agents.runs.testing import diamond_template, hire_variables_for, uneven_diamond_template
+from onb_agents.runs.testing import OutboxStandIn, diamond_template, hire_variables_for, uneven_diamond_template
 from onb_api.testing_mongo import MemoryDatabase, memory_store
 from onb_contracts.templates import Template
 from onb_data import DataStore, tenant_scope
 from onb_data.testing import InMemoryAuditLog
-from onb_eventbus import EventBus, Handler, JobContext, PublishResult, Worker
+from onb_eventbus import JobContext
 from onb_orchestrator.checkpointer import CHECKPOINT_WRITES, CHECKPOINTS
 from onb_orchestrator.executor import StubExecutor, TaskWork
 from onb_orchestrator.graph import build_run_graph
@@ -40,33 +40,6 @@ ORG = "org_a"
 
 def run[T](coroutine: Coroutine[Any, Any, T]) -> T:
     return asyncio.run(coroutine)
-
-
-@dataclass
-class OutboxStandIn(EventBus):
-    """Runs `change` and keeps the event; the real outbox (one transaction) is EVT-1's and tests_int's."""
-
-    events: list[dict[str, Any]] = field(default_factory=list)
-
-    async def publish(
-        self,
-        event_type: str,
-        payload: Mapping[str, Any],
-        *,
-        idempotency_key: str,
-        run_id: str | None = None,
-        change: Callable[[], Awaitable[None]] | None = None,
-    ) -> PublishResult:
-        if change is not None:
-            await change()
-        self.events.append({"type": event_type, "payload": dict(payload), "key": idempotency_key})
-        return PublishResult(event_id=f"ev_{len(self.events)}", duplicate=False)
-
-    def worker(self, handlers: Mapping[str, Handler], *, worker_id: str | None = None) -> Worker:
-        raise NotImplementedError
-
-    def consumers(self) -> tuple[str, ...]:
-        return (START_RUN,)
 
 
 @dataclass

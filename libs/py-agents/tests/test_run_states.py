@@ -131,3 +131,12 @@ def test_run_transitions_are_allowed(current: RunState, target: RunState) -> Non
 def test_illegal_run_transitions_are_rejected(current: RunState, target: RunState) -> None:
     with pytest.raises(IllegalTransitionError):
         check_run_transition(current, target)
+
+
+def test_the_states_are_the_api_contracts_states() -> None:
+    from typing import get_args
+
+    from onb_contracts.runs import RunStatus, TaskStatus
+
+    assert {s.value for s in TaskState} == set(get_args(TaskStatus))
+    assert {s.value for s in RunState} == set(get_args(RunStatus))
