@@ -40,6 +40,7 @@ from onb_api.auth.mongo_users import MongoUserStore
 from onb_api.auth.passwords import hash_password
 from onb_api.auth.tokens import Principal
 from onb_api.auth.users import NewUser
+from onb_api.documents.service import DocumentService
 from onb_api.hires.service import HireService
 from onb_api.templates import MongoTemplateStore, RegistryValidatorSource, TemplateLifecycle
 from onb_api.testing import TEST_SETTINGS, InMemoryAuditLog
@@ -298,9 +299,19 @@ def build_api(store: DataStore) -> FastAPI:
     audit = AuditLog(store)
     agents = AgentRegistry(MongoRegistryStore(store), audit)
     users = MongoUserStore(store)
-    hires = HireService.build(store, xt_keyring(store), auditor=audit, users=users)
+    keyring = xt_keyring(store)
+    hires = HireService.build(store, keyring, auditor=audit, users=users)
     templates = template_lifecycle(store, audit, agents)
-    return create_app(auth=TEST_SETTINGS, users=users, audit=audit, agents=agents, hires=hires, templates=templates)
+    documents = DocumentService.build(store, keyring, auditor=audit)
+    return create_app(
+        auth=TEST_SETTINGS,
+        users=users,
+        audit=audit,
+        agents=agents,
+        hires=hires,
+        templates=templates,
+        documents=documents,
+    )
 
 
 def xt_keyring(store: DataStore) -> Keyring:

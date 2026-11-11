@@ -15,6 +15,7 @@ must show that a value taken in org B does not collide (no unique-index inferenc
 
 from __future__ import annotations
 
+import asyncio
 import itertools
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
@@ -23,10 +24,14 @@ from typing import Any, Protocol
 import pytest
 from fastapi.testclient import TestClient
 from onb_api.auth.tokens import read_token
-from onb_api.testing import TEST_SETTINGS, bearer, token_for
+from onb_api.documents.bucket import DocumentNotFoundError
+from onb_api.documents.meta import META_COLLECTION
+from onb_api.documents.service import DocumentService
+from onb_api.testing import TEST_SETTINGS, InMemoryAuditLog, bearer, token_for
 from onb_contracts.auth import Role
+from onb_data import tenant_scope
 
-from .conftest import Unscoped, World
+from .conftest import Unscoped, World, xt_keyring
 from .world import (
     A_DRAFT,
     B_DRAFT,
@@ -540,6 +545,80 @@ def _reads_only(check: Callable[[TestClient, World], None]) -> Callable[[TestCli
     return run
 
 
+# --- HIRE-2: document scans ---------------------------------------------------------------------------------
+# A scan goes to a hire of the caller's org only; org B's hire answers like a hire nobody has, and org B's
+# scan neither opens for org A nor shows in org A's `documents_meta` (read through the scoped repository).
+
+XT_SCAN = b"\x89PNG\r\n\x1a\n" + b"xt synthetic scan " * 64
+
+
+def _upload(client: TestClient, hire_id: str, headers: dict[str, str]) -> Response:
+    return client.post(
+        f"/hires/{hire_id}/documents",
+        params={"type": "pan"},
+        content=XT_SCAN,
+        headers={**headers, "Content-Type": "image/png"},
+    )
+
+
+def _upload_request(xt: World, role: Role) -> Request:
+    return {
+        "method": "POST",
+        "url": f"/hires/{xt.vault_hires()[ORG_A]}/documents",
+        "params": {"type": "pan"},
+        "content": XT_SCAN,
+        "headers": {**bearer(_token(role)), "Content-Type": "image/png"},
+    }
+
+
+def _upload_check(client: TestClient, xt: World) -> None:
+    xt.vault_hires()  # seed both orgs' vault hires before anything is read
+    a_hire, b_hire = xt.vault_hires()[ORG_A], xt.vault_hires()[ORG_B]
+    b_upload = _upload(client, b_hire, bearer(token_for(*B_ADMIN)))
+    assert b_upload.status_code == 201, b_upload.json()
+    b_doc = b_upload.json()["data"]["id"]
+    for role in (Role.HR_ADMIN, Role.HR):
+        headers = bearer(_token(role))
+        missing = _upload(client, MISSING_HIRE, headers)
+        for foreign_id in (b_hire, "h_globex_001"):
+            foreign = _upload(client, foreign_id, headers)
+            assert foreign.status_code == 404, foreign.json()
+            assert_indistinguishable(seen(foreign), seen(missing), f"upload to org B's hire as {role.value}")
+    a_doc = _upload(client, a_hire, bearer(_token(Role.HR))).json()["data"]["id"]
+    assert _documents_meta(xt, ORG_A) == {(a_doc, a_hire)}
+    assert _documents_meta(xt, ORG_B) == {(b_doc, b_hire)}
+    # Org B's scan does not open in org A, even named by id and hire; it still opens in org B.
+    assert _read_scan(xt, ORG_A, b_hire, b_doc) is None
+    assert _read_scan(xt, ORG_B, b_hire, b_doc) == XT_SCAN
+
+
+def _documents_meta(xt: World, org_id: str) -> set[tuple[str, str]]:
+    async def main() -> set[tuple[str, str]]:
+        store = xt.store()
+        try:
+            with tenant_scope(org_id):
+                return {(d["_id"], d["hire_id"]) for d in await store.tenant(META_COLLECTION).find({})}
+        finally:
+            await store.close()
+
+    return asyncio.run(main())
+
+
+def _read_scan(xt: World, org_id: str, hire_id: str, document_id: str) -> bytes | None:
+    async def main() -> bytes | None:
+        store = xt.store()
+        try:
+            documents = DocumentService.build(store, xt_keyring(store), auditor=InMemoryAuditLog())
+            with tenant_scope(org_id):
+                return await documents.read(org_id, hire_id=hire_id, document_id=document_id)
+        except DocumentNotFoundError:
+            return None
+        finally:
+            await store.close()
+
+    return asyncio.run(main())
+
+
 ALL_200: Mapping[Role, int] = dict.fromkeys(ACTORS, 200)
 ADMIN_ONLY: Mapping[Role, int] = {Role.HR_ADMIN: 200, Role.HR: 403, Role.MANAGER: 403}
 HR_ONLY: Mapping[Role, int] = {Role.HR_ADMIN: 200, Role.HR: 200, Role.MANAGER: 403}
@@ -583,6 +662,12 @@ ROUTE_CASES: Mapping[tuple[str, str], RouteCase] = {
     ("GET", "/templates"): RouteCase(_list_templates_request, _reads_only(_list_templates_check), ALL_200),
     ("GET", "/templates/{key}/versions/{version}"): RouteCase(_version_request, _reads_only(_version_check), ALL_200),
     ("POST", "/templates/{key}/versions/{version}/archive"): RouteCase(_archive_request, _archive_check, ADMIN_ONLY),
+    ("POST", "/hires/{hire_id}/documents"): RouteCase(
+        _upload_request,
+        _reads_only(_upload_check),
+        {Role.HR_ADMIN: 201, Role.HR: 201, Role.MANAGER: 403},
+        volatile=frozenset({"id", "uploaded_at"}),
+    ),
 }
 
 _ROUTE_IDS = [f"{method} {path}" for method, path in ROUTE_CASES]
