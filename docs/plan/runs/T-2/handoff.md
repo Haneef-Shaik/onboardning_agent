@@ -161,6 +161,8 @@ RED before GREEN:
 - `red-queue-allowance.txt` (15 failed before `queue_allowance.py` existed)
 
 ## Verifier
+goal-verifier attempt 5: **pass** on the final base `e892d97`. It made 3 of 3 `make test-int` runs, and all four gates passed. It re-traced all 7 suites, plus a stricter trace of its own that also records commands inside allowed blocks: no `src/` frame sits inside any exemption. The conflict file differs from main only by T-2's additions. It judged the tunnel fix narrow and correct, with one noted edge: if a dead session's pid is reused, its tunnel leaks, but no test breaks.
+
 goal-verifier attempt 4: **pass** on base `1e22bba`. It reproduced the 103 flag call sites independently, all test code, and found no weakened assertion.
 
 **For integration (attempt 4).** Main has moved to `e892d97` (EVAL-1, UI-1, AUD-1). The verifier's trial merge **conflicts** in `apps/mcp-mongo/tests_int/test_db_users_int.py`, and after it `tools/tests/test_safety_net_suites.py` flags `libs/py-evals/tests_int` (no plugin, no fixture test). That is not a trivial rebase. It needs the conflict resolved, the plugin and a fixture test wired into py-evals, its root reads traced and marked, and the three gates re-run.
