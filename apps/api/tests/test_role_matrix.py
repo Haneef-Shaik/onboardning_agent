@@ -5,20 +5,29 @@ when a route is added without a row here, or without the token dependency, so ev
 joins the matrix. `require_role` itself is exercised on probe routes with every role combination.
 """
 
+import asyncio
+import itertools
+import uuid
 from collections.abc import Iterator
-from typing import Annotated
+from pathlib import Path
+from typing import Annotated, Any
 
 import pytest
+import yaml
 from fastapi import Depends, FastAPI
 from fastapi.routing import APIRoute, iter_route_contexts
 from fastapi.testclient import TestClient
+from onb_agents.registry import AgentRegistry
 from onb_api import create_app
 from onb_api.auth.dependencies import authenticated, require_role
 from onb_api.auth.tokens import Principal
 from onb_api.responses import respond
-from onb_api.testing import bearer, token_for
+from onb_api.templates import RegistryValidatorSource, TemplateLifecycle
+from onb_api.testing import InMemoryAuditLog, InMemoryTemplateStore, bearer, token_for
 from onb_contracts import Envelope
 from onb_contracts.auth import Role
+from onb_contracts.templates import Template
+from onb_data import tenant_scope
 
 # One acme user per role (seed_v1 ids).
 ACTORS = {
@@ -47,7 +56,23 @@ ROLE_MATRIX: dict[tuple[str, str], dict[Role, int]] = {
     ("PUT", "/hires/{hire_id}/pii/{field}"): {Role.HR_ADMIN: 422, Role.HR: 422, Role.MANAGER: 403},
     ("POST", "/hires/{hire_id}/pii/{field}/reveal"): {Role.HR_ADMIN: 422, Role.HR: 422, Role.MANAGER: 403},
     ("GET", "/pii-access-log"): {Role.HR_ADMIN: 200, Role.HR: 403, Role.MANAGER: 403},
+    # TPL-2: HR and HR_ADMIN author drafts; only HR_ADMIN publishes and archives; everyone reads the
+    # published templates (managers open them in suggest mode, FR-T6) (PRD §3, FR-T4, §10 Templates).
+    ("POST", "/templates/drafts"): {Role.HR_ADMIN: 201, Role.HR: 201, Role.MANAGER: 403},
+    ("GET", "/templates/drafts"): {Role.HR_ADMIN: 200, Role.HR: 200, Role.MANAGER: 403},
+    ("GET", "/templates/drafts/{draft_id}"): {Role.HR_ADMIN: 200, Role.HR: 200, Role.MANAGER: 403},
+    ("PUT", "/templates/drafts/{draft_id}"): {Role.HR_ADMIN: 200, Role.HR: 200, Role.MANAGER: 403},
+    ("POST", "/templates/drafts/{draft_id}/validate"): {Role.HR_ADMIN: 200, Role.HR: 200, Role.MANAGER: 403},
+    ("POST", "/templates/drafts/{draft_id}/publish"): {Role.HR_ADMIN: 200, Role.HR: 403, Role.MANAGER: 403},
+    ("GET", "/templates"): ALL_200,
+    ("GET", "/templates/{key}/versions/{version}"): ALL_200,
+    ("POST", "/templates/{key}/versions/{version}/archive"): {Role.HR_ADMIN: 200, Role.HR: 403, Role.MANAGER: 403},
 }
+
+CONFIG = Path(__file__).resolve().parents[3] / "config"
+SEED_TEMPLATE: dict[str, Any] = yaml.safe_load((CONFIG.parent / "templates" / "engineer-india.yaml").read_text())
+SAMPLE_DRAFT = "tdr_" + "a" * 32  # seeded unpublished
+PUBLISHED_DRAFT = "tdr_" + "b" * 32  # seeded and published as engineer-india v1
 
 # A concrete path for each route with path parameters: an existing record, so HR_ADMIN gets 200.
 SAMPLE_PATHS = {
@@ -55,7 +80,38 @@ SAMPLE_PATHS = {
     "/hires/{hire_id}": "/hires/h_acme_001",
     "/hires/{hire_id}/pii/{field}": "/hires/h_acme_001/pii/mobile",
     "/hires/{hire_id}/pii/{field}/reveal": "/hires/h_acme_001/pii/mobile/reveal",
+    "/templates/drafts/{draft_id}": f"/templates/drafts/{SAMPLE_DRAFT}",
+    "/templates/drafts/{draft_id}/validate": f"/templates/drafts/{SAMPLE_DRAFT}/validate",
+    "/templates/drafts/{draft_id}/publish": f"/templates/drafts/{SAMPLE_DRAFT}/publish",
+    "/templates/{key}/versions/{version}": "/templates/engineer-india/versions/1",
+    "/templates/{key}/versions/{version}/archive": "/templates/engineer-india/versions/1/archive",
 }
+
+# A valid body for the routes whose permitted roles should succeed (the hire routes are sent none).
+SAMPLE_BODIES: dict[tuple[str, str], dict[str, Any]] = {
+    ("POST", "/templates/drafts"): {"template": SEED_TEMPLATE},
+    ("PUT", "/templates/drafts/{draft_id}"): {"template": SEED_TEMPLATE},
+}
+
+
+@pytest.fixture
+def templates(
+    template_store: InMemoryTemplateStore, registry: AgentRegistry, audit_log: InMemoryAuditLog
+) -> TemplateLifecycle:
+    """The lifecycle with one draft and one published version in org_acme, at the sample paths."""
+    ids = itertools.chain([SAMPLE_DRAFT, PUBLISHED_DRAFT], (f"tdr_{uuid.uuid4().hex}" for _ in itertools.count()))
+    validators = RegistryValidatorSource.from_config(registry, CONFIG)
+    lifecycle = TemplateLifecycle(template_store, validators, audit_log, new_draft_id=lambda: next(ids))
+
+    async def seed() -> None:
+        with tenant_scope("org_acme"):
+            template = Template.model_validate(SEED_TEMPLATE)
+            await lifecycle.create_draft(template, actor_id="u_acme_hr1")
+            await lifecycle.create_draft(template, actor_id="u_acme_hr1")
+            await lifecycle.publish(PUBLISHED_DRAFT, actor_id="u_acme_hradmin")
+
+    asyncio.run(seed())
+    return lifecycle
 
 
 def _routes(app: FastAPI) -> list[APIRoute]:
@@ -101,18 +157,37 @@ def test_the_matrix_covers_every_role() -> None:
 def test_role_matrix(client: TestClient, route: tuple[str, str], role: Role) -> None:
     method, path = route
     user_id, org_id = ACTORS[role]
-    response = client.request(method, SAMPLE_PATHS.get(path, path), headers=bearer(token_for(user_id, org_id, role)))
+    response = client.request(
+        method,
+        SAMPLE_PATHS.get(path, path),
+        headers=bearer(token_for(user_id, org_id, role)),
+        json=SAMPLE_BODIES.get(route),
+    )
     assert response.status_code == ROLE_MATRIX[route][role], response.text
 
 
 @pytest.mark.parametrize("route", sorted(ROLE_MATRIX), ids=lambda k: f"{k[0]} {k[1]}")
 def test_every_guarded_route_refuses_a_missing_token(client: TestClient, route: tuple[str, str]) -> None:
     method, path = route
-    assert client.request(method, SAMPLE_PATHS.get(path, path)).status_code == 401
+    assert client.request(method, SAMPLE_PATHS.get(path, path), json=SAMPLE_BODIES.get(route)).status_code == 401
 
 
 def test_every_path_parameter_route_has_a_sample_path() -> None:
     assert {path for _, path in ROLE_MATRIX if "{" in path} == set(SAMPLE_PATHS)
+
+
+def test_every_route_with_a_body_has_a_sample_body_or_expects_422_without_one() -> None:
+    """A body route either gets a valid sample body (its permitted roles get 2xx), or is sent none and
+    its matrix row says the permitted roles reach validation (422), as HIRE-1's rows do."""
+    with_body = {
+        key
+        for route in _routes(create_app())
+        for key in _keys(route)
+        if key not in PUBLIC_ROUTES and route.body_field is not None
+    }
+    assert set(SAMPLE_BODIES) <= with_body
+    for key in with_body - set(SAMPLE_BODIES):
+        assert 422 in ROLE_MATRIX[key].values(), f"{key}: give it a SAMPLE_BODIES entry or expect 422"
 
 
 # --- require_role on probe routes ----------------------------------------------------------------

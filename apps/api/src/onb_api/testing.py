@@ -5,7 +5,8 @@ Test-only, like `onb_telemetry.testing`: production code never imports it. It li
 so test suites can import it without making their `tests/` directories packages (two packages named
 `tests` collide when several projects' tests run in one pytest call).
 
-`InMemoryAuditLog` is `onb_data.testing`'s, re-exported here so API tests import one module.
+`InMemoryAuditLog` is `onb_data.testing`'s, re-exported here so API tests import one module, and so is
+`InMemoryTemplateStore` (`onb_api.templates.memory`).
 
 The user store keeps its contract: the login directory is global, user records are read in the current
 tenant scope only (a user of another org is "not found"), and an email is unique across orgs.
@@ -26,12 +27,14 @@ from onb_api.auth.passwords import hash_password
 from onb_api.auth.settings import AuthSettings
 from onb_api.auth.tokens import Principal, issue_token
 from onb_api.auth.users import EmailTakenError, LoginEntry, NewUser, UserRecord, login_key
+from onb_api.templates.memory import InMemoryTemplateStore
 
 __all__ = [
     "PASSWORD",
     "SEED_USERS",
     "TEST_SETTINGS",
     "InMemoryAuditLog",
+    "InMemoryTemplateStore",
     "InMemoryUserStore",
     "bearer",
     "email_of",

@@ -1,18 +1,19 @@
 """API test fixtures: a client on a fresh app, with no telemetry left over from another test.
 
 The app gets the test auth settings, an in-memory user store seeded with both orgs' users, an
-empty in-memory audit log, an in-memory agent registry synced from `config/agents/` (REG-1), and
-the hire service (HIRE-1) over an in-memory database holding seed_v1's hires, with its own audit log
-(`hire_audit`). `JWT_SECRET` and `PII_MASTER_KEY` are set for every test (fresh random values), so
-tests that build the app from the environment start like the real service; the startup tests
-remove them.
+empty in-memory audit log (`audit_log`), an in-memory agent registry synced from `config/agents/`
+(REG-1), the hire service (HIRE-1) over an in-memory database holding seed_v1's hires, with its own
+audit log (`hire_audit`), and the template lifecycle (TPL-2) over an in-memory store, validating
+against that registry and auditing to `audit_log`. `JWT_SECRET` and `PII_MASTER_KEY` are set for
+every test (fresh random values), so tests that build the app from the environment start like the
+real service; the startup tests remove them.
 """
 
 import asyncio
 import base64
 import json
 import secrets
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from pathlib import Path
 
 import pytest
@@ -22,12 +23,26 @@ from onb_agents.registry import AgentRegistry, load_catalog, load_manifests
 from onb_agents.testing import InMemoryRegistryStore
 from onb_api import create_app
 from onb_api.hires.service import HireService
-from onb_api.testing import TEST_SETTINGS, InMemoryAuditLog, InMemoryUserStore, seeded_store
+from onb_api.templates import RegistryValidatorSource, TemplateLifecycle
+from onb_api.testing import TEST_SETTINGS, InMemoryAuditLog, InMemoryTemplateStore, InMemoryUserStore, seeded_store
 from onb_api.testing_mongo import MemoryDatabase, memory_keyring, memory_store
 from onb_data import Actor
 from onb_telemetry.testing import reset_telemetry_globals
 
-__all__ = ["app", "client", "hire_audit", "hires", "jwt_secret_in_env", "memory_db", "registry", "users"]
+__all__ = [
+    "app",
+    "audit_log",
+    "client",
+    "hire_audit",
+    "hires",
+    "jwt_secret_in_env",
+    "memory_db",
+    "registry",
+    "registry_retire",
+    "template_store",
+    "templates",
+    "users",
+]
 
 CONFIG = Path(__file__).resolve().parents[3] / "config"
 SEED = Path(__file__).resolve().parents[3] / "evals" / "fixtures" / "seed_v1.json"
@@ -54,6 +69,18 @@ def registry() -> AgentRegistry:
 
 
 @pytest.fixture
+def registry_retire(registry: AgentRegistry) -> Callable[[str], None]:
+    """Retire one agent in the registry, as a sync without its manifest does."""
+
+    def retire(name: str) -> None:
+        manifests = [m for m in load_manifests(CONFIG / "agents") if m.name != name]
+        catalog = load_catalog(CONFIG / "tool_catalog.yaml", load_manifests(CONFIG / "agents"))
+        asyncio.run(registry.sync(manifests, catalog, actor=Actor.user("u_acme_hradmin")))
+
+    return retire
+
+
+@pytest.fixture
 def memory_db() -> MemoryDatabase:
     """The in-memory database under the hire service, with seed_v1's hires of both orgs stored as
     seeded (their `ptk_seed_*` stand-ins resolve nowhere)."""
@@ -69,15 +96,40 @@ def hire_audit() -> InMemoryAuditLog:
 
 
 @pytest.fixture
+def audit_log() -> InMemoryAuditLog:
+    return InMemoryAuditLog()
+
+
+@pytest.fixture
 def hires(memory_db: MemoryDatabase, hire_audit: InMemoryAuditLog, users: InMemoryUserStore) -> HireService:
     store = memory_store(memory_db)
     return HireService.build(store, memory_keyring(store), auditor=hire_audit, users=users)
 
 
 @pytest.fixture
-def app(users: InMemoryUserStore, registry: AgentRegistry, hires: HireService) -> FastAPI:
+def template_store() -> InMemoryTemplateStore:
+    return InMemoryTemplateStore()
+
+
+@pytest.fixture
+def templates(
+    template_store: InMemoryTemplateStore, registry: AgentRegistry, audit_log: InMemoryAuditLog
+) -> TemplateLifecycle:
+    return TemplateLifecycle(template_store, RegistryValidatorSource.from_config(registry, CONFIG), audit_log)
+
+
+@pytest.fixture
+def app(
+    users: InMemoryUserStore,
+    registry: AgentRegistry,
+    audit_log: InMemoryAuditLog,
+    hires: HireService,
+    templates: TemplateLifecycle,
+) -> FastAPI:
     reset_telemetry_globals()
-    return create_app(auth=TEST_SETTINGS, users=users, audit=InMemoryAuditLog(), agents=registry, hires=hires)
+    return create_app(
+        auth=TEST_SETTINGS, users=users, audit=audit_log, agents=registry, hires=hires, templates=templates
+    )
 
 
 @pytest.fixture

@@ -1,0 +1,4 @@
+ImportError while loading conftest '/Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-tpl-2/apps/api/tests/conftest.py'.
+apps/api/tests/conftest.py:21: in <module>
+    from onb_api.templates import RegistryValidatorSource, TemplateLifecycle
+E   ImportError: cannot import name 'RegistryValidatorSource' from 'onb_api.templates' (unknown location)

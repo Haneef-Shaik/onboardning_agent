@@ -6,9 +6,9 @@ OpenAPI export can build apps freely.
 Auth settings default to the environment, so an app built without them fails at once when
 `JWT_SECRET` is missing (PRD §7.8). Without a user store, login and `/me` answer 503; without an audit
 log, `GET /audit` answers 503; without an agent registry, `GET /agents` answers 503; without a hire
-service, the hire and PII routes answer 503. On startup the app makes the user store's, the audit
-log's and the hire service's indexes (hires, vault, org keys, PII access log) and the stand-in
-password hash.
+service, the hire and PII routes answer 503; without a template lifecycle, `/templates` answers 503.
+On startup the app makes the user store's, the audit log's, the hire service's (hires, vault, org
+keys, PII access log) and the template store's indexes and the stand-in password hash.
 """
 
 from __future__ import annotations
@@ -33,6 +33,8 @@ from onb_api.auth.users import UserStore
 from onb_api.errors import install_error_handling
 from onb_api.hires import routes as hire_routes
 from onb_api.hires.service import HireService
+from onb_api.templates import TemplateLifecycle
+from onb_api.templates import routes as template_routes
 
 TITLE = "Onboarding Platform API"
 VERSION = "0.1.0"
@@ -50,6 +52,7 @@ def create_app(
     audit: AuditReader | None = None,
     agents: AgentRegistryReader | None = None,
     hires: HireService | None = None,
+    templates: TemplateLifecycle | None = None,
 ) -> FastAPI:
     settings = auth if auth is not None else AuthSettings.from_env()
 
@@ -61,6 +64,8 @@ def create_app(
             await audit.ensure_indexes()
         if hires is not None:
             await hires.ensure_indexes()
+        if templates is not None:
+            await templates.ensure_indexes()
         await run_in_threadpool(warm_up, settings.bcrypt_rounds)
         yield
 
@@ -70,12 +75,14 @@ def create_app(
     app.state.audit = audit
     app.state.agents = agents
     app.state.hires = hires
+    app.state.templates = templates
     install_error_handling(app)
     app.include_router(health.router)
     app.include_router(auth_routes.router)
     app.include_router(audit_routes.router)
     app.include_router(agent_routes.router)
     app.include_router(hire_routes.router)
+    app.include_router(template_routes.router)
     if telemetry_is_active():
         # `from fastapi import FastAPI` above bound the class before the instrumentor could swap
         # it, so instrument this app explicitly.
