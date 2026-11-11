@@ -11,6 +11,7 @@ dependencies = [
     "onb-crypto",
     "onb-data",
     "onb-guardrails",
+    "onb-mcp-mocks",
     "onb-mcp-mongo",
     "onb-telemetry",
     "opentelemetry-api>=1.45,<2",
@@ -30,5 +31,6 @@ onb-agents = { workspace = true }
 onb-crypto = { workspace = true }
 onb-data = { workspace = true }
 onb-guardrails = { workspace = true }
+onb-mcp-mocks = { workspace = true }
 onb-mcp-mongo = { workspace = true }
 onb-telemetry = { workspace = true }

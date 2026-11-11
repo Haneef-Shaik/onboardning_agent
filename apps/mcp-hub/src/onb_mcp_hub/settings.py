@@ -4,6 +4,9 @@
 - `MCP_CALL_CONTEXT_KEY`: signs call contexts; mcp-mongo verifies with the same key.
 - `MCP_HUB_MONGO_URI`: the hub's own database user (reads `agent_registry`, appends `audit_log`).
 - `MCP_HUB_MONGO_SERVER_URL`: mcp-mongo's streamable-HTTP endpoint.
+- `MCP_MOCKS_CONTEXT_KEY`: signs call contexts for mcp-mocks (MOCK-1); mcp-mocks verifies with it.
+  Distinct from the other two keys, so neither server can mint the other's contexts.
+- `MCP_HUB_MOCKS_SERVER_URL`: mcp-mocks' streamable-HTTP endpoint.
 - Optional: `MCP_HUB_DATABASE` (`onboarding`), `MCP_HUB_HOST` (`127.0.0.1`), `MCP_HUB_PORT` (8100),
   `MCP_HUB_ALLOWED_HOSTS` (comma-separated `Host` names the hub answers).
 """
@@ -15,7 +18,7 @@ from dataclasses import dataclass, field
 
 from onb_agents.tokens import MIN_KEY_LENGTH
 
-from .catalog import MONGO_SERVER
+from .catalog import MOCKS_SERVER, MONGO_SERVER
 from .server import DEFAULT_ALLOWED_HOSTS
 
 __all__ = ["Settings", "SettingsError", "load_settings"]
@@ -35,6 +38,7 @@ class Settings:
     context_key: str = field(repr=False)
     mongo_uri: str = field(repr=False)
     downstream: Mapping[str, str]
+    server_keys: Mapping[str, str] = field(repr=False)
     database: str
     host: str
     port: int
@@ -78,13 +82,18 @@ def _hosts(env: Mapping[str, str]) -> tuple[str, ...]:
 def load_settings(env: Mapping[str, str]) -> Settings:
     token_key = _key(env, "AGENT_TOKEN_KEY")
     context_key = _key(env, "MCP_CALL_CONTEXT_KEY")
-    if token_key == context_key:
-        raise SettingsError("AGENT_TOKEN_KEY and MCP_CALL_CONTEXT_KEY must differ")
+    mocks_key = _key(env, "MCP_MOCKS_CONTEXT_KEY")
+    if len({token_key, context_key, mocks_key}) != 3:
+        raise SettingsError("AGENT_TOKEN_KEY, MCP_CALL_CONTEXT_KEY and MCP_MOCKS_CONTEXT_KEY must all differ")
     return Settings(
         token_key=token_key,
         context_key=context_key,
         mongo_uri=_required(env, "MCP_HUB_MONGO_URI"),
-        downstream={MONGO_SERVER: _url(env, "MCP_HUB_MONGO_SERVER_URL")},
+        downstream={
+            MONGO_SERVER: _url(env, "MCP_HUB_MONGO_SERVER_URL"),
+            MOCKS_SERVER: _url(env, "MCP_HUB_MOCKS_SERVER_URL"),
+        },
+        server_keys={MOCKS_SERVER: mocks_key},
         database=env.get("MCP_HUB_DATABASE") or DEFAULT_DATABASE,
         host=env.get("MCP_HUB_HOST") or DEFAULT_HOST,
         port=_port(env),

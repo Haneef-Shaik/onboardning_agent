@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import dataclasses
 
 import httpx
 import jwt
@@ -19,7 +20,7 @@ CTX = CallContext(
 URLS = {"mongo": "http://mcp-mongo/mcp", "mocks": "http://mcp-mocks/mcp"}
 
 
-class _Stop(Exception):
+class _StopError(Exception):
     """Raised by the fake transport once the first request shows the header the hub sent."""
 
 
@@ -28,7 +29,7 @@ def _capture(seen: list[str]) -> object:
         seen.append(headers[HEADER])
 
         def refuse(request: httpx.Request) -> httpx.Response:
-            raise _Stop
+            raise _StopError
 
         return httpx.AsyncClient(transport=httpx.MockTransport(refuse), headers=headers)
 
@@ -38,7 +39,7 @@ def _capture(seen: list[str]) -> object:
 def _signed_for(downstream: McpDownstream, tool_name: str, catalog: dict[str, object], seen: list[str]) -> str:
     tool = catalog[tool_name]
     with pytest.raises(BaseException):  # noqa: B017, PT011 - the fake transport stops the session after the header is seen
-        asyncio.run(downstream.call(tool, {}, CTX))  # type: ignore[arg-type]
+        asyncio.run(downstream.call(tool, {}, dataclasses.replace(CTX, tool=tool.tool)))  # type: ignore[attr-defined, arg-type]
     return seen[-1]
 
 

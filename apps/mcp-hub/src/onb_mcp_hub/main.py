@@ -12,7 +12,7 @@ from onb_agents.registry.mongo import MongoRegistryStore
 from onb_data import AuditLog, connect
 from onb_telemetry import init_telemetry
 
-from .catalog import mongo_catalog
+from .catalog import platform_catalog
 from .downstream import McpDownstream
 from .gateway import Gateway
 from .server import SERVER_NAME, build_hub
@@ -34,10 +34,10 @@ def build_gateway(settings: Settings) -> Gateway:
     store = connect(settings.mongo_uri, settings.database, app_name=SERVER_NAME)
     audit = AuditLog(store)
     return Gateway(
-        catalog=mongo_catalog(),
+        catalog=platform_catalog(),
         registry=AgentRegistry(MongoRegistryStore(store), audit),
         auditor=audit,
-        downstream=McpDownstream(settings.downstream, settings.context_key),
+        downstream=McpDownstream(settings.downstream, settings.context_key, keys=settings.server_keys),
         token_key=settings.token_key,
         secrets=(settings.context_key, settings.mongo_uri, *_uri_secrets(settings.mongo_uri)),
     )

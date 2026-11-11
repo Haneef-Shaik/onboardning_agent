@@ -1,9 +1,10 @@
 """Forwarding to the downstream MCP servers, with the credentials only the hub holds (PRD §5.2, §7.4).
 
-For mcp-mongo the credential is the call context: an HS256 JWS signed with `MCP_CALL_CONTEXT_KEY`
-for this one call (tool, org, agent, run, collections), sent in `X-Onb-Call-Context`. The agent's
-own token never leaves the hub. Each call opens its own stateless MCP session, so no context is
-ever reused for another call.
+The credential is the call context: an HS256 JWS for this one call (tool, org, agent, run,
+collections), sent in `X-Onb-Call-Context`. Each server has its own key and its own audience
+(`mcp-<server>`: `mcp-mongo`, `mcp-mocks`), so a context minted for one server is refused by every
+other, and one server's key cannot mint another's contexts. The agent's own token never leaves the
+hub. Each call opens its own stateless MCP session, so no context is ever reused for another call.
 """
 
 from __future__ import annotations
@@ -19,7 +20,7 @@ from onb_mcp_mongo.call_context import HEADER, CallContext, check_key, sign_call
 
 from .catalog import HubTool
 
-__all__ = ["DEFAULT_TIMEOUT_S", "ClientFactory", "McpDownstream", "UnknownServerError"]
+__all__ = ["DEFAULT_TIMEOUT_S", "ClientFactory", "McpDownstream", "UnknownServerError", "audience_for"]
 
 DEFAULT_TIMEOUT_S = 30.0
 ClientFactory = Callable[[dict[str, str]], httpx.AsyncClient]
@@ -33,17 +34,35 @@ def _default_client(headers: dict[str, str]) -> httpx.AsyncClient:
     return httpx.AsyncClient(headers=headers, timeout=DEFAULT_TIMEOUT_S, follow_redirects=False)
 
 
+def audience_for(server: str) -> str:
+    """The audience a server's contexts are signed for: `mcp-mongo`, `mcp-mocks`."""
+    return f"mcp-{server}"
+
+
 class McpDownstream:
-    def __init__(self, urls: Mapping[str, str], context_key: str, *, client: ClientFactory = _default_client) -> None:
-        check_key(context_key)
+    """`urls`: server → endpoint. `context_key` signs mcp-mongo's contexts (and any server without
+    its own key in `keys`); `keys`: server → that server's own key (MOCK-1: `mocks`)."""
+
+    def __init__(
+        self,
+        urls: Mapping[str, str],
+        context_key: str,
+        *,
+        keys: Mapping[str, str] | None = None,
+        client: ClientFactory = _default_client,
+    ) -> None:
+        own = dict(keys or {})
+        for key in (context_key, *own.values()):
+            check_key(key)
         self._urls = dict(urls)
         self._key = context_key
+        self._keys = own
         self._client = client
 
     @property
     def secrets(self) -> tuple[str, ...]:
         """Credentials this client holds: never allowed back to an agent."""
-        return (self._key,)
+        return (self._key, *self._keys.values())
 
     async def call(
         self, tool: HubTool, args: Mapping[str, Any], context: CallContext
@@ -51,7 +70,8 @@ class McpDownstream:
         url = self._urls.get(tool.server)
         if url is None:
             raise UnknownServerError(f"no URL configured for the {tool.server} server")
-        signed = sign_call_context(context, self._key)
+        key = self._keys.get(tool.server, self._key)
+        signed = sign_call_context(context, key, audience=audience_for(tool.server))
         async with (
             self._client({HEADER: signed}) as http,
             streamable_http_client(url, http_client=http) as (read, write, _),

@@ -65,16 +65,15 @@ class Stack:
 
     def __init__(self, agents: dict[str, RegisteredAgent] | None = None) -> None:
         self.store = InMemoryIdempotencyStore()
-        self.mocks = build_mocks(self.store, MOCKS_KEY)
-        mocks_app = self.mocks.streamable_http_app()
         self.forwarded: list[httpx.Request] = []
+        self._mocks_app: Any = None
 
         def client(headers: dict[str, str]) -> httpx.AsyncClient:
             async def record(request: httpx.Request) -> None:
                 self.forwarded.append(request)
 
             return httpx.AsyncClient(
-                transport=httpx.ASGITransport(app=mocks_app),
+                transport=httpx.ASGITransport(app=self._mocks_app),
                 base_url="http://mcp-mocks",
                 headers=headers,
                 event_hooks={"request": [record]},
@@ -96,8 +95,13 @@ class Stack:
         )
 
     def run(self, fn: Callable[[ClientSession], Awaitable[Any]], headers: dict[str, str]) -> Any:
+        # A FastMCP session manager runs once; each call gets a fresh server over the same store,
+        # as a restarted process would (the store is what makes a replay a replay).
+        mocks = build_mocks(self.store, MOCKS_KEY)
+        self._mocks_app = mocks.streamable_http_app()
+
         async def go() -> Any:
-            async with self.mocks.session_manager.run(), hub_session(self.gateway, headers) as session:
+            async with mocks.session_manager.run(), hub_session(self.gateway, headers) as session:
                 return await fn(session)
 
         return asyncio.run(go())
@@ -151,7 +155,9 @@ def test_the_provisioning_manifest_names_only_tools_the_hub_serves() -> None:
 # --- box 1: the provisioning agent's token reaches the mocks through the hub -------------------------
 
 
-@pytest.mark.parametrize(("tool", "args"), [("mocks__create_bitbucket_account", BITBUCKET), ("mocks__provision_laptop", LAPTOP)])
+@pytest.mark.parametrize(
+    ("tool", "args"), [("mocks__create_bitbucket_account", BITBUCKET), ("mocks__provision_laptop", LAPTOP)]
+)
 def test_the_provisioning_agent_calls_a_mock_through_the_hub(
     tool: str, args: dict[str, Any], telemetry: CapturedTelemetry
 ) -> None:
@@ -178,7 +184,11 @@ def test_the_hub_signs_mocks_calls_with_the_mocks_key_for_the_mocks_audience(tel
     [post] = [r for r in stack.forwarded if b'"tools/call"' in r.content]
     context = post.headers[HEADER]
     claims_ = jwt.decode(context, MOCKS_KEY, algorithms=["HS256"], audience="mcp-mocks")
-    assert (claims_["org_id"], claims_["tool"], claims_["agent"]) == ("org_acme", "create_bitbucket_account", "provisioning_agent")
+    assert (claims_["org_id"], claims_["tool"], claims_["agent"]) == (
+        "org_acme",
+        "create_bitbucket_account",
+        "provisioning_agent",
+    )
     with pytest.raises(jwt.InvalidSignatureError):
         jwt.decode(context, CONTEXT_KEY, algorithms=["HS256"], audience="mcp-mocks")
     assert "authorization" not in {k.lower() for k in post.headers}  # the agent token stops at the hub
@@ -191,7 +201,9 @@ def test_the_hub_signs_mocks_calls_with_the_mocks_key_for_the_mocks_audience(tel
 # --- box 2: replay with the same idempotency key -----------------------------------------------------
 
 
-def test_replaying_through_the_hub_returns_the_same_result_and_creates_nothing_new(telemetry: CapturedTelemetry) -> None:
+def test_replaying_through_the_hub_returns_the_same_result_and_creates_nothing_new(
+    telemetry: CapturedTelemetry,
+) -> None:
     stack = Stack()
     first = stack.call("mocks__create_bitbucket_account", BITBUCKET)
     again = stack.call("mocks__create_bitbucket_account", BITBUCKET)
@@ -209,7 +221,8 @@ def test_a_conflicting_replay_through_the_hub_is_refused_and_audited_as_denied(t
     assert result.isError is True
     assert "downstream_denied" in text(result)
     assert stack.store.count() == 1
-    assert [(r.outcome, r.reason) for r in stack.records()][-1] == (AuditOutcome.DENIED, "downstream_denied")
+    outcomes = sorted((r.outcome.value, r.reason or "") for r in stack.records())
+    assert outcomes == [("denied", "downstream_denied"), ("success", "")]
 
 
 def test_the_same_idempotency_key_in_another_org_creates_that_orgs_own_record(telemetry: CapturedTelemetry) -> None:
