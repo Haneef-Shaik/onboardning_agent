@@ -177,8 +177,22 @@ def test_missing_or_reordered_chunks_are_refused(bucket: DocumentBucket, db: Mem
         collection.documents = [
             {**c, "n": 0} if c["files_id"] == stored.id and c["n"] == 1 else c for c in collection.documents
         ]
-    with pytest.raises(DecryptionError):
+    with pytest.raises(DecryptionError, match="missing or duplicated chunks"):
         _run(ORG, bucket.read(ORG, hire_id=HIRE, document_id=stored.id))
+
+
+def test_ciphertext_copied_into_another_document_of_the_same_hire_fails_to_decrypt(
+    bucket: DocumentBucket, db: MemoryDatabase
+) -> None:
+    """The document id is bound too: one scan pasted over another scan of the same hire and type."""
+    first = _put(bucket)
+    second = _put(bucket)
+    first_files = next(f for f in db.raw(FILES_COLLECTION) if f["_id"] == first.id)
+    for chunk in (c for c in db.raw(CHUNKS_COLLECTION) if c["files_id"] == first.id):
+        _rewrite_chunk(db, second.id, chunk["n"], chunk["data"])
+    _rewrite(db, FILES_COLLECTION, second.id, lambda f: {**f, "metadata": dict(first_files["metadata"])})
+    with pytest.raises(DecryptionError):
+        _run(ORG, bucket.read(ORG, hire_id=HIRE, document_id=second.id))
 
 
 def test_another_org_cannot_read_the_document(bucket: DocumentBucket) -> None:
