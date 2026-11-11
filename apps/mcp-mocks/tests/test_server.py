@@ -69,31 +69,41 @@ def test_replaying_a_call_through_mcp_returns_the_same_result_and_creates_nothin
     assert replayed == [False, True]
 
 
-@pytest.mark.parametrize("header", ["", "not-a-jws"])
-def test_a_call_without_a_valid_context_is_denied(header: str, telemetry: CapturedTelemetry) -> None:
-    store = InMemoryIdempotencyStore()
-    result = _call(store, "create_bitbucket_account", BITBUCKET_ARGS, header=header)
+def _assert_no_context(result: CallToolResult, store: InMemoryIdempotencyStore, telemetry: CapturedTelemetry) -> None:
     assert result.isError is True
-    assert "only through the MCP hub" in _text(result) or "refused" in _text(result)
     assert store.count() == 0
     [span] = [s for s in telemetry.spans() if s.name.startswith(SPAN_PREFIX)]
     assert dict(span.attributes or {})["denial.reason"] == "no_call_context"
 
 
-def test_a_context_signed_for_mcp_mongo_is_denied() -> None:
+@pytest.mark.parametrize(
+    ("header", "message"),
+    [
+        ("", "no call context: mcp-mocks is reached only through the MCP hub"),
+        ("not-a-jws", "call context refused: DecodeError"),
+    ],
+)
+def test_a_call_without_a_valid_context_is_denied(header: str, message: str, telemetry: CapturedTelemetry) -> None:
+    store = InMemoryIdempotencyStore()
+    result = _call(store, "create_bitbucket_account", BITBUCKET_ARGS, header=header)
+    assert message in _text(result)
+    _assert_no_context(result, store, telemetry)
+
+
+def test_a_context_signed_for_mcp_mongo_is_denied(telemetry: CapturedTelemetry) -> None:
     """The mongo audience never authorises a mock call, even with the right key and tool."""
     store = InMemoryIdempotencyStore()
     result = _call(store, "create_bitbucket_account", BITBUCKET_ARGS, audience="mcp-mongo")
-    assert result.isError is True
-    assert store.count() == 0
+    assert "call context refused: InvalidAudienceError" in _text(result)
+    _assert_no_context(result, store, telemetry)
 
 
-def test_a_context_signed_with_another_key_is_denied() -> None:
+def test_a_context_signed_with_another_key_is_denied(telemetry: CapturedTelemetry) -> None:
     store = InMemoryIdempotencyStore()
     forged = sign_call_context(CTX_A, "another-key-that-is-long-enough-0123456789", audience="mcp-mocks")
     result = _call(store, "create_bitbucket_account", BITBUCKET_ARGS, header=forged)
-    assert result.isError is True
-    assert store.count() == 0
+    assert "call context refused: InvalidSignatureError" in _text(result)
+    _assert_no_context(result, store, telemetry)
 
 
 def test_a_context_naming_another_tool_is_denied(telemetry: CapturedTelemetry) -> None:
@@ -129,9 +139,14 @@ def test_a_conflicting_replay_is_refused_as_a_conflict_not_an_internal_error(tel
     assert store.count() == 1
 
 
-def test_a_full_store_is_an_internal_error_without_detail(telemetry: CapturedTelemetry) -> None:
-    store = InMemoryIdempotencyStore(max_records=0)
-    result = _call(store, "provision_laptop", LAPTOP_ARGS)
+def test_an_unexpected_failure_is_an_internal_error_without_detail(
+    telemetry: CapturedTelemetry, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    async def explode(*_: Any) -> Any:
+        raise RuntimeError("secret detail")
+
+    monkeypatch.setattr("onb_mcp_mocks.server.invoke_outcome", explode)
+    result = _call(InMemoryIdempotencyStore(), "provision_laptop", LAPTOP_ARGS)
     assert result.isError is True
     assert _text(result) == "provision_laptop: internal error"
     [span] = [s for s in telemetry.spans() if s.name.startswith(SPAN_PREFIX)]

@@ -28,7 +28,9 @@ __all__ = [
     "TransportRefusedError",
 ]
 
-MAX_TEXT_CHARS = 4096  # Bot API sendMessage: 1-4096 characters after entity parsing
+# Bot API sendMessage: 1-4096 characters after entity parsing. The stub counts Python characters,
+# not UTF-16 units; close enough for a stub, and the real adapter enforces Telegram's own count.
+MAX_TEXT_CHARS = 4096
 MAX_CALLBACK_DATA_BYTES = 64  # Bot API InlineKeyboardButton.callback_data: 1-64 bytes
 MAX_USERNAME_CHARS = 33  # "@" + 5..32 characters
 
@@ -75,7 +77,7 @@ def _valid_chat(chat_id: object) -> bool:
     if isinstance(chat_id, bool):
         return False
     if isinstance(chat_id, int):
-        return chat_id > 0
+        return chat_id != 0  # users are positive; groups and channels negative, as in the Bot API
     if isinstance(chat_id, str):
         name = chat_id[1:]
         return chat_id.startswith("@") and 5 <= len(name) < MAX_USERNAME_CHARS and name.replace("_", "").isalnum()
@@ -93,7 +95,7 @@ class TelegramMockTransport:
         self, chat_id: ChatId, text: str, *, inline_keyboard: Sequence[Sequence[InlineButton]] = ()
     ) -> SentMessage:
         if not _valid_chat(chat_id):
-            raise TransportRefusedError("chat_id must be a positive id or an @username")
+            raise TransportRefusedError("chat_id must be a non-zero id or an @username")
         if not 1 <= len(text) <= MAX_TEXT_CHARS:
             raise TransportRefusedError(f"text must be 1-{MAX_TEXT_CHARS} characters")
         if not all(isinstance(b, InlineButton) for row in inline_keyboard for b in row):

@@ -43,9 +43,10 @@ LaptopProfile = Literal["standard", "engineering", "design"]
 
 
 def _unique(values: list[str]) -> list[str]:
+    """Groups are a set: no repeats, and sorted, so their order never makes a replay a conflict."""
     if len(set(values)) != len(values):
         raise ValueError("groups must not repeat")
-    return values
+    return sorted(values)
 
 
 class _Args(ArgModelBase):

@@ -74,7 +74,7 @@ def test_a_message_outside_the_bot_api_limits_is_refused_and_not_counted(text: s
     assert transport.sent == 0
 
 
-@pytest.mark.parametrize("chat_id", [0, -1, "", "@", True])
+@pytest.mark.parametrize("chat_id", [0, "", "@", "@ab", True, 1.5])
 def test_a_bad_chat_id_is_refused_without_echoing_it(chat_id: object) -> None:
     transport = TelegramMockTransport()
     with pytest.raises(TransportRefusedError):

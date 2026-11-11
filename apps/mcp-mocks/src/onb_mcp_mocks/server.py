@@ -6,8 +6,9 @@ closed contract → run the tool for the context's org (idempotent on `task_id`)
 carries `tool.name`, `org_id`, `agent.name`, `run_id`, `mock.replayed` and an `outcome`; never
 argument values or results.
 
-Refusals are plain messages (`idempotency_conflict: …`, `invalid arguments: …`); an unexpected
-failure is `<tool>: internal error`, the convention the hub uses to tell a failure from a refusal.
+Refusals are plain messages (`idempotency_conflict: …`, `store_full: …`, `invalid arguments: …`);
+an unexpected failure, including a result that breaks the server's own contract, is
+`<tool>: internal error`, the convention the hub uses to tell a failure from a refusal.
 """
 
 from __future__ import annotations
@@ -27,7 +28,7 @@ from opentelemetry.trace import Span, Status, StatusCode
 from pydantic import ConfigDict, Field, ValidationError
 
 from .contracts import CONTRACTS
-from .store import IdempotencyConflictError, IdempotencyStore
+from .store import IdempotencyConflictError, IdempotencyStore, StoreFullError
 from .tools import invoke_outcome
 
 __all__ = ["AUDIENCE", "SERVER_NAME", "SPAN_PREFIX", "build_server"]
@@ -97,16 +98,19 @@ class MockTool(Tool):
         contract = CONTRACTS[self.name]
         try:
             args = contract.args.model_validate(arguments)
+        except ValidationError as exc:
+            raise _deny(span, "invalid_arguments", _validation_message(exc)) from None
+        try:
             outcome = await invoke_outcome(self.store, ctx, self.name, args)
             result = contract.result.model_validate(outcome.result)
             converted = self.fn_metadata.convert_result(result) if convert_result else result
-        except ValidationError as exc:
-            raise _deny(span, "invalid_arguments", _validation_message(exc)) from None
         except IdempotencyConflictError:
             raise _deny(
                 span, "idempotency_conflict", "idempotency_conflict: this task_id was already used with other arguments"
             ) from None
-        except Exception as exc:
+        except StoreFullError:
+            raise _deny(span, "store_full", "store_full: this org may create no more mock records") from None
+        except Exception as exc:  # a server bug (a result breaking its contract included): never the agent's fault
             span.set_attributes({"outcome": "error", "error.type": type(exc).__name__})
             span.set_status(Status(StatusCode.ERROR))
             _log.error("mcp-mocks %s failed: %s", self.name, type(exc).__name__)

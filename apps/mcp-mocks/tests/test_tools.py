@@ -9,7 +9,12 @@ from typing import Any
 import pytest
 from onb_mcp_mocks import tools
 from onb_mcp_mocks.contracts import CONTRACTS, BitbucketAccount
-from onb_mcp_mocks.store import MAX_RECORDS, IdempotencyConflictError, InMemoryIdempotencyStore, StoreFullError
+from onb_mcp_mocks.store import (
+    MAX_RECORDS_PER_ORG,
+    IdempotencyConflictError,
+    InMemoryIdempotencyStore,
+    StoreFullError,
+)
 
 from .harness import BITBUCKET_ARGS, CTX_A, LAPTOP_ARGS, TASK_1, run
 
@@ -114,12 +119,12 @@ def test_a_returned_result_cannot_change_the_stored_one() -> None:
 
 
 def test_the_store_refuses_new_records_when_full() -> None:
-    store = InMemoryIdempotencyStore(max_records=1)
+    store = InMemoryIdempotencyStore(max_records_per_org=1)
     _invoke(store, "create_bitbucket_account", BITBUCKET_ARGS)
     with pytest.raises(StoreFullError):
         _invoke(store, "provision_laptop", LAPTOP_ARGS)
     assert _invoke(store, "create_bitbucket_account", BITBUCKET_ARGS)["status"] == "active"  # replays still answer
-    assert MAX_RECORDS >= 10_000
+    assert MAX_RECORDS_PER_ORG >= 1_000
 
 
 def test_an_unknown_tool_is_refused() -> None:
