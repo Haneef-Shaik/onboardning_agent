@@ -15,7 +15,7 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
-from onb_api.testing_mongo import MemoryDatabase, memory_keyring, memory_store
+from onb_api.testing_mongo import MemoryDatabase, memory_keyring, memory_store, seed_vault_value
 from onb_contracts.notify import TELEGRAM_SINK, NotifySendArgs, NotifySendResult
 from onb_crypto import (
     GrantAudit,
@@ -23,7 +23,6 @@ from onb_crypto import (
     GrantSigningKey,
     GrantVerifier,
     SinkResolver,
-    Vault,
     VaultField,
     ensure_grant_indexes,
     load_sink_policy,
@@ -124,28 +123,24 @@ def build_world(*, clock: Callable[[], datetime] | None = None) -> World:
     async def seed() -> dict[str, str]:
         await ensure_grant_indexes(store)
         await ensure_outbox_indexes(store)
-        vault = Vault(keyring, store)
-        tokens: dict[str, str] = {}
         for org in (ORG_A, ORG_B):
             with tenant_scope(org):
                 await keyring.create(org)
+
+        async def put(org: str, subject: str, field: VaultField, value: str) -> str:
+            return await seed_vault_value(keyring, store, org, subject_id=subject, field=field, value=value)
+
+        tokens = {
+            "mobile": await put(ORG_A, HIRE, VaultField.MOBILE, MOBILE),
+            "email": await put(ORG_A, HIRE, VaultField.EMAIL, EMAIL),
+            "other": await put(ORG_A, OTHER_HIRE, VaultField.MOBILE, OTHER_MOBILE),
+            "b_mobile": await put(ORG_B, B_HIRE, VaultField.MOBILE, B_MOBILE),
+        }
         with tenant_scope(ORG_A):
-            tokens["mobile"] = await vault.put(
-                ORG_A, subject_id=HIRE, field=VaultField.MOBILE, value=MOBILE, created_by="u_hr"
-            )
-            tokens["email"] = await vault.put(
-                ORG_A, subject_id=HIRE, field=VaultField.EMAIL, value=EMAIL, created_by="u_hr"
-            )
-            tokens["other"] = await vault.put(
-                ORG_A, subject_id=OTHER_HIRE, field=VaultField.MOBILE, value=OTHER_MOBILE, created_by="u_hr"
-            )
             await store.tenant("users").insert_many(
                 [{"_id": "u_acme_hr1", "role": "HR"}, {"_id": "u_acme_mgr_ravi", "role": "MANAGER"}]
             )
         with tenant_scope(ORG_B):
-            tokens["b_mobile"] = await vault.put(
-                ORG_B, subject_id=B_HIRE, field=VaultField.MOBILE, value=B_MOBILE, created_by="u_hr"
-            )
             await store.tenant("users").insert_one({"_id": "u_globex_hr1", "role": "HR"})
         return tokens
 

@@ -18,14 +18,14 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, cast
 
 from bson import ObjectId
-from onb_crypto import ORG_KEYS_COLLECTION, Keyring, MasterKey, RepositoryOrgKeyStore, SecretKey
-from onb_data import DataStore
+from onb_crypto import ORG_KEYS_COLLECTION, Keyring, MasterKey, RepositoryOrgKeyStore, SecretKey, Vault, VaultField
+from onb_data import DataStore, tenant_scope
 from pymongo.errors import DuplicateKeyError
 
 if TYPE_CHECKING:
     from pymongo.asynchronous.database import AsyncDatabase
 
-__all__ = ["MemoryCollection", "MemoryDatabase", "memory_keyring", "memory_store"]
+__all__ = ["MemoryCollection", "MemoryDatabase", "memory_keyring", "memory_store", "seed_vault_value"]
 
 Document = dict[str, Any]
 _MISSING = object()
@@ -297,6 +297,17 @@ def memory_store(database: MemoryDatabase | None = None) -> DataStore:
     the driver's type (as in py-data's own tests)."""
     db = database if database is not None else MemoryDatabase()
     return DataStore(cast("AsyncDatabase[Document]", db), None)
+
+
+async def seed_vault_value(
+    keyring: Keyring, store: DataStore, org_id: str, *, subject_id: str, field: VaultField, value: str
+) -> str:
+    """Store `value` for a hire through the real vault, as HR would, and return its token. For sink
+    tests outside the API (NOTIF-1): only the API layer may hold a `Vault` (PII-2's boundary scan)."""
+    with tenant_scope(org_id):
+        return await Vault(keyring, store).put(
+            org_id, subject_id=subject_id, field=field, value=value, created_by="u_test_hr"
+        )
 
 
 def memory_keyring(store: DataStore) -> Keyring:
