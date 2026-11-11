@@ -67,7 +67,15 @@ def test_create_app_fails_without_jwt_secret(monkeypatch: pytest.MonkeyPatch) ->
 
 def _start_api(env: dict[str, str]) -> subprocess.CompletedProcess[str]:
     """Import the ASGI entry point the way `uvicorn onb_api.main:app` does, in a clean process."""
-    stripped = {"JWT_SECRET", "MONGO_URI", "MONGO_DATABASE", "PII_MASTER_KEY", "CONFIG_DIR", "TELEGRAM_WEBHOOK_SECRET", *LLM_ENV}
+    stripped = {
+        "JWT_SECRET",
+        "MONGO_URI",
+        "MONGO_DATABASE",
+        "PII_MASTER_KEY",
+        "CONFIG_DIR",
+        "TELEGRAM_WEBHOOK_SECRET",
+        *LLM_ENV,
+    }
     base = {k: v for k, v in os.environ.items() if k not in stripped}
     base["OTEL_SDK_DISABLED"] = "true"
     return subprocess.run(
@@ -144,6 +152,8 @@ def test_startup_fails_when_the_llm_configuration_does_not_resolve() -> None:
     assert result.returncode != 0
     assert "LLMConfigError" in result.stderr
     assert "LLM_MODEL_STANDARD" in result.stderr
+
+
 def test_startup_fails_without_the_telegram_webhook_secret() -> None:
     env = {k: v for k, v in MONGO_ENV.items() if k != "TELEGRAM_WEBHOOK_SECRET"}
     result = _start_api({**env, "JWT_SECRET": GOOD_SECRET})

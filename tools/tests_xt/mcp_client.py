@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any
 
@@ -42,7 +43,18 @@ def _outcome(result: CallToolResult) -> Outcome:
     return Outcome(bool(result.isError), result.structuredContent, text)
 
 
-def call(url: str, key: str, org_id: str, tool: str, args: dict[str, Any], *, audience: str = AUDIENCE) -> Outcome:
+def call(
+    url: str,
+    key: str,
+    org_id: str,
+    tool: str,
+    args: dict[str, Any],
+    *,
+    audience: str = AUDIENCE,
+    headers: Mapping[str, str] | None = None,
+) -> Outcome:
+    """`headers` go on every request too (NOTIF-1: the task's PII grant, as the hub forwards it)."""
+
     async def sign(request: httpx.Request) -> None:
         body = json.loads(request.content or b"{}")
         if isinstance(body, dict) and body.get("method") == "tools/call":
@@ -51,7 +63,7 @@ def call(url: str, key: str, org_id: str, tool: str, args: dict[str, Any], *, au
 
     async def main() -> Outcome:
         async with (
-            httpx.AsyncClient(event_hooks={"request": [sign]}, timeout=30) as http,
+            httpx.AsyncClient(event_hooks={"request": [sign]}, headers=dict(headers or {}), timeout=30) as http,
             streamable_http_client(url, http_client=http) as (read, write, _),
             ClientSession(read, write) as session,
         ):

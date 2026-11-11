@@ -16,18 +16,25 @@ from dataclasses import dataclass
 from typing import Any, Protocol
 
 import pytest
+from onb_agents.runtime.task import GRANT_HEADER
+from onb_crypto import GrantIssuer, VaultField, load_sink_policy
+from onb_crypto.tokens import new_token
+from onb_data import tenant_scope
 
+from . import world
 from .conftest import McpServer, Unscoped, World
 from .mcp_client import READ, WRITE, Outcome, call
+from .surface import ROOT, XT_GRANT_KEY
 from .world import ORG_A, ORG_B, Seen, assert_indistinguishable, assert_no_leak, tenant_documents
 
 Args = dict[str, Any]
 
 
 class Call(Protocol):
-    """(tool, args) -> outcome, as an org-A agent (or, where a case needs it, as `org`)."""
+    """(tool, args) -> outcome, as an org-A agent (or, where a case needs it, as `org`). `grant` is the
+    task's PII grant, sent as the hub forwards it to a sink (NOTIF-1)."""
 
-    def __call__(self, tool: str, args: Args, org: str = ORG_A) -> Outcome: ...
+    def __call__(self, tool: str, args: Args, org: str = ORG_A, *, grant: str | None = None) -> Outcome: ...
 
 
 B_HIRE, B_RUN = "h_globex_001", "run_globex_001"
@@ -44,6 +51,8 @@ class ToolCase:
     """The ordinary call an org-A agent makes."""
     check: Callable[[Call, World, Unscoped], None]
     """The tool's own cross-tenant assertions."""
+    prepare: Callable[[World], object] | None = None
+    """Seeding the case needs before org B is snapshotted (NOTIF-1: both orgs' vault hires)."""
 
 
 # MCP-2's validator refuses any filter, pipeline or document that names `org_id`, even as `$org_id`.
@@ -210,7 +219,64 @@ def _mock_check(tool: str, args: Args, id_field: str) -> Callable[[Call, World, 
     return check
 
 
+# --- mcp-notify (NOTIF-1): the sink resolves a token only for the caller's org, hire and grant ------------
+
+POLICY = load_sink_policy(ROOT / "config" / "pii_sink_policy.yaml")
+NOTIFY_ARGS: Args = {"channel": "in_app", "recipient_user_id": "u_acme_hr1", "body": "Welcome sent."}
+ABSENT_REF = new_token()  # well-formed, stored nowhere
+
+
+def _vault_hire(xt: World, unscoped: Unscoped, org: str) -> tuple[str, str]:
+    """(hire id, mobile token) of the org's vault-backed hire: a token, never a value."""
+    hire_id = xt.vault_hires()[org]
+    with unscoped("root read of a seeded hire's mobile token, to address it like the orchestrator would"):
+        hire = xt.root_db["new_hires"].find_one({"_id": hire_id})
+    assert hire is not None
+    return hire_id, str(hire["pii"]["mobile"])
+
+
+def _grant(org: str, hire_id: str) -> str:
+    """A grant as the orchestrator issues it for a welcome task (RUN-3), signed with this run's key."""
+    with tenant_scope(org):
+        return GrantIssuer(XT_GRANT_KEY, POLICY).issue_grant(
+            org,
+            run_id=f"run_xt_{org}",
+            task_id="xt_welcome",
+            subject_id=hire_id,
+            fields=[VaultField.MOBILE],
+            sink="notify.telegram",
+        )
+
+
+def _notify_check(agent: Call, xt: World, unscoped: Unscoped) -> None:
+    """Org A sends to its own hire; org B's token under org A's grant, and org B's grant, resolve nothing
+    and answer exactly like a token that does not exist. An in-app message to an org-B user answers like
+    one to nobody. No outbox copy, in any org, holds a raw mobile."""
+    a_hire, a_token = _vault_hire(xt, unscoped, ORG_A)
+    b_hire, b_token = _vault_hire(xt, unscoped, ORG_B)
+    body = {"channel": "telegram", "body": "Welcome aboard!"}
+    agent("notify_send", {**body, "recipient_token": a_token}, grant=_grant(ORG_A, a_hire)).ok()
+    foreign = agent("notify_send", {**body, "recipient_token": b_token}, grant=_grant(ORG_A, a_hire))
+    absent = agent("notify_send", {**body, "recipient_token": ABSENT_REF}, grant=_grant(ORG_A, a_hire))
+    assert foreign.error
+    assert_indistinguishable(_seen(foreign), _seen(absent), "notify_send to org B's token")
+    b_grant = agent("notify_send", {**body, "recipient_token": b_token}, grant=_grant(ORG_B, b_hire))
+    assert b_grant.error
+    assert "wrong_org" in b_grant.text
+    for refused in (foreign, b_grant):
+        assert_no_leak(refused.text, "a refused notify_send")
+    to_b_user = agent("notify_send", {**NOTIFY_ARGS, "recipient_user_id": "u_globex_hr1"})
+    to_nobody = agent("notify_send", {**NOTIFY_ARGS, "recipient_user_id": "u_nobody_xt"})
+    assert_indistinguishable(_seen(to_b_user), _seen(to_nobody), "notify_send in-app to an org-B user")
+    with unscoped("root read-back of every outbox copy, in every org"):
+        outbox = list(xt.root_db["mock_outbox"].find())
+    assert [(d["org_id"], d["recipient"]["token"]) for d in outbox] == [(ORG_A, a_token)]
+    raw = [s for org in (ORG_A, ORG_B) for s in world.xt_vault_strings(org)]
+    assert not any(s in repr(outbox) for s in raw)
+
+
 TOOL_CASES: Mapping[tuple[str, str], ToolCase] = {
+    ("mcp-notify", "notify_send"): ToolCase(NOTIFY_ARGS, _notify_check, prepare=World.vault_hires),
     ("mcp-mocks", "create_bitbucket_account"): ToolCase(
         BITBUCKET_ARGS, _mock_check("create_bitbucket_account", BITBUCKET_ARGS, "account_id")
     ),
@@ -228,15 +294,26 @@ TOOL_CASES: Mapping[tuple[str, str], ToolCase] = {
     ),
 }
 
-_SERVERS: Mapping[str, str] = {"mcp-mongo": "mcp_mongo", "mcp-mocks": "mcp_mocks"}  # server -> its fixture
+_SERVERS: Mapping[str, str] = {  # server -> its fixture
+    "mcp-mongo": "mcp_mongo",
+    "mcp-mocks": "mcp_mocks",
+    "mcp-notify": "mcp_notify",
+}
 _TOOL_IDS = [f"{server}.{tool}" for server, tool in TOOL_CASES]
+
+
+def _prepare(xt: World, key: tuple[str, str]) -> None:
+    prepare = TOOL_CASES[key].prepare
+    if prepare is not None:
+        prepare(xt)
 
 
 def _agent(request: pytest.FixtureRequest, server: str) -> Call:
     mcp: McpServer = request.getfixturevalue(_SERVERS[server])
 
-    def agent(tool: str, args: Args, org: str = ORG_A) -> Outcome:
-        return call(mcp.url, mcp.key, org, tool, args, audience=mcp.audience)
+    def agent(tool: str, args: Args, org: str = ORG_A, *, grant: str | None = None) -> Outcome:
+        headers = {GRANT_HEADER: grant} if grant is not None else None
+        return call(mcp.url, mcp.key, org, tool, args, audience=mcp.audience, headers=headers)
 
     return agent
 
@@ -245,6 +322,7 @@ def _agent(request: pytest.FixtureRequest, server: str) -> Call:
 def test_the_tools_own_cross_tenant_checks(
     request: pytest.FixtureRequest, xt_world: World, unscoped: Unscoped, key: tuple[str, str]
 ) -> None:
+    _prepare(xt_world, key)
     before = xt_world.org_b_snapshot(unscoped)
     TOOL_CASES[key].check(_agent(request, key[0]), xt_world, unscoped)
     assert xt_world.org_b_snapshot(unscoped) == before
@@ -254,6 +332,7 @@ def test_the_tools_own_cross_tenant_checks(
 def test_no_org_b_data_reaches_an_org_a_agent(
     request: pytest.FixtureRequest, xt_world: World, unscoped: Unscoped, key: tuple[str, str]
 ) -> None:
+    _prepare(xt_world, key)
     before = xt_world.org_b_snapshot(unscoped)
     outcome = _agent(request, key[0])(key[1], TOOL_CASES[key].args)
     outcome.ok()
@@ -265,6 +344,7 @@ def test_no_org_b_data_reaches_an_org_a_agent(
 def test_an_org_id_argument_naming_org_b_is_refused(
     request: pytest.FixtureRequest, xt_world: World, unscoped: Unscoped, key: tuple[str, str]
 ) -> None:
+    _prepare(xt_world, key)
     before = xt_world.org_b_snapshot(unscoped)
     outcome = _agent(request, key[0])(key[1], {**TOOL_CASES[key].args, "org_id": ORG_B})
     assert outcome.error, outcome.data

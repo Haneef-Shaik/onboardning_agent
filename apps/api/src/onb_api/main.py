@@ -30,8 +30,8 @@ from onb_api.documents.service import DocumentService
 from onb_api.evals.store import EvalRunStore
 from onb_api.health import SERVICE_NAME
 from onb_api.hires.service import HireService
-from onb_api.templates import MongoTemplateStore, RegistryValidatorSource, TemplateLifecycle
 from onb_api.notify.service import BusDecisions, MockChannels
+from onb_api.templates import MongoTemplateStore, RegistryValidatorSource, TemplateLifecycle
 
 auth = AuthSettings.from_env()
 mongo_uri = require_env(os.environ, "MONGO_URI")

@@ -43,6 +43,7 @@ from onb_api.auth.users import NewUser
 from onb_api.documents.service import DocumentService
 from onb_api.evals.store import EvalRunStore
 from onb_api.hires.service import HireService
+from onb_api.notify.service import BusDecisions, MockChannels
 from onb_api.templates import MongoTemplateStore, RegistryValidatorSource, TemplateLifecycle
 from onb_api.testing import TEST_SETTINGS, InMemoryAuditLog
 from onb_contracts.auth import Role
@@ -58,6 +59,8 @@ from onb_data.safety_net_pytest import (  # T-2 tenant safety net (PRD §7.9): r
     unscoped,
 )
 from onb_evals.results import record_run
+from onb_mcp_mocks.notify.main import build_service as build_notify_service
+from onb_mcp_mocks.notify.server import AUDIENCE as NOTIFY_AUDIENCE
 from onb_mcp_mocks.server import AUDIENCE as MOCKS_AUDIENCE
 from onb_mcp_mocks.server import build_server as build_mocks_server
 from onb_mcp_mocks.store import InMemoryIdempotencyStore
@@ -67,7 +70,7 @@ from pymongo import MongoClient
 from pymongo.database import Database
 
 from . import world
-from .surface import PLATFORM_SUBSCRIPTIONS, api_routes, mcp_tools, platform_consumers
+from .surface import PLATFORM_SUBSCRIPTIONS, api_routes, mcp_tools, notify_settings, platform_consumers
 
 # Re-exported so pytest registers the safety net hooks and fixtures for this suite.
 __all__ = ["pytest_configure", "pytest_sessionfinish", "tenant_safety_net", "tenant_safety_net_guard", "unscoped"]
@@ -78,6 +81,8 @@ SOCAT_IMAGE = "alpine/socat:1.8.1.3@sha256:e8a6e8868a8e6e01d9c2c321a8f8d4474d2d7
 TUNNEL_LABEL_KEY = "onb.test.xt-mongo-tunnel"
 MCP_CONTEXT_KEY = secrets.token_urlsafe(48)
 MOCKS_CONTEXT_KEY = secrets.token_urlsafe(48)  # its own key, as deployed
+NOTIFY_CONTEXT_KEY = secrets.token_urlsafe(48)  # NOTIF-1: mcp-notify's own key
+XT_WEBHOOK_SECRET = secrets.token_urlsafe(32)  # NOTIF-1: the Telegram webhook secret token
 PASSWORD = secrets.token_urlsafe(12)
 T0 = datetime(2026, 11, 1, 8, 0, tzinfo=UTC)
 # HIRE-1: the vault's master key for this run (random, never a fixed secret).
@@ -348,6 +353,7 @@ def build_api(store: DataStore) -> FastAPI:
     templates = template_lifecycle(store, audit, agents)
     documents = DocumentService.build(store, keyring, auditor=audit)
     evals = EvalRunStore(store)
+    notify = MockChannels(store, webhook_secret=XT_WEBHOOK_SECRET, decisions=BusDecisions(store))
     return create_app(
         auth=TEST_SETTINGS,
         users=users,
@@ -357,6 +363,7 @@ def build_api(store: DataStore) -> FastAPI:
         templates=templates,
         documents=documents,
         evals=evals,
+        notify=notify,
     )
 
 
@@ -418,6 +425,17 @@ def mcp_mocks() -> Iterator[McpServer]:
     server = build_mocks_server(InMemoryIdempotencyStore(), MOCKS_CONTEXT_KEY, port=port)
     for _ in _serve(server.streamable_http_app(), port, "mcp-mocks"):
         yield McpServer(f"http://127.0.0.1:{port}/mcp", MOCKS_CONTEXT_KEY, MOCKS_AUDIENCE)
+
+
+@pytest.fixture(scope="session")
+def mcp_notify(mongo_uri: str, database_name: str) -> Iterator[McpServer]:
+    """NOTIF-1: the notify sink over the scratch database, with this run's vault master key (so it can
+    resolve the seeded vault hires) and grant key (`surface.XT_GRANT_KEY`), and the real bus."""
+    port = _free_port()
+    store = connect(mongo_uri, database_name, app_name="xt-mcp-notify")
+    server = build_notify_service(notify_settings(NOTIFY_CONTEXT_KEY, XT_MASTER_KEY), store).server
+    for _ in _serve(server.streamable_http_app(), port, "mcp-notify"):
+        yield McpServer(f"http://127.0.0.1:{port}/mcp", NOTIFY_CONTEXT_KEY, NOTIFY_AUDIENCE)
 
 
 # --- the covered surface, printed at the end of the run --------------------------------------------------

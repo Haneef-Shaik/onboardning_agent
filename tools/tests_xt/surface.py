@@ -29,7 +29,11 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.routing import APIRoute, iter_route_contexts
 from mcp.server.fastmcp import FastMCP
+from onb_contracts.notify import NOTIFY_SUBSCRIPTIONS
+from onb_crypto import GrantSigningKey, GrantVerifier, MasterKey, SecretKey
 from onb_data import DataStore
+from onb_mcp_mocks.notify.main import build_service as build_notify_service
+from onb_mcp_mocks.notify.settings import NotifySettings
 from onb_mcp_mocks.server import build_server as build_mocks_server
 from onb_mcp_mocks.store import InMemoryIdempotencyStore
 from onb_mcp_mongo.server import build_server
@@ -40,11 +44,20 @@ ROOT = Path(__file__).resolve().parents[2]
 
 # Every subscription map the platform runs, by owner. Empty until the orchestrator (RUN-1) subscribes
 # its first consumer; that goal adds its map here (imported from its module) with a case per consumer.
-PLATFORM_SUBSCRIPTIONS: Mapping[str, Mapping[str, Sequence[str]]] = {}
+PLATFORM_SUBSCRIPTIONS: Mapping[str, Mapping[str, Sequence[str]]] = {
+    # NOTIF-1: the notification consumers (`notify.in_app`), run by mcp-notify; every publisher of their
+    # events (the API's webhook, the sink) builds its bus with this same map.
+    "notify": NOTIFY_SUBSCRIPTIONS,
+}
 
 # Production modules that build a `MongoEventBus`, relative to the repo root. Each must feed its
 # subscriptions into PLATFORM_SUBSCRIPTIONS above.
-BUS_MODULES: frozenset[str] = frozenset()
+BUS_MODULES: frozenset[str] = frozenset(
+    {
+        "apps/api/src/onb_api/notify/service.py",  # NOTIF-1: `decision.received` from the webhook
+        "apps/mcp-mocks/src/onb_mcp_mocks/notify/main.py",  # NOTIF-1: the sink's events + `notify.in_app`
+    }
+)
 
 # --- MCP servers ------------------------------------------------------------------------------------
 
@@ -58,13 +71,45 @@ def _mcp_mocks(_: DataStore, context_key: str) -> FastMCP:
     return build_mocks_server(InMemoryIdempotencyStore(), context_key)
 
 
+# NOTIF-1: the orchestrator's grant key for this run; mcp-notify verifies with its public half.
+XT_GRANT_KEY = GrantSigningKey.generate()
+
+
+def notify_settings(context_key: str, master_key: MasterKey | None = None) -> NotifySettings:
+    """mcp-notify's settings for the suite: this run's grant key, and the given vault master key (a fresh
+    one when only the tool list is needed). The database comes from the store the service is built on."""
+    return NotifySettings(
+        context_key=context_key,
+        mongo_uri="mongodb://unused.invalid",
+        master_key=master_key or MasterKey(SecretKey.generate()),
+        verifier=GrantVerifier([XT_GRANT_KEY.public_key]),
+        database="unused",
+        policy_file=ROOT / "config" / "pii_sink_policy.yaml",
+        host="127.0.0.1",
+        port=8210,
+    )
+
+
+def _mcp_notify(store: DataStore, context_key: str) -> FastMCP:
+    """mcp-notify (NOTIF-1) over the store, as `onb_mcp_mocks.notify.main` builds it."""
+    return build_notify_service(notify_settings(context_key), store).server
+
+
 # Every MCP server the platform runs, by name, built over a store. The hub is a low-level `Server`
 # with its own cross-tenant cases (apps/mcp-hub/tests_int/test_hub_xt.py::HUB_TOOL_CASES).
-MCP_SERVERS: Mapping[str, Callable[[DataStore, str], FastMCP]] = {"mcp-mongo": _mcp_mongo, "mcp-mocks": _mcp_mocks}
+MCP_SERVERS: Mapping[str, Callable[[DataStore, str], FastMCP]] = {
+    "mcp-mongo": _mcp_mongo,
+    "mcp-mocks": _mcp_mocks,
+    "mcp-notify": _mcp_notify,
+}
 
 # Production modules that build an MCP server (`FastMCP(...)`), relative to the repo root.
 MCP_SERVER_MODULES: frozenset[str] = frozenset(
-    {"apps/mcp-mongo/src/onb_mcp_mongo/server.py", "apps/mcp-mocks/src/onb_mcp_mocks/server.py"}
+    {
+        "apps/mcp-mongo/src/onb_mcp_mongo/server.py",
+        "apps/mcp-mocks/src/onb_mcp_mocks/server.py",
+        "apps/mcp-mocks/src/onb_mcp_mocks/notify/server.py",
+    }
 )
 
 # Production code lives here; tests, the py-eventbus library itself and its docstrings do not count.

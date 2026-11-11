@@ -23,11 +23,13 @@ from dataclasses import dataclass
 from typing import Any
 
 import pytest
+from onb_contracts.notify import CHANGE_REQUEST_DECIDED, IN_APP_CONSUMER, NOTIFY_SUBSCRIPTIONS, RUN_BLOCKED
 from onb_data import DataStore, current_tenant, tenant_scope
 from onb_eventbus import Handler, JobContext, MongoEventBus
+from onb_mcp_mocks.notify.in_app import in_app_handler
 
 from .conftest import Unscoped, World
-from .world import ORG_A, ORG_B, tenant_documents
+from .world import ORG_A, ORG_B, seed_users, tenant_documents
 
 # (tenant context during the handler, the job's org) for each handler call, in order.
 Observed = list[tuple[str, str]]
@@ -43,8 +45,14 @@ class ConsumerCase:
     """The production handler, built over the store."""
 
 
-# One row per platform consumer (RUN-1 adds the orchestrator's). Empty while nothing subscribes.
-CONSUMER_CASES: Mapping[str, ConsumerCase] = {}
+# One row per platform consumer (RUN-1 adds the orchestrator's).
+CONSUMER_CASES: Mapping[str, ConsumerCase] = {
+    # NOTIF-1: a blocked run tells the org's HR users in-app; `test_the_in_app_consumer_*` covers its
+    # other event (a decided change request) with an org-B requester id.
+    IN_APP_CONSUMER: ConsumerCase(
+        RUN_BLOCKED, lambda org: {"run_id": f"run_xt_{org}", "task_id": "xt_task"}, in_app_handler
+    ),
+}
 
 
 def _probe(store: DataStore) -> Handler:
@@ -124,3 +132,37 @@ def test_a_consumer_handling_an_org_a_event_stays_in_org_a(xt_world: World, unsc
             written = sorted((d["org_id"], d["hires_seen"]) for d in xt_world.root_db["xt_probe"].find())
         own = {org: len(tenant_documents(org)["new_hires"]) for org in (ORG_A, ORG_B)}
         assert written == sorted([(ORG_A, own[ORG_A]), (ORG_A, own[ORG_A]), (ORG_B, own[ORG_B]), (ORG_B, own[ORG_B])])
+
+
+def test_the_in_app_consumer_never_tells_another_orgs_user(xt_world: World, unscoped: Unscoped) -> None:
+    """NOTIF-1: an org-A change request naming an org-B user as its requester notifies nobody, and a
+    blocked org-A run notifies org A's HR users only."""
+    subscriptions = NOTIFY_SUBSCRIPTIONS
+
+    async def main() -> None:
+        store = xt_world.store()
+        try:
+            bus = MongoEventBus(store, subscriptions=subscriptions)
+            await bus.ensure_indexes()
+            with tenant_scope(ORG_A):
+                await bus.publish(
+                    CHANGE_REQUEST_DECIDED,
+                    {"change_request_id": "cr_xt_1", "requested_by": "u_globex_hr1", "decision": "accepted"},
+                    idempotency_key="xt-cr-1",
+                )
+                await bus.publish(
+                    RUN_BLOCKED, {"run_id": "run_acme_001", "task_id": "xt_task"}, idempotency_key="xt-rb-1"
+                )
+            worker = bus.worker({IN_APP_CONSUMER: in_app_handler(store)})
+            while await worker.run_once() is not None:
+                pass
+        finally:
+            await store.close()
+
+    before = xt_world.org_b_snapshot(unscoped)
+    asyncio.run(main())
+    assert xt_world.org_b_snapshot(unscoped) == before
+    with unscoped("root read-back of every in-app notification, in every org"):
+        stored = sorted((d["org_id"], d["user_id"], d["kind"]) for d in xt_world.root_db["notifications"].find())
+    hr_users = sorted(u["_id"] for u in seed_users() if u["org_id"] == ORG_A and u["role"] in ("HR", "HR_ADMIN"))
+    assert stored == [(ORG_A, user, RUN_BLOCKED) for user in hr_users]

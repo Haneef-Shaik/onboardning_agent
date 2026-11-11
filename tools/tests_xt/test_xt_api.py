@@ -29,9 +29,12 @@ from onb_api.documents.meta import META_COLLECTION
 from onb_api.documents.service import DocumentService
 from onb_api.testing import TEST_SETTINGS, InMemoryAuditLog, bearer, token_for
 from onb_contracts.auth import Role
+from onb_contracts.notify import DECISION_RECEIVED, TELEGRAM_AUTH_HEADER, Decision, new_callback_data
 from onb_data import tenant_scope
+from onb_mcp_mocks.notify.outbox import DecisionButton, OutboxEntry, TelegramMockChannel
+from onb_mcp_mocks.telegram import TelegramMockTransport
 
-from .conftest import Unscoped, World, xt_keyring
+from .conftest import XT_WEBHOOK_SECRET, Unscoped, World, xt_keyring
 from .world import (
     A_DRAFT,
     B_DRAFT,
@@ -673,6 +676,134 @@ def _eval_run_check(client: TestClient, _: World) -> None:
     assert client.get(f"/evals/runs/{own_id}", headers=bearer(token_for(*B_ADMIN))).status_code == 404
 
 
+# --- NOTIF-1: GET /mock-outbox, POST /webhooks/telegram ------------------------------------------------
+# Each org has one Approve/Reject message, sent through the real Telegram mock channel (so the stored
+# shape is the sink's) and addressed to that org's manager. Org B's message text names org B's seeded
+# hire, so a leak of it would show. The webhook takes no user token: the org of a press comes from the
+# button id alone; a press decides in its own org and answers exactly like a press nobody knows.
+
+B_MESSAGE_TEXT = "Approve the laptop for h_globex_001?"
+DECISION_BUTTONS = (DecisionButton("Approve", Decision.APPROVE), DecisionButton("Reject", Decision.REJECT))
+_OUTBOX_AUDIENCE = {ORG_A: ACTORS[Role.MANAGER], ORG_B: "u_globex_mgr1"}
+
+
+def _decision_messages(xt: World) -> dict[str, dict[str, str]]:
+    """{org: {decision: callback data}} for each org's Approve/Reject message (sent once per world)."""
+
+    async def main() -> dict[str, dict[str, str]]:
+        store = xt.store()
+        try:
+            channel = TelegramMockChannel(store, TelegramMockTransport())
+            found: dict[str, dict[str, str]] = {}
+            for org in (ORG_A, ORG_B):
+                with tenant_scope(org):
+                    stored = await store.tenant("mock_outbox").find({"ref.type": "approval"}, limit=1)
+                    if not stored:
+                        text = B_MESSAGE_TEXT if org == ORG_B else "Approve the laptop for the new hire?"
+                        entry = OutboxEntry(
+                            recipient_token=None,
+                            recipient_masked="90XXXXXX01",
+                            text=text,
+                            run_id=f"run_xt_{org}",
+                            task_id="manager_approval",
+                            ref={"type": "approval", "id": f"ap_xt_{org}"},
+                            audience_user_id=_OUTBOX_AUDIENCE[org],
+                        )
+                        _, document = await channel.send(731957001, entry, buttons=DECISION_BUTTONS)
+                        await channel.store(document)
+                        stored = [document]
+                    found[org] = {b["decision"]: b["callback_data"] for b in stored[0]["buttons"]}
+            return found
+        finally:
+            await store.close()
+
+    return asyncio.run(main())
+
+
+def _decisions_in(xt: World, org: str) -> list[dict[str, Any]]:
+    async def main() -> list[dict[str, Any]]:
+        store = xt.store()
+        try:
+            with tenant_scope(org):
+                events = await store.tenant("events").find({"type": DECISION_RECEIVED})
+            return [dict(e["payload"]) for e in events]
+        finally:
+            await store.close()
+
+    return asyncio.run(main())
+
+
+def _outbox_request(xt: World, role: Role) -> Request:
+    _decision_messages(xt)
+    return {"method": "GET", "url": "/mock-outbox", "headers": bearer(_token(role))}
+
+
+def _outbox_check(client: TestClient, xt: World) -> None:
+    buttons = _decision_messages(xt)
+    hr = client.get("/mock-outbox", headers=bearer(_token(Role.HR))).json()
+    assert [m["buttons"][0]["callback_data"] for m in hr["data"]] == [buttons[ORG_A]["approve"]]
+    assert hr["meta"]["page"]["total"] == 1
+    manager = client.get("/mock-outbox", headers=bearer(_token(Role.MANAGER))).json()["data"]
+    assert [m["buttons"][0]["callback_data"] for m in manager] == [buttons[ORG_A]["approve"]]
+    other_manager = client.get("/mock-outbox", headers=bearer(token_for("u_acme_mgr_xt", ORG_A, Role.MANAGER)))
+    assert other_manager.json()["data"] == []
+    # Paging past org A's message finds nothing, not org B's.
+    assert (
+        client.get("/mock-outbox", params={"page": 2, "limit": 1}, headers=bearer(_token(Role.HR))).json()["data"] == []
+    )
+    b_data = client.get("/mock-outbox", headers=bearer(token_for(*B_ADMIN))).json()["data"]
+    assert [(m["text"], m["buttons"][0]["callback_data"]) for m in b_data] == [
+        (B_MESSAGE_TEXT, buttons[ORG_B]["approve"])
+    ]
+
+
+def _telegram_update(callback_data: str, query_id: str) -> dict[str, Any]:
+    """A Bot API `Update` with a `callback_query`, as Telegram sends it for a button press."""
+    return {
+        "update_id": 731957264,
+        "callback_query": {
+            "id": query_id,
+            "from": {"id": 731957001, "is_bot": False, "first_name": "Ravi", "language_code": "en"},
+            "message": {"message_id": 1, "date": 1794300000, "chat": {"id": 731957001, "type": "private"}},
+            "chat_instance": "-5368927412083694527",
+            "data": callback_data,
+        },
+    }
+
+
+def _webhook(client: TestClient, body: Mapping[str, Any], secret: str = XT_WEBHOOK_SECRET, **headers: str) -> Response:
+    return client.post("/webhooks/telegram", json=body, headers={TELEGRAM_AUTH_HEADER: secret, **headers})
+
+
+def _webhook_request(xt: World, role: Role) -> Request:
+    buttons = _decision_messages(xt)
+    return {
+        "method": "POST",
+        "url": "/webhooks/telegram",
+        "headers": {TELEGRAM_AUTH_HEADER: XT_WEBHOOK_SECRET, **bearer(_token(role))},
+        "json": _telegram_update(buttons[ORG_A]["approve"], "xt-press-a"),
+    }
+
+
+def _webhook_check(client: TestClient, xt: World) -> None:
+    buttons = _decision_messages(xt)
+    a_press = _webhook(client, _telegram_update(buttons[ORG_A]["reject"], "xt-a-1"))
+    assert a_press.status_code == 200, a_press.json()
+    assert [(d["decision"], d["ref_id"]) for d in _decisions_in(xt, ORG_A)] == [("reject", f"ap_xt_{ORG_A}")]
+    assert _decisions_in(xt, ORG_B) == []
+    # Org B's button, pressed with an org-A user's token on the request: decides in org B, never org A,
+    # and answers exactly like a button nobody has.
+    b_press = _webhook(client, _telegram_update(buttons[ORG_B]["approve"], "xt-b-1"), **bearer(_token(Role.HR)))
+    unknown = _webhook(client, _telegram_update(new_callback_data(), "xt-none-1"))
+    assert_indistinguishable(seen(b_press), seen(unknown), "POST /webhooks/telegram for an org-B button")
+    assert [d["ref_id"] for d in _decisions_in(xt, ORG_B)] == [f"ap_xt_{ORG_B}"]
+    assert len(_decisions_in(xt, ORG_A)) == 1
+    # A wrong secret decides nothing anywhere.
+    wrong = _webhook(client, _telegram_update(buttons[ORG_A]["approve"], "xt-a-2"), secret="x" * 40)
+    assert wrong.status_code == 401
+    assert len(_decisions_in(xt, ORG_A)) == 1
+
+
 ALL_200: Mapping[Role, int] = dict.fromkeys(ACTORS, 200)
 ADMIN_ONLY: Mapping[Role, int] = {Role.HR_ADMIN: 200, Role.HR: 403, Role.MANAGER: 403}
 HR_ONLY: Mapping[Role, int] = {Role.HR_ADMIN: 200, Role.HR: 200, Role.MANAGER: 403}
@@ -724,6 +855,8 @@ ROUTE_CASES: Mapping[tuple[str, str], RouteCase] = {
     ),
     ("GET", "/evals/runs"): RouteCase(_eval_runs_request, _reads_only(_eval_runs_check), ADMIN_ONLY),
     ("GET", "/evals/runs/{run_id}"): RouteCase(_eval_run_request, _reads_only(_eval_run_check), ADMIN_ONLY),
+    ("GET", "/mock-outbox"): RouteCase(_outbox_request, _reads_only(_outbox_check), ALL_200),
+    ("POST", "/webhooks/telegram"): RouteCase(_webhook_request, _reads_only(_webhook_check), ALL_200),
 }
 
 _ROUTE_IDS = [f"{method} {path}" for method, path in ROUTE_CASES]

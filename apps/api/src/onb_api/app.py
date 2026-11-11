@@ -43,10 +43,10 @@ from onb_api.evals import routes as eval_routes
 from onb_api.evals.store import EvalRunsReader
 from onb_api.hires import routes as hire_routes
 from onb_api.hires.service import HireService
-from onb_api.templates import TemplateLifecycle
-from onb_api.templates import routes as template_routes
 from onb_api.notify import routes as notify_routes
 from onb_api.notify.service import MockChannels
+from onb_api.templates import TemplateLifecycle
+from onb_api.templates import routes as template_routes
 
 TITLE = "Onboarding Platform API"
 VERSION = "0.1.0"

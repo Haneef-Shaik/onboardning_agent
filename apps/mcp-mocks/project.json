@@ -24,7 +24,7 @@
       "executor": "@nxlv/python:run-commands",
       "cache": true,
       "options": {
-        "command": "uv run --frozen mypy --cache-dir .mypy_cache/mcp-mocks apps/mcp-mocks/src apps/mcp-mocks/tests",
+        "command": "uv run --frozen mypy --cache-dir .mypy_cache/mcp-mocks apps/mcp-mocks/src apps/mcp-mocks/tests apps/mcp-mocks/tests_int",
         "cwd": "."
       }
     },
@@ -37,6 +37,14 @@
         "env": {
           "COVERAGE_FILE": ".coverage.mcp-mocks"
         }
+      }
+    },
+    "test-int": {
+      "executor": "@nxlv/python:run-commands",
+      "cache": false,
+      "options": {
+        "command": "uv run --frozen pytest apps/mcp-mocks/tests_int -o cache_dir=.pytest_cache/mcp-mocks-int",
+        "cwd": "."
       }
     }
   }

@@ -27,8 +27,8 @@ from onb_api import create_app
 from onb_api.documents.service import DocumentService
 from onb_api.evals.store import EvalRunStore
 from onb_api.hires.service import HireService
-from onb_api.templates import RegistryValidatorSource, TemplateLifecycle
 from onb_api.notify.service import MockChannels
+from onb_api.templates import RegistryValidatorSource, TemplateLifecycle
 from onb_api.testing import (
     TEST_SETTINGS,
     WEBHOOK_SECRET,
