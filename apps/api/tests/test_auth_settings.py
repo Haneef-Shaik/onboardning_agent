@@ -6,6 +6,7 @@ import secrets
 import subprocess
 import sys
 from datetime import timedelta
+from pathlib import Path
 
 import pytest
 from onb_api import create_app
@@ -66,7 +67,7 @@ def test_create_app_fails_without_jwt_secret(monkeypatch: pytest.MonkeyPatch) ->
 
 def _start_api(env: dict[str, str]) -> subprocess.CompletedProcess[str]:
     """Import the ASGI entry point the way `uvicorn onb_api.main:app` does, in a clean process."""
-    stripped = {"JWT_SECRET", "MONGO_URI", "MONGO_DATABASE", "PII_MASTER_KEY"}
+    stripped = {"JWT_SECRET", "MONGO_URI", "MONGO_DATABASE", "PII_MASTER_KEY", "CONFIG_DIR"}
     base = {k: v for k, v in os.environ.items() if k not in stripped}
     base["OTEL_SDK_DISABLED"] = "true"
     return subprocess.run(
@@ -122,6 +123,16 @@ def test_startup_fails_with_a_malformed_pii_master_key() -> None:
     assert sentinel not in result.stderr
 
 
+CONFIG_ENV = {"CONFIG_DIR": str(Path(__file__).resolve().parents[3] / "config")}
+
+
 def test_startup_succeeds_with_the_settings() -> None:
-    result = _start_api({**MONGO_ENV, "JWT_SECRET": GOOD_SECRET})
+    result = _start_api({**MONGO_ENV, **CONFIG_ENV, "JWT_SECRET": GOOD_SECRET})
     assert result.returncode == 0, result.stderr
+
+
+def test_startup_fails_without_the_config_dir() -> None:
+    """TPL-2: the template validator reads the tool catalog and the sink policy from CONFIG_DIR."""
+    result = _start_api({**MONGO_ENV, "JWT_SECRET": GOOD_SECRET})
+    assert result.returncode != 0
+    assert "ConfigError: CONFIG_DIR is not set" in result.stderr

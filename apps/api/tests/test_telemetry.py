@@ -3,6 +3,7 @@
 import importlib
 import sys
 from collections.abc import Iterator
+from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
@@ -77,6 +78,8 @@ def test_main_initialises_telemetry_as_the_api_service(monkeypatch: pytest.Monke
     # main.py also needs the Mongo settings (AUTH-1); the client is lazy, so nothing connects.
     monkeypatch.setenv("MONGO_URI", "mongodb://127.0.0.1:1/?serverSelectionTimeoutMS=1")
     monkeypatch.setenv("MONGO_DATABASE", "onb")
+    # And the config directory (TPL-2: the template validator's catalog and sink policy).
+    monkeypatch.setenv("CONFIG_DIR", str(Path(__file__).resolve().parents[3] / "config"))
     reset_telemetry_globals()
     sys.modules.pop("onb_api.main", None)
     try:
