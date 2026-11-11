@@ -2,7 +2,7 @@
 
 The name uses `__` because agent-side model APIs allow only `[A-Za-z0-9_-]` in tool names. Each
 entry carries the downstream tool's JSON-schema contract, which the hub checks before forwarding.
-The entries come from each server's own contracts (mcp-mongo's, mcp-mocks'), so the hub and a
+The entries come from each server's own contracts (mcp-mongo's, mcp-mocks', mcp-notify's), so the hub and a
 server can never disagree about a schema.
 """
 
@@ -12,22 +12,28 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any
 
+from onb_contracts.notify import NOTIFY_SEND, NotifySendResult
 from onb_mcp_mocks.contracts import CONTRACTS as MOCK_CONTRACTS
+from onb_mcp_mocks.notify.server import DESCRIPTION as NOTIFY_DESCRIPTION
+from onb_mcp_mocks.notify.server import NotifyArgs
 from onb_mcp_mongo.contracts import CONTRACTS
 
 __all__ = [
     "MOCKS_SERVER",
     "MONGO_SERVER",
+    "NOTIFY_SERVER",
     "SEPARATOR",
     "HubTool",
     "hub_name",
     "mocks_catalog",
     "mongo_catalog",
+    "notify_catalog",
     "platform_catalog",
 ]
 
 MONGO_SERVER = "mongo"
 MOCKS_SERVER = "mocks"
+NOTIFY_SERVER = "notify"
 SEPARATOR = "__"
 
 
@@ -84,6 +90,23 @@ def mocks_catalog() -> dict[str, HubTool]:
     }
 
 
+def notify_catalog() -> dict[str, HubTool]:
+    """`notify_send` (NOTIF-1), with the schema the notify server serves (the shared `onb_contracts.notify`
+    contract). REG-1's `templates_agent` manifest grants it as `notify: [notify_send]`."""
+    name = hub_name(NOTIFY_SERVER, NOTIFY_SEND)
+    return {
+        name: HubTool(
+            server=NOTIFY_SERVER,
+            tool=NOTIFY_SEND,
+            name=name,
+            description=NOTIFY_DESCRIPTION,
+            input_schema=NotifyArgs.model_json_schema(by_alias=True),
+            output_schema=NotifySendResult.model_json_schema(by_alias=True),
+            read_only=False,
+        )
+    }
+
+
 def platform_catalog() -> dict[str, HubTool]:
     """Every tool the deployed hub serves."""
-    return {**mongo_catalog(), **mocks_catalog()}
+    return {**mongo_catalog(), **mocks_catalog(), **notify_catalog()}

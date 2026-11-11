@@ -29,6 +29,7 @@ class Sent:
     args: Mapping[str, Any]
     context: CallContext
     signed: str = ""
+    grant: str | None = None
 
 
 @dataclass
@@ -45,12 +46,12 @@ class FakeDownstream:
         return (self.credential,)
 
     async def call(
-        self, tool: HubTool, args: Mapping[str, Any], context: CallContext
+        self, tool: HubTool, args: Mapping[str, Any], context: CallContext, *, grant: str | None = None
     ) -> tuple[CallToolResult, tuple[str, ...]]:
         if self.fail is not None:
             raise self.fail
         signed = secrets.token_urlsafe(48)  # like a real JWS: shares nothing with the key
-        sent = Sent(tool, dict(args), context, signed)
+        sent = Sent(tool, dict(args), context, signed, grant)
         self.sent.append(sent)
         return self.reply(sent), (signed,)
 

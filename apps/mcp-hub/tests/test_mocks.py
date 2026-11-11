@@ -21,7 +21,7 @@ from onb_agents.tokens import hub_client_config, issue_agent_token
 from onb_data import AuditOutcome, tenant_scope
 from onb_data.audit import AuditEntry, AuditQuery
 from onb_data.testing import InMemoryAuditLog
-from onb_mcp_hub.catalog import MOCKS_SERVER, mocks_catalog, mongo_catalog, platform_catalog
+from onb_mcp_hub.catalog import MOCKS_SERVER, mocks_catalog, mongo_catalog, notify_catalog, platform_catalog
 from onb_mcp_hub.downstream import McpDownstream
 from onb_mcp_hub.gateway import Gateway
 from onb_mcp_mocks.contracts import CONTRACTS as MOCK_CONTRACTS
@@ -129,9 +129,9 @@ class _Registry:
 # --- catalog -----------------------------------------------------------------------------------------
 
 
-def test_the_platform_catalog_serves_the_mongo_and_mock_tools() -> None:
+def test_the_platform_catalog_serves_the_mongo_mock_and_notify_tools() -> None:
     catalog = platform_catalog()
-    assert sorted(catalog) == sorted([*mongo_catalog(), *mocks_catalog()])
+    assert sorted(catalog) == sorted([*mongo_catalog(), *mocks_catalog(), *notify_catalog()])
     assert sorted(mocks_catalog()) == ["mocks__create_bitbucket_account", "mocks__provision_laptop"]
 
 

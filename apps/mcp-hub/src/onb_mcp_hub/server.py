@@ -1,6 +1,7 @@
 """The hub's MCP server: streamable HTTP at `/mcp`, the single entry point for agent tools (PRD §7.4).
 
-Agents connect with `Authorization: Bearer <agent token>` (`onb_agents.tokens.hub_client_config`).
+Agents connect with `Authorization: Bearer <agent token>` (`onb_agents.tokens.hub_client_config`) and,
+for a task with a PII grant, `X-Onb-Pii-Grant` (AG-1), which only a sink ever receives (NOTIF-1).
 `tools/list` serves the catalog; every `tools/call` goes to `Gateway.call`, unknown names included,
 so even a call for a tool the hub does not serve is audited and traced. Built on the MCP SDK's
 low-level server, because the hub's tools are the downstream servers' tools, not Python functions.
@@ -21,6 +22,7 @@ from starlette.routing import Route
 from starlette.types import Receive, Scope, Send
 
 from .catalog import HubTool
+from .downstream import GRANT_HEADER
 from .gateway import Gateway
 
 __all__ = ["SERVER_NAME", "Hub", "build_hub", "hub_tools"]
@@ -78,7 +80,8 @@ def build_hub(gateway: Gateway, *, allowed_hosts: Sequence[str] = DEFAULT_ALLOWE
         request = server.request_context.request
         headers = getattr(request, "headers", None)
         authorization = headers.get("authorization") if headers is not None else None
-        return await gateway.call(name, arguments or {}, authorization)
+        grant = headers.get(GRANT_HEADER) if headers is not None else None
+        return await gateway.call(name, arguments or {}, authorization, grant=grant)
 
     security = TransportSecuritySettings(
         enable_dns_rebinding_protection=True, allowed_hosts=_hosts(allowed_hosts), allowed_origins=[]

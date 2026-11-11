@@ -5,6 +5,10 @@ collections), sent in `X-Onb-Call-Context`. Each server has its own key and its 
 (`mcp-<server>`: `mcp-mongo`, `mcp-mocks`), so a context minted for one server is refused by every
 other, and one server's key cannot mint another's contexts. The agent's own token never leaves the
 hub. Each call opens its own stateless MCP session, so no context is ever reused for another call.
+
+The orchestrator's PII grant (AG-1 sends it as `X-Onb-Pii-Grant` on the agent's hub connection) is
+forwarded to the servers in `GRANT_SERVERS` only, the notify sink (NOTIF-1). mcp-mongo and mcp-mocks
+never see it, whatever the agent sends.
 """
 
 from __future__ import annotations
@@ -18,11 +22,21 @@ from mcp.client.streamable_http import streamable_http_client
 from mcp.types import CallToolResult
 from onb_mcp_mongo.call_context import HEADER, CallContext, check_key, sign_call_context
 
-from .catalog import MONGO_SERVER, HubTool
+from .catalog import MONGO_SERVER, NOTIFY_SERVER, HubTool
 
-__all__ = ["DEFAULT_TIMEOUT_S", "ClientFactory", "McpDownstream", "UnknownServerError", "audience_for"]
+__all__ = [
+    "DEFAULT_TIMEOUT_S",
+    "GRANT_HEADER",
+    "GRANT_SERVERS",
+    "ClientFactory",
+    "McpDownstream",
+    "UnknownServerError",
+    "audience_for",
+]
 
 DEFAULT_TIMEOUT_S = 30.0
+GRANT_HEADER = "x-onb-pii-grant"  # AG-1's `onb_agents.runtime.task.GRANT_HEADER`
+GRANT_SERVERS = frozenset({NOTIFY_SERVER})  # the sinks: the only servers a grant is forwarded to
 ClientFactory = Callable[[dict[str, str]], httpx.AsyncClient]
 
 
@@ -70,15 +84,19 @@ class McpDownstream:
         return tuple(self._keys.values())
 
     async def call(
-        self, tool: HubTool, args: Mapping[str, Any], context: CallContext
+        self, tool: HubTool, args: Mapping[str, Any], context: CallContext, *, grant: str | None = None
     ) -> tuple[CallToolResult, tuple[str, ...]]:
+        """Forward one call. `grant` goes along only to a server in `GRANT_SERVERS`."""
         url = self._urls.get(tool.server)
         if url is None:
             raise UnknownServerError(f"no URL configured for the {tool.server} server")
         key = self._keys[tool.server]  # present for every server with a URL (checked at construction)
         signed = sign_call_context(context, key, audience=audience_for(tool.server))
+        headers = {HEADER: signed}
+        if grant and tool.server in GRANT_SERVERS:
+            headers[GRANT_HEADER] = grant
         async with (
-            self._client({HEADER: signed}) as http,
+            self._client(headers) as http,
             streamable_http_client(url, http_client=http) as (read, write, _),
             ClientSession(read, write) as session,
         ):

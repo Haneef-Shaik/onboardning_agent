@@ -33,6 +33,7 @@ from opentelemetry import trace
 from opentelemetry.trace import Span, Status, StatusCode
 
 from .catalog import HubTool
+from .downstream import GRANT_SERVERS
 from .policy import CallDeniedError, Grant, authorize, recordable_collection
 from .scan import scan_result
 
@@ -57,7 +58,7 @@ class Downstream(Protocol):
     def secrets(self) -> tuple[str, ...]: ...
 
     async def call(
-        self, tool: HubTool, args: Mapping[str, Any], context: CallContext
+        self, tool: HubTool, args: Mapping[str, Any], context: CallContext, *, grant: str | None = None
     ) -> tuple[CallToolResult, tuple[str, ...]]: ...
 
 
@@ -134,8 +135,13 @@ class Gateway:
         """Every credential the hub holds; a response containing one is withheld."""
         return (*self._secrets, *self._downstream.secrets)
 
-    async def call(self, name: str, args: Mapping[str, Any], authorization: str | None) -> CallToolResult:
-        """The result the agent sees for `name(args)`, called with the given `Authorization` header."""
+    async def call(
+        self, name: str, args: Mapping[str, Any], authorization: str | None, *, grant: str | None = None
+    ) -> CallToolResult:
+        """The result the agent sees for `name(args)`, called with the given `Authorization` header.
+
+        `grant` is the `X-Onb-Pii-Grant` header of the agent's connection: handed to the downstream
+        client (which forwards it to a sink only) and never returned to the agent."""
         tool = self._catalog.get(name)
         call = _Call(tool=tool, collection=_collection(tool, args))
         attrs: dict[str, str] = {"tool.name": tool.name if tool else "unknown"}
@@ -148,20 +154,22 @@ class Gateway:
             span_name, attributes=attrs, record_exception=False, set_status_on_exception=False
         ) as span:
             try:
-                return await self._run(span, call, args, authorization)
+                return await self._run(span, call, args, authorization, grant)
             except CallDeniedError as denied:
                 return await self._deny(span, call, denied)
             except Exception as exc:  # a registry or policy failure: audited and traced, never echoed
                 return await self._fail(span, call, exc, "internal_error")
 
-    async def _run(self, span: Span, call: _Call, args: Mapping[str, Any], authorization: str | None) -> CallToolResult:
+    async def _run(
+        self, span: Span, call: _Call, args: Mapping[str, Any], authorization: str | None, grant: str | None
+    ) -> CallToolResult:
         claims = call.claims = self._verify(authorization)
         span.set_attributes({"org_id": claims.org_id, "agent.name": claims.agent, "run_id": claims.run_id})
         agent = await self._agent(claims.agent)
-        grant = authorize(claims, agent, call.tool, args)
+        access = authorize(claims, agent, call.tool, args)
         if call.tool is None:  # authorize has already denied it; this narrows the type
             raise CallDeniedError("unknown_tool", "the hub serves no such tool")
-        return await self._forward(span, call, claims, call.tool, args, grant)
+        return await self._forward(span, call, claims, call.tool, args, access, grant)
 
     def _verify(self, authorization: str | None) -> AgentClaims:
         try:
@@ -176,7 +184,14 @@ class Gateway:
             raise CallDeniedError("manifest_invalid", "the agent's registry record does not verify") from None
 
     async def _forward(
-        self, span: Span, call: _Call, claims: AgentClaims, tool: HubTool, args: Mapping[str, Any], grant: Grant
+        self,
+        span: Span,
+        call: _Call,
+        claims: AgentClaims,
+        tool: HubTool,
+        args: Mapping[str, Any],
+        grant: Grant,
+        pii_grant: str | None,
     ) -> CallToolResult:
         context = CallContext(
             org_id=claims.org_id,
@@ -187,11 +202,13 @@ class Gateway:
             write=grant.write,
         )
         try:
-            result, sent = await self._downstream.call(tool, args, context)
+            forwarded = pii_grant if tool.server in GRANT_SERVERS else None  # a sink's only; never mongo's
+            result, sent = await self._downstream.call(tool, args, context, grant=forwarded)
         except Exception as exc:
             return await self._fail(span, call, exc, "downstream_unavailable")
         try:
-            scanned = scan_result(result, secrets=(*self.secrets, *sent))
+            held = (*self.secrets, *sent, *((pii_grant,) if pii_grant else ()))
+            scanned = scan_result(result, secrets=held)
         except CallDeniedError as withheld:
             return await self._deny(span, call, withheld, ran=not tool.read_only)
         if scanned.result.isError:
