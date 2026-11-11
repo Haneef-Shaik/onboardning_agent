@@ -63,12 +63,14 @@ test-int: up
 	uv run --frozen pytest tools/tests_int -q -o cache_dir=.pytest_cache/tools-int && \
 	$(NX) run-many -t test-int --output-style=static
 
-## Cross-tenant suite (PRD §7.9 Testing, T-3): two seeded orgs on the compose Mongo; for every API
-## route, MCP tool and event consumer, an org-A actor cannot read, list, update or infer org B. A route,
-## tool or consumer without a case fails it. The run ends by listing the surface it covered.
+## Cross-tenant suite (PRD §7.9 Testing): two seeded orgs; for every API route, MCP tool and event
+## consumer, an org-A actor cannot read, list, update or infer org B. T-3's suite (tools/tests_xt: API
+## routes, mcp-mongo tools, consumers) plus every project's own `test-xt` target (HUB-1: the MCP hub's
+## tools, apps/mcp-hub/tests_int/test_hub_xt.py). A route, tool or consumer without a case fails it.
 test-xt: up
 	set -a && . ./$(ENV_FILE) && set +a && \
-	uv run --frozen pytest tools/tests_xt -q -o cache_dir=.pytest_cache/tests-xt
+	uv run --frozen pytest tools/tests_xt -q -o cache_dir=.pytest_cache/tests-xt && \
+	$(NX) run-many -t test-xt --output-style=static
 
 ## Eval harness self-test (PRD §8.2, MASTER-PLAN §7): every dataset case against its scripted output on
 ## the `fake` connector (no model calls), k=3, each repetition in a fresh database on the compose Mongo,

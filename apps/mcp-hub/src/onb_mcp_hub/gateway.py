@@ -210,7 +210,9 @@ class Gateway:
         if call.claims is None:
             call.claims = denied.claims
             if call.claims is not None:
-                span.set_attributes({"org_id": call.claims.org_id, "agent.name": call.claims.agent})
+                span.set_attributes(
+                    {"org_id": call.claims.org_id, "agent.name": call.claims.agent, "run_id": call.claims.run_id}
+                )
         try:
             await self._audit(call, AuditOutcome.DENIED, denied.reason)
         except Exception as exc:

@@ -86,6 +86,7 @@ def assert_denied(hub: Hub, telemetry: CapturedTelemetry, result: CallToolResult
     assert attrs["denial.reason"] == reason
     assert attrs["org_id"] == "org_acme"
     assert attrs["agent.name"] == "db_agent"
+    assert attrs["run_id"] == "run_1"
 
 
 # --- box 1: the four named denials ----------------------------------------------------------------
