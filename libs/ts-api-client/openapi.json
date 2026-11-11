@@ -2544,6 +2544,229 @@
         "title": "Role",
         "type": "string"
       },
+      "RunCreate": {
+        "additionalProperties": false,
+        "description": "`POST /runs`: start a run for a hire on a published template version (FR-R1).",
+        "properties": {
+          "hire_id": {
+            "maxLength": 66,
+            "pattern": "^h_[A-Za-z0-9_]{1,64}$",
+            "title": "Hire Id",
+            "type": "string"
+          },
+          "template_key": {
+            "maxLength": 64,
+            "pattern": "^[a-z][a-z0-9_-]{0,63}$",
+            "title": "Template Key",
+            "type": "string"
+          },
+          "template_version": {
+            "maximum": 1000000.0,
+            "minimum": 1.0,
+            "title": "Template Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "hire_id",
+          "template_key",
+          "template_version"
+        ],
+        "title": "RunCreate",
+        "type": "object"
+      },
+      "RunEnvelope": {
+        "additionalProperties": false,
+        "description": "A run that was just started.",
+        "properties": {
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RunRecord"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "error": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ErrorBody"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta",
+            "default": {}
+          },
+          "success": {
+            "title": "Success",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "success",
+          "data",
+          "error",
+          "meta"
+        ],
+        "title": "RunEnvelope",
+        "type": "object"
+      },
+      "RunRecord": {
+        "additionalProperties": false,
+        "description": "A run, pinned to the template version and DAG hash it was compiled from.",
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "created_by": {
+            "title": "Created By",
+            "type": "string"
+          },
+          "dag_hash": {
+            "title": "Dag Hash",
+            "type": "string"
+          },
+          "hire_id": {
+            "title": "Hire Id",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "started",
+              "running",
+              "completed",
+              "failed"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "tasks": {
+            "items": {
+              "$ref": "#/components/schemas/RunTaskRecord"
+            },
+            "title": "Tasks",
+            "type": "array"
+          },
+          "template_key": {
+            "title": "Template Key",
+            "type": "string"
+          },
+          "template_version": {
+            "title": "Template Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "hire_id",
+          "template_key",
+          "template_version",
+          "dag_hash",
+          "status",
+          "created_by",
+          "created_at",
+          "tasks"
+        ],
+        "title": "RunRecord",
+        "type": "object"
+      },
+      "RunTaskRecord": {
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "title": "Action",
+            "type": "string"
+          },
+          "agent": {
+            "title": "Agent",
+            "type": "string"
+          },
+          "depends_on": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Depends On",
+            "type": "array"
+          },
+          "due": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Due"
+          },
+          "skip_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Skip Reason"
+          },
+          "status": {
+            "enum": [
+              "pending",
+              "ready",
+              "running",
+              "waiting_approval",
+              "done",
+              "failed",
+              "skipped",
+              "cancelled"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "task_id": {
+            "title": "Task Id",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "action",
+              "approval"
+            ],
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "task_id",
+          "title",
+          "type",
+          "agent",
+          "action",
+          "depends_on",
+          "status",
+          "skip_reason",
+          "due"
+        ],
+        "title": "RunTaskRecord",
+        "type": "object"
+      },
       "Sla": {
         "additionalProperties": false,
         "description": "`due` is a date variable with an optional offset: `start_date - 7d`, `start_date + 48h`.",
@@ -4492,6 +4715,52 @@
         "summary": "List Pii Access Log",
         "tags": [
           "hires"
+        ]
+      }
+    },
+    "/runs": {
+      "post": {
+        "operationId": "startRun",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RunCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunEnvelope"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error, in the envelope"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Start Run",
+        "tags": [
+          "runs"
         ]
       }
     },

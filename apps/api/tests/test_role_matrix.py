@@ -80,6 +80,8 @@ ROLE_MATRIX: dict[tuple[str, str], dict[Role, int]] = {
     ("GET", "/mock-outbox"): ALL_200,
     # UI-4: HR and HR_ADMIN read a hire's scan metadata; managers never see documents.
     ("GET", "/hires/{hire_id}/documents"): {Role.HR_ADMIN: 200, Role.HR: 200, Role.MANAGER: 403},
+    # RUN-1: HR and HR_ADMIN start runs (PRD FR-R1, §3, §10 Hires & runs); a manager does not.
+    ("POST", "/runs"): {Role.HR_ADMIN: 201, Role.HR: 201, Role.MANAGER: 403},
 }
 
 CONFIG = Path(__file__).resolve().parents[3] / "config"
@@ -107,6 +109,8 @@ SAMPLE_PATHS = {
 SAMPLE_BODIES: dict[tuple[str, str], dict[str, Any]] = {
     ("POST", "/templates/drafts"): {"template": SEED_TEMPLATE},
     ("PUT", "/templates/drafts/{draft_id}"): {"template": SEED_TEMPLATE},
+    # h_acme_001 on engineer-india v1, which the `templates` fixture publishes.
+    ("POST", "/runs"): {"hire_id": "h_acme_001", "template_key": "engineer-india", "template_version": 1},
 }
 
 

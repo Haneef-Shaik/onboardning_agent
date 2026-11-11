@@ -5,10 +5,12 @@ empty in-memory audit log (`audit_log`), an in-memory agent registry synced from
 (REG-1), the hire service (HIRE-1) over an in-memory database holding seed_v1's hires, with its own
 audit log (`hire_audit`), the template lifecycle (TPL-2) over an in-memory store, validating
 against that registry and auditing to `audit_log`, the document service (HIRE-2) over the same
-database, keyring (`keyring`, shared with the hires) and audit log as the hires, and the eval run
-store (UI-8) over the same in-memory database. `JWT_SECRET` and `PII_MASTER_KEY` are set for every
-test (fresh random values), so tests that build the app from the environment start like the real
-service; the startup tests remove them.
+database, keyring (`keyring`, shared with the hires) and audit log as the hires, the eval run
+store (UI-8) over the same in-memory database, the mock channels (NOTIF-1), and the run service
+(RUN-1) over the hires' database, publishing to an outbox stand-in (`run_outbox`) and auditing to
+`audit_log`. `JWT_SECRET` and `PII_MASTER_KEY` are set for every test (fresh random values), so
+tests that build the app from the environment start like the real service; the startup tests
+remove them.
 """
 
 import asyncio
@@ -22,12 +24,14 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from onb_agents.registry import AgentRegistry, load_catalog, load_manifests
+from onb_agents.runs.testing import OutboxStandIn
 from onb_agents.testing import InMemoryRegistryStore
 from onb_api import create_app
 from onb_api.documents.service import DocumentService
 from onb_api.evals.store import EvalRunStore
 from onb_api.hires.service import HireService
 from onb_api.notify.service import MockChannels
+from onb_api.runs import RunService
 from onb_api.templates import RegistryValidatorSource, TemplateLifecycle
 from onb_api.testing import (
     TEST_SETTINGS,
@@ -58,6 +62,8 @@ __all__ = [
     "notify_db",
     "registry",
     "registry_retire",
+    "run_outbox",
+    "runs",
     "template_store",
     "templates",
     "users",
@@ -168,6 +174,22 @@ def notify(notify_db: MemoryDatabase, decisions: RecordedDecisions) -> MockChann
 
 
 @pytest.fixture
+def run_outbox() -> OutboxStandIn:
+    return OutboxStandIn()
+
+
+@pytest.fixture
+def runs(
+    memory_db: MemoryDatabase,
+    run_outbox: OutboxStandIn,
+    audit_log: InMemoryAuditLog,
+    hires: HireService,
+    templates: TemplateLifecycle,
+) -> RunService:
+    return RunService.build(memory_store(memory_db), run_outbox, auditor=audit_log, hires=hires, templates=templates)
+
+
+@pytest.fixture
 def app(
     users: InMemoryUserStore,
     registry: AgentRegistry,
@@ -177,6 +199,7 @@ def app(
     documents: DocumentService,
     memory_db: MemoryDatabase,
     notify: MockChannels,
+    runs: RunService,
 ) -> FastAPI:
     reset_telemetry_globals()
     return create_app(
@@ -189,6 +212,7 @@ def app(
         documents=documents,
         evals=EvalRunStore(memory_store(memory_db)),
         notify=notify,
+        runs=runs,
     )
 
 

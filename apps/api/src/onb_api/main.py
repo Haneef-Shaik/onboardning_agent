@@ -18,6 +18,7 @@ from pathlib import Path
 
 from onb_agents.registry import AgentRegistry
 from onb_agents.registry.mongo import MongoRegistryStore
+from onb_agents.runs import run_bus
 from onb_crypto import ORG_KEYS_COLLECTION, Keyring, MasterKey, RepositoryOrgKeyStore
 from onb_data import AuditLog, connect
 from onb_llm import load_llm_config
@@ -31,6 +32,7 @@ from onb_api.evals.store import EvalRunStore
 from onb_api.health import SERVICE_NAME
 from onb_api.hires.service import HireService
 from onb_api.notify.service import BusDecisions, MockChannels
+from onb_api.runs import RunService
 from onb_api.templates import MongoTemplateStore, RegistryValidatorSource, TemplateLifecycle
 
 auth = AuthSettings.from_env()
@@ -55,6 +57,8 @@ eval_runs = EvalRunStore(store)
 notify = MockChannels(
     store, webhook_secret=require_env(os.environ, "TELEGRAM_WEBHOOK_SECRET"), decisions=BusDecisions(store)
 )
+bus = run_bus(store)
+runs = RunService.build(store, bus, auditor=audit_log, hires=hires, templates=templates, bus_indexes=bus.ensure_indexes)
 app = create_app(
     auth=auth,
     users=users,
@@ -66,4 +70,5 @@ app = create_app(
     evals=eval_runs,
     llm=llm_config,
     notify=notify,
+    runs=runs,
 )

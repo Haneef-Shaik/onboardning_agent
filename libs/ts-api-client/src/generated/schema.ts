@@ -261,6 +261,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Start Run */
+        post: operations["startRun"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/templates": {
         parameters: {
             query?: never;
@@ -1278,6 +1295,87 @@ export interface components {
          */
         Role: "HR_ADMIN" | "HR" | "MANAGER";
         /**
+         * RunCreate
+         * @description `POST /runs`: start a run for a hire on a published template version (FR-R1).
+         */
+        RunCreate: {
+            /** Hire Id */
+            hire_id: string;
+            /** Template Key */
+            template_key: string;
+            /** Template Version */
+            template_version: number;
+        };
+        /**
+         * RunEnvelope
+         * @description A run that was just started.
+         */
+        RunEnvelope: {
+            data: components["schemas"]["RunRecord"] | null;
+            error: components["schemas"]["ErrorBody"] | null;
+            /** @default {} */
+            meta: components["schemas"]["Meta"];
+            /** Success */
+            success: boolean;
+        };
+        /**
+         * RunRecord
+         * @description A run, pinned to the template version and DAG hash it was compiled from.
+         */
+        RunRecord: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Created By */
+            created_by: string;
+            /** Dag Hash */
+            dag_hash: string;
+            /** Hire Id */
+            hire_id: string;
+            /** Id */
+            id: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "started" | "running" | "completed" | "failed";
+            /** Tasks */
+            tasks: components["schemas"]["RunTaskRecord"][];
+            /** Template Key */
+            template_key: string;
+            /** Template Version */
+            template_version: number;
+        };
+        /** RunTaskRecord */
+        RunTaskRecord: {
+            /** Action */
+            action: string;
+            /** Agent */
+            agent: string;
+            /** Depends On */
+            depends_on: string[];
+            /** Due */
+            due: string | null;
+            /** Skip Reason */
+            skip_reason: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "ready" | "running" | "waiting_approval" | "done" | "failed" | "skipped" | "cancelled";
+            /** Task Id */
+            task_id: string;
+            /** Title */
+            title: string;
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "action" | "approval";
+        };
+        /**
          * Sla
          * @description `due` is a date variable with an optional offset: `start_date - 7d`, `start_date + 48h`.
          */
@@ -2131,6 +2229,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PiiAccessEnvelope"];
+                };
+            };
+            /** @description Error, in the envelope */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    startRun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RunCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunEnvelope"];
                 };
             };
             /** @description Error, in the envelope */
