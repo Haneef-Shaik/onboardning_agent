@@ -18,3 +18,7 @@ Gates on the final code (`make check`, `make test-int`), box evidence, handoff, 
   the key is `task_id`.
 - FastMCP's session manager runs once per instance: the hub unit Stack builds a fresh mocks server per
   call over the same store.
+
+## Status (2026-11-11)
+In review after goal-verifier pass (attempt 1, code at 736abd9). Held for the orchestrator: no rebase,
+merge or branch deletion from this session.
