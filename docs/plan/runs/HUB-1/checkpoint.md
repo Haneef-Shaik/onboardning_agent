@@ -12,8 +12,7 @@
 6. py-evals runner reads hub `AuditLog` records; ADR 0008.
 
 ## Next
-Code + security review, mutation checks, gates (`make check`, `make test-int`, `make test-xt`,
-`make evals-selftest`, `make contracts-check`), handoff, verifier, board → in review, `make down`.
+Handoff written (attempt 1); run the goal-verifier, then board → in review, `make down`.
 
 ## Surprises
 - The PRD's PII detectors match digit runs inside ObjectId hex and vault tokens: the scan skips
