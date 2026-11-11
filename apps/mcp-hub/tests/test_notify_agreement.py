@@ -78,4 +78,3 @@ def test_every_scripted_call_is_valid_under_the_contract(path: Path) -> None:
     assert calls, f"{path.name} scripts the notification tool"
     for args in calls:
         NotifySendArgs.model_validate(args)
-
