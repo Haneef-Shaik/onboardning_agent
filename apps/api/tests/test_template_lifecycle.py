@@ -13,7 +13,7 @@ import pytest
 import yaml
 from onb_agents.registry import AgentRegistry
 from onb_api.templates import LifecycleConflictError, RegistryValidatorSource, TemplateLifecycle
-from onb_api.templates.store import VersionExistsError
+from onb_api.templates.store import MongoTemplateStore, TemplateStore, VersionExistsError
 from onb_api.testing import InMemoryAuditLog, InMemoryTemplateStore
 from onb_contracts.templates import Template
 from onb_data import Actor, AuditOutcome, NotFoundError, tenant_scope
@@ -67,13 +67,30 @@ def test_a_stored_version_is_never_written_again(registry: AgentRegistry) -> Non
     assert after == before
 
 
-def test_the_store_has_no_way_to_update_or_delete_a_version() -> None:
-    names = {name for name in dir(InMemoryTemplateStore) if not name.startswith("_")}
-    version_writes = {
-        n for n in names if "version" in n and n not in {"get_version", "insert_version", "archive_version"}
-    }
-    assert version_writes == {"append_version_entry"}  # the head's summary, not the version body
-    assert not {n for n in names if n.startswith(("delete", "remove", "update", "replace_version"))}
+@pytest.mark.parametrize("store_type", [InMemoryTemplateStore, MongoTemplateStore, TemplateStore])
+def test_no_store_has_a_way_to_update_or_delete_a_version(store_type: type) -> None:
+    names = {name for name in dir(store_type) if not name.startswith("_")}
+    version_ops = {n for n in names if "version" in n}
+    # Reads, the one insert, the head's summary and the head's archive flag: nothing rewrites a body.
+    assert version_ops == {"get_version", "insert_version", "append_version_entry", "archive_version"}
+    assert not {n for n in names if n.startswith(("delete", "remove", "update", "upsert"))}
+
+
+def test_a_version_read_from_the_in_memory_store_is_a_copy(registry: AgentRegistry) -> None:
+    store = InMemoryTemplateStore()
+    lifecycle = _lifecycle(registry, store, InMemoryAuditLog())
+
+    async def scenario() -> None:
+        draft = await lifecycle.create_draft(TEMPLATE, actor_id="u_acme_hr1")
+        await lifecycle.publish(draft.id, actor_id="u_acme_hradmin")
+        first = await store.get_version("engineer-india", 1)
+        assert first is not None
+        first.template["name"] = "Changed in the caller's copy"  # type: ignore[index]
+        again = await store.get_version("engineer-india", 1)
+        assert again is not None
+        assert again.template["name"] == "Engineers, India"
+
+    _run(scenario)
 
 
 @pytest.mark.parametrize("action", ["template.publish"])

@@ -77,6 +77,8 @@ MAX_LIST: Final = 50
 MAX_INPUT_DEPTH: Final = 6
 MAX_INPUT_STRING: Final = 2000
 MAX_INPUTS_SIZE: Final = 16_000
+_INT64_MIN: Final = -(2**63)
+_INT64_MAX: Final = 2**63 - 1
 APPROVER_ROLES: Final = frozenset({"HR", "HR_ADMIN", "MANAGER"})
 # Words of the `when` language: a variable with one of these names could never be referenced.
 RESERVED_VARIABLE_NAMES: Final = frozenset({"and", "or", "not", "in", "true", "false", "null"})
@@ -183,7 +185,8 @@ class Sla(BaseModel):
 
 
 def _size(value: object) -> int:
-    """Characters of text in `value` (keys and strings); a string over the per-string cap is refused."""
+    """Characters of text in `value` (keys, strings and numbers as written). Refused: a string over the
+    per-string cap, an integer outside int64 (it could not be stored) and a list over `MAX_LIST`."""
     if isinstance(value, str):
         if len(value) > MAX_INPUT_STRING:
             raise ValueError(f"an inputs string is at most {MAX_INPUT_STRING} characters")
@@ -191,8 +194,12 @@ def _size(value: object) -> int:
     if isinstance(value, Mapping):
         return sum(len(str(key)) + _size(item) for key, item in value.items())
     if isinstance(value, list):
+        if len(value) > MAX_LIST:
+            raise ValueError(f"an inputs list holds at most {MAX_LIST} items")
         return sum(_size(item) for item in value)
-    return 1
+    if isinstance(value, int) and not isinstance(value, bool) and not _INT64_MIN <= value <= _INT64_MAX:
+        raise ValueError("an inputs integer must fit in 64 bits")
+    return len(repr(value)) if isinstance(value, int | float) and not isinstance(value, bool) else 1
 
 
 def _depth(value: object) -> int:

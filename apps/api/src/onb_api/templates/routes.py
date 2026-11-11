@@ -50,6 +50,7 @@ from onb_api.templates.lifecycle import (
     draft_target,
     version_target,
 )
+from onb_api.templates.store import VersionExistsError
 
 __all__ = ["router", "template_lifecycle"]
 
@@ -87,7 +88,7 @@ def _draft_target(params: Mapping[str, Any]) -> str:
 
 def _version_target(params: Mapping[str, Any]) -> str:
     key, version = str(params.get("key", "")), str(params.get("version", ""))
-    if _KEY.fullmatch(key) and _VERSION.fullmatch(version):
+    if _KEY.fullmatch(key) and _VERSION.fullmatch(version) and int(version) <= MAX_TEMPLATE_VERSION:
         return version_target(key, int(version))
     return _INVALID_VERSION
 
@@ -136,6 +137,8 @@ async def _guarded[T](call: Awaitable[T]) -> T:
         raise _invalid(error) from None
     except LifecycleConflictError as error:
         raise AppError(ErrorCode.CONFLICT, str(error)) from None
+    except VersionExistsError:
+        raise AppError(ErrorCode.CONFLICT, "that version is already published") from None
 
 
 # --- drafts --------------------------------------------------------------------------------------------

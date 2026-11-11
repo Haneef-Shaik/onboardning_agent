@@ -280,3 +280,31 @@ def test_input_keys_are_plain_ascii_names(key: str) -> None:
     data = prd_template()
     _task(data, "welcome_message")["inputs"] = {key: "x"}
     _rejects(data)
+
+
+# --- TPL-2 security review H1: numbers and lists cannot get around the inputs caps ---------------------
+
+
+def test_numbers_count_towards_the_inputs_size_by_their_digits() -> None:
+    data = prd_template()
+    _task(data, "welcome_message")["inputs"] = {f"n{i}": int("9" * 18) for i in range(1000)}
+    assert "inputs" in _rejects(data)
+
+
+@pytest.mark.parametrize("number", [2**63, -(2**63) - 1, int("9" * 4000)], ids=["2^63", "-2^63-1", "4000-digits"])
+def test_an_integer_outside_the_int64_range_is_refused(number: int) -> None:
+    data = prd_template()
+    _task(data, "welcome_message")["inputs"] = {"n": number}
+    _rejects(data)
+
+
+def test_a_list_in_inputs_longer_than_the_list_cap_is_refused() -> None:
+    data = prd_template()
+    _task(data, "welcome_message")["inputs"] = {"items": [1] * (MAX_LIST + 1)}
+    _rejects(data)
+
+
+def test_numbers_and_lists_within_the_caps_are_accepted() -> None:
+    data = prd_template()
+    _task(data, "welcome_message")["inputs"] = {"items": [2**63 - 1, -(2**63), 1.5, True] * 10}
+    Template.model_validate(data)

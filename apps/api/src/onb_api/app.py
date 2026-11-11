@@ -30,6 +30,7 @@ from onb_api.auth import routes as auth_routes
 from onb_api.auth.passwords import warm_up
 from onb_api.auth.settings import AuthSettings
 from onb_api.auth.users import UserStore
+from onb_api.body_limit import BodyLimitMiddleware
 from onb_api.errors import install_error_handling
 from onb_api.hires import routes as hire_routes
 from onb_api.hires.service import HireService
@@ -77,6 +78,8 @@ def create_app(
     app.state.hires = hires
     app.state.templates = templates
     install_error_handling(app)
+    # Added after the error handling, so it sits outside it: an oversized body never reaches a route.
+    app.add_middleware(BodyLimitMiddleware)
     app.include_router(health.router)
     app.include_router(auth_routes.router)
     app.include_router(audit_routes.router)

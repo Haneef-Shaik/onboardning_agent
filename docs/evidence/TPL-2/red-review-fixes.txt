@@ -1,0 +1,4 @@
+FAILED apps/api/tests/test_template_lifecycle.py::test_a_version_read_from_the_in_memory_store_is_a_copy
+FAILED apps/api/tests/test_templates_route.py::test_a_version_that_already_exists_is_409_not_500
+FAILED apps/api/tests/test_templates_route.py::test_a_denied_archive_of_an_out_of_range_version_is_audited_as_invalid
+3 failed, 330 passed in 6.21s

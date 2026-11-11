@@ -9,6 +9,7 @@ replaced (`VersionExistsError`), and
 
 from __future__ import annotations
 
+import copy
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field, replace
 from datetime import datetime
@@ -94,7 +95,9 @@ class InMemoryTemplateStore:
         self._state.versions[key] = version
 
     async def get_version(self, key: str, version: int) -> StoredVersion | None:
-        return self._state.versions.get((_org(), key, version))
+        found = self._state.versions.get((_org(), key, version))
+        # A copy, like a Mongo read: a caller changing what it got cannot change the stored version.
+        return None if found is None else replace(found, template=copy.deepcopy(dict(found.template)))
 
     async def archive_version(self, key: str, version: int, *, at: datetime, by: str) -> bool:
         head = self._state.heads.get((_org(), key))

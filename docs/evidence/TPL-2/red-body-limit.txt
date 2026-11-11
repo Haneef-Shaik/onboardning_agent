@@ -1,0 +1,13 @@
+
+==================================== ERRORS ====================================
+______________ ERROR collecting apps/api/tests/test_body_limit.py ______________
+ImportError while importing test module '/Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-tpl-2/apps/api/tests/test_body_limit.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+apps/api/tests/test_body_limit.py:10: in <module>
+    from onb_api.body_limit import TEMPLATE_BODY_LIMIT
+E   ModuleNotFoundError: No module named 'onb_api.body_limit'
+=========================== short test summary info ============================
+ERROR apps/api/tests/test_body_limit.py
+!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+1 error in 0.15s

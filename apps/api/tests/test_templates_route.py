@@ -304,3 +304,26 @@ def test_another_orgs_draft_is_not_found(client: TestClient) -> None:
     assert client.get(f"/templates/drafts/{draft['id']}", headers=_auth(globex_hr)).status_code == 404
     assert _publish(client, draft["id"], globex_admin).status_code == 404
     assert client.get("/templates/drafts", headers=_auth(globex_hr)).json()["data"] == []
+
+
+def test_a_version_that_already_exists_is_409_not_500(
+    client: TestClient, template_store: Any, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Out of sync head and versions (never in normal flow): the insert-only store refuses, the caller
+    gets a conflict."""
+    from onb_api.templates.store import VersionExistsError
+
+    async def refuse(_: Any) -> None:
+        raise VersionExistsError("engineer-india v1 is already published")
+
+    monkeypatch.setattr(template_store, "insert_version", refuse)
+    response = _publish(client, _create(client, seed_template())["id"])
+    assert response.status_code == 409, response.text
+    assert client.get("/templates", headers=_auth(ADMIN)).json()["data"] == []
+
+
+def test_a_denied_archive_of_an_out_of_range_version_is_audited_as_invalid(
+    client: TestClient, audit_log: InMemoryAuditLog
+) -> None:
+    assert client.post("/templates/engineer-india/versions/5000000/archive", headers=_auth(HR)).status_code == 403
+    assert [e.target for e in _audit(audit_log, "template.archive")] == ["template:invalid"]

@@ -200,3 +200,26 @@ def test_an_invalid_publish_is_422_and_audited_as_failed(root_client: Client, sc
     assert [(r["org_id"], r["outcome"], r["target"]) for r in records] == [
         ("org_acme", "failed", f"template_draft:{draft_id}")
     ]
+
+
+class FailingArchiveAuditLog(FailingAuditLog):
+    failing = frozenset({"template.archive"})
+
+
+def test_an_archive_whose_audit_write_fails_leaves_the_version_published(
+    root_client: Client, scratch: str, unscoped: Unscoped
+) -> None:
+    with _api(root_client, scratch, FailingArchiveAuditLog) as client:
+        client.post(f"/templates/drafts/{_draft(client, SEED)}/publish", headers=_auth(ADMIN_A))
+        response = client.post("/templates/engineer-india/versions/1/archive", headers=_auth(ADMIN_A))
+        assert response.status_code == 500
+        assert (
+            client.get("/templates/engineer-india/versions/1", headers=_auth(HR_A)).json()["data"]["status"]
+            == "published"
+        )
+    with unscoped("root read-back: the rolled-back archive left the head and the audit log untouched"):
+        database = root_client[scratch]
+        head = database["templates"].find_one({"key": "engineer-india"})
+        assert head is not None
+        assert [entry["archived_at"] for entry in head["versions"]] == [None]
+        assert database["audit_log"].count_documents({"action": "template.archive"}) == 0
