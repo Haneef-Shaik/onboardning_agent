@@ -295,3 +295,14 @@ def test_the_result_serialises_without_secrets(tmp_path: Path) -> None:
         "outcome": "allowed",
         "reason": None,
     }
+
+
+def test_a_failed_result_never_carries_a_partial_output(tmp_path: Path) -> None:
+    """A failure that lands after the contract validated (a time limit hit as the graph closes) still
+    reports no output: a failed task is never mistaken for an answer."""
+    from onb_agents.runtime.runner import Failure, ModelChoice, _Ended, _result
+
+    ended = _Ended(state={"output": {"status": "ok", "answer": {}}, "trajectory": []}, failure=Failure("timeout", "x"))
+    choice = ModelChoice(record={}, model=FakeModels([], tmp_path).runtime.chat_model_for()[1])
+    result = _result(DB, task(), choice, Budget(BudgetLimits()), ended, contract_for("db_agent"))
+    assert (result.outcome, result.output, result.failure) == ("failed", None, Failure("timeout", "x"))
