@@ -6,8 +6,8 @@ private and hands out repositories only, so no caller ever holds a collection or
 
 from __future__ import annotations
 
-from collections.abc import Awaitable, Callable, Sequence
-from typing import TYPE_CHECKING, Any
+from collections.abc import Awaitable, Callable, Mapping, Sequence
+from typing import TYPE_CHECKING, Any, Final
 
 from pymongo import AsyncMongoClient as _AsyncMongoClient
 
@@ -43,6 +43,20 @@ def _database_name(name: object) -> str:
     if not isinstance(name, str) or not name or len(name) > 63 or _BAD_DATABASE_CHARS & set(name):
         raise ValueError(f"invalid database name: {name!r}")
     return name
+
+
+_EXISTS: Final = {"$exists": True}
+
+
+def _partial_filter(partial: Mapping[str, Any]) -> dict[str, Any]:
+    if not isinstance(partial, Mapping) or not partial:
+        raise InvalidIndexError("a partial filter names at least one field")
+    for field, condition in partial.items():
+        if not isinstance(field, str) or not field or field.startswith("$") or field == ORG_FIELD:
+            raise InvalidIndexError("a partial filter names plain fields other than org_id")
+        if condition != _EXISTS:
+            raise InvalidIndexError('a partial filter only takes {field: {"$exists": True}}')
+    return {field: dict(_EXISTS) for field in partial}
 
 
 class DataStore:
@@ -106,12 +120,22 @@ class DataStore:
         return GlobalRepository(self._database[name])
 
     async def ensure_index(
-        self, collection: str, keys: Sequence[IndexKey], *, unique: bool = False, name: str | None = None
+        self,
+        collection: str,
+        keys: Sequence[IndexKey],
+        *,
+        unique: bool = False,
+        name: str | None = None,
+        partial: Mapping[str, Any] | None = None,
     ) -> str:
         """Create an index. On a tenant collection the keys must start with `org_id`.
 
         Queue collections (`jobs`, `dead_letters`) are claimed across orgs, so a non-unique index
         there may lead with another field (`status`); a unique one must still start with `org_id`.
+
+        `partial` limits the index to documents that have the named fields, as
+        `{field: {"$exists": True}, ...}` and nothing else (never `org_id`), so a unique index can
+        skip records that lack the field without ever being narrowed by org.
         """
         coll = _collection_name(collection)
         if coll in APPEND_ONLY_COLLECTIONS and unique:
@@ -121,6 +145,8 @@ class DataStore:
         if coll in QUEUE_COLLECTIONS and unique and spec[0][0] != ORG_FIELD:
             raise InvalidIndexError("a unique index on a queue collection must start with org_id")
         options: dict[str, Any] = {"unique": unique}
+        if partial is not None:
+            options["partialFilterExpression"] = _partial_filter(partial)
         if name is not None:
             options["name"] = name
         return await self._database[coll].create_index(spec, **options)

@@ -85,6 +85,29 @@ def test_a_tenant_index_with_an_org_id_prefix_is_created() -> None:
     assert call.kwargs == {"unique": True, "name": "org_email"}
 
 
+def test_a_partial_unique_index_passes_its_filter_to_the_driver() -> None:
+    # HIRE-1: `{org_id, email_hash}` is unique only among hires that have an email_hash.
+    db = FakeDatabase()
+    _ensure(db, "hires", [("org_id", 1), ("email_hash", 1)], unique=True, partial={"email_hash": {"$exists": True}})
+    assert db["hires"].last("create_index").kwargs == {
+        "unique": True,
+        "partialFilterExpression": {"email_hash": {"$exists": True}},
+    }
+
+
+@pytest.mark.parametrize(
+    "partial",
+    [{}, {"org_id": {"$exists": True}}, {"$or": [{"a": 1}]}, {"email_hash": 1}, {"email_hash": {"$exists": False}}],
+    ids=["empty", "org_id", "operator", "equality", "exists-false"],
+)
+def test_a_partial_filter_is_field_exists_only(partial: Any) -> None:
+    # Only `{field: {"$exists": True}}` on non-org fields: a filter can never narrow an index by org.
+    db = FakeDatabase()
+    with pytest.raises(InvalidIndexError, match="partial"):
+        _ensure(db, "hires", [("org_id", 1), ("email_hash", 1)], unique=True, partial=partial)
+    assert db["hires"].calls == []
+
+
 def test_an_index_on_org_id_alone_is_allowed_and_named_by_the_driver() -> None:
     db = FakeDatabase()
     assert _ensure(db, "hires", [("org_id", -1)]) == "org_id_-1"
