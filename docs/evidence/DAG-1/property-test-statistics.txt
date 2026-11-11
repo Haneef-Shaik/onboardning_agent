@@ -12,25 +12,25 @@ libs/py-agents/tests/test_dag_properties.py::test_compiling_any_template_twice_g
 
 libs/py-agents/tests/test_dag_properties.py::test_every_compiled_graph_is_acyclic_and_skipped_tasks_never_block:
 
-  - during generate phase (0.51 seconds):
+  - during generate phase (0.46 seconds):
     - Typical runtimes: ~ 0-1 ms, of which ~ 0-1 ms in data generation
-    - 400 passing, 0 failing, and 19 invalid test cases
+    - 400 passing, 0 failing, and 22 invalid test cases
     - Events:
-      * 29.83%, compiled: a pending task depends on a skipped task
-      * 22.20%, refused: unknown dependency
-      * 19.09%, refused: cycle
-      * 14.56%, compiled: every dependency of a pending task is skipped
+      * 31.99%, compiled: a pending task depends on a skipped task
+      * 15.64%, refused: unknown dependency
+      * 14.69%, refused: cycle
+      * 13.27%, compiled: every dependency of a pending task is skipped
 
   - Stopped because settings.max_examples=400
 
 
 libs/py-agents/tests/test_dag_properties.py::test_compiling_any_template_twice_gives_the_same_hash:
 
-  - during generate phase (0.13 seconds):
-    - Typical runtimes: ~ 0-2 ms, of which ~ 0-1 ms in data generation
-    - 100 passing, 0 failing, and 4 invalid test cases
+  - during generate phase (0.12 seconds):
+    - Typical runtimes: ~ 0-1 ms, of which ~ 0-1 ms in data generation
+    - 100 passing, 0 failing, and 5 invalid test cases
 
   - Stopped because settings.max_examples=100
 
 
-============================== 2 passed in 0.93s ===============================
+============================== 2 passed in 0.79s ===============================
