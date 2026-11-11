@@ -4,6 +4,10 @@ version = "0.1.0"
 description = "Agent graphs and the agent registry"
 requires-python = ">=3.12,<3.13"
 dependencies = [
+  "langchain-core>=1.0,<2",
+  "langchain-mcp-adapters>=0.1,<1",
+  "langgraph>=1.0,<2",
+  "mcp>=1.20,<2",
   "onb-contracts",
   "onb-crypto",
   "onb-data",

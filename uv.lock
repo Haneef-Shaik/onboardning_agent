@@ -666,6 +666,20 @@ wheels = [
 ]
 
 [[package]]
+name = "langchain-mcp-adapters"
+version = "0.3.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "langchain-core" },
+    { name = "mcp" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/05/49/f3b8497b64024ab50d10011f27e94d149668fef754da74c1c2ce6ebe4a30/langchain_mcp_adapters-0.3.2.tar.gz", hash = "sha256:61cd1a09597adb619a9bafb0642938ffc2a9463d699a753f7af0420ea46c381a", size = 47129, upload-time = "2026-08-06T06:15:04.094Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/a3/5e/4f117d2500a661079a1895a6eb18954a906e458b1e45fa04a301fcdabd61/langchain_mcp_adapters-0.3.2-py3-none-any.whl", hash = "sha256:094e6b3096dbcc408417d5722f6915f164772e50c502ae3d8989405bf12c3c84", size = 28879, upload-time = "2026-08-06T06:15:02.832Z" },
+]
+
+[[package]]
 name = "langchain-protocol"
 version = "0.0.21"
 source = { registry = "https://pypi.org/simple" }
@@ -864,6 +878,10 @@ name = "onb-agents"
 version = "0.1.0"
 source = { editable = "libs/py-agents" }
 dependencies = [
+    { name = "langchain-core" },
+    { name = "langchain-mcp-adapters" },
+    { name = "langgraph" },
+    { name = "mcp" },
     { name = "onb-contracts" },
     { name = "onb-crypto" },
     { name = "onb-data" },
@@ -877,6 +895,10 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
+    { name = "langchain-core", specifier = ">=1.0,<2" },
+    { name = "langchain-mcp-adapters", specifier = ">=0.1,<1" },
+    { name = "langgraph", specifier = ">=1.0,<2" },
+    { name = "mcp", specifier = ">=1.20,<2" },
     { name = "onb-contracts", editable = "libs/py-contracts" },
     { name = "onb-crypto", editable = "libs/py-crypto" },
     { name = "onb-data", editable = "libs/py-data" },
