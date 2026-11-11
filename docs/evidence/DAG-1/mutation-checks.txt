@@ -1,0 +1,63 @@
+M1 killed    a false `when` never skips (box 1)
+    failed: test_sales_variables_mark_bitbucket_access_skipped_with_a_reason, test_a_skipped_task_stays_in_the_dag_with_its_edges, test_a_designer_keeps_security_training_and_skips_bitbucket, test_a_dependent_of_a_skipped_task_is_not_blocked (+2 more)
+M2 killed    skipped tasks block their dependents (box 2)
+    failed: test_a_dependent_of_a_skipped_task_is_not_blocked, test_every_compiled_graph_is_acyclic_and_skipped_tasks_never_block
+M3 killed    skipped tasks are offered as ready (boxes 1, 2)
+    failed: test_sales_variables_mark_bitbucket_access_skipped_with_a_reason, test_every_compiled_graph_is_acyclic_and_skipped_tasks_never_block
+M4 killed    cycles are not refused (box 2)
+    failed: test_a_cycle_fails_the_compile, test_every_compiled_graph_is_acyclic_and_skipped_tasks_never_block
+M5 killed    unknown dependencies are not refused (box 2)
+    failed: test_an_unknown_dependency_fails_the_compile, test_every_compiled_graph_is_acyclic_and_skipped_tasks_never_block
+M6 killed    the hash depends on the call, not the compile (box 3)
+    failed: test_compiling_twice_gives_the_same_hash, test_the_hash_ignores_variables_the_template_does_not_declare, test_the_hash_is_stable_across_runs, test_the_hash_is_the_same_in_another_process (+2 more)
+M7 killed    the hash covers only the template key and version (box 3)
+    failed: test_a_different_compile_gives_a_different_hash[role-sales], test_a_different_compile_gives_a_different_hash[start_date-2026-12-02], test_the_hash_is_stable_across_runs, test_inputs_json_cannot_carry_fail_the_compile
+M8 killed    the canonical form is not key-sorted (box 3, pinned hash)
+    failed: test_the_hash_is_stable_across_runs
+M9 killed    the SLA offset sign is ignored (box 4)
+    failed: test_the_dag_document_is_json_with_every_task, test_the_hash_is_stable_across_runs, test_sla_start_date_minus_7d_resolves_to_the_right_date, test_sla_offsets_cross_months_and_years[2026-03-05-2026-02-26] (+4 more)
+M10 killed    an hour offset counts as days (box 4)
+    failed: test_an_hour_offset_resolves_from_midnight_utc
+M11 killed    an hour offset is not anchored to UTC (box 4)
+    failed: test_an_hour_offset_resolves_from_midnight_utc
+M12 killed    an SLA on a non-date variable is not refused
+    failed: test_an_sla_that_reads_no_date_variable_fails_the_compile[variable1]
+M13 killed    an SLA date outside the calendar crashes instead of failing closed
+    failed: test_a_due_date_outside_the_calendar_fails_the_compile
+M14 killed    an undecidable condition reads as false
+    failed: test_a_condition_that_cannot_be_decided_fails_the_compile
+M15 killed    a missing variable is not named as missing
+    failed: test_a_missing_variable_fails_the_compile[role]
+M16 killed    an unpublished template compiles
+    failed: test_only_a_published_version_compiles[lifecycle0], test_only_a_published_version_compiles[lifecycle1]
+M17 killed    a datetime passes as a date
+    failed: test_a_variable_of_the_wrong_type_fails_the_compile[start_date-value7]
+M18 killed    enum membership is not checked
+    failed: test_a_variable_of_the_wrong_type_fails_the_compile[role-astronaut]
+M19 killed    a bool passes as a number
+    failed: test_boolean_and_number_variables_are_strict[variable1-3-True]
+M20 killed    a non-finite number passes
+    failed: test_boolean_and_number_variables_are_strict[variable2-2.5-nan]
+M21 killed    a bool check accepts anything
+    failed: test_boolean_and_number_variables_are_strict[variable0-True-1]
+M22 killed    a text check accepts anything
+    failed: test_a_variable_of_the_wrong_type_fails_the_compile[location-7]
+M23 killed    a non-mapping of variables is accepted
+    failed: test_variables_must_be_a_mapping
+M24 killed    compiled tasks share the template's inputs dict
+    failed: test_the_compiled_task_keeps_the_template_task, test_changing_compiled_inputs_does_not_change_the_template, test_compiling_twice_gives_the_same_hash, test_the_hash_is_stable_across_runs (+1 more)
+M25 killed    ready ignores unknown done ids
+    failed: test_ready_refuses_an_unknown_task_id
+M26 killed    inputs that JSON cannot carry are hashed anyway
+    failed: test_inputs_json_cannot_carry_fail_the_compile
+M27 killed    a non-Template is accepted
+    failed: test_a_template_must_be_a_template
+M28 killed    the skip reason drops the condition
+    failed: test_sales_variables_mark_bitbucket_access_skipped_with_a_reason
+M29 killed    the YYYY-MM-DD pattern is not enforced
+    failed: test_a_variable_of_the_wrong_type_fails_the_compile[start_date-20261201], test_a_variable_of_the_wrong_type_fails_the_compile[start_date-2026-W48-2]
+M30 killed    a missing SLA variable is not named as missing
+    failed: test_a_missing_variable_fails_the_compile[start_date]
+
+source diff after all mutations: 0 files differ
+mutations: 30, killed: 30, survivors: none

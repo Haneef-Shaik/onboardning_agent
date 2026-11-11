@@ -318,6 +318,8 @@ def test_a_variable_nothing_reads_may_be_missing(template: Template) -> None:
         ("start_date", "01/12/2026"),
         ("start_date", "2026-02-30"),
         ("start_date", "2026-12-01T10:00:00"),
+        ("start_date", "20261201"),  # compact ISO: Python accepts it, the stored form is YYYY-MM-DD
+        ("start_date", "2026-W48-2"),  # ISO week date
         ("start_date", datetime(2026, 12, 1, 10, 0)),  # a datetime is not a date
         ("start_date", "\uff12\uff10\uff12\uff16-12-01"),  # full-width (non-ASCII) digits
         ("location", 7),
