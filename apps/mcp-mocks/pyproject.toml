@@ -1,10 +1,15 @@
 [project]
 name = "onb-mcp-mocks"
 version = "0.1.0"
-description = "Mock MCP server (Bitbucket, IT provisioning) and the Telegram transport stub"
+description = "Mock MCP servers: Bitbucket and IT provisioning, and the notify sink over the Telegram mock"
 requires-python = ">=3.12,<3.13"
 dependencies = [
     "mcp>=1.20,<2",
+    "onb-contracts",
+    "onb-crypto",
+    "onb-data",
+    "onb-eventbus",
+    "onb-guardrails",
     "onb-mcp-mongo",
     "onb-telemetry",
     "opentelemetry-api>=1.45,<2",
@@ -20,5 +25,10 @@ build-backend = "hatchling.build"
 packages = ["src/onb_mcp_mocks"]
 
 [tool.uv.sources]
+onb-contracts = { workspace = true }
+onb-crypto = { workspace = true }
+onb-data = { workspace = true }
+onb-eventbus = { workspace = true }
+onb-guardrails = { workspace = true }
 onb-mcp-mongo = { workspace = true }
 onb-telemetry = { workspace = true }

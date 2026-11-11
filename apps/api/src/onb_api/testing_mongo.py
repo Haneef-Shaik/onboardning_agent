@@ -249,6 +249,12 @@ class MemoryCollection:
                 return _Result(deleted_count=1)
         return _Result()
 
+    async def delete_many(self, query: Mapping[str, Any], **_: Any) -> _Result:
+        kept = [d for d in self.documents if not matches(d, query)]
+        deleted = len(self.documents) - len(kept)
+        self.documents = kept
+        return _Result(deleted_count=deleted)
+
     @staticmethod
     def _apply(document: Document, update: Mapping[str, Any], *, inserting: bool) -> Document:
         for op, fields in update.items():

@@ -1125,6 +1125,11 @@ version = "0.1.0"
 source = { editable = "apps/mcp-mocks" }
 dependencies = [
     { name = "mcp" },
+    { name = "onb-contracts" },
+    { name = "onb-crypto" },
+    { name = "onb-data" },
+    { name = "onb-eventbus" },
+    { name = "onb-guardrails" },
     { name = "onb-mcp-mongo" },
     { name = "onb-telemetry" },
     { name = "opentelemetry-api" },
@@ -1135,6 +1140,11 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "mcp", specifier = ">=1.20,<2" },
+    { name = "onb-contracts", editable = "libs/py-contracts" },
+    { name = "onb-crypto", editable = "libs/py-crypto" },
+    { name = "onb-data", editable = "libs/py-data" },
+    { name = "onb-eventbus", editable = "libs/py-eventbus" },
+    { name = "onb-guardrails", editable = "libs/py-guardrails" },
     { name = "onb-mcp-mongo", editable = "apps/mcp-mongo" },
     { name = "onb-telemetry", editable = "libs/py-telemetry" },
     { name = "opentelemetry-api", specifier = ">=1.45,<2" },
