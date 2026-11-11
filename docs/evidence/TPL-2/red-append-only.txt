@@ -1,0 +1,30 @@
+F.F......                                                                [100%]
+=================================== FAILURES ===================================
+___ test_the_append_only_collections_are_the_audit_log_and_template_versions ___
+
+    def test_the_append_only_collections_are_the_audit_log_and_template_versions() -> None:
+        # TPL-2: a published template version never changes (PRD FR-T4), so it gets no write path either.
+>       assert frozenset({"audit_log", "template_versions"}) == APPEND_ONLY_COLLECTIONS
+E       AssertionError: assert frozenset({'a...te_versions'}) == frozenset({'audit_log'})
+E         
+E         Extra items in the left set:
+E         'template_versions'
+E         Use -v to get more diff
+
+libs/py-data/tests/test_audit.py:82: AssertionError
+_ test_an_append_only_collection_is_never_handed_out_with_a_write_path[tenant-template_versions] _
+
+handout = 'tenant', collection = 'template_versions'
+
+    @pytest.mark.parametrize("collection", ["audit_log", "template_versions"])
+    @pytest.mark.parametrize("handout", ["tenant", "shared", "queue"])
+    def test_an_append_only_collection_is_never_handed_out_with_a_write_path(handout: str, collection: str) -> None:
+>       with pytest.raises(UnknownCollectionError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE UnknownCollectionError
+
+libs/py-data/tests/test_audit.py:90: Failed
+=========================== short test summary info ============================
+FAILED libs/py-data/tests/test_audit.py::test_the_append_only_collections_are_the_audit_log_and_template_versions
+FAILED libs/py-data/tests/test_audit.py::test_an_append_only_collection_is_never_handed_out_with_a_write_path[tenant-template_versions]
+2 failed, 7 passed, 65 deselected in 0.11s

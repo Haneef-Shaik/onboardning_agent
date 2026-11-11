@@ -77,16 +77,18 @@ def _public_names(obj: object) -> set[str]:
 # --- Box 1: no update or delete path ---------------------------------------------------------------
 
 
-def test_audit_log_is_the_only_append_only_collection() -> None:
-    assert frozenset({"audit_log"}) == APPEND_ONLY_COLLECTIONS
+def test_the_append_only_collections_are_the_audit_log_and_template_versions() -> None:
+    # TPL-2: a published template version never changes (PRD FR-T4), so it gets no write path either.
+    assert frozenset({"audit_log", "template_versions"}) == APPEND_ONLY_COLLECTIONS
     assert not APPEND_ONLY_COLLECTIONS & GLOBAL_COLLECTIONS
     assert not APPEND_ONLY_COLLECTIONS & QUEUE_COLLECTIONS
 
 
+@pytest.mark.parametrize("collection", ["audit_log", "template_versions"])
 @pytest.mark.parametrize("handout", ["tenant", "shared", "queue"])
-def test_the_audit_collection_is_never_handed_out_with_a_write_path(handout: str) -> None:
+def test_an_append_only_collection_is_never_handed_out_with_a_write_path(handout: str, collection: str) -> None:
     with pytest.raises(UnknownCollectionError):
-        getattr(make_store(), handout)("audit_log")
+        getattr(make_store(), handout)(collection)
 
 
 def test_append_only_is_refused_for_other_collections() -> None:

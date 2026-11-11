@@ -1,4 +1,8 @@
-"""Append-only tenant collections: insert, find and count, and nothing else (PRD §7.6 `audit_log`).
+"""Append-only tenant collections: insert, find and count, and nothing else.
+
+- `audit_log` (PRD §7.6): who did what, never edited.
+- `template_versions` (PRD FR-T4, TPL-2): a published template version never changes. Its lifecycle
+  state (archived or not) lives on the `templates` record, so the version itself needs no update.
 
 `store.append_only("audit_log")` is the only handle on these collections: `store.tenant(...)`,
 `shared(...)` and `queue(...)` refuse them, so no caller can reach an update or delete. Reads and the
@@ -22,7 +26,7 @@ __all__ = ["APPEND_ONLY_COLLECTIONS", "AppendOnlyRepository"]
 
 Document = dict[str, Any]
 
-APPEND_ONLY_COLLECTIONS = frozenset({"audit_log"})
+APPEND_ONLY_COLLECTIONS = frozenset({"audit_log", "template_versions"})
 
 
 class AppendOnlyRepository:
