@@ -263,7 +263,7 @@ def test_a_downstream_credential_in_a_response_never_reaches_the_agent(
     def echo(sent: Sent) -> CallToolResult:
         leaked = {
             "downstream": downstream.credential,
-            "context": f"signed-context-for-{sent.context.tool}-{downstream.credential}",
+            "context": sent.signed,
             "token_key": TOKEN_KEY,
         }[which]
         return ok({"documents": [{"note": f"auth={leaked}"}], "count": 1})

@@ -8,8 +8,9 @@ Order (the first failing check names the denial):
    manifest, so no manifest, forged or not, can reach `pii_vault*`, `org_keys`, `pii_access_log`;
 4. the manifest grants the server and the tool (`server_not_in_manifest`, `tool_not_in_manifest`);
 5. the token's scopes name the tool (`scope_not_granted`);
-6. the arguments match the tool's JSON-schema contract (`invalid_arguments`) and never name
-   `org_id` (`org_id_not_allowed`): tenant scope comes only from the token;
+6. the arguments match the tool's JSON-schema contract (`invalid_arguments`), never name
+   `org_id` (`org_id_not_allowed`): tenant scope comes only from the token; and hold no raw PII
+   (`raw_pii_in_arguments`): only vault tokens;
 7. Mongo: the collection is in the manifest's read (or, for writes, write) list
    (`collection_not_in_manifest`) and an MCP database user holds it (`collection_not_provisioned`);
    mcp-mongo's query validator passes (its own reason, e.g. `forbidden_operator`);
@@ -36,8 +37,17 @@ from onb_mcp_mongo.policy import ToolRejectedError
 from pydantic import ValidationError
 
 from .catalog import MONGO_SERVER, HubTool
+from .pii import count_pii, scannable
 
-__all__ = ["APPROVAL_SCOPE_PREFIX", "FORBIDDEN_COLLECTIONS", "MAX_NODES", "CallDeniedError", "Grant", "authorize"]
+__all__ = [
+    "APPROVAL_SCOPE_PREFIX",
+    "FORBIDDEN_COLLECTIONS",
+    "MAX_NODES",
+    "CallDeniedError",
+    "Grant",
+    "authorize",
+    "recordable_collection",
+]
 
 # Hard-denied for every agent, whatever its manifest says (PRD §7.4). Any identifier containing
 # `pii_vault`, `org_keys` or `pii_access_log` is refused too (`names_a_forbidden_collection`).
@@ -67,31 +77,40 @@ class Grant:
     collection: str | None
 
 
-def _walk(value: Any) -> Iterator[tuple[str, Any]]:
-    """Every (kind, item) in `value`: dict keys as "key", strings as "str". Iterative and capped."""
-    stack = [value]
+def _walk(value: Any) -> Iterator[tuple[str, Any, str | None]]:
+    """Every (kind, item, parent key) in `value`: dict keys as "key", strings as "str", numbers as
+    "num". Iterative and capped."""
+    stack: list[tuple[Any, str | None]] = [(value, None)]
     seen = 0
     while stack:
-        item = stack.pop()
+        item, parent = stack.pop()
         seen += 1
         if seen > MAX_NODES:
             raise CallDeniedError("too_large", "the arguments are too large")
         if isinstance(item, str):
-            yield "str", item
+            yield "str", item, parent
+        elif isinstance(item, int | float) and not isinstance(item, bool):
+            yield "num", item, parent
         elif isinstance(item, Mapping):
             for key, child in item.items():
-                yield "key", key
-                stack.append(child)
+                yield "key", key, parent
+                stack.append((child, key if isinstance(key, str) else None))
         elif isinstance(item, list | tuple):
-            stack.extend(item)
+            stack.extend((child, parent) for child in item)
 
 
 def _forbidden(name: str) -> bool:
     return name in FORBIDDEN_COLLECTIONS or names_a_forbidden_collection(name)
 
 
+def recordable_collection(name: str) -> bool:
+    """Whether `name` may be written into an audit target or span: a collection the platform knows
+    (one an MCP user holds, or a hard-denied one, so vault attempts stay visible). Never agent text."""
+    return name in PROVISIONED_READ or name in FORBIDDEN_COLLECTIONS
+
+
 def _check_vault(args: Mapping[str, Any]) -> None:
-    if any(isinstance(text, str) and _forbidden(text) for _, text in _walk(args)):
+    if any(kind != "num" and isinstance(text, str) and _forbidden(text) for kind, text, _ in _walk(args)):
         raise CallDeniedError("vault_denied", "the vault is unreachable through MCP")
 
 
@@ -118,9 +137,18 @@ def _check_schema(tool: HubTool, args: Mapping[str, Any]) -> None:
     if errors:
         issues = ", ".join(f"{e.json_path} ({e.validator})" for e in errors[:5])
         raise CallDeniedError("invalid_arguments", f"invalid arguments: {issues}")
-    for kind, text in _walk(args):
-        if kind == "key" and isinstance(text, str) and "org_id" in text.split("."):
+    for kind, text, _ in _walk(args):
+        # A key (`{"org_id": …}`, `"x.org_id"`) or a value naming the field (`$rename` target, `"$org_id"`).
+        if kind != "num" and isinstance(text, str) and "org_id" in text.lstrip("$").split("."):
             raise CallDeniedError("org_id_not_allowed", "org_id comes from the agent token, never from arguments")
+
+
+def _check_pii(args: Mapping[str, Any]) -> None:
+    """Arguments carry `ptk_` tokens, never raw sensitive values (PRD §5.5, §7.10)."""
+    for kind, item, parent in _walk(args):
+        text = scannable(item)
+        if text is not None and count_pii(text, None if kind == "key" else parent):
+            raise CallDeniedError("raw_pii_in_arguments", "arguments may carry vault tokens only, never raw PII")
 
 
 def _usable(names: tuple[str, ...], provisioned: frozenset[str]) -> frozenset[str]:
@@ -170,6 +198,7 @@ def authorize(
     _check_vault(args)
     _check_manifest(token, agent, tool)
     _check_schema(tool, args)
+    _check_pii(args)
     grant = _mongo_grant(agent, tool, args) if tool.server == MONGO_SERVER else Grant(frozenset(), frozenset(), None)
     _check_approval(token, agent, tool, grant.collection)
     return grant

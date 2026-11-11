@@ -86,3 +86,9 @@ def test_the_gateway_main_builds_holds_every_credential_it_must_never_return(mon
     gateway = main_module.build_gateway(load_settings(ENV))
     held = set(gateway.secrets)
     assert {TOKEN_KEY, CONTEXT_KEY, DB_URI} <= held
+
+
+def test_the_database_password_alone_is_a_held_credential() -> None:
+    password = DB_URI.split(":")[2].split("@")[0]
+    held = set(main_module.build_gateway(load_settings(ENV)).secrets)
+    assert {password, f"mcp_hub:{password}"} <= held

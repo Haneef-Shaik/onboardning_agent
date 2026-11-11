@@ -6,8 +6,8 @@
 - **PII:** every string, keys included, goes through the PRD's detectors (`onb_guardrails.pii`);
   raw values become typed markers such as `[MOBILE]`. Tenant documents should only hold `ptk_`
   tokens, so a hit means something upstream leaked: the response is redacted, not passed on.
-  Whole-string ids (ObjectId hex, 32-hex ids) and vault tokens are left as they are, since their
-  digit runs can look like a phone number and the agent needs them intact.
+  Numbers are scanned too. Hex ids under id keys and vault tokens are left as they are (`pii.py`),
+  since their digit runs can look like a phone number and the agent needs them intact.
 - Only text content is forwarded (`unsupported_content` otherwise). When the result has structured
   content, its text block is rebuilt from the redacted structure.
 """
@@ -15,21 +15,18 @@
 from __future__ import annotations
 
 import json
-import re
 from collections.abc import Collection
 from dataclasses import dataclass
 from typing import Any
 
 from mcp.types import CallToolResult, ContentBlock, TextContent
-from onb_crypto.tokens import is_token
-from onb_guardrails.pii import detect, redact
 
+from .pii import count_pii, redact_text, scannable
 from .policy import CallDeniedError
 
 __all__ = ["MIN_SECRET_LENGTH", "Scanned", "scan_result"]
 
 MIN_SECRET_LENGTH = 8
-_HEX_ID = re.compile(r"[0-9a-f]{24}|[0-9a-f]{32}")
 
 
 @dataclass(frozen=True, slots=True)
@@ -49,23 +46,25 @@ class _Scanner:
                 "credential_in_response", "the downstream response was withheld: it held a credential"
             )
 
-    def text(self, value: str) -> str:
+    def text(self, value: str, key: str | None = None) -> str:
         self.check_secrets(value)
-        if _HEX_ID.fullmatch(value) or is_token(value):
-            return value
-        found = detect(value)
+        found = count_pii(value, key)
         if not found:
             return value
-        self.redacted += len(found)
-        return redact(value)
+        self.redacted += found
+        return redact_text(value)
 
-    def value(self, item: Any) -> Any:
+    def value(self, item: Any, key: str | None = None) -> Any:
         if isinstance(item, str):
-            return self.text(item)
+            return self.text(item, key)
         if isinstance(item, dict):
-            return {self.text(str(key)): self.value(child) for key, child in item.items()}
+            return {self.text(str(k)): self.value(child, str(k)) for k, child in item.items()}
         if isinstance(item, list | tuple):
-            return [self.value(child) for child in item]
+            return [self.value(child, key) for child in item]
+        number = scannable(item)
+        if number is not None and count_pii(number):
+            self.redacted += 1  # a number holding a sensitive value becomes its marker text
+            return redact_text(number)
         return item
 
 

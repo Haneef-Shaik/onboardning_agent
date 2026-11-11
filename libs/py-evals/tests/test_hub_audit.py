@@ -55,3 +55,19 @@ def test_stand_in_records_still_read_back() -> None:
 
 def test_the_runner_query_selects_both_shapes() -> None:
     assert AUDIT_QUERIES == ({"kind": "mcp_call"}, {"action": "mcp.tool_call"})
+
+
+def test_an_unexpected_hub_outcome_reads_as_an_error_not_a_crash() -> None:
+    [entry] = audit_from_documents([hub_record("tool:mongo.find", "something_new")])
+    assert entry.outcome is ToolOutcome.ERROR
+
+
+def test_the_runner_reads_both_shapes_back_in_call_order() -> None:
+    from datetime import timedelta
+
+    from onb_evals.runner import _call_time
+
+    later = {**hub_record("tool:mongo.count", "success"), "at": AT + timedelta(seconds=2)}
+    earlier = {"kind": "mcp_call", "org_id": "org_acme", "tool": "find", "outcome": "allowed", "at": AT}
+    assert sorted([later, earlier], key=_call_time) == [earlier, later]
+    assert _call_time({"kind": "mcp_call"}) < AT

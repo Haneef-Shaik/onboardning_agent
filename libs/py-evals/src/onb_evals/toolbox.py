@@ -219,7 +219,7 @@ def _hub_entry(doc: Mapping[str, Any]) -> AuditEntry:
         org_id=str(doc.get("org_id")),
         tool=_hub_tool(str(doc.get("target", ""))),
         args={},
-        outcome=_HUB_OUTCOMES[str(doc.get("outcome"))],
+        outcome=_HUB_OUTCOMES.get(str(doc.get("outcome")), ToolOutcome.ERROR),
     )
 
 

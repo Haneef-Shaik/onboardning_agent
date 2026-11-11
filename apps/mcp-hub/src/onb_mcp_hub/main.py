@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 from collections.abc import Mapping
+from urllib.parse import unquote, urlsplit
 
 import uvicorn
 from onb_agents.registry import AgentRegistry
@@ -20,6 +21,14 @@ from .settings import Settings, load_settings
 __all__ = ["build_gateway", "main"]
 
 
+def _uri_secrets(uri: str) -> tuple[str, ...]:
+    """The password of a database URI, alone and as `user:password`: a response may echo either."""
+    parts = urlsplit(uri)
+    if not parts.password:
+        return ()
+    return (unquote(parts.password), parts.password, f"{parts.username}:{parts.password}")
+
+
 def build_gateway(settings: Settings) -> Gateway:
     """The gateway over the hub's database user and the configured downstream servers."""
     store = connect(settings.mongo_uri, settings.database, app_name=SERVER_NAME)
@@ -30,7 +39,7 @@ def build_gateway(settings: Settings) -> Gateway:
         auditor=audit,
         downstream=McpDownstream(settings.downstream, settings.context_key),
         token_key=settings.token_key,
-        secrets=(settings.context_key, settings.mongo_uri),
+        secrets=(settings.context_key, settings.mongo_uri, *_uri_secrets(settings.mongo_uri)),
     )
 
 

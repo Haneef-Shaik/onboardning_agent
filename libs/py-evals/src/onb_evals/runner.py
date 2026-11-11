@@ -8,6 +8,7 @@ import time
 from collections.abc import Callable, Mapping, Sequence
 from contextlib import AbstractAsyncContextManager
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from typing import Any, Final, Protocol
 
 from langchain_core.callbacks import BaseCallbackHandler
@@ -31,6 +32,11 @@ __all__ = ["AgentAdapter", "AgentInvocation", "DatabaseProvider", "EvalRunner", 
 
 TRAJECTORY_CHECKS: Final = frozenset({"tool_called", "tool_not_called"})
 _MAX_ERROR_CHARS: Final = 300
+
+
+def _call_time(document: Mapping[str, Any]) -> datetime:
+    at = document.get("at")
+    return at if isinstance(at, datetime) else datetime.min.replace(tzinfo=UTC)
 
 
 class DatabaseProvider(Protocol):
@@ -176,6 +182,7 @@ class EvalRunner:
         for org_id in self._orgs:
             with tenant_scope(org_id):
                 log = store.append_only(AUDIT_COLLECTION)
-                documents = [doc for query in AUDIT_QUERIES for doc in await log.find(query)]
+                found = [doc for query in AUDIT_QUERIES for doc in await log.find(query)]
+            documents = sorted(found, key=_call_time)  # both shapes, in the order the calls happened
             entries.extend(audit_from_documents(tokens.to_seed(documents)))
         return tuple(entries)

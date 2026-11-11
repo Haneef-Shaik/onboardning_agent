@@ -33,7 +33,7 @@ from opentelemetry import trace
 from opentelemetry.trace import Span, Status, StatusCode
 
 from .catalog import HubTool
-from .policy import CallDeniedError, Grant, authorize
+from .policy import CallDeniedError, Grant, authorize, recordable_collection
 from .scan import scan_result
 
 __all__ = ["AUDIT_ACTION", "SPAN_PREFIX", "AgentLookup", "Downstream", "Gateway"]
@@ -87,8 +87,17 @@ def _error(text: str) -> CallToolResult:
 
 
 def _collection(tool: HubTool | None, args: Mapping[str, Any]) -> str | None:
+    """The collection to name in the audit target and span: a known collection name, or `other`.
+    Agent-chosen text never lands in the audit log or a trace."""
     value = args.get("collection") if tool is not None else None
-    return value if isinstance(value, str) and _COLLECTION.fullmatch(value) else None
+    if not isinstance(value, str) or not _COLLECTION.fullmatch(value):
+        return None
+    return value if recordable_collection(value) else "other"
+
+
+def _downstream_failed(result: CallToolResult) -> bool:
+    """mcp-mongo answers an unexpected failure with `<tool>: internal error`; anything else is a refusal."""
+    return any(isinstance(c, TextContent) and c.text.endswith("internal error") for c in result.content)
 
 
 def _result_count(result: CallToolResult) -> int:
@@ -141,6 +150,8 @@ class Gateway:
                 return await self._run(span, call, args, authorization)
             except CallDeniedError as denied:
                 return await self._deny(span, call, denied)
+            except Exception as exc:  # a registry or policy failure: audited and traced, never echoed
+                return await self._fail(span, call, exc, "internal_error")
 
     async def _run(self, span: Span, call: _Call, args: Mapping[str, Any], authorization: str | None) -> CallToolResult:
         claims = call.claims = self._verify(authorization)
@@ -177,10 +188,16 @@ class Gateway:
         try:
             result, sent = await self._downstream.call(tool, args, context)
         except Exception as exc:
-            return await self._fail(span, call, exc)
-        scanned = scan_result(result, secrets=(*self.secrets, *sent))
+            return await self._fail(span, call, exc, "downstream_unavailable")
+        try:
+            scanned = scan_result(result, secrets=(*self.secrets, *sent))
+        except CallDeniedError as withheld:
+            return await self._deny(span, call, withheld, ran=not tool.read_only)
         if scanned.result.isError:
-            raise CallDeniedError("downstream_denied", "the tool server refused the call") from None
+            if _downstream_failed(scanned.result):
+                return await self._fail(span, call, RuntimeError("downstream"), "downstream_error")
+            refused = CallDeniedError("downstream_denied", "the tool server refused the call")
+            return await self._deny(span, call, refused, ran=False)
         span.set_attributes({"pii.redacted": scanned.redacted, "result.count": _result_count(scanned.result)})
         reason = "pii_redacted" if scanned.redacted else None
         try:
@@ -193,19 +210,21 @@ class Gateway:
         span.set_attribute("outcome", "ok")
         return scanned.result
 
-    async def _fail(self, span: Span, call: _Call, exc: Exception) -> CallToolResult:
-        span.set_attributes({"outcome": "error", "error.type": type(exc).__name__})
+    async def _fail(self, span: Span, call: _Call, exc: Exception, reason: str) -> CallToolResult:
+        span.set_attributes({"outcome": "error", "error.type": type(exc).__name__, "error.reason": reason})
         span.set_status(Status(StatusCode.ERROR))
-        _log.error("mcp-hub downstream call failed: %s", type(exc).__name__)
+        _log.error("mcp-hub call failed (%s): %s", reason, type(exc).__name__)
         try:
-            await self._audit(call, AuditOutcome.FAILED, "downstream_unavailable")
+            await self._audit(call, AuditOutcome.FAILED, reason)
         except Exception as audit_exc:
             span.set_attribute("audit.failed", True)
             _log.error("mcp-hub audit failed: %s", type(audit_exc).__name__)
         name = call.tool.name if call.tool else "unknown"
         return _error(f"{name}: internal error")
 
-    async def _deny(self, span: Span, call: _Call, denied: CallDeniedError) -> CallToolResult:
+    async def _deny(self, span: Span, call: _Call, denied: CallDeniedError, *, ran: bool = False) -> CallToolResult:
+        """Refuse the call. `ran`: a write already reached the tool server and its response was withheld,
+        so the record says `failed` (the change may have landed), not `denied`."""
         span.set_attributes({"outcome": "denied", "denial.reason": denied.reason})
         if call.claims is None:
             call.claims = denied.claims
@@ -214,7 +233,7 @@ class Gateway:
                     {"org_id": call.claims.org_id, "agent.name": call.claims.agent, "run_id": call.claims.run_id}
                 )
         try:
-            await self._audit(call, AuditOutcome.DENIED, denied.reason)
+            await self._audit(call, AuditOutcome.FAILED if ran else AuditOutcome.DENIED, denied.reason)
         except Exception as exc:
             span.set_attribute("audit.failed", True)
             _log.error("mcp-hub audit failed for a denial: %s", type(exc).__name__)
