@@ -3,11 +3,13 @@ envelope before it is parsed, whether it declares its length or streams it in ch
 
 from __future__ import annotations
 
-from collections.abc import Iterator
+import asyncio
+from collections.abc import Iterator, MutableMapping
+from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
-from onb_api.body_limit import TEMPLATE_BODY_LIMIT
+from onb_api.body_limit import TEMPLATE_BODY_LIMIT, BodyLimitMiddleware
 from onb_api.testing import bearer, token_for
 from onb_contracts.auth import Role
 
@@ -50,3 +52,29 @@ def test_routes_outside_templates_are_not_limited_by_it(client: TestClient) -> N
     body = b'{"email": "' + b"a" * (TEMPLATE_BODY_LIMIT + 1) + b'", "password": "x"}'
     response = client.post("/auth/login", content=body, headers={"content-type": "application/json"})
     assert response.status_code != 413
+
+
+def test_a_declared_length_over_the_limit_is_refused_before_any_body_is_read() -> None:
+    """The client says how big the body is: the middleware answers 413 without reading a byte of it."""
+    reads: list[str] = []
+    sent: list[MutableMapping[str, Any]] = []
+
+    async def app(scope: Any, receive: Any, send: Any) -> None:
+        raise AssertionError("the app was called")
+
+    async def receive() -> dict[str, Any]:
+        reads.append("read")
+        return {"type": "http.request", "body": b"{}", "more_body": False}
+
+    async def send(message: MutableMapping[str, Any]) -> None:
+        sent.append(message)
+
+    scope = {
+        "type": "http",
+        "method": "POST",
+        "path": "/templates/drafts",
+        "headers": [(b"content-length", str(TEMPLATE_BODY_LIMIT + 1).encode())],
+    }
+    asyncio.run(BodyLimitMiddleware(app)(scope, receive, send))
+    assert reads == []
+    assert sent[0]["status"] == 413
