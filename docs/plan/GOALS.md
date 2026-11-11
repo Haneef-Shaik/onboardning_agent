@@ -506,7 +506,7 @@ forbidden one, keeps `pii.*` read-only and never lets `org_id` be set.
 - [ ] An injection corpus of 40+ payloads (nested, dotted, unicode, `$where`, `$function`, `$accumulator`, `$expr` with JS, `$lookup`, `$graphLookup`, `$out`, `$merge`, `$unionWith`) is all rejected, each with a named reason (test)
 - [ ] A hypothesis test never produces an accepted query containing a forbidden operator
 - [ ] An update touching `pii.mobile` and a `$set` of `org_id` are rejected (tests)
-- [ ] A test asserts no delete, drop, index, admin or `runCommand` tool exists
+- [ ] A test lists the tools served by the app main() starts (over a real MCP session, through the production settings path) and asserts they are exactly the six PRD tools, so no delete, drop, index, admin or `runCommand` tool exists; how the process is started and what else it runs is left to code review and SEC-2
 
 ### MCP-3 · Back the policy with least-privilege database users
 - **Size:** M · **Milestone:** M2 · **Label:** least-privilege DB users
