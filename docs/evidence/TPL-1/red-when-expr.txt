@@ -1,0 +1,3 @@
+ImportError while importing test module '/Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-tpl-1/libs/py-agents/tests/test_when_expr.py'.
+E   ModuleNotFoundError: No module named 'onb_agents.templates.expr'
+!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
