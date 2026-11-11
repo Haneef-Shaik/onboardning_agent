@@ -3,7 +3,8 @@
 T-2's box "the listener is on for every integration test" must keep holding as goals add suites, so
 this check runs in `make check`: each project with a `test-int` target whose `tests_int` imports
 pymongo or `onb_data` must load `onb_data.safety_net_pytest` in its conftest (all five names) and
-carry a fixture test asserting every collected test uses the guard. Reads files only.
+carry a fixture test asserting every collected test uses the guard. So must the root suites run by
+a make target (`tools/tests_xt`, the cross-tenant suite). Reads files only.
 """
 
 from __future__ import annotations
@@ -18,17 +19,30 @@ REQUIRED_NAMES = frozenset(
     {"pytest_configure", "pytest_sessionfinish", "tenant_safety_net", "tenant_safety_net_guard", "unscoped"}
 )
 MONGO_MARKERS = ("pymongo", "onb_data")
-KNOWN_MONGO_SUITES = {"libs/py-data", "libs/py-eventbus", "libs/py-crypto", "libs/py-telemetry"}
+KNOWN_MONGO_SUITES = {
+    "libs/py-data/tests_int",
+    "libs/py-eventbus/tests_int",
+    "libs/py-crypto/tests_int",
+    "libs/py-telemetry/tests_int",
+    "tools/tests_xt",
+}
+
+
+# Root suites run by a make target rather than an Nx `test-int` target (T-3: `make test-xt`).
+ROOT_SUITES = ("tools/tests_xt",)
 
 
 def integration_suites(root: Path) -> dict[str, Path]:
-    """{project dir: its tests_int dir} for every project with a `test-int` target."""
+    """{suite dir: suite path} for every project's `tests_int` with a `test-int` target, and the root suites."""
     suites: dict[str, Path] = {}
     for project_json in sorted([*root.glob("apps/*/project.json"), *root.glob("libs/*/project.json")]):
         targets = json.loads(project_json.read_text()).get("targets", {})
         suite = project_json.parent / "tests_int"
         if "test-int" in targets and suite.is_dir():
-            suites[project_json.parent.relative_to(root).as_posix()] = suite
+            suites[suite.relative_to(root).as_posix()] = suite
+    for name in ROOT_SUITES:
+        if (root / name).is_dir():
+            suites[name] = root / name
     return suites
 
 
@@ -60,14 +74,14 @@ def has_guard_fixture_test(suite: Path) -> bool:
 
 def problems(root: Path) -> list[str]:
     found: list[str] = []
-    for project, suite in integration_suites(root).items():
+    for name, suite in integration_suites(root).items():
         if not talks_to_mongo(suite):
             continue
         missing = missing_plugin_names(suite)
         if missing:
-            found.append(f"{project}/tests_int/conftest.py does not import {sorted(missing)} from {PLUGIN}")
+            found.append(f"{name}/conftest.py does not import {sorted(missing)} from {PLUGIN}")
         if not has_guard_fixture_test(suite):
-            found.append(f"{project}/tests_int has no fixture test asserting every test uses the safety net guard")
+            found.append(f"{name} has no fixture test asserting every test uses the safety net guard")
     return found
 
 
@@ -77,7 +91,7 @@ def test_every_mongo_integration_suite_runs_under_the_safety_net() -> None:
 
 def test_the_check_sees_the_known_mongo_suites() -> None:
     """Guards the detector itself: if it found nothing, the check above would pass vacuously."""
-    mongo = {project for project, suite in integration_suites(ROOT).items() if talks_to_mongo(suite)}
+    mongo = {name for name, suite in integration_suites(ROOT).items() if talks_to_mongo(suite)}
     assert mongo >= KNOWN_MONGO_SUITES
 
 
@@ -106,6 +120,16 @@ def test_a_partial_import_is_reported(tmp_path: Path) -> None:
     assert problems(tmp_path) == [
         "libs/py-new/tests_int/conftest.py does not import "
         "['pytest_sessionfinish', 'tenant_safety_net_guard', 'unscoped'] from onb_data.safety_net_pytest"
+    ]
+
+
+def test_a_root_suite_without_the_plugin_is_reported(tmp_path: Path) -> None:
+    suite = tmp_path / "tools" / "tests_xt"
+    suite.mkdir(parents=True)
+    (suite / "test_thing.py").write_text("from onb_data import tenant_scope\n")
+    assert problems(tmp_path) == [
+        f"tools/tests_xt/conftest.py does not import {sorted(REQUIRED_NAMES)} from {PLUGIN}",
+        "tools/tests_xt has no fixture test asserting every test uses the safety net guard",
     ]
 
 

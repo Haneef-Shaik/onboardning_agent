@@ -1,0 +1,255 @@
+"""The cross-tenant suite (`make test-xt`, PRD §7.9 Testing) on the compose MongoDB replica set.
+
+Every test gets a freshly seeded two-org world (see `world.py`) in one scratch database, dropped at
+the end of the session, and runs under the T-2 tenant safety net. Root read-backs across orgs say why
+in `unscoped("reason")`.
+
+Mongo publishes no port (PRD §7.11), so a short-lived loopback tunnel (a socat container on the
+stack's network, as in `apps/api/tests_int/conftest.py`) carries the root login for setup. The
+application objects under test (the API, mcp-mongo, the event bus) reach it through `onb_data`'s
+`TenantRepository` like they do in production.
+
+The end of the run prints the surface the suite covered: every route, MCP tool and event consumer.
+"""
+
+from __future__ import annotations
+
+import asyncio
+import os
+import secrets
+import socket
+import subprocess
+import threading
+import time
+import uuid
+from collections.abc import Callable, Iterator
+from contextlib import AbstractContextManager
+from dataclasses import dataclass, field
+from datetime import UTC, datetime, timedelta
+from typing import Any
+from urllib.parse import quote_plus
+
+import pytest
+import uvicorn
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
+from onb_api import create_app
+from onb_api.auth.mongo_users import MongoUserStore
+from onb_api.auth.passwords import hash_password
+from onb_api.auth.users import NewUser
+from onb_api.testing import TEST_SETTINGS
+from onb_contracts.auth import Role
+from onb_data import Actor, ActorType, AuditLog, AuditOutcome, DataStore, connect, tenant_scope
+from onb_data.safety_net_pytest import (  # T-2 tenant safety net (PRD §7.9): registers these with pytest
+    pytest_configure,
+    pytest_sessionfinish,
+    tenant_safety_net,
+    tenant_safety_net_guard,
+    unscoped,
+)
+from onb_mcp_mongo.server import build_server
+from pymongo import MongoClient
+from pymongo.database import Database
+
+from . import world
+from .surface import PLATFORM_SUBSCRIPTIONS, api_routes, mcp_tools, platform_consumers
+
+# Re-exported so pytest registers the safety net hooks and fixtures for this suite.
+__all__ = ["pytest_configure", "pytest_sessionfinish", "tenant_safety_net", "tenant_safety_net_guard", "unscoped"]
+
+# Pinned by digest, as in the other suites: this container carries the root login across the tunnel.
+SOCAT_IMAGE = "alpine/socat:1.8.1.3@sha256:e8a6e8868a8e6e01d9c2c321a8f8d4474d2d741d962462e5c5a124a8e66a0055"
+# Its own label key, so another suite's stale-tunnel cleanup never removes this one.
+TUNNEL_LABEL_KEY = "onb.test.xt-mongo-tunnel"
+MCP_CONTEXT_KEY = secrets.token_urlsafe(48)
+PASSWORD = secrets.token_urlsafe(12)
+T0 = datetime(2026, 11, 1, 8, 0, tzinfo=UTC)
+
+RootClient = MongoClient[dict[str, Any]]
+Unscoped = Callable[[str], AbstractContextManager[None]]
+
+
+def _run(*args: str) -> str:
+    return subprocess.run(list(args), cwd=world.ROOT, capture_output=True, text=True, check=True).stdout.strip()
+
+
+def _required_env(name: str) -> str:
+    value = os.environ.get(name, "")
+    if not value:
+        pytest.fail(f"{name} is not set: run the suite with `make test-xt` (it loads .env)")
+    return value
+
+
+@pytest.fixture(scope="session")
+def mongo_tunnel() -> Iterator[str]:
+    container = _run("docker", "compose", "ps", "-q", "mongo")
+    if not container:
+        pytest.fail("the compose mongo service is not running: run `make up`")
+    fmt = "{{range $k, $v := .NetworkSettings.Networks}}{{$k}} {{$v.IPAddress}}{{end}}"
+    network, mongo_ip = _run("docker", "inspect", "-f", fmt, container).split()
+    label = f"{TUNNEL_LABEL_KEY}={network}"
+    stale = _run("docker", "ps", "-aq", "--filter", f"label={label}").split()
+    if stale:
+        subprocess.run(["docker", "rm", "-f", *stale], capture_output=True, check=False)
+    tunnel = _run(
+        "docker", "run", "-d", "--rm", "--label", label, "-p", "127.0.0.1::27017",
+        SOCAT_IMAGE, "TCP-LISTEN:27017,fork,reuseaddr", f"TCP:{mongo_ip}:27017",
+    )  # fmt: skip
+    try:
+        _run("docker", "network", "connect", network, tunnel)
+        yield _run("docker", "port", tunnel, "27017/tcp").splitlines()[0]
+    finally:
+        subprocess.run(["docker", "rm", "-f", tunnel], capture_output=True, check=False)
+
+
+@pytest.fixture(scope="session")
+def mongo_uri(mongo_tunnel: str) -> str:
+    user = quote_plus(_required_env("MONGO_ROOT_USERNAME"))
+    password = quote_plus(_required_env("MONGO_ROOT_PASSWORD"))
+    return f"mongodb://{user}:{password}@{mongo_tunnel}/?authSource=admin&directConnection=true"
+
+
+@pytest.fixture(scope="session")
+def root_client(mongo_uri: str) -> Iterator[RootClient]:
+    client: RootClient = MongoClient(mongo_uri, serverSelectionTimeoutMS=10_000, tz_aware=True)
+    try:
+        yield client
+    finally:
+        client.close()
+
+
+@pytest.fixture(scope="session")
+def database_name(root_client: RootClient) -> Iterator[str]:
+    name = f"xt_{uuid.uuid4().hex[:12]}"
+    try:
+        yield name
+    finally:
+        root_client.drop_database(name)
+
+
+# --- the two-org world ------------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class World:
+    """The seeded scratch database. `root_db` is for read-backs across orgs, inside `unscoped`."""
+
+    uri: str = field(repr=False)  # carries the root password: never in a repr or assertion message
+    database: str
+    root_db: Database[dict[str, Any]] = field(repr=False)
+    password: str = field(repr=False)
+
+    def store(self) -> DataStore:
+        return connect(self.uri, self.database, app_name="xt")
+
+
+async def _seed(store: DataStore) -> None:
+    users = MongoUserStore(store)
+    await users.ensure_indexes()
+    password_hash = hash_password(PASSWORD, rounds=TEST_SETTINGS.bcrypt_rounds)
+    for user in world.seed_users():
+        with tenant_scope(user["org_id"]):
+            new = NewUser(
+                email=world.email_of(user["_id"]),
+                name=user["name"],
+                role=Role(user["role"]),
+                password_hash=password_hash,
+            )
+            await users.add_user(new, user_id=user["_id"])
+    for org_id in (world.ORG_A, world.ORG_B):
+        with tenant_scope(org_id):
+            for collection, docs in world.tenant_documents(org_id).items():
+                if docs:
+                    await store.tenant(collection).insert_many(docs)
+    minutes = iter(range(len(world.AUDIT_ROWS)))
+    log = AuditLog(store, clock=lambda: T0 + timedelta(minutes=next(minutes)))
+    for org_id, actor_type, actor_id, action, target, outcome in world.AUDIT_ROWS:
+        actor = Actor.user(actor_id) if actor_type == ActorType.USER else Actor.agent(actor_id)
+        with tenant_scope(org_id):
+            await log.audit(actor=actor, action=action, target=target, outcome=AuditOutcome(outcome), reason="xt")
+
+
+@pytest.fixture
+def xt_world(root_client: RootClient, mongo_uri: str, database_name: str) -> World:
+    """A fresh copy of the two-org world for this test."""
+    root_client.drop_database(database_name)
+    seeded = World(mongo_uri, database_name, root_client[database_name], PASSWORD)
+
+    async def main() -> None:
+        store = seeded.store()
+        try:
+            await _seed(store)
+        finally:
+            await store.close()
+
+    asyncio.run(main())
+    return seeded
+
+
+# --- the API ----------------------------------------------------------------------------------------
+
+
+def build_api(store: DataStore) -> FastAPI:
+    """The app as `onb_api.main` builds it, over the scratch database (REG-1: pass new stores here)."""
+    return create_app(auth=TEST_SETTINGS, users=MongoUserStore(store), audit=AuditLog(store))
+
+
+@pytest.fixture
+def api(xt_world: World) -> Iterator[TestClient]:
+    with TestClient(build_api(xt_world.store())) as client:
+        yield client
+
+
+# --- mcp-mongo, served over HTTP on loopback ----------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class McpServer:
+    url: str
+    key: str = field(repr=False)
+
+
+def _free_port() -> int:
+    with socket.socket() as sock:
+        sock.bind(("127.0.0.1", 0))
+        port: int = sock.getsockname()[1]
+        return port
+
+
+@pytest.fixture(scope="session")
+def mcp_mongo(mongo_uri: str, database_name: str) -> Iterator[McpServer]:
+    port = _free_port()
+    server = build_server(connect(mongo_uri, database_name, app_name="xt-mcp-mongo"), MCP_CONTEXT_KEY, port=port)
+    config = uvicorn.Config(server.streamable_http_app(), host="127.0.0.1", port=port, log_level="warning")
+    uv_server = uvicorn.Server(config)
+    thread = threading.Thread(target=uv_server.run, daemon=True)
+    thread.start()
+    end = time.monotonic() + 15
+    while not uv_server.started:
+        if time.monotonic() > end or not thread.is_alive():
+            pytest.fail("mcp-mongo did not start")
+        time.sleep(0.05)
+    try:
+        yield McpServer(f"http://127.0.0.1:{port}/mcp", MCP_CONTEXT_KEY)
+    finally:
+        uv_server.should_exit = True
+        thread.join(timeout=10)
+
+
+# --- the covered surface, printed at the end of the run --------------------------------------------------
+
+
+def pytest_terminal_summary(terminalreporter: pytest.TerminalReporter) -> None:
+    """Box 1: the run lists every route (and tool and consumer) it covered."""
+    offline = connect("mongodb://127.0.0.1:1", "xt_listing")  # lazy: never connects
+    routes = api_routes(build_api(offline))
+    tools = mcp_tools(offline, MCP_CONTEXT_KEY)
+    consumers = platform_consumers(PLATFORM_SUBSCRIPTIONS)
+    write = terminalreporter.write_line
+    write(f"cross-tenant surface: {len(routes)} API routes, {len(tools)} MCP tools, {len(consumers)} event consumers")
+    for method, path in routes:
+        write(f"  route    {method:6} {path}")
+    for server, tool in tools:
+        write(f"  tool     {server}.{tool}")
+    for consumer in consumers:
+        write(f"  consumer {consumer}")

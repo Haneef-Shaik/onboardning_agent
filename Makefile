@@ -12,7 +12,7 @@ export NX_TUI := false
 COMPOSE := docker compose
 ENV_FILE := .env
 
-.PHONY: bootstrap check plan-check env-check tooling-test contracts contracts-check lint typecheck test test-int evals-selftest fmt up down logs llm-health
+.PHONY: bootstrap check plan-check env-check tooling-test contracts contracts-check lint typecheck test test-int test-xt evals-selftest fmt up down logs llm-health
 
 ## Install the pinned toolchains: one uv virtualenv at the root, and node_modules.
 bootstrap:
@@ -21,8 +21,9 @@ bootstrap:
 	npm ci --no-audit --no-fund
 
 ## The standard gate: plan check, repo guards, then lint, typecheck and unit tests (with the
-## 80% line-coverage threshold on every libs/py-* project) for all 17 Nx projects.
-check: plan-check env-check tooling-test lint typecheck test
+## 80% line-coverage threshold on every libs/py-* project) for all 17 Nx projects, then the
+## cross-tenant suite (a required step, PRD §7.9 Testing: it needs Docker for the compose Mongo).
+check: plan-check env-check tooling-test lint typecheck test test-xt
 	@echo "make check: all passed"
 
 plan-check:
@@ -61,6 +62,13 @@ test-int: up
 	set -a && . ./$(ENV_FILE) && set +a && \
 	uv run --frozen pytest tools/tests_int -q -o cache_dir=.pytest_cache/tools-int && \
 	$(NX) run-many -t test-int --output-style=static
+
+## Cross-tenant suite (PRD §7.9 Testing, T-3): two seeded orgs on the compose Mongo; for every API
+## route, MCP tool and event consumer, an org-A actor cannot read, list, update or infer org B. A route,
+## tool or consumer without a case fails it. The run ends by listing the surface it covered.
+test-xt: up
+	set -a && . ./$(ENV_FILE) && set +a && \
+	uv run --frozen pytest tools/tests_xt -q -o cache_dir=.pytest_cache/tests-xt
 
 ## Eval harness self-test (PRD §8.2, MASTER-PLAN §7): every dataset case against its scripted output on
 ## the `fake` connector (no model calls), k=3, each repetition in a fresh database on the compose Mongo,
