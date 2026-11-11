@@ -72,6 +72,8 @@ class RejectReason(StrEnum):
     PURGED = "token_purged"
     RECORD_INTEGRITY = "record_integrity"
     VAULT_ERROR = "vault_error"
+    # NOTIF-1: the grant is for another run than the hub-signed call context names (checked by the sink).
+    WRONG_RUN = "wrong_run"
 
 
 class GrantRejected(CryptoError):  # noqa: N818 - the name the PII-4 card and later goals use

@@ -230,6 +230,21 @@ def test_concurrent_uses_of_one_grant_send_once(world: World) -> None:
     assert len(world.scratch.find("pii_access_log")) == 1
 
 
+def test_concurrent_retries_of_one_call_send_once_and_fail_no_task(world: World) -> None:
+    async def scenario(service: NotifyService) -> list[CallToolResult]:
+        grant = world.grant()
+        return list(await asyncio.gather(*(send(world, service, telegram(world), grant) for _ in range(5))))
+
+    results = run(world, scenario)
+    assert all(not r.isError for r in results), [text(r) for r in results]
+    assert sum(not (r.structuredContent or {}).get("replayed") for r in results) == 1
+    assert len({(r.structuredContent or {}).get("notification_id") for r in results}) == 1
+    assert len(world.scratch.find("mock_outbox")) == 1
+    assert world.scratch.find("events", {"type": "task.sink_rejected"}) == []
+    [claim] = world.scratch.find("notify_sends")
+    assert claim["status"] == "sent"
+
+
 # --- in-app and the webhook, on the real bus --------------------------------------------------------------
 
 

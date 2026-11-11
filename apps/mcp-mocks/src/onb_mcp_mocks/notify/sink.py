@@ -21,17 +21,18 @@ from __future__ import annotations
 import json
 import logging
 from collections.abc import Callable
-from dataclasses import dataclass
-from datetime import UTC, datetime
-from typing import Final
+from datetime import UTC, datetime, timedelta
+from typing import Final, NoReturn
 
 from onb_contracts.notify import TELEGRAM_SINK, Channel, NotifySendArgs, NotifySendResult
 from onb_crypto import (
     Grant,
     GrantAudit,
+    GrantAuditRecord,
     GrantRejected,
     GrantVerifier,
     MaskedField,
+    RejectReason,
     SinkResolver,
     SinkToken,
     VaultField,
@@ -45,12 +46,14 @@ from .audit import Caller, CallerGrantAudit, record_guardrail
 from .events import NotifyEvents
 from .in_app import InAppChannel
 from .outbox import OutboxEntry, TelegramMockChannel, digest
+from .sends import SendClaims
 
 __all__ = ["NotifySink", "ResolverFactory", "SinkRefusedError"]
 
 _log = logging.getLogger("onb_mcp_mocks.notify")
 _VAULT_REF_MARK: Final = "ptk_"
 AGENT_KIND: Final = "agent_message"
+SWEEP_MARGIN: Final = timedelta(minutes=5)
 
 ResolverFactory = Callable[[GrantAudit], SinkResolver]
 """Builds PII-4's resolver with this call's audit hook (`SinkResolver.create(keyring, store, verifier,
@@ -63,12 +66,6 @@ class SinkRefusedError(Exception):
     def __init__(self, reason: str, message: str) -> None:
         super().__init__(message)
         self.reason = reason
-
-
-@dataclass(frozen=True, slots=True)
-class _Claims:
-    run_id: str | None
-    task_id: str | None
 
 
 def _utcnow() -> datetime:
@@ -99,6 +96,7 @@ class NotifySink:
         self._events = events
         self._auditor = auditor
         self._clock = clock
+        self._sends = SendClaims(store)
 
     async def send(self, caller: Caller, grant: str | None, args: NotifySendArgs) -> NotifySendResult:
         """Run inside `tenant_scope(caller.org_id)`."""
@@ -125,73 +123,135 @@ class NotifySink:
         token = args.recipient_token
         if token is None:  # the contract requires it; checked again for the type
             raise SinkRefusedError("invalid_arguments", "invalid arguments: recipient_token")
-        grant_digest, args_digest = digest(grant), _args_digest(args)
-        replay = await self._telegram.find_replay(grant_digest) if grant else None
-        if replay is not None and replay.get("args_digest") == args_digest:
-            return NotifySendResult(
-                status="sent", channel=Channel.TELEGRAM, notification_id=str(replay["_id"]), replayed=True
-            )
-        claims = self._claims(grant)
+        verified = self._verified(grant, caller)
         audit = CallerGrantAudit(self._auditor, caller)
+        if verified is None:  # unverifiable or another org's: the resolver refuses it, and records why
+            return await self._resolve_and_send(caller, grant, args, token, None, audit, owned=False)
+        if verified.run_id != caller.run_id:
+            await self._refuse(caller, verified, audit, RejectReason.WRONG_RUN, "the grant is for another run")
+        grant_digest = digest(grant)
+        claim = await self._sends.claim(caller, grant_digest, _args_digest(args))
+        if claim.status == "sent" and claim.outbox_id is not None:
+            return NotifySendResult(
+                status="sent", channel=Channel.TELEGRAM, notification_id=claim.outbox_id, replayed=True
+            )
+        if claim.status == "conflict":
+            await self._refuse(caller, verified, audit, RejectReason.REPLAYED, "the grant was already used")
+        if claim.status != "owned":  # failed or still pending: the first call reports its own outcome
+            raise SinkRefusedError(f"send_{claim.status}", f"send_{claim.status}: an earlier call with this grant")
+        return await self._resolve_and_send(caller, grant, args, token, verified, audit, owned=True)
+
+    async def _resolve_and_send(
+        self,
+        caller: Caller,
+        grant: str,
+        args: NotifySendArgs,
+        token: str,
+        verified: Grant | None,
+        audit: CallerGrantAudit,
+        *,
+        owned: bool,
+    ) -> NotifySendResult:
+        grant_digest = digest(grant)
         try:
             values = await self._resolver(audit).resolve_at_sink(
                 grant, TELEGRAM_SINK, [SinkToken(VaultField.MOBILE, token)]
             )
         except GrantRejected as rejected:
-            await self._rejected(caller, claims, rejected)
-            raise SinkRefusedError(
-                f"grant_rejected:{rejected.reason.value}", f"grant_rejected ({rejected.reason.value}): nothing was sent"
-            ) from None
+            if owned:
+                await self._sends.release(grant_digest)
+            await self._rejected(caller, verified, rejected)
+            raise _refusal(rejected.reason) from None
+        try:
+            outbox_id = await self._deliver(caller, args, token, values[token], verified, grant_digest)
+        except Exception:
+            # The value was resolved (the jti is spent): record the failure once, so a retry with this
+            # grant is refused `send_failed` instead of failing the task a second time.
+            await self._sends.mark_failed(grant_digest)
+            await self._report(caller, verified, "send_failed")
+            raise
         await self._sweep_expired_jtis()
-        mobile = values[token]
+        return NotifySendResult(status="sent", channel=Channel.TELEGRAM, notification_id=outbox_id)
+
+    async def _deliver(
+        self, caller: Caller, args: NotifySendArgs, token: str, mobile: str, verified: Grant | None, grant_digest: str
+    ) -> str:
+        """Send through the transport, then store the masked copy, mark the claim sent and publish
+        `notification.sent`, all in one transaction. The raw value goes no further than the transport."""
+        run_id, task_id = (verified.run_id, verified.task_id) if verified else (None, None)
         entry = OutboxEntry(
             recipient_token=token,
             recipient_masked=mask(MaskedField.MOBILE, mobile),
             text=args.body,
-            run_id=claims.run_id,
-            task_id=claims.task_id,
+            run_id=run_id,
+            task_id=task_id,
             agent=caller.agent,
             grant_digest=grant_digest,
-            args_digest=args_digest,
+            args_digest=_args_digest(args),
         )
         sent, document = await self._telegram.send(int(pii_normalize.mobile(mobile)), entry)
-        del mobile, values  # the raw value goes no further than the transport
+        outbox_id = str(document["_id"])
 
         async def store_copy() -> None:
             await self._telegram.store(document)
+            await self._sends.mark_sent(grant_digest, outbox_id)
 
-        payload = {
-            "outbox_id": document["_id"],
-            "channel": "telegram",
-            "run_id": claims.run_id,
-            "task_id": claims.task_id,
-        }
-        await self._events.sent(payload, key=f"notify:sent:{grant_digest}", run_id=claims.run_id, change=store_copy)
-        _log.info("telegram mock sent: org=%s outbox=%s message=%d", caller.org_id, document["_id"], sent.message_id)
-        return NotifySendResult(status="sent", channel=Channel.TELEGRAM, notification_id=str(document["_id"]))
+        payload = {"outbox_id": outbox_id, "channel": "telegram", "run_id": run_id, "task_id": task_id}
+        await self._events.sent(payload, key=f"notify:sent:{grant_digest}", run_id=run_id, change=store_copy)
+        _log.info("telegram mock sent: org=%s outbox=%s message=%d", caller.org_id, outbox_id, sent.message_id)
+        return outbox_id
 
-    def _claims(self, grant: str) -> _Claims:
-        """The grant's run and task when its signature verifies (the resolver checks it again, and
-        alone decides); nothing otherwise."""
+    def _verified(self, grant: str, caller: Caller) -> Grant | None:
+        """The grant's claims when its signature verifies and it is for the caller's org; nothing
+        otherwise (the resolver checks it again and alone decides, and another org's run or task is
+        never written into the caller's org)."""
         try:
             verified: Grant = self._verifier.verify(grant)
         except GrantRejected:
-            return _Claims(None, None)
-        return _Claims(verified.run_id, verified.task_id)
+            return None
+        return verified if verified.org_id == caller.org_id else None
 
-    async def _rejected(self, caller: Caller, claims: _Claims, rejected: GrantRejected) -> None:
-        """The guardrail decision and the task failure report. The grant audit record is already
-        written by the resolver's hook. Failures here are logged: the refusal stands either way."""
+    async def _refuse(
+        self, caller: Caller, verified: Grant, audit: CallerGrantAudit, reason: RejectReason, detail: str
+    ) -> NoReturn:
+        """A refusal the sink decides itself (before the resolver): the same records as the resolver's."""
+        record = GrantAuditRecord(
+            org_id=caller.org_id,
+            sink=TELEGRAM_SINK,
+            reason=reason,
+            detail=detail,
+            tokens=(),
+            at=self._clock(),
+            run_id=verified.run_id,
+            task_id=verified.task_id,
+            subject_id=verified.subject_id,
+            jti=verified.jti,
+        )
         try:
-            await record_guardrail(self._auditor, caller, claims.task_id, rejected.reason)
+            await audit.record(record)
+        except Exception as exc:
+            _log.error("sink grant audit failed: org=%s error=%s", caller.org_id, type(exc).__name__)
+        await self._rejected(caller, verified, GrantRejected(reason, detail))
+        raise _refusal(reason)
+
+    async def _rejected(self, caller: Caller, verified: Grant | None, rejected: GrantRejected) -> None:
+        """The guardrail decision and the task failure report. The grant audit record is already
+        written. Failures here are logged: the refusal stands either way."""
+        task_id = verified.task_id if verified else None
+        try:
+            await record_guardrail(self._auditor, caller, task_id, rejected.reason)
         except Exception as exc:
             _log.error("sink guardrail record failed: org=%s error=%s", caller.org_id, type(exc).__name__)
+        await self._report(caller, verified, rejected.reason.value)
+
+    async def _report(self, caller: Caller, verified: Grant | None, reason: str) -> None:
+        """`task.sink_rejected`: the orchestrator fails the task."""
         payload = {
             "run_id": caller.run_id,
             "agent": caller.agent,
-            "task_id": claims.task_id,
+            "task_id": verified.task_id if verified else None,
             "sink": TELEGRAM_SINK,
-            "reason": rejected.reason.value,
+            "reason": reason,
         }
         try:
             await self._events.rejected(payload, run_id=caller.run_id)
@@ -199,7 +259,14 @@ class NotifySink:
             _log.error("sink rejection event failed: org=%s error=%s", caller.org_id, type(exc).__name__)
 
     async def _sweep_expired_jtis(self) -> None:
+        """Rows expired for longer than `SWEEP_MARGIN`, so sink replicas with drifting clocks never
+        delete a jti another replica still accepts."""
         try:
-            await self._store.tenant(JTI_COLLECTION).delete_many({"expires_at": {"$lt": self._clock()}})
+            cutoff = self._clock() - SWEEP_MARGIN
+            await self._store.tenant(JTI_COLLECTION).delete_many({"expires_at": {"$lt": cutoff}})
         except Exception as exc:  # housekeeping only: never fails a send
             _log.warning("pii_grant_jti sweep failed: %s", type(exc).__name__)
+
+
+def _refusal(reason: RejectReason) -> SinkRefusedError:
+    return SinkRefusedError(f"grant_rejected:{reason.value}", f"grant_rejected ({reason.value}): nothing was sent")

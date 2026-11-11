@@ -123,7 +123,7 @@ def scratch(root_client: Client, mongo_uri: str, tenant_safety_net: TenantComman
     """A fresh database with the collections a transaction writes created up front, dropped afterwards."""
     name = f"it_notif1_{uuid.uuid4().hex[:12]}"
     db = root_client[name]
-    for collection in ("events", "jobs", "dead_letters", "mock_outbox", "notifications"):
+    for collection in ("events", "jobs", "dead_letters", "mock_outbox", "notifications", "notify_sends", "telegram_callbacks"):
         db.create_collection(collection)
     try:
         yield Scratch(mongo_uri, name, db, tenant_safety_net)

@@ -37,14 +37,21 @@
    through that event:** the orchestrator (RUN-3) subscribes and marks the task failed; until then the
    agent also gets a tool error (`grant_rejected (<reason>)`, which the hub reports as
    `downstream_denied`). Codes only, never the rejection's free-text detail.
-6. **A send** resolves the recipient once (the grant's jti is single-use), hands the value to MOCK-1's
-   transport and keeps only `{token, masked}` in `mock_outbox`. The outbox write and
-   `notification.sent` commit in one bus transaction. A repeat of the same grant with the same
-   arguments returns the first send (`replayed: true`) without resolving again; other arguments under a
-   used grant are `replayed` refusals.
+6. **A send** first checks the grant: it must verify, be for the caller's org (else the resolver refuses
+   `wrong_org`, and none of its run or task is written into the caller's org) and name the caller's run
+   (else `wrong_run`, a new `RejectReason`). It then takes a **send claim** (`notify_sends`, unique per
+   org and grant digest) before anything is resolved. The owner resolves the recipient once (the jti is
+   single-use), hands the value to MOCK-1's transport, and in one bus transaction stores only
+   `{token, masked}` in `mock_outbox`, registers any buttons, marks the claim `sent` and publishes
+   `notification.sent`. A concurrent or later call with the same grant, arguments, agent and run waits
+   for the owner and returns its send (`replayed: true`); anything else under that grant is a `replayed`
+   refusal without touching the vault. If something fails after the value was resolved, the claim is
+   marked `failed` and `task.sink_rejected` (reason `send_failed`) is published once; a retry is refused
+   `send_failed`, never resolved again. (Code review: retries must not fail a task that was sent.)
 7. **`pii_grant_jti` growth.** A TTL index would be single-field, and T-2's server walk fails any
    tenant index that does not start with `org_id`. Instead every successful send sweeps its own org's
-   expired rows (`delete_many({expires_at < now})`, a new tenant-scoped `TenantRepository.delete_many`,
+   rows expired for over 5 minutes (`delete_many({expires_at < now - 5 min})`, a margin for clock drift
+   between replicas, a new tenant-scoped `TenantRepository.delete_many`,
    on PII-4's `{org_id, expires_at}` index). An expired grant is refused `expired` before its jti is
    read, so a swept row can never re-enable a replay. Startup runs `ensure_grant_indexes`.
 8. **Telegram callbacks.** Button `callback_data` is `ob1:` + 128 random bits (26 bytes; Telegram
@@ -53,9 +60,11 @@
    pattern of ADR 0004's `user_logins`). The decision comes from the stored button in the org's
    `mock_outbox`, never from the request. `POST /webhooks/telegram` authenticates with
    `X-Telegram-Bot-Api-Secret-Token` (`TELEGRAM_WEBHOOK_SECRET`, 32-256 of Telegram's characters,
-   compared in constant time) before the body is validated, accepts Telegram's `Update` (unknown
+   compared in constant time) before the body is validated (a body that is not JSON is 400 first), accepts Telegram's `Update` (unknown
    fields ignored), answers every accepted update the same `{ok: true}`, and publishes
-   `decision.received` keyed by `callback_query.id`, so Telegram's retries decide once.
+   `decision.received` keyed by `callback_query.id`, so Telegram's retries decide once. The payload holds
+   ids and codes only: not the presser's Telegram id (a personal identifier, and in this mock the
+   recipient's mobile is the chat id).
 9. **In-app.** `notifications` (tenant). The consumer `notify.in_app` delivers `change_request.decided`
    (to the requester) and `run.blocked` (to the org's HR and HR_ADMIN), idempotently per (event, user).
    Its subscription map is `onb_contracts.notify.NOTIFY_SUBSCRIPTIONS`; every publisher of those
@@ -83,5 +92,9 @@
   `MCP_HUB_NOTIFY_SERVER_URL`, and the API's `TELEGRAM_WEBHOOK_SECRET`. MCP-3/SEC: the sink's database
   user needs read on `pii_vault`, `org_keys`, `users` and write on the collections listed in
   `onb_mcp_mocks.notify.settings`.
+- The mock uses the normalised mobile as the Telegram `chat_id`. A real Bot API adapter cannot send
+  to a phone number: it needs a chat id from the bot's own `/start` flow (a gap for the real adapter).
+- Open for HIL-1 / SEC-2: a press is not bound to the expected chat, and buttons never expire; agents
+  may send in-app messages to any user of their org without a rate cap.
 - One more global collection: it reveals to someone with database read access which org a button id
   belongs to, nothing else.

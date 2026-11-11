@@ -1,0 +1,33 @@
+== Box 1: mock_outbox holds only the masked mobile, never the raw value (DB scan test)
+$ uv run --frozen pytest apps/mcp-mocks/tests/test_notify_sink.py::test_box1_mock_outbox_holds_only_the_masked_mobile_never_the_raw_value apps/mcp-mocks/tests_int/test_notify_against_mongo.py::test_box1_mock_outbox_holds_only_the_masked_mobile_never_the_raw_value_db_scan
+PASSED apps/mcp-mocks/tests/test_notify_sink.py::test_box1_mock_outbox_holds_only_the_masked_mobile_never_the_raw_value
+PASSED apps/mcp-mocks/tests_int/test_notify_against_mongo.py::test_box1_mock_outbox_holds_only_the_masked_mobile_never_the_raw_value_db_scan
+2 passed in 4.71s
+
+== Box 2: a rejected grant stores nothing, fails the task, writes a guardrail event and an audit record
+$ uv run --frozen pytest apps/mcp-mocks/tests/test_notify_sink.py apps/mcp-mocks/tests_int/test_notify_against_mongo.py apps/mcp-mocks/tests/test_notify_server.py -k box2 or rejected_grant_is_a_refusal
+PASSED apps/mcp-mocks/tests/test_notify_sink.py::test_box2_a_rejected_grant_stores_nothing_fails_the_task_and_writes_a_guardrail_event_and_an_audit_record[no-grant]
+PASSED apps/mcp-mocks/tests/test_notify_sink.py::test_box2_a_rejected_grant_stores_nothing_fails_the_task_and_writes_a_guardrail_event_and_an_audit_record[forged-signature]
+PASSED apps/mcp-mocks/tests/test_notify_sink.py::test_box2_a_rejected_grant_stores_nothing_fails_the_task_and_writes_a_guardrail_event_and_an_audit_record[wrong-sink]
+PASSED apps/mcp-mocks/tests/test_notify_sink.py::test_box2_a_rejected_grant_stores_nothing_fails_the_task_and_writes_a_guardrail_event_and_an_audit_record[another-hires-token]
+PASSED apps/mcp-mocks/tests/test_notify_sink.py::test_box2_a_rejected_grant_stores_nothing_fails_the_task_and_writes_a_guardrail_event_and_an_audit_record[another-orgs-token]
+PASSED apps/mcp-mocks/tests/test_notify_sink.py::test_box2_a_rejected_grant_stores_nothing_fails_the_task_and_writes_a_guardrail_event_and_an_audit_record[another-orgs-grant]
+PASSED apps/mcp-mocks/tests/test_notify_sink.py::test_box2_a_rejected_grant_stores_nothing_fails_the_task_and_writes_a_guardrail_event_and_an_audit_record[email-token-as-recipient]
+PASSED apps/mcp-mocks/tests_int/test_notify_against_mongo.py::test_box2_a_rejected_grant_stores_nothing_fails_the_task_and_writes_a_guardrail_event_and_an_audit_record[another-hires-token]
+PASSED apps/mcp-mocks/tests_int/test_notify_against_mongo.py::test_box2_a_rejected_grant_stores_nothing_fails_the_task_and_writes_a_guardrail_event_and_an_audit_record[another-orgs-token]
+PASSED apps/mcp-mocks/tests_int/test_notify_against_mongo.py::test_box2_a_rejected_grant_stores_nothing_fails_the_task_and_writes_a_guardrail_event_and_an_audit_record[another-orgs-grant]
+PASSED apps/mcp-mocks/tests_int/test_notify_against_mongo.py::test_box2_a_rejected_grant_stores_nothing_fails_the_task_and_writes_a_guardrail_event_and_an_audit_record[no-grant]
+PASSED apps/mcp-mocks/tests/test_notify_server.py::test_a_rejected_grant_is_a_refusal_naming_the_reason_never_an_internal_error
+12 passed, 31 deselected in 4.60s
+
+== Box 3: the webhook rejects a wrong secret token and accepts Telegram's documented callback_query (fixture)
+$ uv run --frozen pytest apps/api/tests/test_notify_routes.py -k box3
+PASSED apps/api/tests/test_notify_routes.py::test_box3_the_webhook_rejects_a_wrong_secret_token[missing]
+PASSED apps/api/tests/test_notify_routes.py::test_box3_the_webhook_rejects_a_wrong_secret_token[empty]
+PASSED apps/api/tests/test_notify_routes.py::test_box3_the_webhook_rejects_a_wrong_secret_token[another-secret]
+PASSED apps/api/tests/test_notify_routes.py::test_box3_the_webhook_rejects_a_wrong_secret_token[one-character-short]
+PASSED apps/api/tests/test_notify_routes.py::test_box3_a_wrong_secret_is_refused_before_the_body_is_read
+PASSED apps/api/tests/test_notify_routes.py::test_box3_the_webhook_accepts_telegrams_documented_callback_query_and_emits_a_decision_event
+6 passed, 15 deselected in 0.15s
+
+exit=0

@@ -31,6 +31,7 @@ from onb_data import DataStore, tenant_scope
 from onb_data.testing import InMemoryAuditLog
 from onb_mcp_mocks.notify.audit import Caller
 from onb_mcp_mocks.notify.outbox import TelegramMockChannel, ensure_outbox_indexes
+from onb_mcp_mocks.notify.sends import ensure_send_indexes
 from onb_mcp_mocks.notify.sink import NotifySink
 from onb_mcp_mocks.telegram import TelegramMockTransport
 from opentelemetry import trace
@@ -123,6 +124,7 @@ def build_world(*, clock: Callable[[], datetime] | None = None) -> World:
     async def seed() -> dict[str, str]:
         await ensure_grant_indexes(store)
         await ensure_outbox_indexes(store)
+        await ensure_send_indexes(store)
         for org in (ORG_A, ORG_B):
             with tenant_scope(org):
                 await keyring.create(org)

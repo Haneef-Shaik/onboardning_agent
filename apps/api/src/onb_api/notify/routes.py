@@ -3,10 +3,11 @@
 | Route | Who |
 |---|---|
 | `GET /mock-outbox` | HR_ADMIN, HR (the org's outbox), MANAGER (messages addressed to them) |
-| `POST /webhooks/telegram` | Telegram (or the mock outbox UI): the webhook secret token, no user token |
+| `POST /webhooks/telegram` | Telegram: the webhook secret token, no user token |
 
 The webhook takes no bearer token, as Telegram sends none: it authenticates with
-`X-Telegram-Bot-Api-Secret-Token`. A wrong or missing secret is 401 before the body is read. The org
+`X-Telegram-Bot-Api-Secret-Token`. A wrong or missing secret is 401 before the body is validated (a body
+that is not JSON at all is 400 first: FastAPI reads it before the dependencies run). The org
 of a press comes from the button id, through the callback directory (ADR 0013), never from the
 request. Any update with the right secret answers `{ok: true}`, whatever it named.
 """
@@ -64,7 +65,7 @@ def telegram_sender(
     secret: Annotated[str | None, Header(alias="X-Telegram-Bot-Api-Secret-Token")] = None,
 ) -> MockChannels:
     """The webhook's authentication: Telegram's secret token. A dependency, so it is checked before the
-    body is validated: a wrong secret is 401 whatever the body holds."""
+    body is validated: a wrong secret is 401 for any JSON body."""
     channels = mock_channels(request)
     if not channels.secret_matches(secret):
         raise AppError(ErrorCode.UNAUTHENTICATED)

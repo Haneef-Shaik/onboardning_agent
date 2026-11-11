@@ -87,12 +87,11 @@ class TelegramMockChannel:
     async def send(
         self, chat_id: ChatId, entry: OutboxEntry, *, buttons: Sequence[DecisionButton] = ()
     ) -> tuple[SentMessage, dict[str, Any]]:
-        """Send, then return the receipt and the outbox document to store (the caller stores it, so the
-        write can commit with its event). Callback data for `buttons` is registered first."""
+        """Send, then return the receipt and the outbox document to store (the caller stores it with
+        `store`, so the write, the button registrations and the event commit together)."""
         stored_buttons = [
             {"text": b.text, "callback_data": new_callback_data(), "decision": b.decision.value} for b in buttons
         ]
-        await self._register(stored_buttons)
         keyboard = [[InlineButton(b["text"], b["callback_data"]) for b in stored_buttons]] if stored_buttons else []
         sent = await self._transport.send_message(chat_id, entry.text, inline_keyboard=keyboard)
         document: dict[str, Any] = {
@@ -114,7 +113,7 @@ class TelegramMockChannel:
             document["args_digest"] = entry.args_digest
         return sent, document
 
-    async def _register(self, buttons: Sequence[Mapping[str, str]]) -> None:
+    async def _register(self, buttons: Sequence[Mapping[str, Any]]) -> None:
         if not buttons:
             return
         org_id = current_tenant().org_id
@@ -124,7 +123,6 @@ class TelegramMockChannel:
         )
 
     async def store(self, document: Mapping[str, Any]) -> None:
+        """The masked copy and its buttons' directory entries (call inside the send's transaction)."""
+        await self._register(document.get("buttons") or [])
         await self._store.tenant(OUTBOX_COLLECTION).insert_one(document)
-
-    async def find_replay(self, grant_digest: str) -> dict[str, Any] | None:
-        return await self._store.tenant(OUTBOX_COLLECTION).find_one({"grant_digest": grant_digest})

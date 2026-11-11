@@ -9,6 +9,7 @@ import sys
 from pathlib import Path
 
 SINK = "apps/mcp-mocks/src/onb_mcp_mocks/notify/sink.py"
+SENDS = "apps/mcp-mocks/src/onb_mcp_mocks/notify/sends.py"
 AUDIT = "apps/mcp-mocks/src/onb_mcp_mocks/notify/audit.py"
 IN_APP = "apps/mcp-mocks/src/onb_mcp_mocks/notify/in_app.py"
 SERVER = "apps/mcp-mocks/src/onb_mcp_mocks/notify/server.py"
@@ -34,7 +35,7 @@ MUTATIONS = [
         "N2",
         "box 2: no guardrail decision for a refused grant",
         SINK,
-        "await record_guardrail(self._auditor, caller, claims.task_id, rejected.reason)",
+        "await record_guardrail(self._auditor, caller, task_id, rejected.reason)",
         "pass",
         MOCKS_TESTS,
     ),
@@ -58,24 +59,23 @@ MUTATIONS = [
         "N5",
         "box 2: a refused grant still sends (the refusal is swallowed and the send goes on unresolved)",
         SINK,
-        "            await self._rejected(caller, claims, rejected)\n            raise SinkRefusedError(",
-        "            await self._rejected(caller, claims, rejected)\n            values = {token: '9000000001'}\n"
-        "        if False:\n            raise SinkRefusedError(",
+        "            raise _refusal(rejected.reason) from None",
+        "            values = {token: '9000000001'}",
         MOCKS_TESTS,
     ),
     (
         "N6",
         "replay: a used grant with other arguments counts as a replay of the first send",
-        SINK,
-        'if replay is not None and replay.get("args_digest") == args_digest:',
-        "if replay is not None:",
+        SENDS,
+        '            if not same:\n                return Claim("conflict")',
+        '            if False:\n                return Claim("conflict")',
         MOCKS_TESTS,
     ),
     (
         "N7",
         "jti sweep: deletes live rows too",
         SINK,
-        'delete_many({"expires_at": {"$lt": self._clock()}})',
+        'delete_many({"expires_at": {"$lt": cutoff}})',
         "delete_many({})",
         MOCKS_TESTS,
     ),
@@ -158,6 +158,30 @@ MUTATIONS = [
         "held = (*self.secrets, *sent, *((pii_grant,) if pii_grant else ()))",
         "held = (*self.secrets, *sent)",
         HUB_TESTS,
+    ),
+    (
+        "N18",
+        "failure after resolution: not recorded, so a retry is resolved again (and replayed) instead of send_failed",
+        SINK,
+        "await self._sends.mark_failed(grant_digest)",
+        "pass",
+        MOCKS_TESTS,
+    ),
+    (
+        "N19",
+        "the grant's run is not compared with the call context's",
+        SINK,
+        "if verified.run_id != caller.run_id:",
+        "if False:",
+        MOCKS_TESTS,
+    ),
+    (
+        "N20",
+        "another org's verified grant has its run and task written into the caller's org",
+        SINK,
+        "return verified if verified.org_id == caller.org_id else None",
+        "return verified",
+        MOCKS_TESTS,
     ),
 ]
 

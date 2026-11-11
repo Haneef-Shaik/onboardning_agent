@@ -40,6 +40,7 @@ from onb_mcp_hub.catalog import NOTIFY_SERVER, notify_catalog, platform_catalog
 from onb_mcp_hub.downstream import GRANT_SERVERS, McpDownstream
 from onb_mcp_hub.gateway import Gateway
 from onb_mcp_mocks.notify.outbox import TelegramMockChannel, ensure_outbox_indexes
+from onb_mcp_mocks.notify.sends import ensure_send_indexes
 from onb_mcp_mocks.notify.server import DESCRIPTION, NotifyArgs, build_notify_server
 from onb_mcp_mocks.notify.sink import NotifySink
 from onb_mcp_mocks.telegram import TelegramMockTransport
@@ -100,6 +101,7 @@ class Stack:
         async def seed() -> str:
             await ensure_grant_indexes(store)
             await ensure_outbox_indexes(store)
+            await ensure_send_indexes(store)
             with tenant_scope("org_acme"):
                 await keyring.create("org_acme")
             return await seed_vault_value(

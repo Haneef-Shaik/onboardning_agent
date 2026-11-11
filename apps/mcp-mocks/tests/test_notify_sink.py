@@ -6,15 +6,18 @@ Box 2: a rejected grant stores nothing, fails the task, and writes a guardrail e
 
 from __future__ import annotations
 
+import asyncio
 import json
 from datetime import timedelta
 from typing import Any
 
 import pytest
+from onb_contracts.notify import NotifySendArgs
 from onb_crypto import GrantIssuer, VaultField
 from onb_data import tenant_scope
 from onb_mcp_mocks.notify.audit import Caller
 from onb_mcp_mocks.notify.sink import SinkRefusedError
+from onb_mcp_mocks.telegram import TransportRefusedError
 from onb_telemetry.testing import CapturedTelemetry
 
 from .notify_world import (
@@ -203,7 +206,7 @@ def test_a_send_sweeps_this_orgs_expired_jti_rows_and_keeps_live_ones() -> None:
         world.grant(org=ORG_B, subject="h_globex_001", ttl=timedelta(seconds=1)), world.telegram("b_mobile"), org_b
     )
     first = {row["org_id"]: row["jti"] for row in world.db.raw("pii_grant_jti")}
-    clock.advance(timedelta(seconds=3))  # both first grants have expired; a new one lives 5 minutes
+    clock.advance(timedelta(minutes=6))  # both first grants expired over the 5-minute sweep margin ago
     world.send(world.grant(), world.telegram(body="Second message"))
     rows = world.db.raw("pii_grant_jti")
     assert first[ORG_A] not in {row["jti"] for row in rows}, "org A's expired row was not swept"
@@ -267,3 +270,63 @@ def test_the_caller_org_comes_from_the_context_not_the_grant(world: World) -> No
 def test_the_world_uses_distinct_hires() -> None:
     assert len({HIRE, OTHER_HIRE}) == 2
     assert CALLER.org_id == ORG_A
+
+
+# --- review fixes: one send per grant, failures after resolution, the grant's run and org -----------------
+
+
+def test_concurrent_identical_calls_send_once_and_neither_fails_the_task(world: World) -> None:
+    grant, args = world.grant(), NotifySendArgs.model_validate(world.telegram())
+
+    async def both() -> list[Any]:
+        with tenant_scope(ORG_A):
+            return list(
+                await asyncio.gather(world.sink.send(CALLER, grant, args), world.sink.send(CALLER, grant, args))
+            )
+
+    results = asyncio.run(both())
+    assert sorted(r.replayed for r in results) == [False, True]
+    assert len({r.notification_id for r in results}) == 1
+    assert world.transport.sent == 1
+    assert [event for event, _ in world.events.published] == ["notification.sent"]
+
+
+def test_a_failure_after_resolution_is_reported_once_and_a_retry_is_refused_send_failed(
+    world: World, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    async def broken(*_: Any, **__: Any) -> Any:
+        raise TransportRefusedError("the transport is down")
+
+    grant = world.grant()
+    monkeypatch.setattr(world.transport, "send_message", broken)
+    with pytest.raises(TransportRefusedError):
+        world.send(grant, world.telegram())
+    monkeypatch.undo()
+    with pytest.raises(SinkRefusedError) as retried:
+        world.send(grant, world.telegram())
+    assert retried.value.reason == "send_failed"
+    assert [(event, payload["reason"]) for event, payload in world.events.published] == [
+        ("task.sink_rejected", "send_failed")
+    ]
+    assert world.db.raw("mock_outbox") == []
+    assert raw_hits(world) == []
+
+
+def test_a_grant_for_another_run_is_refused_and_recorded_like_any_refusal(world: World) -> None:
+    with pytest.raises(SinkRefusedError) as refused:
+        world.send(world.grant(run_id="run_acme_other"), world.telegram())
+    assert refused.value.reason == "grant_rejected:wrong_run"
+    assert world.transport.sent == 0
+    assert world.db.raw("pii_grant_jti") == []  # refused before the vault is touched
+    records = {(r.action, r.reason) for r in world.records(ORG_A)}
+    assert records == {("pii.grant.resolve", "wrong_run"), ("guardrail.sink.grant", "wrong_run")}
+    assert [(e, p["reason"]) for e, p in world.events.published] == [("task.sink_rejected", "wrong_run")]
+
+
+def test_another_orgs_grant_writes_none_of_its_run_or_task_into_the_callers_org(world: World) -> None:
+    caller_b = Caller(org_id=ORG_B, agent="templates_agent", run_id="run_acme_001")
+    with pytest.raises(SinkRefusedError):
+        world.send(world.grant(task="acme_secret_task"), world.telegram(), caller=caller_b)
+    [(_, payload)] = world.events.published
+    assert payload["task_id"] is None
+    assert all("acme_secret_task" not in r.target for r in world.records(ORG_B))

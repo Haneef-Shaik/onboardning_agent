@@ -33,6 +33,7 @@ from ..telegram import TelegramMockTransport
 from .events import BusEvents
 from .in_app import ensure_in_app_indexes, in_app_handler
 from .outbox import TelegramMockChannel, ensure_outbox_indexes
+from .sends import ensure_send_indexes
 from .server import SERVER_NAME, build_notify_server
 from .settings import NotifySettings, load_notify_settings
 from .sink import NotifySink
@@ -73,6 +74,7 @@ async def ensure_indexes(service: NotifyService) -> None:
     await ensure_grant_indexes(service.store)
     await ensure_outbox_indexes(service.store)
     await ensure_in_app_indexes(service.store)
+    await ensure_send_indexes(service.store)
     await service.bus.ensure_indexes()
     await AuditLog(service.store).ensure_indexes()
 

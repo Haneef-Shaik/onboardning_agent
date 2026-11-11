@@ -91,7 +91,7 @@ def test_box3_the_webhook_rejects_a_wrong_secret_token(
     assert decisions.published == []
 
 
-def test_box3_a_wrong_secret_is_refused_before_the_body_is_read(client: TestClient) -> None:
+def test_box3_a_wrong_secret_is_refused_before_the_body_is_validated(client: TestClient) -> None:
     assert post(client, {"not": "an update"}, "wrong-secret-but-long-enough-0123456789abcdef").status_code == 401
 
 
@@ -110,7 +110,6 @@ def test_box3_the_webhook_accepts_telegrams_documented_callback_query_and_emits_
         "decision": "approve",
         "channel": "telegram",
         "outbox_id": notify_db.raw("mock_outbox")[0]["_id"],
-        "telegram_user_id": 731957001,
         "callback_query_id": "3143857237649841312",
     }
 
@@ -229,6 +228,14 @@ def test_a_manager_sees_only_messages_addressed_to_them(client: TestClient, noti
     seed_message(notify_db, A, audience=None)
     data = outbox(client, "u_acme_mgr_ravi", Role.MANAGER).json()["data"]
     assert [m["buttons"][0]["callback_data"] for m in data] == [mine["approve"]]
+
+
+def test_an_unreadable_outbox_document_is_skipped_not_a_500(client: TestClient, notify_db: MemoryDatabase) -> None:
+    seed_message(notify_db, A)
+    notify_db["mock_outbox"].documents.append({"_id": "eval_shape", "org_id": A, "channel": "telegram", "body": "x"})
+    response = outbox(client, "u_acme_hr1", Role.HR)
+    assert response.status_code == 200
+    assert [m["id"] for m in response.json()["data"]] == [notify_db.raw("mock_outbox")[0]["_id"]]
 
 
 def test_the_outbox_pages(client: TestClient, notify_db: MemoryDatabase) -> None:

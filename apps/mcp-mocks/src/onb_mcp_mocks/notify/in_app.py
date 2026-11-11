@@ -103,7 +103,9 @@ class InAppChannel:
             await self._store.tenant(NOTIFICATIONS_COLLECTION).insert_one(document)
         except DuplicateKeyError:
             existing = await self._store.tenant(NOTIFICATIONS_COLLECTION).find_one({"dedupe_key": dedupe_key})
-            return (str(existing["_id"]) if existing else ""), True
+            if existing is None:  # the duplicate was removed in between: let the bus retry the job
+                raise
+            return str(existing["_id"]), True
         return str(document["_id"]), False
 
 

@@ -9,9 +9,10 @@ nothing and passes no stored field through unchecked.
 `X-Telegram-Bot-Api-Secret-Token` (compared in constant time), then an `Update` whose
 `callback_query.data` is one of our button ids. The button id's org comes from the global
 `telegram_callbacks` directory (ADR 0013), never from the request; the decision comes from the stored
-button, never from the request. A press publishes `decision.received` on the EVT-1 bus, keyed by
-Telegram's `callback_query.id`, so Telegram's retries of one press publish once. Every accepted update
-gets the same answer, so a caller learns nothing about which ids exist.
+button, never from the request. A press publishes `decision.received` on the EVT-1 bus (ids and codes
+only, not the presser's Telegram id, a personal identifier), keyed by Telegram's `callback_query.id`,
+so Telegram's retries of one press publish once. Every accepted update gets the same answer, so a
+caller learns nothing about which ids exist.
 """
 
 from __future__ import annotations
@@ -117,6 +118,16 @@ def _message(doc: Mapping[str, Any]) -> MockOutboxMessage:
     )
 
 
+def _readable(doc: Mapping[str, Any]) -> MockOutboxMessage | None:
+    """The message, or None (logged by id) for a document that is not an outbox copy: one bad record
+    must not take the whole outbox down."""
+    try:
+        return _message(doc)
+    except (KeyError, TypeError, ValueError):
+        _log.warning("mock_outbox: skipped an unreadable document %s", doc.get("_id"))
+        return None
+
+
 class MockChannels:
     def __init__(self, store: DataStore, *, webhook_secret: str, decisions: DecisionPublisher) -> None:
         self._store = store
@@ -136,7 +147,7 @@ class MockChannels:
         query = {"audience_user_id": principal.user_id} if principal.role is Role.MANAGER else {}
         repo = self._store.tenant(OUTBOX_COLLECTION)
         docs = await repo.find(query, sort=[("sent_at", -1), ("_id", -1)], skip=(page - 1) * limit, limit=limit)
-        return OutboxPage(tuple(_message(d) for d in docs), await repo.count(query))
+        return OutboxPage(tuple(m for m in map(_readable, docs) if m is not None), await repo.count(query))
 
     # --- POST /webhooks/telegram ----------------------------------------------------------------------
 
@@ -170,7 +181,6 @@ class MockChannels:
             "decision": Decision(button["decision"]).value,
             "channel": "telegram",
             "outbox_id": str(message["_id"]),
-            "telegram_user_id": query.from_.id,
             "callback_query_id": query.id,
         }
         published = await self._decisions.publish(payload, key=f"telegram:callback:{query.id}")

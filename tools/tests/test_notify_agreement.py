@@ -3,7 +3,8 @@
 Settled: server `notify`, tool `notify_send`, hub name `notify__notify_send`, audit target
 `tool:notify.notify_send`, arguments `onb_contracts.notify.NotifySendArgs`. The REG-1 manifest, the
 hub catalog, the notify server, the eval dataset's checks, the eval scripts and the eval harness's
-stand-in all have to agree, or this fails.
+stand-in all have to agree, or this fails. It lives with the repo tooling because no app may
+import the eval harness (py-evals' boundary test).
 """
 
 from __future__ import annotations
@@ -13,14 +14,14 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from onb_agents.registry import load_manifests
 from onb_contracts.notify import NOTIFY_SEND, NOTIFY_SERVER, NotifySendArgs
 from onb_evals.toolbox import ToolBox
 from onb_mcp_hub.catalog import hub_name, notify_catalog
 from onb_mcp_mocks.notify.server import NotifyArgs
 
-from .agents import MANIFESTS
-
-ROOT = Path(__file__).resolve().parents[3]
+ROOT = Path(__file__).resolve().parents[2]
+MANIFESTS = {m.name: m for m in load_manifests(ROOT / "config" / "agents")}
 DATASET = ROOT / "evals" / "datasets" / "onboarding_agents_v1.jsonl"
 SELFTEST = ROOT / "evals" / "selftest"
 SCRIPTS = (SELFTEST / "scripted_outputs_v1.jsonl", SELFTEST / "negative_controls_v1.jsonl")

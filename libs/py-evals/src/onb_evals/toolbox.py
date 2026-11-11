@@ -41,8 +41,7 @@ WRITABLE: Final = frozenset({"run_tasks"})
 QUERY_OPERATORS: Final = frozenset(
     {"$eq", "$ne", "$gt", "$gte", "$lt", "$lte", "$in", "$nin", "$exists", "$regex", "$and", "$or"}
 )
-# NOTIF-1: the channels and arguments of the real `notify_send` (one contract for server, hub and evals).
-CHANNELS: Final = frozenset(channel.value for channel in Channel)
+# NOTIF-1: `notify_send` takes the real tool's contract (one for server, hub and evals); it fixes the channels.
 MAX_DOCUMENTS: Final = 50
 
 
@@ -176,8 +175,6 @@ class ToolBox:
         return {"ok": True, "matched": outcome.matched, "modified": outcome.modified}, ()
 
     async def _notify(self, args: NotifySendArgs) -> tuple[dict[str, Any], tuple[str, ...]]:
-        if args.channel.value not in CHANNELS:
-            raise ToolDeniedError(f"channel {args.channel.value} is not available")
         if args.channel is Channel.TELEGRAM and not is_token(args.recipient_token):
             raise ToolDeniedError("the recipient must be a vault token")
         await self._store.tenant(OUTBOX_COLLECTION).insert_one(

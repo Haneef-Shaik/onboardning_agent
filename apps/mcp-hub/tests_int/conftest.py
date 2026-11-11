@@ -63,6 +63,7 @@ from onb_mcp_hub.downstream import McpDownstream
 from onb_mcp_hub.gateway import Gateway
 from onb_mcp_hub.server import build_hub
 from onb_mcp_mocks.notify.outbox import TelegramMockChannel, ensure_outbox_indexes
+from onb_mcp_mocks.notify.sends import ensure_send_indexes
 from onb_mcp_mocks.notify.server import build_notify_server
 from onb_mcp_mocks.notify.sink import NotifySink
 from onb_mcp_mocks.server import build_server as build_mocks_server
@@ -229,6 +230,7 @@ def _notify(mongo_uri: str) -> tuple[Notify, NotifySink]:
         seed_keyring = _keyring(master, seeding)
         await ensure_grant_indexes(seeding)
         await ensure_outbox_indexes(seeding)
+        await ensure_send_indexes(seeding)
         tokens = {}
         for org in ORGS:
             with tenant_scope(org):
