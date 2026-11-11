@@ -14,16 +14,31 @@ index key makes one email index differently in each org.
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Mapping
+from dataclasses import dataclass
 from typing import Any, Final
 
 from onb_data import DataStore, TenantRepository
 from pymongo.errors import DuplicateKeyError
 
-__all__ = ["HIRES_COLLECTION", "EmailTakenError", "HireStore"]
+__all__ = ["HIRES_COLLECTION", "EmailTakenError", "HireStore", "StoredPii"]
+
+log = logging.getLogger(__name__)
 
 HIRES_COLLECTION: Final = "new_hires"
 EMAIL_INDEX: Final = "org_email_hash_unique"
+
+
+@dataclass(frozen=True, slots=True)
+class StoredPii:
+    """What a hire keeps of one vault value: its token, vault version, mask and blind index."""
+
+    field: str
+    token: str
+    version: int
+    masked: str
+    index: tuple[str, str] | None  # (index name, blind index)
 
 
 class EmailTakenError(Exception):
@@ -82,6 +97,33 @@ class HireStore:
         except DuplicateKeyError as error:
             raise _taken_or(error) from None
         return bool(outcome.matched == 1)
+
+    async def commit_pii(self, hire_id: str, pii: StoredPii, extra: Mapping[str, Any]) -> bool:
+        """Point the hire's field at a new vault value, only if that value is newer than the one it holds
+        (a hire seeded without versions takes any). False when the hire is gone or holds a newer one."""
+        version_path = f"pii_versions.{pii.field}"
+        changes: dict[str, Any] = {
+            f"pii.{pii.field}": pii.token,
+            f"pii_masked.{pii.field}": pii.masked,
+            version_path: pii.version,
+            **extra,
+        }
+        if pii.index is not None:
+            changes[pii.index[0]] = pii.index[1]
+        newer = {"$or": [{version_path: {"$exists": False}}, {version_path: {"$lt": pii.version}}]}
+        try:
+            outcome = await self._repo().update_one({"_id": hire_id, **newer}, {"$set": changes})
+        except DuplicateKeyError as error:
+            raise _taken_or(error) from None
+        return bool(outcome.matched == 1)
+
+    async def restore_email(self, hire_id: str, email_hash: str | None) -> None:
+        """Put back the hire's previous email index after an update that did not complete (best effort)."""
+        update = {"$unset": {"email_hash": ""}} if email_hash is None else {"$set": {"email_hash": email_hash}}
+        try:
+            await self._repo().update_one({"_id": hire_id}, update)
+        except Exception as error:
+            log.error("email index of hire %s not restored: %s", hire_id, type(error).__name__)
 
 
 def _taken_or(error: DuplicateKeyError) -> Exception:

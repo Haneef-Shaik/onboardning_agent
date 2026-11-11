@@ -5,7 +5,9 @@
   hire is stored with tokens, masks and blind indexes only. Free-text notes are stored redacted.
 - **Read.** Always masked. A MANAGER sees only hires whose `manager_id` is theirs; any other hire, like
   another org's, is 404.
-- **Update** (HR/HR_ADMIN): a new vault version and token; the old one is superseded (FR-P4).
+- **Update** (HR/HR_ADMIN): a new vault version and token; the old one is superseded (FR-P4). The
+  email is reserved and the change audited before the vault is touched, and the hire only ever takes
+  a newer version than it holds (see `update`).
 - **Reveal** (HR/HR_ADMIN; Aadhaar HR_ADMIN only): with a reason, one field. The value leaves only
   after its `pii_access_log` entry and its audit record are written (fail closed).
 
@@ -26,6 +28,7 @@ from onb_contracts import ErrorCode, ErrorDetail
 from onb_contracts.auth import Role
 from onb_contracts.hires import (
     REVEAL_TTL_SECONDS,
+    AadhaarConsentInput,
     HireRecord,
     NewHireRequest,
     PiiAccessRecord,
@@ -42,6 +45,7 @@ from onb_crypto import (
     NoOrgKeysError,
     TokenNotFoundError,
     Vault,
+    VaultConflictError,
     ensure_org_keys_index,
     ensure_vault_indexes,
 )
@@ -55,7 +59,7 @@ from onb_api.errors import AppError
 from onb_api.hires import fields
 from onb_api.hires.access_log import AccessQuery, PiiAccessLog
 from onb_api.hires.records import hire_record
-from onb_api.hires.store import EmailTakenError, HireStore
+from onb_api.hires.store import EmailTakenError, HireStore, StoredPii
 
 __all__ = ["HireService"]
 
@@ -84,8 +88,14 @@ class _Written:
 
     field: PiiField
     token: str
+    version: int
     masked: str
     index: tuple[str, str] | None  # (index name, blind index)
+
+    def as_stored(self) -> StoredPii:
+        return StoredPii(
+            field=self.field.value, token=self.token, version=self.version, masked=self.masked, index=self.index
+        )
 
 
 class HireService:
@@ -140,7 +150,8 @@ class HireService:
         written: list[_Written] = []
         try:
             for field, value in values.items():
-                consent = self._consent(request.aadhaar_consent) if field is PiiField.AADHAAR else None
+                given = request.aadhaar_consent if field is PiiField.AADHAAR else None
+                consent = None if given is None else self._consent(given)
                 written.append(await self._write(org_id, hire_id, field, value, principal.user_id, consent))
             document = self._document(principal, hire_id, request, written)
             await self.store.insert(document)
@@ -193,6 +204,7 @@ class HireService:
             "notes": redact(request.notes),
             "pii": {w.field.value: w.token for w in written},
             "pii_masked": {w.field.value: w.masked for w in written},
+            "pii_versions": {w.field.value: w.version for w in written},
             "id_proof": {
                 "aadhaar_consent": request.aadhaar_consent is not None,
                 "alternative_id": None if request.alternative_id is None else request.alternative_id.value,
@@ -208,7 +220,10 @@ class HireService:
         try:
             await self._audit(principal, "hire.create", f"hire:{hire_id}", AuditOutcome.SUCCESS)
         except BaseException:
-            await self.store.delete(hire_id)
+            try:
+                await self.store.delete(hire_id)
+            except Exception as error:
+                log.error("undo of hire %s failed: %s", hire_id, type(error).__name__)
             await self._purge(principal.org_id, hire_id, written)
             raise
 
@@ -236,7 +251,31 @@ class HireService:
     async def update(
         self, principal: Principal, hire_id: str, field: PiiField, request: PiiUpdateRequest
     ) -> HireRecord:
+        """The vault supersedes a field's old value as soon as a new one is put, so nothing reaches the
+        vault until the hire can take the new token: validated, visible, email reserved on the hire,
+        audited (AUD-1: a change that cannot be audited is not made). The hire then takes the token only
+        if it is newer than the one it holds, so a slower, older update never replaces a newer one."""
         value = request.value.strip()
+        consent = self._update_consent(field, value, request)
+        document = await self._visible(principal, hire_id)
+        org_id, target = principal.org_id, f"hire:{hire_id}/{field.value}"
+        await self._org_keys(org_id)
+        previous_email = await self._reserve_email(hire_id, field, value, document)
+        try:
+            await self._audit(principal, "pii.update", target, AuditOutcome.SUCCESS)
+            written = await self._write(org_id, hire_id, field, value, principal.user_id, consent)
+        except BaseException:
+            await self.store.restore_email(hire_id, previous_email)
+            raise
+        extra = {"id_proof.aadhaar_consent": True} if field is PiiField.AADHAAR else {}
+        if not await self.store.commit_pii(hire_id, written.as_stored(), extra):
+            await self._audit_failure(principal, target, "a newer value was written concurrently")
+            raise AppError(ErrorCode.CONFLICT, "The value changed meanwhile; reload and retry")
+        log.info("hire pii updated: org=%s hire=%s field=%s token=%s", org_id, hire_id, field.value, written.token)
+        return hire_record(await self._visible(principal, hire_id))
+
+    @classmethod
+    def _update_consent(cls, field: PiiField, value: str, request: PiiUpdateRequest) -> AadhaarConsent | None:
         fields.require_valid(field, value, "body.value")
         if field is PiiField.AADHAAR and request.aadhaar_consent is None:
             raise AppError(ErrorCode.VALIDATION_ERROR, details=(_consent_detail("Aadhaar needs the hire's consent"),))
@@ -244,32 +283,31 @@ class HireService:
             raise AppError(
                 ErrorCode.VALIDATION_ERROR, details=(_consent_detail("Consent is only taken with an Aadhaar"),)
             )
-        await self._visible(principal, hire_id)
-        org_id = principal.org_id
-        await self._org_keys(org_id)
-        if field is PiiField.EMAIL:
-            email_hash = await self._index(org_id, field, value)
-            if await self.store.email_taken(email_hash, other_than=hire_id):
-                raise AppError(ErrorCode.CONFLICT, _EMAIL_TAKEN)
-        consent = self._consent(request.aadhaar_consent) if field is PiiField.AADHAAR else None
-        written = await self._write(org_id, hire_id, field, value, principal.user_id, consent)
-        changes: dict[str, Any] = {f"pii.{field.value}": written.token, f"pii_masked.{field.value}": written.masked}
-        if written.index is not None:
-            changes[written.index[0]] = written.index[1]
-        if field is PiiField.AADHAAR:
-            changes["id_proof.aadhaar_consent"] = True
+        return None if request.aadhaar_consent is None else cls._consent(request.aadhaar_consent)
+
+    async def _reserve_email(self, hire_id: str, field: PiiField, value: str, document: dict[str, Any]) -> str | None:
+        """For an email update, the new blind index is set on the hire first: the unique index settles a
+        race before the vault is touched. Returns the hire's previous email index (to restore on failure)."""
+        previous: str | None = document.get("email_hash")
+        if field is not PiiField.EMAIL:
+            return previous
+        email_hash = await self._index(document["org_id"], field, value)
+        if await self.store.email_taken(email_hash, other_than=hire_id):
+            raise AppError(ErrorCode.CONFLICT, _EMAIL_TAKEN)
         try:
-            found = await self.store.set_fields(hire_id, changes)
+            found = await self.store.set_fields(hire_id, {"email_hash": email_hash})
         except EmailTakenError:
-            # Lost a race for the email: the new vault version is withdrawn; the hire keeps its old token.
-            await self._purge(org_id, hire_id, [written])
             raise AppError(ErrorCode.CONFLICT, _EMAIL_TAKEN) from None
         if not found:
-            await self._purge(org_id, hire_id, [written])
             raise AppError(ErrorCode.NOT_FOUND)
-        await self._audit(principal, "pii.update", f"hire:{hire_id}/{field.value}", AuditOutcome.SUCCESS)
-        log.info("hire pii updated: org=%s hire=%s field=%s token=%s", org_id, hire_id, field.value, written.token)
-        return hire_record(await self._visible(principal, hire_id))
+        return previous
+
+    async def _audit_failure(self, principal: Principal, target: str, reason: str) -> None:
+        """A FAILED record after an audited change did not complete (best effort: logged if it fails)."""
+        try:
+            await self._audit(principal, "pii.update", target, AuditOutcome.FAILED, reason)
+        except Exception as error:
+            log.error("audit of a failed update not written: target=%s error=%s", target, type(error).__name__)
 
     # --- reveal (FR-P2, FR-P5, §7.10 Reveal) -------------------------------------------------------
 
@@ -333,15 +371,15 @@ class HireService:
         index = None
         if index_field is not None:
             index = (index_field.index_name, await self._keyring.blind_index(org_id, index_field, value))
-        token = await self._vault.put(
-            org_id,
-            subject_id=hire_id,
-            field=fields.vault_field(field),
-            value=value,
-            created_by=created_by,
-            consent=consent,
-        )
-        return _Written(field=field, token=token, masked=fields.masked(field, value), index=index)
+        vault_field = fields.vault_field(field)
+        try:
+            token = await self._vault.put(
+                org_id, subject_id=hire_id, field=vault_field, value=value, created_by=created_by, consent=consent
+            )
+        except VaultConflictError:
+            raise AppError(ErrorCode.CONFLICT, "The value was written concurrently; retry") from None
+        version = (await self._vault.verify(token, org_id=org_id, subject_id=hire_id, field=vault_field)).version
+        return _Written(field=field, token=token, version=version, masked=fields.masked(field, value), index=index)
 
     async def _purge(self, org_id: str, hire_id: str, written: list[_Written]) -> None:
         """Withdraw vault values of a write that did not complete (best effort: a failure is logged,
@@ -362,7 +400,7 @@ class HireService:
         )
 
     @staticmethod
-    def _consent(consent: Any) -> AadhaarConsent:
+    def _consent(consent: AadhaarConsentInput) -> AadhaarConsent:
         return AadhaarConsent(purpose=redact(consent.purpose.strip()))
 
     @staticmethod

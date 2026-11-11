@@ -25,6 +25,7 @@ from onb_contracts.hires import (
     DEFAULT_HIRE_LIMIT,
     HIRE_ID_PATTERN,
     MAX_ACCESS_LOG_LIMIT,
+    MAX_ACCESS_LOG_SKIP,
     MAX_HIRE_LIMIT,
     MAX_HIRE_SKIP,
     HireEnvelope,
@@ -68,9 +69,9 @@ def hire_service(request: Request) -> HireService:
 Hires = Annotated[HireService, Depends(hire_service)]
 
 
-def _check_depth(page: int, limit: int) -> None:
-    if (page - 1) * limit > MAX_HIRE_SKIP:
-        raise AppError(ErrorCode.VALIDATION_ERROR, f"Pages reach at most {MAX_HIRE_SKIP} records deep")
+def _check_depth(page: int, limit: int, max_skip: int) -> None:
+    if (page - 1) * limit > max_skip:
+        raise AppError(ErrorCode.VALIDATION_ERROR, f"Pages reach at most {max_skip} records deep")
 
 
 @router.post("/hires", response_model=HireEnvelope, status_code=201, operation_id="createHire")
@@ -85,7 +86,7 @@ async def list_hires(
     page: Page = 1,
     limit: Annotated[int, Query(ge=1, le=MAX_HIRE_LIMIT)] = DEFAULT_HIRE_LIMIT,
 ) -> Envelope[list[HireRecord]]:
-    _check_depth(page, limit)
+    _check_depth(page, limit, MAX_HIRE_SKIP)
     records, total = await hires.list_hires(principal, page=page, limit=limit)
     return respond(records, page=PageMeta(total=total, page=page, limit=limit))
 
@@ -118,9 +119,9 @@ async def list_pii_access_log(
     hire_id: Annotated[str | None, Query(max_length=66, pattern=HIRE_ID_PATTERN)] = None,
     field: PiiField | None = None,
     kind: PiiAccessKind | None = None,
-    page: Page = 1,
+    page: Annotated[int, Query(ge=1, le=MAX_ACCESS_LOG_SKIP + 1)] = 1,
     limit: Annotated[int, Query(ge=1, le=MAX_ACCESS_LOG_LIMIT)] = DEFAULT_ACCESS_LOG_LIMIT,
 ) -> Envelope[list[PiiAccessRecord]]:
-    _check_depth(page, limit)
+    _check_depth(page, limit, MAX_ACCESS_LOG_SKIP)
     records, total = await hires.access_log(AccessQuery(hire_id, field, kind), page=page, limit=limit)
     return respond(records, page=PageMeta(total=total, page=page, limit=limit))

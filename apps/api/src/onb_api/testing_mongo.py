@@ -3,8 +3,8 @@
 Test-only, like `onb_api.testing`. `memory_store()` wraps it in T-1's `DataStore`, so tenant scoping,
 the vault, the keyring's key store and the hire store all run their production code; only the driver
 is replaced. It supports the subset of MongoDB those use: equality on dotted paths, `$exists`, `$in`,
-`$ne`; sort, skip, limit, projection by inclusion; `$set`, `$unset`, `$setOnInsert`; unique indexes,
-partial ones included, refused with `DuplicateKeyError` like the server.
+`$ne`, `$lt`, a top-level `$or`; sort, skip, limit, projection by inclusion; `$set`, `$unset`,
+`$setOnInsert`; unique indexes, partial ones included, refused with `DuplicateKeyError` like the server.
 
 `raw(collection)` returns copies of every stored document, across orgs, for scan tests.
 """
@@ -66,6 +66,9 @@ def _condition_holds(value: Any, condition: Any) -> bool:
             elif op == "$in":
                 if (None if value is _MISSING else value) not in list(operand):
                     return False
+            elif op == "$lt":
+                if value is _MISSING or value is None or not value < operand:
+                    return False
             elif op == "$ne":
                 if (None if value is _MISSING else value) == operand:
                     return False
@@ -77,7 +80,13 @@ def _condition_holds(value: Any, condition: Any) -> bool:
 
 
 def matches(document: Mapping[str, Any], query: Mapping[str, Any]) -> bool:
-    return all(_condition_holds(_get(document, path), condition) for path, condition in query.items())
+    for path, condition in query.items():
+        if path == "$or":
+            if not any(matches(document, branch) for branch in condition):
+                return False
+        elif not _condition_holds(_get(document, path), condition):
+            return False
+    return True
 
 
 def _sort_value(value: Any) -> tuple[int, Any]:

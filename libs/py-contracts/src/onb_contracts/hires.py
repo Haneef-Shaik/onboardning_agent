@@ -35,6 +35,7 @@ MAX_ACCESS_LOG_LIMIT = 200
 DEFAULT_ACCESS_LOG_LIMIT = 50
 # Paging reaches at most this many records deep ((page - 1) * limit).
 MAX_HIRE_SKIP = 10_000
+MAX_ACCESS_LOG_SKIP = 10_000
 # How long the UI shows a revealed value (FR-P2 "expires after a short time").
 REVEAL_TTL_SECONDS = 30
 
