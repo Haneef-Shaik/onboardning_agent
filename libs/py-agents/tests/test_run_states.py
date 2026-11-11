@@ -33,12 +33,7 @@ def test_each_transition_of_fr_r2_is_allowed(current: TaskState, target: TaskSta
     check_transition(current, target)
 
 
-ILLEGAL = [
-    (current, target)
-    for current in TaskState
-    for target in TaskState
-    if (current, target) not in LEGAL
-]
+ILLEGAL = [(current, target) for current in TaskState for target in TaskState if (current, target) not in LEGAL]
 
 
 @pytest.mark.parametrize(("current", "target"), ILLEGAL)
@@ -99,8 +94,14 @@ def test_skipped_dependencies_do_not_block() -> None:
 
 @pytest.mark.parametrize(
     "blocking",
-    [TaskState.PENDING, TaskState.READY, TaskState.RUNNING, TaskState.WAITING_APPROVAL, TaskState.FAILED,
-     TaskState.CANCELLED],
+    [
+        TaskState.PENDING,
+        TaskState.READY,
+        TaskState.RUNNING,
+        TaskState.WAITING_APPROVAL,
+        TaskState.FAILED,
+        TaskState.CANCELLED,
+    ],
 )
 def test_a_dependency_that_is_not_done_or_skipped_blocks(blocking: TaskState) -> None:
     assert not dependencies_met(("a", "b"), {"a": TaskState.DONE, "b": blocking})

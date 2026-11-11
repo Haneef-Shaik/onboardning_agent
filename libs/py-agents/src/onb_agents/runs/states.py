@@ -87,6 +87,8 @@ def _name(state: object) -> str:
 
 
 def _parse[S: StrEnum](kind: type[S], value: object) -> S | None:
+    if not isinstance(value, str):
+        return None
     try:
         return kind(value)
     except ValueError:
