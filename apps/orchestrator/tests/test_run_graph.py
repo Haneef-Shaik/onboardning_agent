@@ -373,3 +373,19 @@ def test_the_stub_executor_records_the_work_it_was_given() -> None:
     run(executor.execute(work))
     assert executor.calls == ["t"]
     assert executor.work == [work]
+
+
+@pytest.mark.parametrize("status", ["in_progress", "blocked", "paused"])
+def test_a_run_in_a_state_this_orchestrator_does_not_drive_is_left_alone(status: str) -> None:
+    """Runs RUN-1 does not own (seeded ones, later goals' states) are never executed or failed by it."""
+    world = _world()
+
+    async def go() -> dict[str, Any]:
+        run_id = await world.start()
+        with tenant_scope(ORG):
+            await world.store.tenant("onboarding_runs").update_by_id(run_id, {"$set": {"status": status}})
+        await world.execute(run_id)
+        return await world.get(run_id)
+
+    assert run(go())["status"] == status
+    assert world.executor.calls == []

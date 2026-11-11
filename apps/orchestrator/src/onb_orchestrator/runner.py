@@ -4,7 +4,8 @@
 the job's tenant context; the handler reads the run in that org only (another org's run, or a missing
 one, is nothing to do), checks its stored DAG against its hash, builds the LangGraph `StateGraph` and
 runs it on the checkpoint thread `org_id:run_id`. Delivery is at least once, so it is idempotent: a
-finished run is left alone, a run with a checkpoint resumes from it, and each task step skips work
+run that is not `started` or `running` (finished, or in a state a later goal owns) is left alone, a
+run with a checkpoint resumes from it, and each task step skips work
 already done. A task that fails marks the run `failed` (retries and blocking are RUN-2's).
 
 `RunExecutor.run_task` is one graph node's work. It moves the task along the state machine, never
@@ -38,7 +39,8 @@ __all__ = ["RunExecutor", "TaskFailedError", "start_run_handler"]
 
 _log = logging.getLogger("onb_orchestrator")
 _MAX_RUN_ID: Final = 128
-_FINISHED_RUN: Final = frozenset({RunState.COMPLETED.value, RunState.FAILED.value})
+# The run states this consumer drives. Any other (finished, or a state a later goal owns) is left alone.
+_DRIVEN: Final = frozenset({RunState.STARTED.value, RunState.RUNNING.value})
 
 
 def _utc_now() -> datetime:
@@ -118,7 +120,7 @@ def start_run_handler(store: DataStore, executor: TaskExecutor, clock: Callable[
         if run is None:
             _log.info("run.started for a run this org does not have; nothing to do", extra={"job_id": job.job_id})
             return
-        if run["status"] in _FINISHED_RUN:
+        if run.get("status") not in _DRIVEN:
             return
         try:
             built = build_run_graph(run, runner)
