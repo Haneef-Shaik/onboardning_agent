@@ -1,8 +1,9 @@
 """DAG-1 box 2: every compiled graph is acyclic, and every dependent of a skipped task stays schedulable.
 
 Hypothesis generates templates with arbitrary `depends_on` edges (cycles and unknown ids included) and
-arbitrary `when` conditions, and hires with arbitrary variables. For every case either the compile is
-refused with the right reason, or:
+arbitrary `when` conditions, and hires with arbitrary variables. A graph with an unknown dependency or a
+cycle (found here independently of the compiler) must be refused with that reason; every other graph
+must compile, and then:
 - the compiled graph is acyclic, checked here independently of the compiler (Kahn's algorithm);
 - `order` lists each task once, after all its dependencies;
 - a simulated scheduler that only ever runs `dag.ready(done)` (FR-R3: ready when every dependency is
@@ -13,9 +14,11 @@ refused with the right reason, or:
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
+from datetime import date
 from typing import Any
 
-from hypothesis import HealthCheck, given, settings
+import pytest
+from hypothesis import HealthCheck, event, given, settings
 from hypothesis import strategies as st
 from onb_agents.dag import CompiledDag, CompileError, CompileReason, compile_dag
 from onb_contracts.templates import Template
@@ -62,12 +65,13 @@ def _has_cycle(edges: Mapping[str, Sequence[str]]) -> bool:
 def templates(draw: st.DrawFn) -> dict[str, Any]:
     size = draw(st.integers(min_value=1, max_value=12))
     ids = [f"t{index}" for index in range(size)]
-    allow_cycles = draw(st.booleans())
+    allow_cycles = draw(st.integers(0, 3)) == 0
+    ghost_at = draw(st.integers(0, 10 * size))  # an unknown dependency in about one template in ten
     tasks = []
     for index, task_id in enumerate(ids):
         pool = ids if allow_cycles else ids[:index]
         depends_on = draw(st.lists(st.sampled_from(pool), unique=True, max_size=4)) if pool else []
-        if draw(st.integers(0, 30)) == 0:
+        if index == ghost_at:
             depends_on = [*depends_on, "ghost"]
         task: dict[str, Any] = {
             "id": task_id,
@@ -90,7 +94,7 @@ hires = st.fixed_dictionaries(
         "role": st.sampled_from(ROLES),
         "remote": st.booleans(),
         "level": st.integers(0, 5),
-        "start_date": st.dates().map(lambda d: d.isoformat()).filter(lambda s: s >= "1000-01-01"),
+        "start_date": st.dates(min_value=date(1000, 1, 1)).map(date.isoformat),
     }
 )
 
@@ -118,15 +122,15 @@ def test_every_compiled_graph_is_acyclic_and_skipped_tasks_never_block(
     template = Template.model_validate(data)
     edges = {task.id: task.depends_on for task in template.tasks}
     ids = set(edges)
-    try:
-        dag = compile_dag(template, variables)
-    except CompileError as error:
-        if any(d not in ids for deps in edges.values() for d in deps):
-            assert error.reason is CompileReason.UNKNOWN_DEPENDENCY
-        else:
-            assert error.reason is CompileReason.CYCLE
-            assert _has_cycle(edges)
+    unknown = any(d not in ids for deps in edges.values() for d in deps)
+    if unknown or _has_cycle(edges):
+        with pytest.raises(CompileError) as caught:
+            compile_dag(template, variables)
+        assert caught.value.reason is (CompileReason.UNKNOWN_DEPENDENCY if unknown else CompileReason.CYCLE)
+        event("refused: unknown dependency" if unknown else "refused: cycle")
         return
+
+    dag = compile_dag(template, variables)  # every acyclic graph with valid variables compiles
 
     compiled = {task.id: task.depends_on for task in dag.tasks}
     assert compiled == edges
@@ -144,7 +148,10 @@ def test_every_compiled_graph_is_acyclic_and_skipped_tasks_never_block(
         assert (task.skip_reason is not None) == (task.id in skipped)
 
     for task_id in pending:
+        if any(d in skipped for d in compiled[task_id]):
+            event("compiled: a pending task depends on a skipped task")
         if compiled[task_id] and all(d in skipped for d in compiled[task_id]):
+            event("compiled: every dependency of a pending task is skipped")
             assert task_id in dag.ready(done=set())
 
     ran = _run_to_completion(dag)

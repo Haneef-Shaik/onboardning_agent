@@ -8,6 +8,9 @@ The template is the seed template (`templates/engineer-india.yaml`) published as
 from __future__ import annotations
 
 import copy
+import os
+import subprocess
+import sys
 from datetime import date, datetime
 from pathlib import Path
 from typing import Any
@@ -58,7 +61,8 @@ def test_sales_variables_mark_bitbucket_access_skipped_with_a_reason(template: T
     task = dag.task("bitbucket_access")
     assert task.status == "skipped"
     assert task.skip_reason is not None
-    assert "when" in task.skip_reason and "role == 'engineer'" in task.skip_reason
+    assert "when" in task.skip_reason
+    assert "role == 'engineer'" in task.skip_reason
     assert "sales" not in task.skip_reason  # the reason names the condition, not the hire's values
     assert "bitbucket_access" not in dag.ready(done={"collect_docs", "manager_approval"})
 
@@ -137,7 +141,8 @@ def test_changing_compiled_inputs_does_not_change_the_template(template: Templat
     dag = compile_dag(template, hire())
     dag.task("welcome_message").task.inputs["channel"] = "sms"
     original = template.task("welcome_message")
-    assert original is not None and original.inputs["channel"] == "telegram"
+    assert original is not None
+    assert original.inputs["channel"] == "telegram"
 
 
 def test_compiling_does_not_change_its_inputs(template: Template) -> None:
@@ -158,7 +163,8 @@ def test_the_dag_document_is_json_with_every_task(template: Template) -> None:
     assert document["template_key"] == "engineer-india"
     assert document["hash"].startswith("sha256:")
     skipped = next(task for task in document["tasks"] if task["id"] == "bitbucket_access")
-    assert skipped["status"] == "skipped" and skipped["skip_reason"]
+    assert skipped["status"] == "skipped"
+    assert skipped["skip_reason"]
     collect = next(task for task in document["tasks"] if task["id"] == "collect_docs")
     assert collect["due"] == "2026-11-24"
 
@@ -171,7 +177,8 @@ def test_compiling_twice_gives_the_same_hash(template: Template) -> None:
     second = compile_dag(Template.model_validate(seed_data()), dict(reversed(list(hire().items()))))
     assert first.hash == second.hash
     assert first == second
-    assert first.hash.startswith("sha256:") and len(first.hash) == len("sha256:") + 64
+    assert first.hash.startswith("sha256:")
+    assert len(first.hash) == len("sha256:") + 64
 
 
 def test_the_hash_ignores_variables_the_template_does_not_declare(template: Template) -> None:
@@ -192,10 +199,38 @@ def test_a_different_version_gives_a_different_hash() -> None:
     assert first.hash != second.hash
 
 
+SEED_ENGINEER_HASH = "sha256:d814ca2bb552ca60a583bd1f50b196a9456a4f2ce2f2621a86b1407b55f2351e"
+
+
 def test_the_hash_is_stable_across_runs(template: Template) -> None:
-    """A pinned value: the hash may only change when the compiled shape is changed on purpose."""
+    """A pinned value: the hash may only change when the seed template or the compiled shape is changed
+    on purpose. It does not depend on the process (hash seed, dict order)."""
     dag = compile_dag(template, hire())
     assert dag.hash == CompiledDag.hash_of(dag.document(include_hash=False))
+    assert dag.hash == SEED_ENGINEER_HASH
+
+
+def test_the_hash_is_the_same_in_another_process(template: Template) -> None:
+    script = (
+        "import yaml,sys\n"
+        "from onb_contracts.templates import Template\n"
+        "from onb_agents.dag import compile_dag\n"
+        "d=yaml.safe_load(open(sys.argv[1])); d.update(version=1, status='published')\n"
+        "v={'manager_id':'u_acme_mgr_ravi','start_date':'2026-12-01','location':'Bangalore','role':'engineer'}\n"
+        "print(compile_dag(Template.model_validate(d), v).hash)\n"
+    )
+    env = {**os.environ, "PYTHONHASHSEED": "12345"}
+    result = subprocess.run([sys.executable, "-c", script, str(SEED_TEMPLATE)], capture_output=True, text=True, env=env)
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.strip() == compile_dag(template, hire()).hash
+
+
+def test_inputs_json_cannot_carry_fail_the_compile() -> None:
+    data = seed_data()
+    data["tasks"][0]["inputs"] = {"weight": float("nan")}
+    with pytest.raises(CompileError) as caught:
+        compile_dag(Template.model_validate(data), hire())
+    assert caught.value.reason is CompileReason.BAD_INPUTS
 
 
 # --- box 4: `sla: start_date - 7d` resolves to the right date ----------------------------------------
@@ -237,7 +272,8 @@ def test_an_hour_offset_resolves_from_midnight_utc() -> None:
 
 def test_sla_hours_are_kept_for_the_runtime(template: Template) -> None:
     task = compile_dag(template, hire()).task("manager_approval")
-    assert task.due is None and task.task.sla_hours == 48
+    assert task.due is None
+    assert task.task.sla_hours == 48
 
 
 def test_a_task_without_an_sla_has_no_due_date(template: Template) -> None:
@@ -283,7 +319,7 @@ def test_a_variable_nothing_reads_may_be_missing(template: Template) -> None:
         ("start_date", "2026-02-30"),
         ("start_date", "2026-12-01T10:00:00"),
         ("start_date", datetime(2026, 12, 1, 10, 0)),  # a datetime is not a date
-        ("start_date", "２０２６-12-01"),  # non-ASCII digits
+        ("start_date", "\uff12\uff10\uff12\uff16-12-01"),  # full-width (non-ASCII) digits
         ("location", 7),
         ("manager_id", None),
     ],

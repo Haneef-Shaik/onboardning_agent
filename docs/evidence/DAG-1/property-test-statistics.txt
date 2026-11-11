@@ -1,0 +1,36 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.12.13, pytest-9.2.0, pluggy-1.7.0 -- /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-dag-1/.venv/bin/python
+hypothesis profile 'default'
+rootdir: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-dag-1
+configfile: pyproject.toml
+plugins: hypothesis-6.170.15, langsmith-0.14.17, cov-7.1.0, anyio-4.16.0
+collecting ... collected 2 items
+
+libs/py-agents/tests/test_dag_properties.py::test_every_compiled_graph_is_acyclic_and_skipped_tasks_never_block PASSED [ 50%]
+libs/py-agents/tests/test_dag_properties.py::test_compiling_any_template_twice_gives_the_same_hash PASSED [100%]
+============================ Hypothesis Statistics =============================
+
+libs/py-agents/tests/test_dag_properties.py::test_every_compiled_graph_is_acyclic_and_skipped_tasks_never_block:
+
+  - during generate phase (0.51 seconds):
+    - Typical runtimes: ~ 0-1 ms, of which ~ 0-1 ms in data generation
+    - 400 passing, 0 failing, and 19 invalid test cases
+    - Events:
+      * 29.83%, compiled: a pending task depends on a skipped task
+      * 22.20%, refused: unknown dependency
+      * 19.09%, refused: cycle
+      * 14.56%, compiled: every dependency of a pending task is skipped
+
+  - Stopped because settings.max_examples=400
+
+
+libs/py-agents/tests/test_dag_properties.py::test_compiling_any_template_twice_gives_the_same_hash:
+
+  - during generate phase (0.13 seconds):
+    - Typical runtimes: ~ 0-2 ms, of which ~ 0-1 ms in data generation
+    - 100 passing, 0 failing, and 4 invalid test cases
+
+  - Stopped because settings.max_examples=100
+
+
+============================== 2 passed in 0.93s ===============================
