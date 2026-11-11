@@ -73,6 +73,29 @@ EXTRA_DOCUMENTS: dict[str, tuple[dict[str, Any], ...]] = {
 }
 
 
+# HIRE-1: one hire per org created through the hire service, so its values sit in the real vault and
+# reveal, update and the access log have something to work on. Synthetic values (PII-3 ranges).
+XT_VAULT_HIRES: dict[str, dict[str, Any]] = {
+    ORG_A: {
+        "name": "Meera Iyer",
+        "manager_id": "u_acme_mgr_ravi",
+        "pii": {"email": "meera.iyer.xt@example.com", "mobile": "+91 90000 00061", "pan": "AXTPI6101K"},
+    },
+    ORG_B: {
+        "name": "Oskar Lindqvist",
+        "manager_id": "u_globex_mgr1",
+        "pii": {"email": "oskar.lindqvist.xt@example.org", "mobile": "+91 90000 00062", "pan": "BXTPL6202L"},
+    },
+}
+
+
+def xt_vault_strings(org_id: str) -> list[str]:
+    """The org's vault hire values in every layout the API could show: as typed and canonical."""
+    hire = XT_VAULT_HIRES[org_id]
+    mobile = hire["pii"]["mobile"].replace(" ", "")
+    return [hire["name"], *hire["pii"].values(), hire["pii"]["email"].lower(), mobile, mobile.removeprefix("+91")]
+
+
 def tenant_documents(org_id: str) -> dict[str, list[dict[str, Any]]]:
     """The seed's tenant documents of one org (plus `EXTRA_DOCUMENTS`), by collection, as stored."""
     data = seed()
@@ -104,7 +127,7 @@ def _org_strings(org_id: str) -> set[str]:
     # The org's name and its raw sensitive values: a reveal or document route must never show B's.
     org = [o for o in data["orgs"] if o["_id"] == org_id]
     vault = [v for v in data["pii_vault_plain"] if v["org_id"] == org_id]
-    sources = [org_id, org, users, vault, tenant_documents(org_id), audit_rows(org_id)]
+    sources = [org_id, org, users, vault, tenant_documents(org_id), audit_rows(org_id), xt_vault_strings(org_id)]
     return {s for s in _strings(sources) if len(s) >= _MIN_MARKER}
 
 

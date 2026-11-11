@@ -15,6 +15,7 @@ must show that a value taken in org B does not collide (no unique-index inferenc
 
 from __future__ import annotations
 
+import itertools
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
 from typing import Any, Protocol
@@ -26,7 +27,18 @@ from onb_api.testing import TEST_SETTINGS, bearer, token_for
 from onb_contracts.auth import Role
 
 from .conftest import World
-from .world import ORG_A, ORG_B, Seen, assert_indistinguishable, assert_no_leak, audit_rows, email_of, without_volatile
+from .world import (
+    ORG_A,
+    ORG_B,
+    XT_VAULT_HIRES,
+    Seen,
+    assert_indistinguishable,
+    assert_no_leak,
+    audit_rows,
+    email_of,
+    tenant_documents,
+    without_volatile,
+)
 
 Request = dict[str, Any]  # keyword arguments for `TestClient.request`
 
@@ -196,12 +208,165 @@ def _agent_check(client: TestClient, _: World) -> None:
     admin = bearer(_token(Role.HR_ADMIN))
     foreign = client.get("/agents/globex_doc_agent", headers=admin)  # an org-B actor name (AUDIT_ROWS)
     missing = client.get("/agents/nobody_xt_agent", headers=admin)
-    assert foreign.status_code == 404, foreign.text
+    assert foreign.status_code == 404, foreign.json()
     assert_indistinguishable(seen(foreign), seen(missing), "GET /agents/{name} for an org-B name")
+
+
+# --- HIRE-1: hires, PII update and reveal, the PII access log -------------------------------------------
+# Each org has one vault-backed hire (`xt.vault_hires()[org]`, values in `world.XT_VAULT_HIRES`); org A's is
+# Ravi's report. Org B's hire, its values, and its access-log entry must never reach an org-A actor;
+# its id answers exactly like an id nobody has (404 for every role that may ask).
+
+MISSING_HIRE = "h_nobody_xt"
+_new_emails = itertools.count(1)
+
+
+def _new_hire_body() -> dict[str, Any]:
+    # A fresh email per call (the route refuses a second hire with one email); the mask stays the same.
+    return {
+        "name": "Ishaan Rao",
+        "role": "analyst",
+        "location": "Kochi",
+        "start_date": "2026-12-21",
+        "manager_id": "u_acme_mgr_ravi",
+        "pii": {"email": f"xnew{next(_new_emails):05d}@example.com", "mobile": "+91 90000 00064"},
+    }
+
+
+def _create_hire_request(xt: World, role: Role) -> Request:
+    xt.vault_hires()  # org B's vault hire exists, so a leak of it would show
+    return {"method": "POST", "url": "/hires", "headers": bearer(_token(role)), "json": _new_hire_body()}
+
+
+def _create_hire_check(client: TestClient, xt: World) -> None:
+    xt.vault_hires()  # seed both orgs' vault hires before anything is read
+    hr = bearer(_token(Role.HR))
+    # An email org B already uses is free in org A: no unique-index inference across orgs.
+    taken_in_b = {**_new_hire_body(), "pii": {"email": XT_VAULT_HIRES[ORG_B]["pii"]["email"]}}
+    created = client.post("/hires", json=taken_in_b, headers=hr)
+    assert created.status_code == 201, created.text
+    new_id = created.json()["data"]["id"]
+    # Org B's manager answers exactly like a manager nobody has.
+    foreign = client.post("/hires", json={**_new_hire_body(), "manager_id": "u_globex_mgr1"}, headers=hr)
+    missing = client.post("/hires", json={**_new_hire_body(), "manager_id": "u_nobody_xt"}, headers=hr)
+    assert foreign.status_code == 422
+    assert_indistinguishable(seen(foreign), seen(missing), "POST /hires with org B's manager")
+    # The new hire is org A's: org B's admin cannot see it.
+    assert client.get(f"/hires/{new_id}", headers=bearer(token_for(*B_ADMIN))).status_code == 404
+    b_ids = {h["id"] for h in client.get("/hires", headers=bearer(token_for(*B_ADMIN))).json()["data"]}
+    assert new_id not in b_ids
+    assert xt.vault_hires()[ORG_B] in b_ids
+
+
+def _list_hires_request(xt: World, role: Role) -> Request:
+    xt.vault_hires()
+    return {"method": "GET", "url": "/hires", "headers": bearer(_token(role)), "params": {"limit": 200}}
+
+
+def _list_hires_check(client: TestClient, xt: World) -> None:
+    xt.vault_hires()  # seed both orgs' vault hires before anything is read
+    a_ids = {
+        h["id"] for h in client.get("/hires", headers=bearer(_token(Role.HR)), params={"limit": 200}).json()["data"]
+    }
+    seeded_a = {doc["_id"] for doc in tenant_documents(ORG_A)["new_hires"]}
+    assert a_ids == seeded_a | {xt.vault_hires()[ORG_A]}
+    mine = client.get("/hires", headers=bearer(_token(Role.MANAGER))).json()["data"]
+    assert {h["manager_id"] for h in mine} == {ACTORS[Role.MANAGER]}
+    b_ids = {h["id"] for h in client.get("/hires", headers=bearer(token_for(*B_ADMIN))).json()["data"]}
+    assert b_ids == {doc["_id"] for doc in tenant_documents(ORG_B)["new_hires"]} | {xt.vault_hires()[ORG_B]}
+
+
+def _get_hire_request(xt: World, role: Role) -> Request:
+    return {"method": "GET", "url": f"/hires/{xt.vault_hires()[ORG_A]}", "headers": bearer(_token(role))}
+
+
+def _get_hire_check(client: TestClient, xt: World) -> None:
+    xt.vault_hires()  # seed both orgs' vault hires before anything is read
+    for role in ACTORS:
+        headers = bearer(_token(role))
+        missing = client.get(f"/hires/{MISSING_HIRE}", headers=headers)
+        for foreign_id in (xt.vault_hires()[ORG_B], "h_globex_001"):
+            foreign = client.get(f"/hires/{foreign_id}", headers=headers)
+            assert foreign.status_code == 404, foreign.json()
+            assert_indistinguishable(seen(foreign), seen(missing), f"GET /hires/{{id}} of org B as {role.value}")
+
+
+def _update_pii_request(xt: World, role: Role) -> Request:
+    return {
+        "method": "PUT",
+        "url": f"/hires/{xt.vault_hires()[ORG_A]}/pii/mobile",
+        "headers": bearer(_token(role)),
+        "json": {"value": "+91 90000 00063"},
+    }
+
+
+def _update_pii_check(client: TestClient, xt: World) -> None:
+    xt.vault_hires()  # seed both orgs' vault hires before anything is read
+    for role in (Role.HR_ADMIN, Role.HR):
+        headers = bearer(_token(role))
+        missing = client.put(f"/hires/{MISSING_HIRE}/pii/mobile", json={"value": "+91 90000 00063"}, headers=headers)
+        foreign = client.put(
+            f"/hires/{xt.vault_hires()[ORG_B]}/pii/mobile", json={"value": "+91 90000 00063"}, headers=headers
+        )
+        assert foreign.status_code == 404, foreign.json()
+        assert_indistinguishable(seen(foreign), seen(missing), f"PUT /hires/{{id}}/pii of org B as {role.value}")
+    # Org B's value is untouched: its own admin still reveals the original.
+    b_value = _reveal(client, xt.vault_hires()[ORG_B], "mobile", bearer(token_for(*B_ADMIN))).json()["data"]["value"]
+    assert b_value == XT_VAULT_HIRES[ORG_B]["pii"]["mobile"]
+
+
+def _reveal(client: TestClient, hire_id: str, field: str, headers: dict[str, str]) -> Response:
+    return client.post(f"/hires/{hire_id}/pii/{field}/reveal", json={"reason": "xt check"}, headers=headers)
+
+
+def _reveal_request(xt: World, role: Role) -> Request:
+    return {
+        "method": "POST",
+        "url": f"/hires/{xt.vault_hires()[ORG_A]}/pii/email/reveal",
+        "headers": bearer(_token(role)),
+        "json": {"reason": "xt check"},
+    }
+
+
+def _reveal_check(client: TestClient, xt: World) -> None:
+    xt.vault_hires()  # seed both orgs' vault hires before anything is read
+    for role in (Role.HR_ADMIN, Role.HR):
+        headers = bearer(_token(role))
+        own = _reveal(client, xt.vault_hires()[ORG_A], "email", headers)
+        assert own.json()["data"]["value"] == XT_VAULT_HIRES[ORG_A]["pii"]["email"]
+        missing = _reveal(client, MISSING_HIRE, "email", headers)
+        for foreign_id in (xt.vault_hires()[ORG_B], "h_globex_001"):
+            foreign = _reveal(client, foreign_id, "email", headers)
+            assert foreign.status_code == 404, foreign.json()
+            assert_indistinguishable(seen(foreign), seen(missing), f"reveal of org B's hire as {role.value}")
+
+
+def _access_log_request(xt: World, role: Role) -> Request:
+    xt.vault_hires()  # org B's access log holds its seeded reveal
+    return {"method": "GET", "url": "/pii-access-log", "headers": bearer(_token(role)), "params": {"limit": 200}}
+
+
+def _access_log_check(client: TestClient, xt: World) -> None:
+    xt.vault_hires()  # seed both orgs' vault hires before anything is read
+    admin = bearer(_token(Role.HR_ADMIN))
+    _reveal(client, xt.vault_hires()[ORG_A], "pan", admin)
+    entries = client.get("/pii-access-log", headers=admin).json()["data"]
+    assert [(e["hire_id"], e["field"]) for e in entries] == [(xt.vault_hires()[ORG_A], "pan")]
+    # Filtering on org B's hire finds exactly what a hire nobody has finds.
+    foreign = client.get("/pii-access-log", params={"hire_id": xt.vault_hires()[ORG_B]}, headers=admin)
+    missing = client.get("/pii-access-log", params={"hire_id": MISSING_HIRE}, headers=admin)
+    assert foreign.json()["data"] == []
+    assert_indistinguishable(seen(foreign), seen(missing), "GET /pii-access-log?hire_id=<org B's>")
+    # And org B's admin, symmetrically, sees only org B's seeded reveal.
+    b_entries = client.get("/pii-access-log", headers=bearer(token_for(*B_ADMIN))).json()["data"]
+    assert [(e["hire_id"], e["field"], e["reason"]) for e in b_entries] == [
+        (xt.vault_hires()[ORG_B], "email", "xt seed")
+    ]
 
 
 ALL_200: Mapping[Role, int] = dict.fromkeys(ACTORS, 200)
 ADMIN_ONLY: Mapping[Role, int] = {Role.HR_ADMIN: 200, Role.HR: 403, Role.MANAGER: 403}
+HR_ONLY: Mapping[Role, int] = {Role.HR_ADMIN: 200, Role.HR: 200, Role.MANAGER: 403}
 
 ROUTE_CASES: Mapping[tuple[str, str], RouteCase] = {
     ("GET", "/health"): RouteCase(_health_request, _health_check, ALL_200),
@@ -212,6 +377,19 @@ ROUTE_CASES: Mapping[tuple[str, str], RouteCase] = {
     ("GET", "/audit"): RouteCase(_audit_request, _audit_check, ADMIN_ONLY),
     ("GET", "/agents"): RouteCase(_agents_request, _agents_check, ADMIN_ONLY),
     ("GET", "/agents/{name}"): RouteCase(_agent_request, _agent_check, ADMIN_ONLY),
+    ("POST", "/hires"): RouteCase(
+        _create_hire_request,
+        _create_hire_check,
+        {Role.HR_ADMIN: 201, Role.HR: 201, Role.MANAGER: 403},
+        volatile=frozenset({"id", "created_at"}),
+    ),
+    ("GET", "/hires"): RouteCase(_list_hires_request, _list_hires_check, ALL_200),
+    ("GET", "/hires/{hire_id}"): RouteCase(_get_hire_request, _get_hire_check, ALL_200),
+    ("PUT", "/hires/{hire_id}/pii/{field}"): RouteCase(_update_pii_request, _update_pii_check, HR_ONLY),
+    ("POST", "/hires/{hire_id}/pii/{field}/reveal"): RouteCase(
+        _reveal_request, _reveal_check, HR_ONLY, volatile=frozenset({"access_id"})
+    ),
+    ("GET", "/pii-access-log"): RouteCase(_access_log_request, _access_log_check, ADMIN_ONLY),
 }
 
 _ROUTE_IDS = [f"{method} {path}" for method, path in ROUTE_CASES]
@@ -239,13 +417,17 @@ def test_naming_org_b_in_the_request_changes_nothing(
     api: TestClient, xt_world: World, route: tuple[str, str], role: Role
 ) -> None:
     case = ROUTE_CASES[route]
+    # A fresh request each time: a creating route's request differs per call (a new unique email),
+    # every other route's request is the same each time.
     request = case.request(xt_world, role)
     baseline = seen(api.request(**request), volatile=case.volatile)
     assert baseline.status == case.expected[role], baseline
+    request = case.request(xt_world, role)
     params = {**request.get("params", {}), **dict.fromkeys(ORG_PARAMS, ORG_B)}
     headers = {**request.get("headers", {}), **dict.fromkeys(ORG_HEADERS, ORG_B)}
     steered = seen(api.request(**{**request, "params": params, "headers": headers}), volatile=case.volatile)
     assert steered == baseline, f"{route}: an org named in the query or headers changed the answer"
+    request = case.request(xt_world, role)
     if "json" in request:
         body = {**request["json"], **dict.fromkeys(ORG_PARAMS, ORG_B)}
         in_body = api.request(**{**request, "json": body})

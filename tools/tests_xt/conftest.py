@@ -22,7 +22,7 @@ import subprocess
 import threading
 import time
 import uuid
-from collections.abc import Callable, Iterator
+from collections.abc import Callable, Iterator, Mapping
 from contextlib import AbstractContextManager
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
@@ -38,9 +38,13 @@ from onb_agents.registry.mongo import ORGS, MongoRegistryStore
 from onb_api import create_app
 from onb_api.auth.mongo_users import MongoUserStore
 from onb_api.auth.passwords import hash_password
+from onb_api.auth.tokens import Principal
 from onb_api.auth.users import NewUser
+from onb_api.hires.service import HireService
 from onb_api.testing import TEST_SETTINGS, InMemoryAuditLog
 from onb_contracts.auth import Role
+from onb_contracts.hires import NewHireRequest, PiiField
+from onb_crypto import ORG_KEYS_COLLECTION, Keyring, MasterKey, RepositoryOrgKeyStore, SecretKey
 from onb_data import Actor, ActorType, AuditLog, AuditOutcome, DataStore, connect, tenant_scope
 from onb_data.safety_net_pytest import (  # T-2 tenant safety net (PRD §7.9): registers these with pytest
     pytest_configure,
@@ -66,6 +70,15 @@ TUNNEL_LABEL_KEY = "onb.test.xt-mongo-tunnel"
 MCP_CONTEXT_KEY = secrets.token_urlsafe(48)
 PASSWORD = secrets.token_urlsafe(12)
 T0 = datetime(2026, 11, 1, 8, 0, tzinfo=UTC)
+# HIRE-1: the vault's master key for this run (random, never a fixed secret).
+XT_MASTER_KEY = MasterKey(SecretKey.generate())
+# The fields every seeded vault hire shares; `world.XT_VAULT_HIRES` gives the rest.
+XT_HIRE_DEFAULTS: Mapping[str, Any] = {
+    "role": "engineer",
+    "location": "Pune",
+    "start_date": "2026-12-14",
+    "notes": "",
+}
 
 RootClient = MongoClient[dict[str, Any]]
 Unscoped = Callable[[str], AbstractContextManager[None]]
@@ -140,6 +153,22 @@ class World:
     database: str
     root_db: Database[dict[str, Any]] = field(repr=False)
     password: str = field(repr=False)
+    _vault_hires: dict[str, str] = field(default_factory=dict, repr=False)
+
+    def vault_hires(self) -> Mapping[str, str]:
+        """HIRE-1: the id of each org's vault-backed hire (`world.XT_VAULT_HIRES`), by org. Seeded on
+        first use only, so the suites that count `new_hires` against the seed see the seed alone."""
+        if not self._vault_hires:
+
+            async def main() -> dict[str, str]:
+                store = self.store()
+                try:
+                    return await _seed_hires(store)
+                finally:
+                    await store.close()
+
+            self._vault_hires.update(asyncio.run(main()))
+        return self._vault_hires
 
     def store(self) -> DataStore:
         return connect(self.uri, self.database, app_name="xt")
@@ -182,6 +211,25 @@ async def _seed(store: DataStore) -> None:
     await _seed_registry(store)
 
 
+async def _seed_hires(store: DataStore) -> dict[str, str]:
+    """One vault-backed hire per org (`world.XT_VAULT_HIRES`), created by HR through the hire service,
+    and one reveal in org B so its access log holds an entry. Their audit records go to an in-memory
+    log, so the seeded audit totals per org stay exactly `world.AUDIT_ROWS`."""
+    service = HireService.build(store, xt_keyring(store), auditor=InMemoryAuditLog(), users=MongoUserStore(store))
+    await service.ensure_indexes()
+    hr = {world.ORG_A: "u_acme_hr1", world.ORG_B: "u_globex_hr1"}
+    ids: dict[str, str] = {}
+    for org_id, hire in world.XT_VAULT_HIRES.items():
+        principal = Principal(user_id=hr[org_id], org_id=org_id, role=Role.HR)
+        request = NewHireRequest.model_validate({**XT_HIRE_DEFAULTS, **hire})
+        with tenant_scope(org_id):
+            ids[org_id] = (await service.create(principal, request)).id
+    globex = Principal(user_id=hr[world.ORG_B], org_id=world.ORG_B, role=Role.HR)
+    with tenant_scope(world.ORG_B):
+        await service.reveal(globex, ids[world.ORG_B], PiiField.EMAIL, "xt seed")
+    return ids
+
+
 async def _seed_registry(store: DataStore) -> None:
     """The global `orgs` and the agent registry, synced from `config/` as REG-1's command does.
 
@@ -220,7 +268,14 @@ def build_api(store: DataStore) -> FastAPI:
     gets its Mongo-backed value here."""
     audit = AuditLog(store)
     agents = AgentRegistry(MongoRegistryStore(store), audit)
-    return create_app(auth=TEST_SETTINGS, users=MongoUserStore(store), audit=audit, agents=agents)
+    users = MongoUserStore(store)
+    hires = HireService.build(store, xt_keyring(store), auditor=audit, users=users)
+    return create_app(auth=TEST_SETTINGS, users=users, audit=audit, agents=agents, hires=hires)
+
+
+def xt_keyring(store: DataStore) -> Keyring:
+    """The keyring over the scratch database's `org_keys`, under this session's master key."""
+    return Keyring(XT_MASTER_KEY, RepositoryOrgKeyStore(store.tenant(ORG_KEYS_COLLECTION)))
 
 
 @pytest.fixture
