@@ -35,6 +35,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from onb_agents.registry import AgentRegistry, load_catalog, load_manifests
 from onb_agents.registry.mongo import ORGS, MongoRegistryStore
+from onb_agents.runs import run_bus
 from onb_api import create_app
 from onb_api.auth.mongo_users import MongoUserStore
 from onb_api.auth.passwords import hash_password
@@ -44,6 +45,7 @@ from onb_api.documents.service import DocumentService
 from onb_api.evals.store import EvalRunStore
 from onb_api.hires.service import HireService
 from onb_api.notify.service import BusDecisions, MockChannels
+from onb_api.runs import RunService
 from onb_api.templates import MongoTemplateStore, RegistryValidatorSource, TemplateLifecycle
 from onb_api.testing import TEST_SETTINGS, InMemoryAuditLog
 from onb_contracts.auth import Role
@@ -354,6 +356,8 @@ def build_api(store: DataStore) -> FastAPI:
     documents = DocumentService.build(store, keyring, auditor=audit)
     evals = EvalRunStore(store)
     notify = MockChannels(store, webhook_secret=XT_WEBHOOK_SECRET, decisions=BusDecisions(store))
+    bus = run_bus(store)
+    runs = RunService.build(store, bus, auditor=audit, hires=hires, templates=templates, bus_indexes=bus.ensure_indexes)
     return create_app(
         auth=TEST_SETTINGS,
         users=users,
@@ -364,6 +368,7 @@ def build_api(store: DataStore) -> FastAPI:
         documents=documents,
         evals=evals,
         notify=notify,
+        runs=runs,
     )
 
 

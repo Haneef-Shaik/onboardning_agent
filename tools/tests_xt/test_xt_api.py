@@ -44,6 +44,7 @@ from .world import (
     ORG_A,
     ORG_B,
     SHARED_KEY,
+    XT_RUNS,
     XT_VAULT_HIRES,
     Seen,
     assert_indistinguishable,
@@ -540,6 +541,55 @@ def _archive_check(client: TestClient, xt: World, unscoped: Unscoped) -> None:
     assert b_version.json()["data"]["status"] == "published"
 
 
+# --- POST /runs (RUN-1) ---------------------------------------------------------------------------------
+# HR starts a run for one of org A's hires on org A's `engineer-india` v1. Org B's hire, a key only org B
+# has, and a version number only org B has reached all answer exactly like ones nobody has (404); the
+# run, its tasks, its event and its job are org A's; no org-B document changes.
+
+RUN_VOLATILE = frozenset({"id", "created_at"})
+
+
+def _run_body(hire: str = XT_RUNS[ORG_A][1], key: str = SHARED_KEY, version: int = 1) -> dict[str, Any]:
+    return {"hire_id": hire, "template_key": key, "template_version": version}
+
+
+def _start_run_request(_: World, role: Role) -> Request:
+    return {"method": "POST", "url": "/runs", "headers": bearer(_token(role)), "json": _run_body()}
+
+
+def _start_run_check(client: TestClient, xt: World, unscoped: Unscoped) -> None:
+    hr = bearer(_token(Role.HR))
+    started: list[str] = []
+
+    def like_missing(foreign: dict[str, Any], missing: dict[str, Any], what: str) -> None:
+        as_foreign = client.post("/runs", json=foreign, headers=hr)
+        as_missing = client.post("/runs", json=missing, headers=hr)
+        assert as_foreign.status_code == 404, as_foreign.text
+        assert_indistinguishable(seen(as_foreign), seen(as_missing), what)
+
+    def call() -> None:
+        like_missing(_run_body(hire=XT_RUNS[ORG_B][1]), _run_body(hire="h_nobody_xt"), "POST /runs, org B's hire")
+        like_missing(_run_body(key=B_ONLY_KEY), _run_body(key="nobody-xt"), "POST /runs, a key only org B has")
+        like_missing(
+            _run_body(version=B_ENGINEER_VERSIONS), _run_body(version=99), "POST /runs, a version only org B has"
+        )
+        response = client.post("/runs", json=_run_body(), headers=hr)
+        assert response.status_code == 201, response.text
+        started.append(response.json()["data"]["id"])
+
+    _unchanged_for_b(xt, unscoped, call)
+    [run_id] = started
+    with unscoped("root read-back of the run org A started, its tasks, event and job"):
+        db = xt.root_db
+        run = db["onboarding_runs"].find_one({"_id": run_id})
+        task_orgs = {t["org_id"] for t in db["run_tasks"].find({"run_id": run_id})}
+        event_orgs = {e["org_id"] for e in db["events"].find({"run_id": run_id})}
+        job_orgs = {j["org_id"] for j in db["jobs"].find({"run_id": run_id})}
+    assert run is not None
+    assert (run["org_id"], run["thread_id"], run["template_version"]) == (ORG_A, f"{ORG_A}:{run_id}", 1)
+    assert task_orgs == event_orgs == job_orgs == {ORG_A}
+
+
 def _reads_only(check: Callable[[TestClient, World], None]) -> Callable[[TestClient, World, Unscoped], None]:
     """A check that takes no root snapshot."""
 
@@ -880,6 +930,7 @@ ROUTE_CASES: Mapping[tuple[str, str], RouteCase] = {
     ("GET", "/evals/runs/{run_id}"): RouteCase(_eval_run_request, _reads_only(_eval_run_check), ADMIN_ONLY),
     ("GET", "/mock-outbox"): RouteCase(_outbox_request, _reads_only(_outbox_check), ALL_200),
     ("POST", "/webhooks/telegram"): RouteCase(_webhook_request, _reads_only(_webhook_check), ALL_200),
+    ("POST", "/runs"): RouteCase(_start_run_request, _start_run_check, AUTHORS_CREATE, volatile=RUN_VOLATILE),
 }
 
 _ROUTE_IDS = [f"{method} {path}" for method, path in ROUTE_CASES]

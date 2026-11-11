@@ -29,6 +29,7 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.routing import APIRoute, iter_route_contexts
 from mcp.server.fastmcp import FastMCP
+from onb_agents.runs import SUBSCRIPTIONS as RUN_SUBSCRIPTIONS
 from onb_contracts.notify import NOTIFY_SUBSCRIPTIONS
 from onb_crypto import GrantSigningKey, GrantVerifier, MasterKey, SecretKey
 from onb_data import DataStore
@@ -42,12 +43,14 @@ ROOT = Path(__file__).resolve().parents[2]
 
 # --- event consumers --------------------------------------------------------------------------------
 
-# Every subscription map the platform runs, by owner. Empty until the orchestrator (RUN-1) subscribes
-# its first consumer; that goal adds its map here (imported from its module) with a case per consumer.
+# Every subscription map the platform runs, by owner.
 PLATFORM_SUBSCRIPTIONS: Mapping[str, Mapping[str, Sequence[str]]] = {
     # NOTIF-1: the notification consumers (`notify.in_app`), run by mcp-notify; every publisher of their
     # events (the API's webhook, the sink) builds its bus with this same map.
     "notify": NOTIFY_SUBSCRIPTIONS,
+    # RUN-1: the run bus (`onb_agents.runs.run_bus`, used by the API to publish and by the orchestrator
+    # worker to consume) subscribes the orchestrator's `orchestrator.start_run` to `run.started`.
+    "runs": RUN_SUBSCRIPTIONS,
 }
 
 # Production modules that build a `MongoEventBus`, relative to the repo root. Each must feed its
@@ -56,6 +59,7 @@ BUS_MODULES: frozenset[str] = frozenset(
     {
         "apps/api/src/onb_api/notify/service.py",  # NOTIF-1: `decision.received` from the webhook
         "apps/mcp-mocks/src/onb_mcp_mocks/notify/main.py",  # NOTIF-1: the sink's events + `notify.in_app`
+        "libs/py-agents/src/onb_agents/runs/events.py",  # RUN-1: `run_bus`, the API's and the orchestrator's bus
     }
 )
 

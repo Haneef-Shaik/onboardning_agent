@@ -1,10 +1,9 @@
 """Every event consumer: handling an org-A event never reads, changes or reveals org B (PRD §7.9).
 
 `CONSUMER_CASES` has one row per consumer in `surface.PLATFORM_SUBSCRIPTIONS`; `test_xt_coverage.py`
-fails the run when a consumer has no row. The platform subscribes no consumer yet (the orchestrator
-does, from RUN-1 on), so the generic check also runs on `xt.probe`, a consumer of this suite that
-reads and writes through the store like a real one. That keeps the check itself exercised until the
-first real consumer arrives.
+fails the run when a consumer has no row. RUN-1 adds the first real one, `orchestrator.start_run`. The
+generic check also keeps running on `xt.probe`, a consumer of this suite that reads and writes through
+the store like a real one, so the check itself stays exercised whatever the platform subscribes.
 
 The generic check, over the real handler:
 1. One org-A event, one worker run: the handler ran inside org A's tenant context, its `JobContext`
@@ -23,13 +22,16 @@ from dataclasses import dataclass
 from typing import Any
 
 import pytest
+from onb_agents.runs import RUN_STARTED, START_RUN
 from onb_contracts.notify import CHANGE_REQUEST_DECIDED, IN_APP_CONSUMER, NOTIFY_SUBSCRIPTIONS, RUN_BLOCKED
 from onb_data import DataStore, current_tenant, tenant_scope
 from onb_eventbus import Handler, JobContext, MongoEventBus
 from onb_mcp_mocks.notify.in_app import in_app_handler
+from onb_orchestrator.executor import StubExecutor
+from onb_orchestrator.runner import start_run_handler
 
 from .conftest import Unscoped, World
-from .world import ORG_A, ORG_B, seed_users, tenant_documents
+from .world import ORG_A, ORG_B, XT_RUNS, seed_users, tenant_documents
 
 # (tenant context during the handler, the job's org) for each handler call, in order.
 Observed = list[tuple[str, str]]
@@ -45,13 +47,21 @@ class ConsumerCase:
     """The production handler, built over the store."""
 
 
-# One row per platform consumer (RUN-1 adds the orchestrator's).
+def _start_run(store: DataStore) -> Handler:
+    """The orchestrator's real consumer, with the stub executor RUN-1 ships (agents arrive in RUN-3)."""
+    return start_run_handler(store, StubExecutor())
+
+
+# One row per platform consumer.
 CONSUMER_CASES: Mapping[str, ConsumerCase] = {
     # NOTIF-1: a blocked run tells the org's HR users in-app; `test_the_in_app_consumer_*` covers its
     # other event (a decided change request) with an org-B requester id.
     IN_APP_CONSUMER: ConsumerCase(
         RUN_BLOCKED, lambda org: {"run_id": f"run_xt_{org}", "task_id": "xt_task"}, in_app_handler
     ),
+    # RUN-1: the orchestrator executes the org's seeded run (`XT_RUNS`): it reads and writes
+    # `onboarding_runs`, `run_tasks` and its checkpoints, all in the job's org.
+    START_RUN: ConsumerCase(RUN_STARTED, lambda org: {"run_id": XT_RUNS[org][0]}, _start_run),
 }
 
 

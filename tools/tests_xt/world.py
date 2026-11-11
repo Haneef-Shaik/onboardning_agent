@@ -17,10 +17,14 @@ import copy
 import json
 from collections.abc import Iterable, Iterator, Mapping
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
 import yaml
+from onb_agents.dag import compile_dag
+from onb_agents.runs import hire_variables, run_records
+from onb_contracts.templates import Template
 
 ROOT = Path(__file__).resolve().parents[2]
 SEED = ROOT / "evals" / "fixtures" / "seed_v1.json"
@@ -115,10 +119,15 @@ def xt_vault_strings(org_id: str) -> list[str]:
 
 
 def tenant_documents(org_id: str) -> dict[str, list[dict[str, Any]]]:
-    """The seed's tenant documents of one org (plus `EXTRA_DOCUMENTS`), by collection, as stored."""
+    """The seed's tenant documents of one org (plus `EXTRA_DOCUMENTS` and its `XT_RUNS` run), by
+    collection, as stored."""
     data = seed()
+    runs = xt_run_documents(org_id)
     return {
-        name: [doc for doc in (*data[name], *EXTRA_DOCUMENTS.get(name, ())) if doc["org_id"] == org_id]
+        name: [
+            *(doc for doc in (*data[name], *EXTRA_DOCUMENTS.get(name, ())) if doc["org_id"] == org_id),
+            *runs.get(name, ()),
+        ]
         for name in TENANT_SEED
     }
 
@@ -164,6 +173,38 @@ def template_drafts(org_id: str) -> list[tuple[str, dict[str, Any], bool]]:
         (B_SALES_DRAFT, _b_sales_template(), True),
         *((draft_id, base_template(), True) for draft_id in B_ENGINEER_DRAFTS),
     ]
+
+
+# --- runs (RUN-1) ------------------------------------------------------------------------------------
+# One started run per org, on that org's `engineer-india` v1 for a seed_v1 hire, stored as `RunStarter`
+# writes it (run and task records) but without an event, so no job is queued before a test publishes
+# one. The orchestrator consumer's cross-tenant case (`test_xt_consumers.py`) executes these runs.
+
+XT_RUNS: Mapping[str, tuple[str, str]] = {  # org -> (run id, hire id)
+    ORG_A: ("run_xt_acme_started", "h_acme_001"),
+    ORG_B: ("run_xt_globex_started", "h_globex_001"),
+}
+XT_RUN_STARTED_AT = datetime(2026, 11, 2, 9, 0, tzinfo=UTC)
+
+
+def xt_run_documents(org_id: str) -> dict[str, list[dict[str, Any]]]:
+    """The org's `XT_RUNS` run and its tasks, compiled from its `engineer-india` v1 for the seed hire."""
+    run_id, hire_id = XT_RUNS[org_id]
+    hire = next(h for h in seed()["new_hires"] if h["_id"] == hire_id)
+    template = Template.model_validate({**base_template(), "version": 1, "status": "published"})
+    records = run_records(
+        org_id=org_id,
+        run_id=run_id,
+        hire_id=hire_id,
+        dag=compile_dag(template, hire_variables(hire)),
+        actor_id="u_xt_seed",
+        traceparent=None,
+        now=XT_RUN_STARTED_AT,
+    )
+    return {
+        "onboarding_runs": [{**records.run, "org_id": org_id}],
+        "run_tasks": [{**task, "org_id": org_id} for task in records.tasks],
+    }
 
 
 def _strings(value: object) -> Iterator[str]:
