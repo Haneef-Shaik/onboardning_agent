@@ -13,6 +13,13 @@ from onb_telemetry.testing import CapturedTelemetry, captured_telemetry, reset_t
 from opentelemetry.sdk.trace import ReadableSpan
 from opentelemetry.trace import SpanKind, StatusCode
 
+# UI-8: main.py resolves config/llm.yaml at startup; the fake connector needs no credentials.
+LLM_ENV = {
+    "LLM_CONNECTOR": "fake",
+    "LLM_MODEL_FAST": "fake-fast",
+    "LLM_MODEL_STANDARD": "fake-standard",
+    "LLM_MODEL_DEEP": "fake-deep",
+}
 FASTAPI_SCOPE = "opentelemetry.instrumentation.fastapi"
 
 
@@ -80,6 +87,8 @@ def test_main_initialises_telemetry_as_the_api_service(monkeypatch: pytest.Monke
     monkeypatch.setenv("MONGO_DATABASE", "onb")
     # And the config directory (TPL-2: the template validator's catalog and sink policy).
     monkeypatch.setenv("CONFIG_DIR", str(Path(__file__).resolve().parents[3] / "config"))
+    for name, value in LLM_ENV.items():
+        monkeypatch.setenv(name, value)
     reset_telemetry_globals()
     sys.modules.pop("onb_api.main", None)
     try:

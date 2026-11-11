@@ -2,6 +2,10 @@
 
 HR and MANAGER get 403 before the registry is read. The registry is global, so no parameter names an
 org and records carry none. An unknown name is 404; a name outside the registry's grammar is 422.
+
+UI-8 (FR-A2): with an LLM configuration, each record also carries `resolved_llm`, the connector and
+model the manifest's choice resolves to (`onb_llm.resolve_llm`, as the agent runtime resolves it), and
+never the provider params llm.yaml routes through it.
 """
 
 from __future__ import annotations
@@ -18,10 +22,12 @@ from onb_contracts.agents import (
     AgentLLM,
     AgentMcpGrant,
     AgentRecord,
+    AgentResolvedLLM,
     AgentsEnvelope,
 )
 from onb_contracts.agents import AgentCollections as Collections
 from onb_contracts.auth import Role
+from onb_llm import LLMConfig, LLMSelection, resolve_llm
 
 from onb_api.agents.reader import AgentRegistryReader
 from onb_api.auth.dependencies import require_role
@@ -46,7 +52,24 @@ def agent_registry(request: Request) -> AgentRegistryReader:
 Registry = Annotated[AgentRegistryReader, Depends(agent_registry)]
 
 
-def _record(agent: RegisteredAgent) -> AgentRecord:
+def llm_config(request: Request) -> LLMConfig | None:
+    config: LLMConfig | None = request.app.state.llm
+    return config
+
+
+Llm = Annotated[LLMConfig | None, Depends(llm_config)]
+
+
+def _resolved(agent: RegisteredAgent, config: LLMConfig | None) -> AgentResolvedLLM | None:
+    if config is None:
+        return None
+    llm = agent.manifest.llm
+    selection = LLMSelection(alias=llm.alias, connector=llm.connector, model=llm.model, params=llm.params.values())
+    chosen = resolve_llm(config, manifest=selection).task_record()
+    return AgentResolvedLLM.model_validate(chosen)
+
+
+def _record(agent: RegisteredAgent, config: LLMConfig | None) -> AgentRecord:
     manifest = agent.manifest
     return AgentRecord(
         name=agent.name,
@@ -74,19 +97,20 @@ def _record(agent: RegisteredAgent) -> AgentRecord:
         limits=AgentLimits.model_validate(manifest.limits.model_dump()),
         sha256=agent.sha256,
         updated_at=agent.updated_at,
+        resolved_llm=_resolved(agent, config),
     )
 
 
 @router.get("/agents", response_model=AgentsEnvelope, operation_id="listAgents")
-async def list_agents(_: HrAdmin, registry: Registry) -> Envelope[list[AgentRecord]]:
-    return respond([_record(agent) for agent in await registry.list_agents()])
+async def list_agents(_: HrAdmin, registry: Registry, llm: Llm) -> Envelope[list[AgentRecord]]:
+    return respond([_record(agent, llm) for agent in await registry.list_agents()])
 
 
 @router.get("/agents/{name}", response_model=AgentEnvelope, operation_id="getAgent")
 async def get_agent(
-    _: HrAdmin, registry: Registry, name: Annotated[str, Path(max_length=64, pattern=AGENT_NAME_PATTERN)]
+    _: HrAdmin, registry: Registry, llm: Llm, name: Annotated[str, Path(max_length=64, pattern=AGENT_NAME_PATTERN)]
 ) -> Envelope[AgentRecord]:
     agent = await registry.get_agent(name)
     if agent is None:
         raise AppError(ErrorCode.NOT_FOUND)
-    return respond(_record(agent))
+    return respond(_record(agent, llm))

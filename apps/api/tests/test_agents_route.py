@@ -6,6 +6,7 @@ every org), so an HR_ADMIN of either org sees the same manifests, and nothing or
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 
 import pytest
@@ -15,6 +16,9 @@ from onb_agents.registry import AgentRegistry
 from onb_api import create_app
 from onb_api.testing import TEST_SETTINGS, InMemoryAuditLog, bearer, token_for
 from onb_contracts.auth import Role
+from onb_llm import load_llm_config
+
+CONFIG = Path(__file__).resolve().parents[3] / "config"
 
 ADMIN = ("u_acme_hradmin", "org_acme", Role.HR_ADMIN)
 HR = ("u_acme_hr1", "org_acme", Role.HR)
@@ -121,3 +125,58 @@ def test_without_a_registry_the_routes_answer_503() -> None:
             response = _get(client, path, ADMIN)
             assert response.status_code == 503
             assert response.json()["error"]["code"] == "SERVICE_UNAVAILABLE"
+
+
+# --- UI-8 / FR-A2: the connector and model each agent runs on -------------------------------------
+# Manifests name an alias (`standard`); llm.yaml and the environment turn it into a connector and a
+# model. The API resolves it the way the agent runtime does, and shows only the choice, never the
+# provider params (region, guardrail, fake script) that llm.yaml routes through.
+
+LLM_ENV = {
+    "LLM_CONNECTOR": "fake",
+    "LLM_MODEL_FAST": "fake-fast-model",
+    "LLM_MODEL_STANDARD": "fake-standard-model",
+    "LLM_MODEL_DEEP": "fake-deep-model",
+    "AWS_REGION": "region-sentinel-1",
+    "BEDROCK_GUARDRAIL_ID": "gr-secret-sentinel",
+    "LLM_FAKE_SCRIPT_FILE": "script-sentinel.json",
+}
+
+
+def _llm_app(registry: AgentRegistry, env: dict[str, str] = LLM_ENV) -> FastAPI:
+    config = load_llm_config(CONFIG / "llm.yaml", env)
+    return create_app(auth=TEST_SETTINGS, agents=registry, llm=config)
+
+
+def test_each_agent_shows_the_connector_and_model_it_resolves_to(registry: AgentRegistry) -> None:
+    with TestClient(_llm_app(registry)) as client:
+        agents = _get(client, "/agents", ADMIN).json()["data"]
+        one = _get(client, "/agents/db_agent", ADMIN).json()["data"]
+    by_name = {a["name"]: a["resolved_llm"] for a in agents}
+    assert by_name["db_agent"] == {
+        "connector": "fake",
+        "model": "fake-standard-model",
+        "alias": "standard",
+        "source": "manifest",
+    }
+    assert one["resolved_llm"] == by_name["db_agent"]
+    assert {r["connector"] for r in by_name.values()} == {"fake"}
+
+
+def test_the_resolved_model_follows_the_environment(registry: AgentRegistry) -> None:
+    env = {**LLM_ENV, "LLM_CONNECTOR": "bedrock", "LLM_MODEL_STANDARD": "provider.model-standard-v1"}
+    with TestClient(_llm_app(registry, env)) as client:
+        resolved = _get(client, "/agents/db_agent", ADMIN).json()["data"]["resolved_llm"]
+    assert (resolved["connector"], resolved["model"]) == ("bedrock", "provider.model-standard-v1")
+
+
+def test_provider_params_never_reach_the_response(registry: AgentRegistry) -> None:
+    for env in (LLM_ENV, {**LLM_ENV, "LLM_CONNECTOR": "bedrock"}):
+        with TestClient(_llm_app(registry, env)) as client:
+            text = _get(client, "/agents", ADMIN).text + _get(client, "/agents/db_agent", ADMIN).text
+        for sentinel in ("region-sentinel", "gr-secret-sentinel", "script-sentinel", "guardrail", "script_file"):
+            assert sentinel not in text
+
+
+def test_without_an_llm_config_the_resolved_model_is_null(client: TestClient) -> None:
+    assert _get(client, "/agents/db_agent", ADMIN).json()["data"]["resolved_llm"] is None

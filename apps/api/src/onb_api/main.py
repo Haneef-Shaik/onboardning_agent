@@ -6,7 +6,9 @@ the `FastAPI` class). Export settings come from the standard `OTEL_*` environmen
 Startup fails (`ConfigError`) when `JWT_SECRET`, `MONGO_URI`, `MONGO_DATABASE` or `CONFIG_DIR` is
 missing, and (`MasterKeyError`) when `PII_MASTER_KEY` is missing or not base64 of 32 bytes (PRD §7.8,
 §7.10). `CONFIG_DIR` is the repository's `config/` (the tool catalog and the field → sink policy the
-template validator reads, TPL-2).
+template validator reads, TPL-2). Startup also fails (`LLMConfigError`) when `CONFIG_DIR/llm.yaml`
+cannot be resolved with this environment, e.g. `LLM_MODEL_STANDARD` unset: the agent pages show the
+connector and model each agent resolves to (UI-8, FR-A2).
 """
 
 import os
@@ -16,12 +18,14 @@ from onb_agents.registry import AgentRegistry
 from onb_agents.registry.mongo import MongoRegistryStore
 from onb_crypto import ORG_KEYS_COLLECTION, Keyring, MasterKey, RepositoryOrgKeyStore
 from onb_data import AuditLog, connect
+from onb_llm import load_llm_config
 from onb_telemetry import init_telemetry
 
 from onb_api.app import create_app
 from onb_api.auth.mongo_users import MongoUserStore
 from onb_api.auth.settings import AuthSettings, require_env
 from onb_api.documents.service import DocumentService
+from onb_api.evals.store import EvalRunStore
 from onb_api.health import SERVICE_NAME
 from onb_api.hires.service import HireService
 from onb_api.templates import MongoTemplateStore, RegistryValidatorSource, TemplateLifecycle
@@ -31,6 +35,7 @@ mongo_uri = require_env(os.environ, "MONGO_URI")
 mongo_database = require_env(os.environ, "MONGO_DATABASE")
 master_key = MasterKey.from_env()
 config_dir = Path(require_env(os.environ, "CONFIG_DIR"))
+llm_config = load_llm_config(config_dir / "llm.yaml", os.environ)
 # Telemetry before the Mongo client: PyMongo applies the tracing listener only to clients made after it.
 telemetry = init_telemetry(SERVICE_NAME)
 store = connect(mongo_uri, mongo_database)
@@ -43,6 +48,7 @@ templates = TemplateLifecycle(
     MongoTemplateStore(store), RegistryValidatorSource.from_config(registry, config_dir), audit_log
 )
 documents = DocumentService.build(store, keyring, auditor=audit_log)
+eval_runs = EvalRunStore(store)
 app = create_app(
     auth=auth,
     users=users,
@@ -51,4 +57,6 @@ app = create_app(
     hires=hires,
     templates=templates,
     documents=documents,
+    evals=eval_runs,
+    llm=llm_config,
 )

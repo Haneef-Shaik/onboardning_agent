@@ -9,7 +9,7 @@ The registry is global: records carry no org.
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict
 
@@ -23,6 +23,7 @@ __all__ = [
     "AgentLimits",
     "AgentMcpGrant",
     "AgentRecord",
+    "AgentResolvedLLM",
     "AgentsEnvelope",
 ]
 
@@ -40,6 +41,18 @@ class AgentLLM(BaseModel):
     connector: str | None
     model: str | None
     params: dict[str, Any]
+
+
+class AgentResolvedLLM(BaseModel):
+    """The connector and model the agent runs on: its manifest's choice resolved through llm.yaml and
+    the environment (UI-8, FR-A2). Provider params are never part of it."""
+
+    model_config = _FROZEN
+
+    connector: str
+    model: str
+    alias: str | None
+    source: Literal["manifest", "org_override", "default"]
 
 
 class AgentCollections(BaseModel):
@@ -79,6 +92,8 @@ class AgentRecord(BaseModel):
     limits: AgentLimits
     sha256: str
     updated_at: datetime
+    # Null when the API runs without an LLM configuration.
+    resolved_llm: AgentResolvedLLM | None = None
 
 
 class AgentsEnvelope(Envelope[list[AgentRecord]]):

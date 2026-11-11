@@ -67,7 +67,7 @@ def test_create_app_fails_without_jwt_secret(monkeypatch: pytest.MonkeyPatch) ->
 
 def _start_api(env: dict[str, str]) -> subprocess.CompletedProcess[str]:
     """Import the ASGI entry point the way `uvicorn onb_api.main:app` does, in a clean process."""
-    stripped = {"JWT_SECRET", "MONGO_URI", "MONGO_DATABASE", "PII_MASTER_KEY", "CONFIG_DIR"}
+    stripped = {"JWT_SECRET", "MONGO_URI", "MONGO_DATABASE", "PII_MASTER_KEY", "CONFIG_DIR", *LLM_ENV}
     base = {k: v for k, v in os.environ.items() if k not in stripped}
     base["OTEL_SDK_DISABLED"] = "true"
     return subprocess.run(
@@ -80,11 +80,20 @@ def _start_api(env: dict[str, str]) -> subprocess.CompletedProcess[str]:
     )
 
 
+# UI-8: the LLM configuration main.py resolves (config/llm.yaml); fake models, no credentials.
+LLM_ENV = {
+    "LLM_CONNECTOR": "fake",
+    "LLM_MODEL_FAST": "fake-fast",
+    "LLM_MODEL_STANDARD": "fake-standard",
+    "LLM_MODEL_DEEP": "fake-deep",
+}
+
 MONGO_ENV = {
     "MONGO_URI": "mongodb://127.0.0.1:1/?serverSelectionTimeoutMS=1",
     "MONGO_DATABASE": "onb",
     # HIRE-1: the vault's master key (PRD §7.10), a fresh one per run.
     "PII_MASTER_KEY": base64.b64encode(secrets.token_bytes(32)).decode("ascii"),
+    **LLM_ENV,
 }
 
 
@@ -124,6 +133,15 @@ def test_startup_fails_with_a_malformed_pii_master_key() -> None:
 
 
 CONFIG_ENV = {"CONFIG_DIR": str(Path(__file__).resolve().parents[3] / "config")}
+
+
+def test_startup_fails_when_the_llm_configuration_does_not_resolve() -> None:
+    """UI-8: main.py resolves CONFIG_DIR/llm.yaml with the environment (the agent pages' model)."""
+    env = {k: v for k, v in MONGO_ENV.items() if k != "LLM_MODEL_STANDARD"}
+    result = _start_api({**env, **CONFIG_ENV, "JWT_SECRET": GOOD_SECRET})
+    assert result.returncode != 0
+    assert "LLMConfigError" in result.stderr
+    assert "LLM_MODEL_STANDARD" in result.stderr
 
 
 def test_startup_succeeds_with_the_settings() -> None:

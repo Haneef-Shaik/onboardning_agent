@@ -9,6 +9,7 @@ import asyncio
 import itertools
 import uuid
 from collections.abc import Iterator
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Annotated, Any
 
@@ -24,10 +25,12 @@ from onb_api.auth.tokens import Principal
 from onb_api.responses import respond
 from onb_api.templates import RegistryValidatorSource, TemplateLifecycle
 from onb_api.testing import InMemoryAuditLog, InMemoryTemplateStore, bearer, token_for
+from onb_api.testing_mongo import MemoryDatabase, memory_store
 from onb_contracts import Envelope
 from onb_contracts.auth import Role
 from onb_contracts.templates import Template
 from onb_data import tenant_scope
+from onb_evals.results import record_run
 
 # One acme user per role (seed_v1 ids).
 ACTORS = {
@@ -69,12 +72,16 @@ ROLE_MATRIX: dict[tuple[str, str], dict[Role, int]] = {
     ("POST", "/templates/{key}/versions/{version}/archive"): {Role.HR_ADMIN: 200, Role.HR: 403, Role.MANAGER: 403},
     # HIRE-2 (PRD FR-P3, §10 Hires): sent without `type` or a body, a permitted role reaches validation.
     ("POST", "/hires/{hire_id}/documents"): {Role.HR_ADMIN: 422, Role.HR: 422, Role.MANAGER: 403},
+    # UI-8: eval runs are HR_ADMIN only, read-only (PRD §10 Evals).
+    ("GET", "/evals/runs"): {Role.HR_ADMIN: 200, Role.HR: 403, Role.MANAGER: 403},
+    ("GET", "/evals/runs/{run_id}"): {Role.HR_ADMIN: 200, Role.HR: 403, Role.MANAGER: 403},
 }
 
 CONFIG = Path(__file__).resolve().parents[3] / "config"
 SEED_TEMPLATE: dict[str, Any] = yaml.safe_load((CONFIG.parent / "templates" / "engineer-india.yaml").read_text())
 SAMPLE_DRAFT = "tdr_" + "a" * 32  # seeded unpublished
 PUBLISHED_DRAFT = "tdr_" + "b" * 32  # seeded and published as engineer-india v1
+SAMPLE_EVAL_RUN = "evr_20261102T090000Z_0000aaa1"
 
 # A concrete path for each route with path parameters: an existing record, so HR_ADMIN gets 200.
 SAMPLE_PATHS = {
@@ -88,6 +95,7 @@ SAMPLE_PATHS = {
     "/templates/{key}/versions/{version}": "/templates/engineer-india/versions/1",
     "/templates/{key}/versions/{version}/archive": "/templates/engineer-india/versions/1/archive",
     "/hires/{hire_id}/documents": "/hires/h_acme_001/documents",
+    "/evals/runs/{run_id}": f"/evals/runs/{SAMPLE_EVAL_RUN}",
 }
 
 # A valid body for the routes whose permitted roles should succeed (the hire routes are sent none).
@@ -115,6 +123,29 @@ def templates(
 
     asyncio.run(seed())
     return lifecycle
+
+
+@pytest.fixture(autouse=True)
+def _sample_eval_run(memory_db: MemoryDatabase) -> None:
+    """One acme eval run, as the harness stores it, so the eval run sample path exists."""
+    started = datetime(2026, 11, 2, 9, 0, tzinfo=UTC)
+    report = {
+        "run_id": SAMPLE_EVAL_RUN,
+        "mode": "selftest",
+        "started_at": started.isoformat(),
+        "finished_at": started.isoformat(),
+        "agent": "all",
+        "llm": "fake:eval-scripted",
+        "dataset": "onboarding_agents_v1.jsonl",
+        "fixture": "seed_v1",
+        "repeat": 1,
+        "passed": True,
+        "all_cases_passed": True,
+        "metrics": {},
+        "gates": [],
+        "cases": [],
+    }
+    asyncio.run(record_run(memory_store(memory_db), "org_acme", report))
 
 
 def _routes(app: FastAPI) -> list[APIRoute]:
