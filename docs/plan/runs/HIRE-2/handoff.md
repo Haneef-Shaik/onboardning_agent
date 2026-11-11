@@ -1,4 +1,4 @@
-# Handoff — HIRE-2 · Store document scans encrypted; agents see only metadata        attempt 1 · goal/hire-2-encrypted-documents · see `git log -1` (handoff commit)
+# Handoff — HIRE-2 · Store document scans encrypted; agents see only metadata        attempt 2 · goal/hire-2-encrypted-documents · see `git log -1` (handoff commit)
 
 **Outcome claimed.** `POST /hires/{hire_id}/documents?type=…` (HR/HR_ADMIN) takes a PDF/JPEG/PNG scan of at
 most 5 MiB as the raw body, seals it with AES-256-GCM under the org keyring (Aadhaar key for Aadhaar scans)
@@ -14,10 +14,10 @@ Decisions: `docs/adr/0012-encrypted-document-scans.md`.
 ## Done when
 | Box | Met | Evidence |
 |-----|-----|----------|
-| GridFS bytes differ from the plaintext and decrypt only with the matching hire binding (test) | yes | Unit (in-memory driver under the real `DataStore`/keyring): `apps/api/tests/test_document_bucket.py::test_the_gridfs_bytes_differ_from_the_plaintext`, `::test_the_bytes_decrypt_with_the_matching_hire_binding`, `::test_another_hire_cannot_decrypt_them`, `::test_rebinding_the_file_to_another_hire_in_the_database_fails_to_decrypt`, `::test_changing_the_bound_metadata_fails_to_decrypt[type,media_type]`, `::test_ciphertext_copied_into_another_hires_document_fails_to_decrypt`, `::test_ciphertext_copied_into_another_document_of_the_same_hire_fails_to_decrypt`, `::test_a_flipped_byte_fails_to_decrypt`, `::test_missing_or_reordered_chunks_are_refused[…]`; through the route `test_documents.py::test_the_stored_bytes_are_encrypted_and_open_only_for_the_hire`, `::test_moving_a_scan_to_another_hire_in_the_database_does_not_open_it`. Real Mongo: `apps/api/tests_int/test_mongo_documents.py::test_gridfs_holds_ciphertext_that_opens_only_for_the_hire` (root read-back of chunks, every collection scanned for the plaintext marker, re-point → `DecryptionError`). `uv run pytest apps/api/tests -q` → `455 passed`; `make test-int` → api `33 passed`. Mutants B1–B11, X3 killed. |
+| GridFS bytes differ from the plaintext and decrypt only with the matching hire binding (test) | yes | Unit (in-memory driver under the real `DataStore`/keyring): `apps/api/tests/test_document_bucket.py::test_the_gridfs_bytes_differ_from_the_plaintext`, `::test_the_bytes_decrypt_with_the_matching_hire_binding`, `::test_another_hire_cannot_decrypt_them`, `::test_rebinding_the_file_to_another_hire_in_the_database_fails_to_decrypt`, `::test_changing_the_bound_metadata_fails_to_decrypt[type,media_type]`, `::test_ciphertext_copied_into_another_hires_document_fails_to_decrypt`, `::test_ciphertext_copied_into_another_document_of_the_same_hire_fails_to_decrypt`, `::test_a_flipped_byte_fails_to_decrypt`, `::test_missing_or_reordered_chunks_are_refused[…]`; through the route `test_documents.py::test_the_stored_bytes_are_encrypted_and_open_only_for_the_hire`, `::test_moving_a_scan_to_another_hire_in_the_database_does_not_open_it`. Real Mongo: `apps/api/tests_int/test_mongo_documents.py::test_gridfs_holds_ciphertext_that_opens_only_for_the_hire` (root read-back of chunks, every collection scanned for the plaintext marker, re-point → `DecryptionError`). `uv run pytest apps/api/tests -q` → `532 passed` (after the rebase on TPL-2); `make test-int` → api `39 passed` (`test_mongo_documents.py` alone: `3 passed`). Mutants B1–B11, X3 killed. |
 | Oversized files and disallowed MIME types are rejected (tests) | yes | `test_documents.py::test_an_oversized_scan_is_refused_with_413`, `::test_a_scan_of_exactly_the_limit_is_accepted`, `::test_an_oversized_stream_without_a_content_length_is_refused`, `::test_an_understated_content_length_does_not_lift_the_limit`, `::test_an_overstated_content_length_is_refused_before_reading`, `::test_one_byte_past_the_limit_is_refused_when_counting`; `::test_a_disallowed_media_type_is_refused[text/plain, text/html, image/gif, image/svg+xml, application/zip, application/octet-stream, application/x-msdownload, image/heic]`, `::test_a_missing_content_type_is_refused`, `::test_content_that_is_not_the_declared_type_is_refused[jpeg-as-png, pdf-as-jpeg, png-as-pdf, exe-as-png, html-as-pdf]`, `::test_an_empty_scan_is_refused`; Mongo `test_mongo_documents.py::test_an_oversized_scan_stores_nothing_on_mongo`. Mutants U1–U7, R7 killed. |
 | A schema test shows `documents_meta` holds only ids, `type`, `uploaded_at` and `verified` | yes | `test_document_bucket.py::test_documents_meta_holds_only_ids_type_uploaded_at_and_verified` (stored keys == `{_id, org_id, hire_id, type, uploaded_at, verified}` and exact values), `test_documents.py::test_documents_meta_holds_only_ids_type_uploaded_at_and_verified` (through the route), `test_mongo_documents.py::test_documents_meta_on_mongo_holds_only_ids_type_uploaded_at_and_verified` (real Mongo); contract `libs/py-contracts/tests/test_document_contracts.py::test_document_meta_carries_only_ids_type_upload_time_and_verified`, `::test_document_meta_refuses_any_other_field[…]`. Mutants M1, M2 killed. |
-| `make test-xt` covers the new route | yes | `tools/tests_xt/test_xt_api.py::ROUTE_CASES[("POST", "/hires/{hire_id}/documents")]` (own check: org B's hire → 404 indistinguishable from missing for HR and HR_ADMIN; org B's scan not in org A's `documents_meta` and does not open for org A; still opens for org B) + generic leak/steering checks per role. `make test-xt` (inside `make check`) → `cross-tenant surface: 13 API routes …`, lists `route POST /hires/{hire_id}/documents`, `140 passed`; the 7 new cases shown PASSED with `-rA`. Mutants X1 (coverage test), X2 (403 instead of 404) killed. |
+| `make test-xt` covers the new route | yes | `tools/tests_xt/test_xt_api.py::ROUTE_CASES[("POST", "/hires/{hire_id}/documents")]` (own check: org B's hire → 404 indistinguishable from missing for HR and HR_ADMIN; org B's scan not in org A's `documents_meta` and does not open for org A; still opens for org B) + generic leak/steering checks per role. `make test-xt` (inside `make check`) → `cross-tenant surface: 22 API routes, 8 MCP tools, 0 event consumers`, lists `route POST /hires/{hire_id}/documents`, `203 passed`; the 7 new cases shown PASSED with `-rA`. Mutants X1 (coverage test), X2 (403 instead of 404) killed. |
 
 ## Claims the next goals may rely on
 | Claim | Proved by |
@@ -38,13 +38,28 @@ Decisions: `docs/adr/0012-encrypted-document-scans.md`.
 ## Gates
 | Gate | Command | Result |
 |------|---------|--------|
-| Check (incl. test-xt) | `make check` | exit 0 — `make check: all passed`; `NX Successfully ran target lint/typecheck/test for 17 projects`; test-xt `cross-tenant surface: 13 API routes, 8 MCP tools, 0 event consumers` · `140 passed` |
-| Integration | `make test-int` | exit 0 — `NX Successfully ran target test-int for 8 projects` (api `33 passed`, incl. `test_mongo_documents.py` 3) |
-| Contracts | `make contracts` then `make contracts-check` | `contracts-check: openapi.json and the TS client are up to date` (both generated files committed) |
+| Check (incl. test-xt) | `make check` | exit 0 — `make check: all passed`; `NX Successfully ran target lint/typecheck/test for 17 projects`; test-xt `cross-tenant surface: 22 API routes, 8 MCP tools, 0 event consumers` · `203 passed` (attempt 2, rebased on `main` ec3dd2a) |
+| Integration | `make test-int` | exit 0 — `NX Successfully ran target test-int for 8 projects` (api `39 passed`, incl. `test_mongo_documents.py` 3) |
+| Contracts | `make contracts` then `make contracts-check` | `contracts-check: openapi.json and the TS client are up to date` (regenerated after the rebase: TPL-2's 9 template operations and `uploadHireDocument` all present; both files committed) |
 | Coverage of the new package | `pytest apps/api/tests --cov=onb_api.documents` | 100% (259 stmts at the time; all branches incl. fail-closed paths) |
 | Eval self-test | not run | diff touches no agent, prompt, manifest or guardrail |
 
 Environment: compose project `ob-hire-2` (ports 19300/19301), `LLM_CONNECTOR=fake`, no model calls.
+
+## Rebase on main (attempt 2)
+`main` gained TPL-2 (templates lifecycle, `ec3dd2a`) after this branch was cut. Rebased onto `ec3dd2a`, keeping
+both sides everywhere:
+- `apps/api/src/onb_api/app.py` / `main.py`: `templates=` and `documents=` both passed; lifespan, `app.state`
+  and routers keep TPL-2's lines with HIRE-2's appended. TPL-2's `BodyLimitMiddleware` applies to `/templates`
+  only, so it does not cap document uploads (HIRE-2 keeps its own 5 MiB counted limit).
+- `apps/api/tests/conftest.py`: TPL-2's `audit_log`, `registry_retire`, `template_store`, `templates` fixtures
+  kept; HIRE-2's shared `keyring` (now also used by `hires`) and `documents` added; `app` takes both.
+- `apps/api/tests/test_role_matrix.py`: all TPL-2 rows and sample paths kept, HIRE-2's row/path appended.
+- `tools/tests_xt`: all 21 rows on `main` kept (script-checked: none missing); HIRE-2's row adapted to the new
+  `check(client, xt, unscoped)` signature via `_reads_only` (its check uploads to org B on purpose, so a root
+  snapshot of org B would not stay unchanged); `build_api` passes `templates=` and `documents=`.
+- OpenAPI/TS client regenerated with `make contracts`.
+Spot mutants re-run on the rebased code: B2, B6, S1, U3, X1 all killed.
 
 ## Inherited and used
 | From | Claim | Held? |
@@ -54,6 +69,7 @@ Environment: compose project `ob-hire-2` (ports 19300/19301), `LLM_CONNECTOR=fak
 | PII-2 | vault writes a `pii_consent` record with each Aadhaar value | yes — the consent gate reads it (R1) |
 | T-1/T-2 | `TenantRepository` scoping; safety net in Mongo suites | yes — all bucket/meta access via `store.tenant(...)`; root reads in `unscoped(...)` |
 | T-3 | ROUTE_CASES per route; foreign id == missing id | yes — new row, X1, X2 |
+| TPL-2 | `create_app(templates=)`, xt `check(client, xt, unscoped)` + `_reads_only`, `BodyLimitMiddleware` on `/templates` | yes — kept intact through the rebase; 22-route surface green |
 | REG-1 | `documents_meta` in db_agent's read/write lists; MCP roles are allowlists | yes — `documents.files`/`.chunks` are in neither list, so agents cannot reach the bytes (checked in `apps/mcp-mongo/src/onb_mcp_mongo/db_users.py`) |
 | AUD-1 | audit fail-closed, `kind:ref` targets | yes — S3, S4, R2 |
 
