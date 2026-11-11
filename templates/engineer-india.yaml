@@ -1,0 +1,62 @@
+# Seed template (PRD §6.1 template shape; TPL-1). Validated by onb_agents.templates.TemplateValidator
+# against config/agents, config/tool_catalog.yaml and config/pii_sink_policy.yaml
+# (libs/py-agents/tests/test_template_validator.py::test_the_seed_template_validates).
+#
+# `version` and `status` belong to the template lifecycle (TPL-2): seeding publishes this as a version.
+# Variables come from the hire record; sensitive fields are never variables or inputs. The only PII a
+# task touches is the hire's mobile, resolved at the notify.telegram sink with a grant (PRD §7.10).
+key: engineer-india
+name: Engineers, India
+variables:
+  - { name: role, type: enum, values: [engineer, designer, sales] }
+  - { name: location, type: string }
+  - { name: start_date, type: date }
+  - { name: manager_id, type: user_ref }
+tasks:
+  - id: collect_docs
+    title: Collect ID & bank documents
+    agent: db_agent
+    action: request_documents
+    inputs: { documents: [aadhaar_scan, pan_scan, bank_proof] }
+    sla: { due: "start_date - 7d" }
+  - id: manager_approval
+    title: Manager approves equipment & access
+    type: approval
+    agent: approvals_agent
+    action: approval
+    approver: { rule: variable, ref: manager_id }
+    sla_hours: 48
+    depends_on: [collect_docs]
+  - id: laptop
+    title: Provision laptop (mock)
+    agent: provisioning_agent
+    action: provision_laptop
+    depends_on: [manager_approval]
+    sla: { due: "start_date - 2d" }
+  - id: bitbucket_access
+    title: Create Bitbucket account (mock)
+    agent: provisioning_agent
+    action: create_bitbucket_account
+    when: "role == 'engineer'"
+    depends_on: [manager_approval]
+    requires_approval: true
+  - id: security_training
+    title: Assign security training
+    agent: db_agent
+    action: assign_training
+    when: "role in ['engineer', 'designer']"
+    inputs: { course_ref: security_basics }
+    depends_on: [manager_approval]
+  - id: orientation
+    title: Schedule orientation
+    agent: db_agent
+    action: schedule_orientation
+    inputs: { slot: first_day_morning }
+    sla: { due: "start_date" }
+  - id: welcome_message
+    title: Send welcome message
+    agent: templates_agent
+    action: render_and_send
+    inputs: { channel: telegram, content_ref: welcome_v2 }
+    pii_access: { fields: [mobile], sink: notify.telegram }
+    depends_on: [manager_approval]

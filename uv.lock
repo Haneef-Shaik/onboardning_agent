@@ -864,7 +864,10 @@ name = "onb-agents"
 version = "0.1.0"
 source = { editable = "libs/py-agents" }
 dependencies = [
+    { name = "onb-contracts" },
+    { name = "onb-crypto" },
     { name = "onb-data" },
+    { name = "onb-guardrails" },
     { name = "onb-llm" },
     { name = "pydantic" },
     { name = "pymongo" },
@@ -873,7 +876,10 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
+    { name = "onb-contracts", editable = "libs/py-contracts" },
+    { name = "onb-crypto", editable = "libs/py-crypto" },
     { name = "onb-data", editable = "libs/py-data" },
+    { name = "onb-guardrails", editable = "libs/py-guardrails" },
     { name = "onb-llm", editable = "libs/py-llm" },
     { name = "pydantic", specifier = ">=2.9,<3" },
     { name = "pymongo", specifier = ">=4.10,<5" },

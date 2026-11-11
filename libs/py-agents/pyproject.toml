@@ -4,7 +4,10 @@ version = "0.1.0"
 description = "Agent graphs and the agent registry"
 requires-python = ">=3.12,<3.13"
 dependencies = [
+  "onb-contracts",
+  "onb-crypto",
   "onb-data",
+  "onb-guardrails",
   "onb-llm",
   "pydantic>=2.9,<3",
   "pymongo>=4.10,<5",
@@ -19,5 +22,8 @@ build-backend = "hatchling.build"
 packages = ["src/onb_agents"]
 
 [tool.uv.sources]
+onb-contracts = { workspace = true }
+onb-crypto = { workspace = true }
 onb-data = { workspace = true }
+onb-guardrails = { workspace = true }
 onb-llm = { workspace = true }
