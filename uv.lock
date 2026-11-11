@@ -1099,6 +1099,24 @@ requires-dist = [
 name = "onb-mcp-mocks"
 version = "0.1.0"
 source = { editable = "apps/mcp-mocks" }
+dependencies = [
+    { name = "mcp" },
+    { name = "onb-mcp-mongo" },
+    { name = "onb-telemetry" },
+    { name = "opentelemetry-api" },
+    { name = "pydantic" },
+    { name = "uvicorn" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "mcp", specifier = ">=1.20,<2" },
+    { name = "onb-mcp-mongo", editable = "apps/mcp-mongo" },
+    { name = "onb-telemetry", editable = "libs/py-telemetry" },
+    { name = "opentelemetry-api", specifier = ">=1.45,<2" },
+    { name = "pydantic", specifier = ">=2.9,<3" },
+    { name = "uvicorn", specifier = ">=0.32" },
+]
 
 [[package]]
 name = "onb-mcp-mongo"
