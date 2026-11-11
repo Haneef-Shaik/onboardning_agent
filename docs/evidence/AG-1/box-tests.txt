@@ -1,0 +1,25 @@
+== box 1: a tool outside the manifest is denied by the hub; the denial is in the trajectory (fake connector)
+libs/py-agents/tests/test_runtime_boxes.py::test_box1_a_tool_outside_the_manifest_is_denied_by_the_hub_and_the_denial_is_in_the_trajectory PASSED [ 50%]
+libs/py-agents/tests/test_runtime_boxes.py::test_box1_a_tool_the_agent_was_never_given_is_still_sent_to_the_hub_and_denied PASSED [100%]
+============================== 2 passed in 0.90s ===============================
+== box 2: the grant and agent token never appear in captured LLM input
+libs/py-agents/tests/test_runtime_boxes.py::test_box2_the_grant_and_the_agent_token_never_appear_in_captured_llm_input PASSED [ 20%]
+libs/py-agents/tests/test_runtime_boxes.py::test_box2_the_grant_and_token_stay_out_of_llm_input_logs_audit_and_results_on_every_path[hub_denial_then_repair] PASSED [ 40%]
+libs/py-agents/tests/test_runtime_boxes.py::test_box2_the_grant_and_token_stay_out_of_llm_input_logs_audit_and_results_on_every_path[repair_fails] PASSED [ 60%]
+libs/py-agents/tests/test_runtime_boxes.py::test_box2_the_grant_and_token_stay_out_of_llm_input_logs_audit_and_results_on_every_path[step_budget] PASSED [ 80%]
+libs/py-agents/tests/test_runtime_boxes.py::test_box2_the_grant_and_token_stay_out_of_llm_input_logs_audit_and_results_on_every_path[transport_failure] PASSED [100%]
+======================= 5 passed, 3 deselected in 0.75s ========================
+== box 3: an exhausted step budget ends the run with a visible failure
+libs/py-agents/tests/test_runtime_boxes.py::test_box3_an_exhausted_step_budget_ends_the_run_with_a_visible_failure PASSED [100%]
+============================== 1 passed in 0.68s ===============================
+== box 4: every agent output contract has a schema test
+============================= 115 passed in 0.19s ==============================
+== box 4: every registered agent has a contract and runs from its manifest
+libs/py-agents/tests/test_runtime.py::test_every_registered_agent_has_a_contract_and_runs_from_its_manifest[approvals_agent] PASSED [ 16%]
+libs/py-agents/tests/test_runtime.py::test_every_registered_agent_has_a_contract_and_runs_from_its_manifest[db_agent] PASSED [ 33%]
+libs/py-agents/tests/test_runtime.py::test_every_registered_agent_has_a_contract_and_runs_from_its_manifest[provisioning_agent] PASSED [ 50%]
+libs/py-agents/tests/test_runtime.py::test_every_registered_agent_has_a_contract_and_runs_from_its_manifest[run_assistant] PASSED [ 66%]
+libs/py-agents/tests/test_runtime.py::test_every_registered_agent_has_a_contract_and_runs_from_its_manifest[template_builder] PASSED [ 83%]
+libs/py-agents/tests/test_runtime.py::test_every_registered_agent_has_a_contract_and_runs_from_its_manifest[templates_agent] PASSED [100%]
+======================= 6 passed, 16 deselected in 0.86s =======================
+exit=0
