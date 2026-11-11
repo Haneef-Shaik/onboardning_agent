@@ -16,10 +16,9 @@ Branch `goal/tpl-2-template-lifecycle`. Compose project `ob-tpl-2` (Caddy 18800/
    148 passed.
 
 ## Next
-- `make contracts`, then the mutation checks (`docs/evidence/TPL-2/mutate.py`) and the reviews.
-- Gates: `make check`, `make test-int`, `make test-xt`, `make contracts-check`.
-- Write the handoff, run the verifier, set the board to in review, then `make down`.
+- Done through gates; handoff written (attempt 1). Next: goal-verifier, then board `in review`, `make down`.
+- Reviews fixed (security H1 body/inputs caps; code-review L5/L7/L8, M1/M2); mutations 32/32.
 
 ## Surprises
-- Worktree guard: put helper scripts in the job tmp folder; don't source `.env` inline (use `tmp/withenv.sh`).
-- An async Mongo client is bound to one event loop: seed through a separate store.
+- Worktree guard: helper scripts go in the job tmp folder; no inline `.env` sourcing (use tmp/withenv.sh).
+- Async Mongo client is loop-bound: seed through a separate store.
