@@ -15,6 +15,7 @@ from collections.abc import Mapping
 from datetime import UTC, datetime
 from typing import Any, Final
 
+from onb_contracts.notify import Channel, NotifySendArgs
 from onb_crypto import is_token
 from onb_data import DataStore, tenant_scope
 from onb_telemetry.attributes import span_attributes
@@ -40,7 +41,8 @@ WRITABLE: Final = frozenset({"run_tasks"})
 QUERY_OPERATORS: Final = frozenset(
     {"$eq", "$ne", "$gt", "$gte", "$lt", "$lte", "$in", "$nin", "$exists", "$regex", "$and", "$or"}
 )
-CHANNELS: Final = frozenset({"telegram", "email"})
+# NOTIF-1: the channels and arguments of the real `notify_send` (one contract for server, hub and evals).
+CHANNELS: Final = frozenset(channel.value for channel in Channel)
 MAX_DOCUMENTS: Final = 50
 
 
@@ -69,17 +71,11 @@ class UpdateOneArgs(_Args):
     set: dict[str, Any] = Field(min_length=1)
 
 
-class NotifySendArgs(_Args):
-    channel: StrictStr
-    recipient_token: StrictStr
-    body: StrictStr = Field(min_length=1, max_length=4000)
-
-
-_TOOLS: Final[dict[str, tuple[type[_Args], str]]] = {
+_TOOLS: Final[dict[str, tuple[type[BaseModel], str]]] = {
     "find": (FindArgs, "Find documents in one collection of your org."),
     "count": (CountArgs, "Count documents in one collection of your org."),
     "update_one": (UpdateOneArgs, "Set fields on one document of a writable collection."),
-    "notify_send": (NotifySendArgs, "Queue a message to a vault-token recipient."),
+    "notify_send": (NotifySendArgs, "Send a message: telegram to a vault-token recipient, or in_app to a user."),
 }
 TOOL_NAMES: Final = tuple(_TOOLS)
 
@@ -180,12 +176,12 @@ class ToolBox:
         return {"ok": True, "matched": outcome.matched, "modified": outcome.modified}, ()
 
     async def _notify(self, args: NotifySendArgs) -> tuple[dict[str, Any], tuple[str, ...]]:
-        if args.channel not in CHANNELS:
-            raise ToolDeniedError(f"channel {args.channel} is not available")
-        if not is_token(args.recipient_token):
+        if args.channel.value not in CHANNELS:
+            raise ToolDeniedError(f"channel {args.channel.value} is not available")
+        if args.channel is Channel.TELEGRAM and not is_token(args.recipient_token):
             raise ToolDeniedError("the recipient must be a vault token")
         await self._store.tenant(OUTBOX_COLLECTION).insert_one(
-            {"channel": args.channel, "recipient_token": args.recipient_token, "body": args.body}
+            {"channel": args.channel.value, **args.model_dump(exclude={"channel"}, exclude_none=True)}
         )
         return {"ok": True, "queued": True}, ()
 

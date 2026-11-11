@@ -66,8 +66,10 @@ def test_count_counts_in_the_org() -> None:
             "collection",
         ),
         ("update_one", {"collection": "run_tasks", "filter": {}, "set": {"org_id": "org_globex"}}, "org_id"),
-        ("notify_send", {"channel": "telegram", "recipient_token": "+91 90000 00001", "body": "hi"}, "token"),
-        ("notify_send", {"channel": "fax", "recipient_token": "x", "body": "hi"}, "channel"),
+        # NOTIF-1: the shared `notify_send` contract refuses a raw mobile and an unknown channel at validation.
+        ("notify_send", {"channel": "telegram", "recipient_token": "+91 90000 00001", "body": "hi"}, "arguments"),
+        ("notify_send", {"channel": "fax", "recipient_token": "x", "body": "hi"}, "arguments"),
+        ("notify_send", {"channel": "telegram", "recipient_token": "ptk_not_a_vault_token", "body": "hi"}, "token"),
         ("publish_template", {"template_key": "engineer-india"}, "unknown tool"),
         ("find", {"collection": "new_hires", "filter": "not an object"}, "arguments"),
     ],
