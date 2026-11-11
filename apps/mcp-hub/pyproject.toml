@@ -8,6 +8,7 @@ dependencies = [
     "jsonschema>=4.20",
     "mcp>=1.20,<2",
     "onb-agents",
+    "onb-crypto",
     "onb-data",
     "onb-guardrails",
     "onb-mcp-mongo",
@@ -26,6 +27,7 @@ packages = ["src/onb_mcp_hub"]
 
 [tool.uv.sources]
 onb-agents = { workspace = true }
+onb-crypto = { workspace = true }
 onb-data = { workspace = true }
 onb-guardrails = { workspace = true }
 onb-mcp-mongo = { workspace = true }
