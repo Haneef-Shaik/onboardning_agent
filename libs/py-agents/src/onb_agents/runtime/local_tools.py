@@ -35,6 +35,9 @@ _WEEKEND: Final = frozenset({5, 6})
 Value = StrictStr | StrictInt | StrictFloat | StrictBool
 
 
+_ARG_NAMES: Final = frozenset({"date", "days", "business_days", "template", "variables"})
+
+
 class _Args(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True, hide_input_in_errors=True)
 
@@ -99,18 +102,35 @@ def render(**kwargs: Any) -> dict[str, str]:
     return {"text": text}
 
 
+def _invalid(name: str, error: ValidationError) -> str:
+    """Field names and the tool name only; never a value. Agent-chosen keys are not echoed either."""
+    fields = sorted({str(e["loc"][0]) if e["loc"] else "(root)" for e in error.errors()})
+    known = [f for f in fields if f in _ARG_NAMES]
+    return f"{name}: invalid arguments ({', '.join(known) or 'unexpected fields'})"
+
+
 def _tool(name: str, description: str, schema: type[_Args], fn: Any) -> StructuredTool:
     def run(**kwargs: Any) -> str:
         try:
             return json.dumps(fn(**kwargs), ensure_ascii=False)
         except ValidationError as error:
-            fields = sorted({".".join(str(p) for p in e["loc"]) or "(root)" for e in error.errors()})
-            raise ToolException(f"{name}: invalid arguments ({', '.join(fields)})") from None
+            raise ToolException(_invalid(name, error)) from None
+        except OverflowError:
+            raise ToolException(f"{name}: the result is outside the supported date range") from None
         except ValueError as error:
             raise ToolException(f"{name}: {error}") from None
 
+    def on_invalid(error: ValidationError) -> str:  # schema check by the tool itself, before `run`
+        return _invalid(name, error)
+
     return StructuredTool.from_function(
-        func=run, name=name, description=description, args_schema=schema, handle_tool_error=True, infer_schema=False
+        func=run,
+        name=name,
+        description=description,
+        args_schema=schema,
+        handle_tool_error=True,
+        handle_validation_error=on_invalid,
+        infer_schema=False,
     )
 
 

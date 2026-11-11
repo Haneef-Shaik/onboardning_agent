@@ -89,3 +89,26 @@ def test_only_the_local_tools_a_manifest_lists_are_given_to_the_agent() -> None:
 def test_every_local_tool_a_manifest_names_exists() -> None:
     for manifest in load_manifests(ROOT / "config" / "agents"):
         assert set(manifest.tools) <= set(LOCAL_TOOLS), manifest.name
+
+
+@pytest.mark.parametrize(
+    "args",
+    [
+        {"date": "2026-12-01", "days": "x"},
+        {"date": "2026-12-01"},
+        {"date": "9999-12-30", "days": 10},
+        {"date": "9999-12-30", "days": 10, "business_days": True},
+        {"date": "0001-01-01", "days": -1},
+    ],
+)
+def test_bad_arguments_through_the_tool_are_an_error_message_never_a_crash(args: dict[str, Any]) -> None:
+    result = call("date_calc", args)
+    assert result.status == "error"
+    assert str(result.content).startswith("date_calc: ")
+    assert "9999" not in str(result.content)
+
+
+def test_bad_render_arguments_through_the_tool_are_an_error_message() -> None:
+    result = call("render", {"template": "", "variables": {"a": {"nested": 1}}})
+    assert result.status == "error"
+    assert str(result.content).startswith("render: invalid arguments")

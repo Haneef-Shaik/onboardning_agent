@@ -238,8 +238,8 @@ def test_diff_removes_none_needs_a_change_request() -> None:
         ),
         (
             "message",
-            {"message": {"channel": "telegram", "recipient_token": "t", "body": "b"}},
-            {"message": {"channel": "telegram", "recipient_token": "t", "body": "b", "cc": "x"}},
+            {"message": {"channel": "telegram", "recipient_token": "ptk_seed_t", "body": "b"}},
+            {"message": {"channel": "telegram", "recipient_token": "ptk_seed_t", "body": "b", "cc": "x"}},
         ),
     ],
 )

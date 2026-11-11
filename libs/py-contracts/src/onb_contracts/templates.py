@@ -58,12 +58,16 @@ __all__ = [
     "RESERVED_VARIABLE_NAMES",
     "SINK_PATTERN",
     "Approver",
+    "Identifier",
+    "InputKey",
     "PiiAccess",
     "Sla",
     "Template",
     "TemplateTask",
+    "Title",
     "Variable",
     "VariableType",
+    "bounded_json",
 ]
 
 _FROZEN = ConfigDict(frozen=True, extra="forbid", hide_input_in_errors=True)
@@ -199,6 +203,16 @@ def _depth(value: object) -> int:
     return 0
 
 
+def bounded_json[J: dict[str, JsonValue]](value: J, *, depth: int, size: int, what: str = "inputs") -> J:
+    """`value` unchanged, or `ValueError` when it nests deeper than `depth` or holds more than `size`
+    characters (or one string over `MAX_INPUT_STRING`). Used for task `inputs` and agent answers."""
+    if _depth(value) > depth:
+        raise ValueError(f"{what} nest at most {depth} levels deep")
+    if _size(value) > size:
+        raise ValueError(f"{what} hold at most {size} characters in total")
+    return value
+
+
 class TemplateTask(BaseModel):
     """One node of the template graph. `inputs` reach the task's agent, so they are LLM-visible."""
 
@@ -232,11 +246,7 @@ class TemplateTask(BaseModel):
     @field_validator("inputs")
     @classmethod
     def _bounded_inputs(cls, value: dict[str, JsonValue]) -> dict[str, JsonValue]:
-        if _depth(value) > MAX_INPUT_DEPTH:
-            raise ValueError(f"inputs nest at most {MAX_INPUT_DEPTH} levels deep")
-        if _size(value) > MAX_INPUTS_SIZE:
-            raise ValueError(f"inputs hold at most {MAX_INPUTS_SIZE} characters in total")
-        return value
+        return bounded_json(value, depth=MAX_INPUT_DEPTH, size=MAX_INPUTS_SIZE)
 
     @model_validator(mode="after")
     def _one_sla_form(self) -> Self:

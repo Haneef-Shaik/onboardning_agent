@@ -32,7 +32,7 @@ TEMPLATE = {
     "name": "Engineers, India",
     "tasks": [{"id": "collect_docs", "title": "Collect documents", "agent": "db_agent", "action": "request_documents"}],
 }
-CHANGE_REQUEST = {
+CHANGE_REQUEST: dict[str, Any] = {
     "template_key": "engineer-india",
     "base_version": 3,
     "diff": {"add_tasks": [], "update_tasks": [{"id": "bitbucket_access", "depends_on": ["collect_docs"]}]},
@@ -197,6 +197,58 @@ def test_every_scripted_eval_output_validates_against_its_agents_contract() -> N
         contract_for(case["agent"], case.get("mode")).model_validate(final)
         checked += 1
     assert checked == len(cases)
+
+
+@pytest.mark.parametrize("key", sorted(CASES))
+def test_a_refusal_or_hand_off_must_explain_itself(key: str) -> None:
+    for status in ("refused", "needs_human"):
+        with pytest.raises(ValidationError):
+            OUTPUT_CONTRACTS[key].model_validate({"status": status})
+
+
+@pytest.mark.parametrize("key", ["template_builder", "template_builder:suggest", "approvals_agent", "templates_agent"])
+def test_a_refusal_carries_no_payload(key: str) -> None:
+    ok, refusal, field, _ = CASES[key]
+    with pytest.raises(ValidationError):
+        OUTPUT_CONTRACTS[key].model_validate({**refusal, "status": "refused", field: ok[field]})
+
+
+@pytest.mark.parametrize(
+    "update",
+    [
+        {"id": "x", "inputs": {"org id": "org_globex"}},
+        {"id": "x", "inputs": {"blob": "a" * 20_000}},
+        {"id": "x", "inputs": {"a": {"b": {"c": {"d": {"e": {"f": {"g": 1}}}}}}}},
+        {"id": "x", "when": "a" * 600},
+        {"id": "x", "sla_hours": 10**6},
+        {"id": "x", "depends_on": [f"t{i}" for i in range(60)]},
+        {"id": "x", "depends_on": ["a", "a"]},
+    ],
+)
+def test_a_change_request_task_update_has_the_template_tasks_bounds(update: dict[str, Any]) -> None:
+    diff = {**CHANGE_REQUEST["diff"], "update_tasks": [update]}
+    with pytest.raises(ValidationError):
+        ChangeRequest.model_validate({**CHANGE_REQUEST, "diff": diff})
+
+
+@pytest.mark.parametrize(
+    "answer",
+    [
+        {"org_id": "org_globex"},
+        {"rows": [{"nested": {"org_id": "org_globex"}}]},
+        {"blob": "a" * 20_000},
+        {"a": {"b": {"c": {"d": {"e": {"f": {"g": 1}}}}}}},
+    ],
+)
+def test_a_db_answer_is_bounded_and_never_names_an_org(answer: dict[str, Any]) -> None:
+    with pytest.raises(ValidationError):
+        OUTPUT_CONTRACTS["db_agent"].model_validate({"status": "ok", "answer": answer})
+
+
+@pytest.mark.parametrize("recipient", ["+919876543210", "priya@example.com", "ptk_", "ptk_bad token"])
+def test_a_message_recipient_must_be_a_pii_token(recipient: str) -> None:
+    with pytest.raises(ValidationError):
+        Message.model_validate({**MESSAGE, "recipient_token": recipient})
 
 
 def test_every_contract_is_an_agent_output() -> None:
