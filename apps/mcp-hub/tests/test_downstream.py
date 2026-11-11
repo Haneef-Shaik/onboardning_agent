@@ -64,6 +64,24 @@ def test_a_short_server_key_is_refused() -> None:
         McpDownstream(URLS, MONGO_KEY, keys={"mocks": "short"})
 
 
+def test_a_non_mongo_server_without_its_own_key_is_refused_at_construction() -> None:
+    """Fail closed: a new server must never be signed with mcp-mongo's key (ADR 0011 §2)."""
+    with pytest.raises(ValueError, match="mocks"):
+        McpDownstream(URLS, MONGO_KEY)
+
+
+@pytest.mark.parametrize(
+    ("urls", "keys"),
+    [
+        (URLS, {"mocks": MONGO_KEY}),
+        ({**URLS, "other": "http://mcp-other/mcp"}, {"mocks": MOCKS_KEY, "other": MOCKS_KEY}),
+    ],
+)
+def test_server_keys_must_all_differ(urls: dict[str, str], keys: dict[str, str]) -> None:
+    with pytest.raises(ValueError, match="differ"):
+        McpDownstream(urls, MONGO_KEY, keys=keys)
+
+
 def test_a_server_without_a_url_is_unknown() -> None:
     downstream = McpDownstream({"mongo": URLS["mongo"]}, MONGO_KEY, keys={"mocks": MOCKS_KEY})
     with pytest.raises(UnknownServerError):

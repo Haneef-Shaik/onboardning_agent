@@ -18,7 +18,7 @@ from mcp.client.streamable_http import streamable_http_client
 from mcp.types import CallToolResult
 from onb_mcp_mongo.call_context import HEADER, CallContext, check_key, sign_call_context
 
-from .catalog import HubTool
+from .catalog import MONGO_SERVER, HubTool
 
 __all__ = ["DEFAULT_TIMEOUT_S", "ClientFactory", "McpDownstream", "UnknownServerError", "audience_for"]
 
@@ -40,8 +40,9 @@ def audience_for(server: str) -> str:
 
 
 class McpDownstream:
-    """`urls`: server → endpoint. `context_key` signs mcp-mongo's contexts (and any server without
-    its own key in `keys`); `keys`: server → that server's own key (MOCK-1: `mocks`)."""
+    """`urls`: server → endpoint. `context_key` signs mcp-mongo's contexts only; `keys`: server → that
+    server's own key (MOCK-1: `mocks`). Fails closed: every other server with a URL needs its own key,
+    and no two servers share one."""
 
     def __init__(
         self,
@@ -51,18 +52,22 @@ class McpDownstream:
         keys: Mapping[str, str] | None = None,
         client: ClientFactory = _default_client,
     ) -> None:
-        own = dict(keys or {})
-        for key in (context_key, *own.values()):
+        own = {**dict(keys or {}), MONGO_SERVER: context_key}
+        for key in own.values():
             check_key(key)
+        missing = sorted(server for server in urls if server not in own)
+        if missing:
+            raise ValueError(f"no call-context key for the {', '.join(missing)} server(s)")
+        if len(set(own.values())) != len(own):
+            raise ValueError("each downstream server's call-context key must differ")
         self._urls = dict(urls)
-        self._key = context_key
         self._keys = own
         self._client = client
 
     @property
     def secrets(self) -> tuple[str, ...]:
         """Credentials this client holds: never allowed back to an agent."""
-        return (self._key, *self._keys.values())
+        return tuple(self._keys.values())
 
     async def call(
         self, tool: HubTool, args: Mapping[str, Any], context: CallContext
@@ -70,7 +75,7 @@ class McpDownstream:
         url = self._urls.get(tool.server)
         if url is None:
             raise UnknownServerError(f"no URL configured for the {tool.server} server")
-        key = self._keys.get(tool.server, self._key)
+        key = self._keys[tool.server]  # present for every server with a URL (checked at construction)
         signed = sign_call_context(context, key, audience=audience_for(tool.server))
         async with (
             self._client({HEADER: signed}) as http,

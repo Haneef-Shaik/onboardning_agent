@@ -96,7 +96,8 @@ def _collection(tool: HubTool | None, args: Mapping[str, Any]) -> str | None:
 
 
 def _downstream_failed(result: CallToolResult) -> bool:
-    """mcp-mongo answers an unexpected failure with `<tool>: internal error`; anything else is a refusal."""
+    """mcp-mongo and mcp-mocks answer an unexpected failure with `<tool>: internal error`; anything else
+    is a refusal."""
     return any(isinstance(c, TextContent) and c.text.endswith("internal error") for c in result.content)
 
 
