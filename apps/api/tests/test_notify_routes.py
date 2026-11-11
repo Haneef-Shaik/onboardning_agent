@@ -76,7 +76,11 @@ def post(client: TestClient, body: Any, secret: str | None = WEBHOOK_SECRET) -> 
 # --- box 3 --------------------------------------------------------------------------------------------
 
 
-@pytest.mark.parametrize("secret", [None, "", "wrong-secret-but-long-enough-0123456789abcdef", WEBHOOK_SECRET[:-1]])
+@pytest.mark.parametrize(
+    "secret",
+    [None, "", "wrong-secret-but-long-enough-0123456789abcdef", WEBHOOK_SECRET[:-1]],
+    ids=["missing", "empty", "another-secret", "one-character-short"],
+)
 def test_box3_the_webhook_rejects_a_wrong_secret_token(
     client: TestClient, notify_db: MemoryDatabase, decisions: RecordedDecisions, secret: str | None
 ) -> None:
