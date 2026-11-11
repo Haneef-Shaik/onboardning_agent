@@ -1,0 +1,20 @@
+### Box 1: the provisioning_agent token can call the mocks through the hub (integration test)
+== int
+3 passed, 5 deselected in 6.36s
+== unit (hub -> real mcp-mocks ASGI)
+3 passed, 11 deselected in 0.29s
+### Box 2: replaying with the same idempotency key returns the same result and creates nothing new (test)
+== int
+2 passed, 6 deselected in 5.32s
+== unit (hub)
+3 passed, 11 deselected in 0.33s
+== unit (mocks)
+7 passed, 19 deselected in 0.26s
+== unit (review fixes)
+4 passed, 5 deselected in 0.18s
+### Box 3: an agent without the tool in its manifest is denied (test)
+== int
+3 passed, 5 deselected in 4.97s
+== unit (hub)
+3 passed, 11 deselected in 0.25s
+exit=0
