@@ -41,7 +41,8 @@ ACTORS = {
 ALL_200 = {Role.HR_ADMIN: 200, Role.HR: 200, Role.MANAGER: 200}
 
 # Routes anyone may call without a token.
-PUBLIC_ROUTES = {("GET", "/health"), ("POST", "/auth/login")}
+# NOTIF-1: Telegram's webhook carries no user token; it authenticates with its secret token header.
+PUBLIC_ROUTES = {("GET", "/health"), ("POST", "/auth/login"), ("POST", "/webhooks/telegram")}
 
 # Every guarded route: (method, path) -> {role: expected status}.
 ROLE_MATRIX: dict[tuple[str, str], dict[Role, int]] = {
@@ -75,6 +76,8 @@ ROLE_MATRIX: dict[tuple[str, str], dict[Role, int]] = {
     # UI-8: eval runs are HR_ADMIN only, read-only (PRD §10 Evals).
     ("GET", "/evals/runs"): {Role.HR_ADMIN: 200, Role.HR: 403, Role.MANAGER: 403},
     ("GET", "/evals/runs/{run_id}"): {Role.HR_ADMIN: 200, Role.HR: 403, Role.MANAGER: 403},
+    # NOTIF-1 (PRD FR-N2, §10 Mock channels): every role; a MANAGER sees only messages addressed to them.
+    ("GET", "/mock-outbox"): ALL_200,
 }
 
 CONFIG = Path(__file__).resolve().parents[3] / "config"

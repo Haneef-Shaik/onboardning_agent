@@ -28,7 +28,16 @@ from onb_api.documents.service import DocumentService
 from onb_api.evals.store import EvalRunStore
 from onb_api.hires.service import HireService
 from onb_api.templates import RegistryValidatorSource, TemplateLifecycle
-from onb_api.testing import TEST_SETTINGS, InMemoryAuditLog, InMemoryTemplateStore, InMemoryUserStore, seeded_store
+from onb_api.notify.service import MockChannels
+from onb_api.testing import (
+    TEST_SETTINGS,
+    WEBHOOK_SECRET,
+    InMemoryAuditLog,
+    InMemoryTemplateStore,
+    InMemoryUserStore,
+    RecordedDecisions,
+    seeded_store,
+)
 from onb_api.testing_mongo import MemoryDatabase, memory_keyring, memory_store
 from onb_crypto import Keyring
 from onb_data import Actor
@@ -38,12 +47,15 @@ __all__ = [
     "app",
     "audit_log",
     "client",
+    "decisions",
     "documents",
     "hire_audit",
     "hires",
     "jwt_secret_in_env",
     "keyring",
     "memory_db",
+    "notify",
+    "notify_db",
     "registry",
     "registry_retire",
     "template_store",
@@ -59,6 +71,7 @@ SEED = Path(__file__).resolve().parents[3] / "evals" / "fixtures" / "seed_v1.jso
 def jwt_secret_in_env(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("JWT_SECRET", secrets.token_urlsafe(48))
     monkeypatch.setenv("PII_MASTER_KEY", base64.b64encode(secrets.token_bytes(32)).decode("ascii"))
+    monkeypatch.setenv("TELEGRAM_WEBHOOK_SECRET", secrets.token_urlsafe(32))
 
 
 @pytest.fixture
@@ -139,6 +152,22 @@ def documents(memory_db: MemoryDatabase, hire_audit: InMemoryAuditLog, keyring: 
 
 
 @pytest.fixture
+def notify_db() -> MemoryDatabase:
+    """NOTIF-1: the in-memory database under the mock channels (`mock_outbox`, `telegram_callbacks`)."""
+    return MemoryDatabase()
+
+
+@pytest.fixture
+def decisions() -> RecordedDecisions:
+    return RecordedDecisions()
+
+
+@pytest.fixture
+def notify(notify_db: MemoryDatabase, decisions: RecordedDecisions) -> MockChannels:
+    return MockChannels(memory_store(notify_db), webhook_secret=WEBHOOK_SECRET, decisions=decisions)
+
+
+@pytest.fixture
 def app(
     users: InMemoryUserStore,
     registry: AgentRegistry,
@@ -147,6 +176,7 @@ def app(
     templates: TemplateLifecycle,
     documents: DocumentService,
     memory_db: MemoryDatabase,
+    notify: MockChannels,
 ) -> FastAPI:
     reset_telemetry_globals()
     return create_app(
@@ -158,6 +188,7 @@ def app(
         templates=templates,
         documents=documents,
         evals=EvalRunStore(memory_store(memory_db)),
+        notify=notify,
     )
 
 

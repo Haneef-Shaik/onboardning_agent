@@ -79,12 +79,30 @@ def _condition_holds(value: Any, condition: Any) -> bool:
     return equal
 
 
+def _candidates(value: Any, parts: list[str]) -> list[Any]:
+    """Every value at `parts` below `value`, stepping into arrays as MongoDB does (`buttons.callback_data`
+    matches any button's `callback_data`)."""
+    if not parts:
+        return [value]
+    if isinstance(value, list):
+        return [found for item in value for found in _candidates(item, parts)]
+    if not isinstance(value, Mapping) or parts[0] not in value:
+        return []
+    return _candidates(value[parts[0]], parts[1:])
+
+
+def _path_holds(document: Mapping[str, Any], path: str, condition: Any) -> bool:
+    if _condition_holds(_get(document, path), condition):
+        return True
+    return any(_condition_holds(found, condition) for found in _candidates(document, path.split(".")))
+
+
 def matches(document: Mapping[str, Any], query: Mapping[str, Any]) -> bool:
     for path, condition in query.items():
         if path == "$or":
             if not any(matches(document, branch) for branch in condition):
                 return False
-        elif not _condition_holds(_get(document, path), condition):
+        elif not _path_holds(document, path, condition):
             return False
     return True
 

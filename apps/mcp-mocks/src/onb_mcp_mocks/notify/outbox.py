@@ -3,8 +3,8 @@
 A `mock_outbox` document (tenant collection, PRD §9):
 
     {_id, org_id, channel: "telegram", recipient: {token, masked}, text, buttons: [{text,
-     callback_data, decision}], ref: {type, id} | null, run_id, task_id, agent, grant_digest,
-     args_digest, message_id, sent_at}
+     callback_data, decision}], ref: {type, id} | null, audience_user_id, run_id, task_id, agent,
+     grant_digest, args_digest, message_id, sent_at}
 
 It never holds a raw value: the recipient is the vault token and its mask, and `text` is the agent's
 body, which the hub has already scanned for raw PII (the body may not carry tokens either, so nothing
@@ -60,6 +60,7 @@ class OutboxEntry:
     task_id: str | None = None
     agent: str | None = None
     ref: Mapping[str, str] | None = None
+    audience_user_id: str | None = None  # a platform user the message is for (an approver); MANAGERs see only theirs
     grant_digest: str | None = None
     args_digest: str | None = None
 
@@ -101,6 +102,7 @@ class TelegramMockChannel:
             "text": entry.text,
             "buttons": stored_buttons,
             "ref": dict(entry.ref) if entry.ref is not None else None,
+            "audience_user_id": entry.audience_user_id,
             "run_id": entry.run_id,
             "task_id": entry.task_id,
             "agent": entry.agent,

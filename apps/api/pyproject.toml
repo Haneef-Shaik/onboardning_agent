@@ -12,6 +12,7 @@ dependencies = [
   "onb-contracts",
   "onb-crypto",
   "onb-data",
+  "onb-eventbus",
   "onb-guardrails",
   "onb-telemetry",
 ]
@@ -21,6 +22,7 @@ onb-agents = { workspace = true }
 onb-contracts = { workspace = true }
 onb-crypto = { workspace = true }
 onb-data = { workspace = true }
+onb-eventbus = { workspace = true }
 onb-guardrails = { workspace = true }
 onb-telemetry = { workspace = true }
 

@@ -8,10 +8,11 @@ Auth settings default to the environment, so an app built without them fails at 
 log, `GET /audit` answers 503; without an agent registry, `GET /agents` answers 503; without a hire
 service, the hire and PII routes answer 503; without a template lifecycle, `/templates` answers 503;
 without a document service, the document upload answers 503; without an eval run store,
-`/evals/runs*` answer 503 (UI-8); without an LLM configuration, agent records carry no resolved
-model. On startup the app makes the user store's, the audit log's, the hire service's (hires, vault,
-org keys, PII access log), the template store's, the document service's (encrypted bucket,
-`documents_meta`) and the eval runs' indexes and the stand-in password hash.
+`/evals/runs*` answer 503 (UI-8); without mock channels, `GET /mock-outbox` and
+`POST /webhooks/telegram` answer 503 (NOTIF-1); without an LLM configuration, agent records carry no
+resolved model. On startup the app makes the user store's, the audit log's, the hire service's (hires,
+vault, org keys, PII access log), the template store's, the document service's (encrypted bucket,
+`documents_meta`), the eval runs' and the mock channels' indexes and the stand-in password hash.
 """
 
 from __future__ import annotations
@@ -44,6 +45,8 @@ from onb_api.hires import routes as hire_routes
 from onb_api.hires.service import HireService
 from onb_api.templates import TemplateLifecycle
 from onb_api.templates import routes as template_routes
+from onb_api.notify import routes as notify_routes
+from onb_api.notify.service import MockChannels
 
 TITLE = "Onboarding Platform API"
 VERSION = "0.1.0"
@@ -65,6 +68,7 @@ def create_app(
     documents: DocumentService | None = None,
     evals: EvalRunsReader | None = None,
     llm: LLMConfig | None = None,
+    notify: MockChannels | None = None,
 ) -> FastAPI:
     settings = auth if auth is not None else AuthSettings.from_env()
 
@@ -82,6 +86,8 @@ def create_app(
             await documents.ensure_indexes()
         if evals is not None:
             await evals.ensure_indexes()
+        if notify is not None:
+            await notify.ensure_indexes()
         await run_in_threadpool(warm_up, settings.bcrypt_rounds)
         yield
 
@@ -95,6 +101,7 @@ def create_app(
     app.state.documents = documents
     app.state.evals = evals
     app.state.llm = llm
+    app.state.notify = notify
     install_error_handling(app)
     # Added after the error handling, so it sits outside it: an oversized body never reaches a route.
     app.add_middleware(BodyLimitMiddleware)
@@ -106,6 +113,7 @@ def create_app(
     app.include_router(template_routes.router)
     app.include_router(document_routes.router)
     app.include_router(eval_routes.router)
+    app.include_router(notify_routes.router)
     if telemetry_is_active():
         # `from fastapi import FastAPI` above bound the class before the instrumentor could swap
         # it, so instrument this app explicitly.

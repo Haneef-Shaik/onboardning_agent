@@ -1,0 +1,42 @@
+{
+  "update_id": 731957264,
+  "callback_query": {
+    "id": "3143857237649841312",
+    "from": {
+      "id": 731957001,
+      "is_bot": false,
+      "first_name": "Ravi",
+      "last_name": "Manager",
+      "username": "ravi_mgr",
+      "language_code": "en"
+    },
+    "message": {
+      "message_id": 42,
+      "from": {
+        "id": 7000000001,
+        "is_bot": true,
+        "first_name": "Onboarding Bot",
+        "username": "onboarding_mock_bot"
+      },
+      "chat": {
+        "id": 731957001,
+        "first_name": "Ravi",
+        "last_name": "Manager",
+        "username": "ravi_mgr",
+        "type": "private"
+      },
+      "date": 1794300000,
+      "text": "Approve laptop for the new hire?",
+      "reply_markup": {
+        "inline_keyboard": [
+          [
+            { "text": "Approve", "callback_data": "__APPROVE__" },
+            { "text": "Reject", "callback_data": "__REJECT__" }
+          ]
+        ]
+      }
+    },
+    "chat_instance": "-5368927412083694527",
+    "data": "__APPROVE__"
+  }
+}

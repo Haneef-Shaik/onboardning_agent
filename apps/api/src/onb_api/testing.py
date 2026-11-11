@@ -16,8 +16,10 @@ Synthetic people only (`evals/fixtures/seed_v1.json`); passwords are made up per
 from __future__ import annotations
 
 import secrets
+from collections.abc import Mapping
 from dataclasses import replace
 from datetime import UTC, datetime
+from typing import Any
 
 from onb_contracts.auth import Role
 from onb_data import current_tenant, tenant_scope
@@ -33,9 +35,11 @@ __all__ = [
     "PASSWORD",
     "SEED_USERS",
     "TEST_SETTINGS",
+    "WEBHOOK_SECRET",
     "InMemoryAuditLog",
     "InMemoryTemplateStore",
     "InMemoryUserStore",
+    "RecordedDecisions",
     "bearer",
     "email_of",
     "seeded_store",
@@ -44,6 +48,8 @@ __all__ = [
 
 TEST_SETTINGS = AuthSettings(jwt_secret=secrets.token_urlsafe(48), bcrypt_rounds=4)
 PASSWORD = secrets.token_urlsafe(12)
+# NOTIF-1: the Telegram webhook secret token test apps are built with (fresh per run).
+WEBHOOK_SECRET = secrets.token_urlsafe(32)
 
 # (user_id, org_id, name, role) from seed_v1; emails are made up from the id.
 SEED_USERS = [
@@ -118,3 +124,22 @@ def token_for(user_id: str, org_id: str, role: Role, *, now: datetime | None = N
 
 def bearer(token: str) -> dict[str, str]:
     return {"Authorization": f"Bearer {token}"}
+
+
+class RecordedDecisions:
+    """A `DecisionPublisher` (NOTIF-1) that records `(org, key, payload)` and, like the bus, ignores a
+    key already used in that org."""
+
+    def __init__(self) -> None:
+        self.published: list[tuple[str, str, dict[str, Any]]] = []
+        self.duplicates = 0
+        self._keys: set[tuple[str, str]] = set()
+
+    async def publish(self, payload: Mapping[str, Any], *, key: str) -> bool:
+        org = current_tenant().org_id
+        if (org, key) in self._keys:
+            self.duplicates += 1
+            return False
+        self._keys.add((org, key))
+        self.published.append((org, key, dict(payload)))
+        return True

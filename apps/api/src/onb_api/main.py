@@ -8,7 +8,9 @@ missing, and (`MasterKeyError`) when `PII_MASTER_KEY` is missing or not base64 o
 §7.10). `CONFIG_DIR` is the repository's `config/` (the tool catalog and the field → sink policy the
 template validator reads, TPL-2). Startup also fails (`LLMConfigError`) when `CONFIG_DIR/llm.yaml`
 cannot be resolved with this environment, e.g. `LLM_MODEL_STANDARD` unset: the agent pages show the
-connector and model each agent resolves to (UI-8, FR-A2).
+connector and model each agent resolves to (UI-8, FR-A2). It fails too (`ConfigError` /
+`WebhookSecretError`) when `TELEGRAM_WEBHOOK_SECRET`, the secret token Telegram echoes on every webhook
+call, is missing or weak (NOTIF-1).
 """
 
 import os
@@ -29,6 +31,7 @@ from onb_api.evals.store import EvalRunStore
 from onb_api.health import SERVICE_NAME
 from onb_api.hires.service import HireService
 from onb_api.templates import MongoTemplateStore, RegistryValidatorSource, TemplateLifecycle
+from onb_api.notify.service import BusDecisions, MockChannels
 
 auth = AuthSettings.from_env()
 mongo_uri = require_env(os.environ, "MONGO_URI")
@@ -49,6 +52,9 @@ templates = TemplateLifecycle(
 )
 documents = DocumentService.build(store, keyring, auditor=audit_log)
 eval_runs = EvalRunStore(store)
+notify = MockChannels(
+    store, webhook_secret=require_env(os.environ, "TELEGRAM_WEBHOOK_SECRET"), decisions=BusDecisions(store)
+)
 app = create_app(
     auth=auth,
     users=users,
@@ -59,4 +65,5 @@ app = create_app(
     documents=documents,
     evals=eval_runs,
     llm=llm_config,
+    notify=notify,
 )
