@@ -25,7 +25,7 @@ from onb_evals.llm_capture import LLMCapture
 from onb_evals.metrics import CaseResult, CheckOutcome, RepetitionResult
 from onb_evals.spans import EvalSpans, case_span
 from onb_evals.tokens import TokenMap
-from onb_evals.toolbox import AUDIT_COLLECTION, ToolBox, audit_from_documents
+from onb_evals.toolbox import AUDIT_COLLECTION, AUDIT_QUERIES, ToolBox, audit_from_documents
 
 __all__ = ["AgentAdapter", "AgentInvocation", "DatabaseProvider", "EvalRunner", "LLMProvider"]
 
@@ -175,6 +175,7 @@ class EvalRunner:
         entries: list[AuditEntry] = []
         for org_id in self._orgs:
             with tenant_scope(org_id):
-                documents = await store.append_only(AUDIT_COLLECTION).find({"kind": "mcp_call"})
+                log = store.append_only(AUDIT_COLLECTION)
+                documents = [doc for query in AUDIT_QUERIES for doc in await log.find(query)]
             entries.extend(audit_from_documents(tokens.to_seed(documents)))
         return tuple(entries)

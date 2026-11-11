@@ -25,9 +25,13 @@ from onb_evals.capture import AuditEntry, ToolCall, ToolOutcome, to_text
 from onb_evals.cases import Actor
 from onb_evals.tokens import TokenMap
 
-__all__ = ["AUDIT_COLLECTION", "TOOL_NAMES", "ToolBox", "ToolDeniedError"]
+__all__ = ["AUDIT_COLLECTION", "AUDIT_QUERIES", "TOOL_NAMES", "ToolBox", "ToolDeniedError", "audit_from_documents"]
 
 AUDIT_COLLECTION: Final = "audit_log"
+# The hub's records (`AuditLog` shape, action `mcp.tool_call`, ADR 0008) and this stand-in's (`kind: mcp_call`).
+HUB_AUDIT_ACTION: Final = "mcp.tool_call"
+AUDIT_QUERIES: Final = ({"kind": "mcp_call"}, {"action": HUB_AUDIT_ACTION})
+_HUB_OUTCOMES: Final = {"success": ToolOutcome.ALLOWED, "denied": ToolOutcome.DENIED, "failed": ToolOutcome.ERROR}
 OUTBOX_COLLECTION: Final = "mock_outbox"
 READABLE: Final = frozenset(
     {"users", "new_hires", "templates", "onboarding_runs", "run_tasks", "approvals", "documents_meta", "knowledge_docs"}
@@ -202,10 +206,30 @@ class ToolBox:
             )
 
 
+def _hub_tool(target: str) -> str:
+    """`tool:mongo.find/run_tasks` -> `find`; `tool:unknown` -> `unknown`."""
+    ref = target.removeprefix("tool:").split("/", 1)[0]
+    return ref.rsplit(".", 1)[-1]
+
+
+def _hub_entry(doc: Mapping[str, Any]) -> AuditEntry:
+    """A hub record. It holds no arguments or result orgs (ADR 0008): the hub scopes every call to the
+    token's org, and the record lives in that org."""
+    return AuditEntry(
+        org_id=str(doc.get("org_id")),
+        tool=_hub_tool(str(doc.get("target", ""))),
+        args={},
+        outcome=_HUB_OUTCOMES[str(doc.get("outcome"))],
+    )
+
+
 def audit_from_documents(documents: list[dict[str, Any]]) -> tuple[AuditEntry, ...]:
     """Audit entries as stored in `audit_log` (the runner reads them back after the run)."""
     entries = []
     for doc in documents:
+        if doc.get("action") == HUB_AUDIT_ACTION:
+            entries.append(_hub_entry(doc))
+            continue
         if doc.get("kind") != "mcp_call":
             continue
         entries.append(
