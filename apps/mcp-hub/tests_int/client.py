@@ -14,6 +14,7 @@ import httpx
 from mcp import ClientSession
 from mcp.client.streamable_http import streamable_http_client
 from mcp.types import CallToolResult, TextContent
+from onb_agents.runtime.task import GRANT_HEADER
 from onb_agents.tokens import AgentClaims, hub_client_config, issue_agent_token
 from onb_data import AuditLog, connect, tenant_scope
 from onb_data.audit import AuditEntry, AuditQuery
@@ -31,8 +32,12 @@ def agent_claims(agent: str, org: str, run_id: str, scopes: tuple[str, ...]) -> 
     return AgentClaims(agent=agent, run_id=run_id, org_id=org, scopes=scopes)
 
 
-async def _session[T](stack: Stack, token: str | None, fn: Callable[[ClientSession], Awaitable[T]]) -> T:
-    headers = hub_client_config(stack.hub_url, token)["headers"] if token else {}
+async def _session[T](
+    stack: Stack, token: str | None, fn: Callable[[ClientSession], Awaitable[T]], grant: str | None = None
+) -> T:
+    headers = dict(hub_client_config(stack.hub_url, token)["headers"]) if token else {}
+    if grant is not None:
+        headers[GRANT_HEADER] = grant  # how the agent runtime sends the task's PII grant (AG-1)
     async with (
         httpx.AsyncClient(headers=headers, timeout=30) as http,
         streamable_http_client(stack.hub_url, http_client=http) as (read, write, _),
@@ -42,12 +47,16 @@ async def _session[T](stack: Stack, token: str | None, fn: Callable[[ClientSessi
         return await fn(session)
 
 
-def call_with_token(stack: Stack, token: str | None, tool: str, args: dict[str, Any]) -> CallToolResult:
-    return asyncio.run(_session(stack, token, lambda s: s.call_tool(tool, args)))
+def call_with_token(
+    stack: Stack, token: str | None, tool: str, args: dict[str, Any], grant: str | None = None
+) -> CallToolResult:
+    return asyncio.run(_session(stack, token, lambda s: s.call_tool(tool, args), grant))
 
 
-def call(stack: Stack, claims: AgentClaims, tool: str, args: dict[str, Any], **token_kw: Any) -> CallToolResult:
-    return call_with_token(stack, issue_agent_token(claims, stack.token_key, **token_kw), tool, args)
+def call(
+    stack: Stack, claims: AgentClaims, tool: str, args: dict[str, Any], *, grant: str | None = None, **token_kw: Any
+) -> CallToolResult:
+    return call_with_token(stack, issue_agent_token(claims, stack.token_key, **token_kw), tool, args, grant)
 
 
 def list_tools(stack: Stack, claims: AgentClaims) -> list[str]:

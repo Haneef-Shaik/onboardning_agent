@@ -15,6 +15,7 @@ Their cases check that one org's idempotency key never answers, reveals or chang
 
 from __future__ import annotations
 
+import json
 import secrets
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -31,6 +32,7 @@ XT_SCOPES = (
     *(f"mongo__{t}" for t in ("list_collections", "find", "count", "aggregate", "insert_one", "update_one")),
     "mocks__create_bitbucket_account",
     "mocks__provision_laptop",
+    "notify__notify_send",
 )
 
 
@@ -114,6 +116,36 @@ def _mock_case(tool: str, args: dict[str, Any], id_field: str) -> Callable[[Stac
     return case
 
 
+def _outbox(world: World, org: str) -> list[dict[str, Any]]:
+    return list(world.root_db["mock_outbox"].find({"org_id": org}))
+
+
+def case_notify_send(stack: Stack, world: World) -> None:
+    """NOTIF-1: org A can send only to its own hire with its own grant. Org B's token, or org B's grant,
+    resolves nothing, sends nothing and changes nothing in org B; the refusal says nothing about B."""
+    notify = stack.notify
+    body = {"channel": "telegram", "body": f"Welcome {world.marker}"}
+    b_before = (_outbox(world, B), list(world.root_db["pii_access_log"].find({"org_id": B})))
+    claims_a = agent_claims("xt_agent", A, "run_xt", XT_SCOPES)
+    own = call(
+        stack, claims_a, "notify__notify_send", {**body, "recipient_token": notify.tokens[A]}, grant=notify.grant(A)
+    )
+    assert own.isError is False, text(own)
+    assert all(d["org_id"] == A for d in _outbox(world, A))
+    b_token = call(
+        stack, claims_a, "notify__notify_send", {**body, "recipient_token": notify.tokens[B]}, grant=notify.grant(A)
+    )
+    b_grant = call(
+        stack, claims_a, "notify__notify_send", {**body, "recipient_token": notify.tokens[B]}, grant=notify.grant(B)
+    )
+    for refused in (b_token, b_grant):
+        assert refused.isError is True
+        assert text(refused).startswith("denied (downstream_denied)")
+        assert notify.tokens[B] not in text(refused)
+    assert (_outbox(world, B), list(world.root_db["pii_access_log"].find({"org_id": B}))) == b_before
+    assert "9988776655" not in json.dumps([*_outbox(world, A), *_outbox(world, B)], default=str)
+
+
 HIRE = "65f0aaaabbbbccccddddeeee"
 HUB_TOOL_CASES: dict[str, Callable[[Stack, World], None]] = {
     "mocks__create_bitbucket_account": _mock_case(
@@ -128,6 +160,7 @@ HUB_TOOL_CASES: dict[str, Callable[[Stack, World], None]] = {
     "mongo__aggregate": case_aggregate,
     "mongo__insert_one": case_insert_one,
     "mongo__update_one": case_update_one,
+    "notify__notify_send": case_notify_send,
 }
 
 
