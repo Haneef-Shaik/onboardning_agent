@@ -201,12 +201,11 @@ def _sealed_header(files: dict[str, Any]) -> tuple[Sealed, KeyPurpose, str, str]
     meta = files.get("metadata")
     if not isinstance(meta, dict) or meta.get("alg") != ALG:
         raise _refused(files.get("_id"), "malformed metadata")
-    nonce = meta.get("nonce")
-    if not isinstance(nonce, bytes):  # never bytes(<int>): that would allocate, not refuse
-        raise _refused(files.get("_id"), "malformed encryption header")
     try:
         purpose = KeyPurpose(str(meta.get("key_purpose")))
-        sealed = Sealed(meta.get("key_version"), nonce, b"")  # type: ignore[arg-type]  # checked by Sealed
+        # The stored values go to `Sealed` as they are: it refuses a non-int version and a nonce that is not
+        # 12 bytes (never `bytes(<int>)`, which would allocate instead of refusing).
+        sealed = Sealed(meta.get("key_version"), meta.get("nonce"), b"")  # type: ignore[arg-type]
     except (TypeError, ValueError):
         raise _refused(files.get("_id"), "malformed encryption header") from None
     document_type, media_type = meta.get("type"), meta.get("media_type")
