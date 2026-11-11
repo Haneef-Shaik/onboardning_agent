@@ -5,7 +5,8 @@
 * an audit log holding MCP hub denials for `db_agent` (HUB-1's record shape, ADR 0006), plus what the
   hire service itself audits;
 * one hire created by HR through the hire service, and one reveal, so the PII access log has an entry;
-* two eval runs written by the harness's own writer (`onb_evals.results.record_run`).
+* two eval runs in the shape the harness stores (`onb_api.testing_evals`; apps may not import the
+  harness).
 
 Test-only and synthetic: the hire's values come from PII-3's synthetic ranges, never a real person.
 """
@@ -22,11 +23,11 @@ from onb_api.auth.tokens import Principal
 from onb_api.evals.store import EvalRunStore
 from onb_api.hires.service import HireService
 from onb_api.testing import InMemoryAuditLog, InMemoryUserStore
+from onb_api.testing_evals import store_eval_run
 from onb_api.testing_mongo import memory_keyring, memory_store
 from onb_contracts.auth import Role
 from onb_contracts.hires import NewHireRequest, PiiField
 from onb_data import Actor, AuditOutcome, tenant_scope
-from onb_evals.results import record_run
 from onb_llm import LLMConfig, load_llm_config
 
 ROOT: Final = Path(__file__).resolve().parents[3]
@@ -153,7 +154,8 @@ def _report(run_id: str, agent: str, passed: bool, started: datetime) -> dict[st
 async def eval_runs() -> EvalRunStore:
     store = memory_store()
     for day, (run_id, agent, passed) in enumerate(EVAL_RUNS):
-        await record_run(store, ORG, _report(run_id, agent, passed, T0 + timedelta(days=day)))
+        started = T0 + timedelta(days=day)
+        await store_eval_run(store, ORG, _report(run_id, agent, passed, started))
     return EvalRunStore(store)
 
 

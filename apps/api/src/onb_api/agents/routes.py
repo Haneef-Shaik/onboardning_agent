@@ -10,6 +10,7 @@ never the provider params llm.yaml routes through it.
 
 from __future__ import annotations
 
+import logging
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Path, Request
@@ -27,7 +28,7 @@ from onb_contracts.agents import (
 )
 from onb_contracts.agents import AgentCollections as Collections
 from onb_contracts.auth import Role
-from onb_llm import LLMConfig, LLMSelection, resolve_llm
+from onb_llm import LLMConfig, LLMConfigError, LLMSelection, resolve_llm
 
 from onb_api.agents.reader import AgentRegistryReader
 from onb_api.auth.dependencies import require_role
@@ -38,6 +39,7 @@ from onb_api.responses import respond
 __all__ = ["agent_registry", "router"]
 
 router = APIRouter(tags=["agents"])
+_log = logging.getLogger(__name__)
 
 HrAdmin = Annotated[Principal, Depends(require_role(Role.HR_ADMIN))]
 
@@ -65,7 +67,12 @@ def _resolved(agent: RegisteredAgent, config: LLMConfig | None) -> AgentResolved
         return None
     llm = agent.manifest.llm
     selection = LLMSelection(alias=llm.alias, connector=llm.connector, model=llm.model, params=llm.params.values())
-    chosen = resolve_llm(config, manifest=selection).task_record()
+    try:
+        chosen = resolve_llm(config, manifest=selection).task_record()
+    except LLMConfigError:
+        # One manifest naming an alias llm.yaml lacks must not hide every other agent: shown unresolved.
+        _log.warning("agent %s: its model choice does not resolve against llm.yaml", agent.name)
+        return None
     return AgentResolvedLLM.model_validate(chosen)
 
 

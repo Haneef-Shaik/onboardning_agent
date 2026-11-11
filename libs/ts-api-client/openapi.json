@@ -275,7 +275,8 @@
           "requires_approval",
           "limits",
           "sha256",
-          "updated_at"
+          "updated_at",
+          "resolved_llm"
         ],
         "title": "AgentRecord",
         "type": "object"

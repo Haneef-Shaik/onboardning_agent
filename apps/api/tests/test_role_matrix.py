@@ -25,12 +25,12 @@ from onb_api.auth.tokens import Principal
 from onb_api.responses import respond
 from onb_api.templates import RegistryValidatorSource, TemplateLifecycle
 from onb_api.testing import InMemoryAuditLog, InMemoryTemplateStore, bearer, token_for
+from onb_api.testing_evals import eval_report, store_eval_run
 from onb_api.testing_mongo import MemoryDatabase, memory_store
 from onb_contracts import Envelope
 from onb_contracts.auth import Role
 from onb_contracts.templates import Template
 from onb_data import tenant_scope
-from onb_evals.results import record_run
 
 # One acme user per role (seed_v1 ids).
 ACTORS = {
@@ -129,23 +129,8 @@ def templates(
 def _sample_eval_run(memory_db: MemoryDatabase) -> None:
     """One acme eval run, as the harness stores it, so the eval run sample path exists."""
     started = datetime(2026, 11, 2, 9, 0, tzinfo=UTC)
-    report = {
-        "run_id": SAMPLE_EVAL_RUN,
-        "mode": "selftest",
-        "started_at": started.isoformat(),
-        "finished_at": started.isoformat(),
-        "agent": "all",
-        "llm": "fake:eval-scripted",
-        "dataset": "onboarding_agents_v1.jsonl",
-        "fixture": "seed_v1",
-        "repeat": 1,
-        "passed": True,
-        "all_cases_passed": True,
-        "metrics": {},
-        "gates": [],
-        "cases": [],
-    }
-    asyncio.run(record_run(memory_store(memory_db), "org_acme", report))
+    report = eval_report(SAMPLE_EVAL_RUN, started, started)
+    asyncio.run(store_eval_run(memory_store(memory_db), "org_acme", report))
 
 
 def _routes(app: FastAPI) -> list[APIRoute]:

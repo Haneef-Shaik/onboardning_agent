@@ -24,6 +24,8 @@ RECORD = {
     "limits": {"max_steps": 8, "max_tokens": 20000, "timeout_s": 60},
     "sha256": "c" * 64,
     "updated_at": "2026-11-10T09:30:00Z",
+    # UI-8: the connector and model the alias resolves to (never provider params).
+    "resolved_llm": {"connector": "fake", "model": "fake-standard", "alias": "standard", "source": "manifest"},
 }
 
 
@@ -37,6 +39,17 @@ def test_a_record_round_trips_with_utc_time() -> None:
 def test_a_record_refuses_unknown_fields_and_bad_values(change: dict[str, object]) -> None:
     with pytest.raises(ValidationError):
         AgentRecord.model_validate({**RECORD, **change})
+
+
+def test_the_resolved_model_is_required_nullable_and_carries_no_provider_params() -> None:
+    assert AgentRecord.model_validate({**RECORD, "resolved_llm": None}).resolved_llm is None
+    without = {k: v for k, v in RECORD.items() if k != "resolved_llm"}
+    with pytest.raises(ValidationError):
+        AgentRecord.model_validate(without)
+    resolved = {"connector": "fake", "model": "fake-standard", "alias": "standard", "source": "manifest"}
+    for extra in ({"params": {"guardrail_id": "g"}}, {"region_name": "r"}, {"source": "somewhere"}):
+        with pytest.raises(ValidationError):
+            AgentRecord.model_validate({**RECORD, "resolved_llm": {**resolved, **extra}})
 
 
 def test_the_envelopes_carry_one_record_or_a_list() -> None:

@@ -1,14 +1,13 @@
 """`GET /evals/runs`, `GET /evals/runs/{run_id}`: HR_ADMIN reads the org's eval runs (UI-8; PRD §9, §10 Evals).
 
-The records are written by the harness's own writer (`onb_evals.results.record_run`), so the read
-model is tested against what the harness stores, not against a hand-made copy of it. HR and MANAGER
-get 403 before the store is read; another org's run answers exactly like a run that does not exist.
+The records are written in the shape the harness stores (`onb_api.testing_evals`; apps may not import
+the harness, and `tools/tests_xt` proves the API reads what `onb_evals.results.record_run` writes). HR
+and MANAGER get 403 before the store is read; another org's run answers exactly like a missing one.
 """
 
 from __future__ import annotations
 
 import asyncio
-import re
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
@@ -16,14 +15,11 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from onb_api import create_app
-from onb_api.evals.store import EVAL_RUNS_COLLECTION, EvalRunStore
+from onb_api.evals.store import EvalRunStore
 from onb_api.testing import TEST_SETTINGS, bearer, token_for
+from onb_api.testing_evals import eval_report, store_eval_run
 from onb_api.testing_mongo import MemoryDatabase, memory_store
 from onb_contracts.auth import Role
-from onb_contracts.evals import EVAL_RUN_ID_PATTERN
-from onb_evals.results import EVAL_RUNS_COLLECTION as HARNESS_COLLECTION
-from onb_evals.results import record_run
-from onb_evals.session import _run_id
 
 ADMIN = ("u_acme_hradmin", "org_acme", Role.HR_ADMIN)
 HR = ("u_acme_hr1", "org_acme", Role.HR)
@@ -38,51 +34,16 @@ MISSING_RUN = "evr_20261105T090000Z_0000ccc1"
 
 
 def report(run_id: str, started: datetime, *, agent: str = "db_agent", passed: bool = True) -> dict[str, Any]:
-    """A report as `onb_evals.report.build_report` shapes it (only the fields `record_run` stores)."""
-    group = {
-        "cases": 2,
-        "repetitions": 6,
-        "pass_at_1": 0.8333,
-        "pass_at_1_exact": "5/6",
-        "pass_hat_k": 0.5,
-        "pass_hat_k_exact": "1/2",
-        "tool_call_accuracy": 1.0,
-        "avg_steps": 3.5,
-        "p50_latency_ms": 12.0,
-        "p95_latency_ms": 30.5,
-        "avg_tokens": 410.0,
-    }
-    return {
-        "run_id": run_id,
-        "mode": "full",
-        "started_at": started.isoformat(),
-        "finished_at": (started + timedelta(minutes=4)).isoformat(),
-        "agent": agent,
-        "llm": "standard",
-        "dataset": "onboarding_agents_v1.jsonl",
-        "fixture": "seed_v1",
-        "repeat": 3,
-        "passed": passed,
-        "all_cases_passed": False,
-        "metrics": {agent: {"all": group, "happy": group}},
-        "gates": [{"name": "pass_hat_k", "agent": agent, "passed": passed, "detail": "50.0% >= 50.0%"}],
-        "cases": [
-            {"case_id": "db-001", "agent": agent, "category": "happy", "repetitions": [{"passed": True}] * 3},
-            {
-                "case_id": "db-002",
-                "agent": agent,
-                "category": "happy",
-                "repetitions": [{"passed": True}, {"passed": False}, {"passed": True}],
-            },
-        ],
-    }
+    return eval_report(run_id, started, started + timedelta(minutes=4), agent=agent, passed=passed)
 
 
 async def _seed(db: MemoryDatabase) -> None:
     store = memory_store(db)
-    await record_run(store, "org_acme", report(ACME_OLD, T0))
-    await record_run(store, "org_acme", report(ACME_NEW, T0 + timedelta(days=1), agent="run_assistant", passed=False))
-    await record_run(store, "org_globex", report(GLOBEX_RUN, T0 + timedelta(days=2), agent="globex_only_agent"))
+    await store_eval_run(store, "org_acme", report(ACME_OLD, T0))
+    await store_eval_run(
+        store, "org_acme", report(ACME_NEW, T0 + timedelta(days=1), agent="run_assistant", passed=False)
+    )
+    await store_eval_run(store, "org_globex", report(GLOBEX_RUN, T0 + timedelta(days=2), agent="globex_only_agent"))
 
 
 @pytest.fixture
@@ -141,8 +102,8 @@ def test_a_run_shows_its_metrics_gates_and_cases(seeded: MemoryDatabase, client:
     }
     assert data["gates"] == [{"name": "pass_hat_k", "agent": "db_agent", "passed": True, "detail": "50.0% >= 50.0%"}]
     assert data["cases"] == [
-        {"case_id": "db-001", "agent": "db_agent", "category": "happy", "passes": 3, "repetitions": 3},
-        {"case_id": "db-002", "agent": "db_agent", "category": "happy", "passes": 2, "repetitions": 3},
+        {"case_id": "db_agent-001", "agent": "db_agent", "category": "happy", "passes": 3, "repetitions": 3},
+        {"case_id": "db_agent-002", "agent": "db_agent", "category": "happy", "passes": 2, "repetitions": 3},
     ]
 
 
@@ -237,15 +198,6 @@ def test_startup_makes_the_org_prefixed_eval_runs_index() -> None:
     with TestClient(app):
         pass
     assert ("org_id", "started_at", "_id") in [index.keys for index in db["eval_runs"].indexes]
-
-
-def test_the_api_reads_the_collection_the_harness_writes() -> None:
-    assert EVAL_RUNS_COLLECTION == HARNESS_COLLECTION
-
-
-def test_the_run_id_pattern_matches_the_harness_ids() -> None:
-    for moment in (T0, datetime(2027, 1, 31, 23, 59, 59, tzinfo=UTC)):
-        assert re.fullmatch(EVAL_RUN_ID_PATTERN, _run_id(moment))
 
 
 def test_a_malformed_stored_run_is_an_internal_error_not_a_partial_answer(

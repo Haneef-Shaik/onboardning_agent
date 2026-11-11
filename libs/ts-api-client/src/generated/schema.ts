@@ -444,7 +444,7 @@ export interface components {
             purpose: string;
             /** Requires Approval */
             requires_approval: string[];
-            resolved_llm?: components["schemas"]["AgentResolvedLLM"] | null;
+            resolved_llm: components["schemas"]["AgentResolvedLLM"] | null;
             /** Sha256 */
             sha256: string;
             /** Tools */

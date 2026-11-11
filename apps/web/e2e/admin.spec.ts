@@ -10,7 +10,7 @@ const ADMIN = "u_acme_hradmin@example.com";
 // admin_seed.py: the synthetic hire's raw values, which must never reach the page.
 const RAW_VALUES = ["AEEPI7101K", "meera.iyer.e2e@example.com", "90000 00071"];
 const AGENTS = ["approvals_agent", "db_agent", "provisioning_agent", "run_assistant", "template_builder", "templates_agent"];
-const RUNS = ["evr_20261103T090000Z_0e2e0002", "evr_20261102T090000Z_0e2e0001"];
+const RUNS = ["evr_20261103T090000Z_0e2e0002", "evr_20261102T090000Z_0e2e0001"] as const;
 const ADMIN_ROUTES = ["/agents", "/agents/db_agent", "/audit", "/pii-access-log", "/evals/runs", `/evals/runs/${RUNS[0]}`];
 
 async function signIn(page: Page, email: string) {

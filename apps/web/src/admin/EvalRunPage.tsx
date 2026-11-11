@@ -54,8 +54,8 @@ function MetricsCard({ run }: { run: EvalRun }) {
               <Cell>{formatRate(metrics.pass_at_1)}</Cell>
               <Cell>{formatRate(metrics.pass_hat_k)}</Cell>
               <Cell>{formatRate(metrics.tool_call_accuracy)}</Cell>
-              <Cell>{metrics.avg_steps}</Cell>
-              <Cell>{metrics.p95_latency_ms}</Cell>
+              <Cell>{metrics.avg_steps.toFixed(1)}</Cell>
+              <Cell>{Math.round(metrics.p95_latency_ms)}</Cell>
             </tr>
           ))}
         </Table>

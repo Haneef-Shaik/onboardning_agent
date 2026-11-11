@@ -92,8 +92,8 @@ class AgentRecord(BaseModel):
     limits: AgentLimits
     sha256: str
     updated_at: datetime
-    # Null when the API runs without an LLM configuration.
-    resolved_llm: AgentResolvedLLM | None = None
+    # Null when the API runs without an LLM configuration, or the manifest's choice does not resolve.
+    resolved_llm: AgentResolvedLLM | None
 
 
 class AgentsEnvelope(Envelope[list[AgentRecord]]):

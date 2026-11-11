@@ -16,7 +16,7 @@ from onb_agents.registry import AgentRegistry
 from onb_api import create_app
 from onb_api.testing import TEST_SETTINGS, InMemoryAuditLog, bearer, token_for
 from onb_contracts.auth import Role
-from onb_llm import load_llm_config
+from onb_llm import LLMConfig, load_llm_config
 
 CONFIG = Path(__file__).resolve().parents[3] / "config"
 
@@ -176,6 +176,16 @@ def test_provider_params_never_reach_the_response(registry: AgentRegistry) -> No
             text = _get(client, "/agents", ADMIN).text + _get(client, "/agents/db_agent", ADMIN).text
         for sentinel in ("region-sentinel", "gr-secret-sentinel", "script-sentinel", "guardrail", "script_file"):
             assert sentinel not in text
+
+
+def test_an_alias_llm_yaml_lacks_leaves_that_agent_unresolved(registry: AgentRegistry) -> None:
+    config = LLMConfig.model_validate({"default": {"connector": "fake", "model": "fake-default"}})
+    with TestClient(create_app(auth=TEST_SETTINGS, agents=registry, llm=config)) as client:
+        listed = _get(client, "/agents", ADMIN)
+        one = _get(client, "/agents/db_agent", ADMIN)
+    assert listed.status_code == one.status_code == 200
+    assert {a["resolved_llm"] for a in listed.json()["data"]} == {None}
+    assert one.json()["data"]["resolved_llm"] is None
 
 
 def test_without_an_llm_config_the_resolved_model_is_null(client: TestClient) -> None:
