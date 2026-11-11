@@ -52,12 +52,18 @@ def test_a_broken_result_is_an_internal_error_not_the_agents_invalid_arguments(
     assert dict(span.attributes or {})["outcome"] == "error"
 
 
-def test_ids_differ_when_the_same_key_comes_back_with_other_arguments_after_a_restart() -> None:
+@pytest.mark.parametrize(
+    ("name", "args", "id_field"),
+    [("create_bitbucket_account", BITBUCKET_ARGS, "account_id"), ("provision_laptop", LAPTOP_ARGS, "order_id")],
+)
+def test_ids_differ_when_the_same_key_comes_back_with_other_arguments_after_a_restart(
+    name: str, args: dict[str, Any], id_field: str
+) -> None:
     """The conflict check lives in memory; the ids include the arguments, so one id never names two hires."""
-    other_hire = {**BITBUCKET_ARGS, "hire_id": "65f0aaaabbbbccccddddffff"}
-    first = _invoke(InMemoryIdempotencyStore(), "create_bitbucket_account", BITBUCKET_ARGS)
-    after_restart = _invoke(InMemoryIdempotencyStore(), "create_bitbucket_account", other_hire)
-    assert first["account_id"] != after_restart["account_id"]
+    other_hire = {**args, "hire_id": "65f0aaaabbbbccccddddffff"}
+    first = _invoke(InMemoryIdempotencyStore(), name, args)
+    after_restart = _invoke(InMemoryIdempotencyStore(), name, other_hire)
+    assert first[id_field] != after_restart[id_field]
 
 
 def test_group_order_does_not_make_a_replay_a_conflict() -> None:

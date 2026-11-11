@@ -72,8 +72,8 @@ MUTATIONS = (
     Mutation(
         "M7 hub signs every server with the mongo key",
         f"{HUB}/downstream.py",
-        "        key = self._keys.get(tool.server, self._key)\n",
-        "        key = self._key\n",
+        "        key = self._keys[tool.server]",
+        "        key = self._keys[MONGO_SERVER]",
         ("apps/mcp-hub/tests/test_downstream.py", "apps/mcp-hub/tests/test_mocks.py"),
     ),
     Mutation(
@@ -128,8 +128,8 @@ MUTATIONS = (
     Mutation(
         "M15 mock ids ignore the org",
         f"{MOCKS}/tools.py",
-        '        account_id=_digest(ctx.org_id, "create_bitbucket_account", args.task_id)[:24],',
-        '        account_id=_digest("create_bitbucket_account", args.task_id)[:24],',
+        '        account_id=_digest(ctx.org_id, "create_bitbucket_account", args.task_id, fingerprint)[:24],',
+        '        account_id=_digest("create_bitbucket_account", args.task_id, fingerprint)[:24],',
         ("apps/mcp-mocks/tests/test_tools.py",),
     ),
     Mutation(
@@ -138,6 +138,43 @@ MUTATIONS = (
         '        loc[-1] = "<extra>"',
         "        pass",
         ("apps/mcp-mocks/tests/test_server.py",),
+    ),
+    Mutation(
+        "M17 downstream falls back to the mongo key for a server without its own",
+        f"{HUB}/downstream.py",
+        "        if missing:\n",
+        "        if False:\n",
+        ("apps/mcp-hub/tests/test_downstream.py",),
+    ),
+    Mutation(
+        "M18 quota shared by every org",
+        f"{MOCKS}/store.py",
+        "            if self._per_org[org_id] >= self._max:\n",
+        "            if sum(self._per_org.values()) >= self._max:\n",
+        ("apps/mcp-mocks/tests/test_review_fixes.py",),
+    ),
+    Mutation(
+        "M19 mock ids ignore the arguments",
+        f"{MOCKS}/tools.py",
+        '        order_id=_digest(ctx.org_id, "provision_laptop", args.task_id, fingerprint)[:24],',
+        '        order_id=_digest(ctx.org_id, "provision_laptop", args.task_id)[:24],',
+        ("apps/mcp-mocks/tests/test_review_fixes.py", "apps/mcp-mocks/tests/test_tools.py"),
+    ),
+    Mutation(
+        "M20 a broken result is reported as the agent's invalid arguments",
+        f"{MOCKS}/server.py",
+        "        except StoreFullError:\n",
+        "        except ValidationError as exc:\n"
+        "            raise _deny(span, 'invalid_arguments', _validation_message(exc)) from None\n"
+        "        except StoreFullError:\n",
+        ("apps/mcp-mocks/tests/test_review_fixes.py",),
+    ),
+    Mutation(
+        "M21 group order makes a replay a conflict",
+        f"{MOCKS}/contracts.py",
+        "    return sorted(values)\n",
+        "    return values\n",
+        ("apps/mcp-mocks/tests/test_review_fixes.py",),
     ),
 )
 
@@ -164,7 +201,7 @@ def run(m: Mutation) -> tuple[bool, str]:
                 check=False,
             )
             if proc.returncode != 0:
-                failed_lines += [ln for ln in proc.stdout.splitlines() if ln.startswith(("FAILED", "ERROR"))][:1]
+                failed_lines += [ln for ln in proc.stdout.splitlines() if ln.startswith(("FAILED ", "ERROR ")) and "::" in ln][:1]
         return bool(failed_lines), "; ".join(failed_lines) or "all tests passed"
     finally:
         path.write_bytes(original)

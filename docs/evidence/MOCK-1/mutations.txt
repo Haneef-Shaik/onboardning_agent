@@ -1,0 +1,23 @@
+KILLED   M1 replay creates a new record: FAILED apps/mcp-mocks/tests/test_tools.py::test_replaying_with_the_same_idempotency_key_returns_the_same_result_and_creates_nothing_new[create_bitbucket_account-args0]; FAILED apps/mcp-hub/tests/test_mocks.py::test_replaying_through_the_hub_returns_the_same_result_and_creates_nothing_new
+KILLED   M2 conflict check removed: FAILED apps/mcp-mocks/tests/test_tools.py::test_the_same_key_with_different_arguments_is_a_conflict_and_changes_nothing; FAILED apps/mcp-mocks/tests/test_server.py::test_a_conflicting_replay_is_refused_as_a_conflict_not_an_internal_error
+KILLED   M3 org dropped from the record key: FAILED apps/mcp-mocks/tests/test_tools.py::test_the_same_key_in_another_org_is_another_record_with_other_ids; FAILED apps/mcp-hub/tests/test_mocks.py::test_the_same_idempotency_key_in_another_org_creates_that_orgs_own_record
+KILLED   M4 mocks server ignores the audience (verifies with mcp-mongo's): FAILED apps/mcp-mocks/tests/test_server.py::test_a_call_with_a_context_returns_the_structured_result
+KILLED   M5 context tool binding removed: FAILED apps/mcp-mocks/tests/test_server.py::test_a_context_naming_another_tool_is_denied
+KILLED   M6 verify_call_context ignores its audience argument: FAILED apps/mcp-mongo/tests/test_call_context.py::test_a_context_signed_for_another_server_is_refused_here_and_accepted_there; FAILED apps/mcp-mocks/tests/test_server.py::test_a_call_with_a_context_returns_the_structured_result
+KILLED   M7 hub signs every server with the mongo key: FAILED apps/mcp-hub/tests/test_downstream.py::test_each_server_gets_a_context_signed_with_its_own_key_for_its_own_audience; FAILED apps/mcp-hub/tests/test_mocks.py::test_the_provisioning_agent_calls_a_mock_through_the_hub[mocks__create_bitbucket_account-args0]
+KILLED   M8 hub signs every server for the mcp-mongo audience: FAILED apps/mcp-hub/tests/test_downstream.py::test_each_server_gets_a_context_signed_with_its_own_key_for_its_own_audience; FAILED apps/mcp-hub/tests/test_mocks.py::test_the_provisioning_agent_calls_a_mock_through_the_hub[mocks__create_bitbucket_account-args0]
+KILLED   M9 manifest tool check skipped (box 3): FAILED apps/mcp-hub/tests/test_mocks.py::test_an_agent_whose_manifest_lacks_that_mock_tool_is_denied
+KILLED   M10 manifest server check skipped (box 3): FAILED apps/mcp-hub/tests/test_mocks.py::test_an_agent_with_no_mock_tools_in_its_manifest_is_denied
+KILLED   M11 hub keys may repeat: FAILED apps/mcp-hub/tests/test_main.py::test_the_keys_must_all_differ[MCP_CALL_CONTEXT_KEY-AGENT_TOKEN_KEY]
+KILLED   M12 mocks dropped from the platform catalog: FAILED apps/mcp-hub/tests/test_mocks.py::test_the_platform_catalog_serves_the_mongo_and_mock_tools; FAILED apps/mcp-hub/tests/test_main.py::test_the_gateway_main_builds_serves_the_mock_tools
+KILLED   M13 Telegram stub keeps a copy of the text: FAILED apps/mcp-mocks/tests/test_telegram.py::test_the_receipt_and_the_stub_hold_no_copy_of_the_text_or_recipient
+KILLED   M14 Telegram stub skips the Bot API text limit: FAILED apps/mcp-mocks/tests/test_telegram.py::test_a_message_outside_the_bot_api_limits_is_refused_and_not_counted[]
+KILLED   M15 mock ids ignore the org: FAILED apps/mcp-mocks/tests/test_tools.py::test_the_same_key_in_another_org_is_another_record_with_other_ids
+KILLED   M16 invented argument keys echoed: FAILED apps/mcp-mocks/tests/test_server.py::test_an_org_id_argument_is_named_in_the_refusal_but_other_invented_keys_are_not
+KILLED   M17 downstream falls back to the mongo key for a server without its own: FAILED apps/mcp-hub/tests/test_downstream.py::test_a_non_mongo_server_without_its_own_key_is_refused_at_construction
+KILLED   M18 quota shared by every org: FAILED apps/mcp-mocks/tests/test_review_fixes.py::test_one_org_filling_its_quota_does_not_block_another_org
+KILLED   M19 mock ids ignore the arguments: FAILED apps/mcp-mocks/tests/test_review_fixes.py::test_ids_differ_when_the_same_key_comes_back_with_other_arguments_after_a_restart[provision_laptop-args1-order_id]
+KILLED   M20 a broken result is reported as the agent's invalid arguments: FAILED apps/mcp-mocks/tests/test_review_fixes.py::test_a_broken_result_is_an_internal_error_not_the_agents_invalid_arguments
+KILLED   M21 group order makes a replay a conflict: FAILED apps/mcp-mocks/tests/test_review_fixes.py::test_group_order_does_not_make_a_replay_a_conflict
+
+21/21 mutations killed

@@ -29,14 +29,20 @@ transport stub. Four things had to be decided:
    start unless `AGENT_TOKEN_KEY`, `MCP_CALL_CONTEXT_KEY` and `MCP_MOCKS_CONTEXT_KEY` all differ. A mocks
    context is refused by mcp-mongo and the reverse, and a compromised mocks server cannot mint mongo
    contexts. `sign_call_context` / `verify_call_context` take an `audience` argument (default `mcp-mongo`,
-   so mcp-mongo is unchanged). The org comes only from the verified context, never from arguments.
-3. **Mock records are in memory** (`InMemoryIdempotencyStore`, bounded at 100 000). Results are derived
-   from SHA-256 of (org, tool, `task_id`), so a replay after a restart still returns the same ids; only
-   the conflict check is lost across a restart. The mocks are thin (PRD §2) and touch no MongoDB, so they
+   so mcp-mongo is unchanged). `McpDownstream` fails closed: every server with a URL other than mongo must
+   have its own key, and no two servers share a key. The org comes only from the verified context, never
+   from arguments.
+3. **Mock records are in memory** (`InMemoryIdempotencyStore`, a quota of 10 000 records per org, so one
+   org filling it never blocks another; a full org gets a `store_full` refusal and its replays still
+   answer). Ids are SHA-256 of (org, tool, `task_id`, argument fingerprint), so a replay after a restart
+   still returns the same ids and the same key with other arguments gets other ids; only the conflict
+   refusal is lost across a restart. `groups` are sorted, so their order never makes a replay a conflict.
+   The mocks are thin (PRD §2) and touch no MongoDB, so they
    need no database user and no `TenantRepository`.
 4. **The Telegram stub is a Python transport, not an MCP tool.** `onb_mcp_mocks.telegram.TelegramTransport`
    is the seam NOTIF-1's `telegram_mock` sink calls after resolving the vault token; `TelegramMockTransport`
-   checks Bot API limits (text 1–4096 characters, callback data 1–64 bytes), returns a Bot-API-shaped
+   checks Bot API limits (text 1–4096 characters, callback data 1–64 bytes, a non-zero chat id or an
+   `@username`), returns a Bot-API-shaped
    receipt, and keeps no copy of the recipient or text. Raw values must never cross the hub, whose argument
    check would refuse them anyway.
 
