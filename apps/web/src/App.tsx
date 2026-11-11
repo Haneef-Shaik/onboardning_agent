@@ -1,7 +1,9 @@
 import type { ApiClient, Me } from "@onb/ts-api-client";
 import { Button } from "@onb/ts-ui";
 import { QueryClientProvider, type QueryClient } from "@tanstack/react-query";
+import type { ReactNode } from "react";
 import { Navigate, Route, Routes, useLocation } from "react-router";
+import { AdminSection } from "./admin/AdminSection";
 import { AuthProvider, useAuth } from "./auth/AuthProvider";
 import type { SessionStore } from "./auth/session";
 import { canAccess, navFor, safeReturnPath, sectionOf } from "./nav/nav";
@@ -20,7 +22,7 @@ export function App({ client, session, queryClient }: AppProps) {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider client={client} session={session}>
-        <AppRoutes />
+        <AppRoutes client={client} />
       </AuthProvider>
     </QueryClientProvider>
   );
@@ -53,7 +55,13 @@ function Guarded({ me }: { me: Me }) {
   return item && canAccess(me.role, pathname) ? <SectionPage item={item} /> : <NotAvailablePage />;
 }
 
-function AppRoutes() {
+/** A real screen behind the same nav-table check as `Guarded`. */
+function RequireSection({ me, children }: { me: Me; children: ReactNode }) {
+  const { pathname } = useLocation();
+  return canAccess(me.role, pathname) ? <>{children}</> : <NotAvailablePage />;
+}
+
+function AppRoutes({ client }: { client: ApiClient }) {
   const auth = useAuth();
   if (auth.status === "signed-out") return <SignedOutRoutes />;
   if (auth.status === "error") {
@@ -73,6 +81,14 @@ function AppRoutes() {
       <Route path="/login" element={<AfterLogin me={me} />} />
       <Route element={<Shell me={me} />}>
         <Route index element={<Navigate to={homeOf(me)} replace />} />
+        <Route
+          path="/admin/*"
+          element={
+            <RequireSection me={me}>
+              <AdminSection client={client} />
+            </RequireSection>
+          }
+        />
         <Route path="*" element={<Guarded me={me} />} />
       </Route>
     </Routes>
