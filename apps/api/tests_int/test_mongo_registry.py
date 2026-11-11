@@ -13,7 +13,8 @@ import asyncio
 import os
 import shutil
 import uuid
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
+from contextlib import AbstractContextManager
 from pathlib import Path
 from typing import Any
 from urllib.parse import quote_plus
@@ -30,6 +31,8 @@ from onb_data import Actor, AuditLog, AuditOutcome, connect
 from pymongo import MongoClient
 
 Client = MongoClient[dict[str, Any]]
+# The `unscoped` fixture (T-2 safety net): `with unscoped("why"):` for a root read-back across orgs.
+Unscoped = Callable[[str], AbstractContextManager[None]]
 ROOT = Path(__file__).resolve().parents[3]
 ADMIN = Actor.user("u_acme_hradmin")
 ORGS = ["org_acme", "org_globex"]
@@ -86,7 +89,7 @@ def _sync(scratch: tuple[str, str], config: Path, *, log_class: type[AuditLog] =
 
 
 def test_changing_a_yaml_and_resyncing_bumps_the_version_and_audits_it_in_mongo(
-    scratch: tuple[str, str], config: Path, root_client: Client
+    scratch: tuple[str, str], config: Path, root_client: Client, unscoped: Unscoped
 ) -> None:
     db = root_client[scratch[1]]
     _sync(scratch, config)
@@ -102,7 +105,8 @@ def test_changing_a_yaml_and_resyncing_bumps_the_version_and_audits_it_in_mongo(
     assert stored is not None
     assert (stored["version"], stored["manifest"]["limits"]["max_steps"]) == (2, 6)
     assert [(c.kind, c.target) for c in report.changes] == [("update", "agent:db_agent/v2")]
-    updates = list(db["audit_log"].find({"action": "registry.agent_update"}, {"_id": 0, "org_id": 1, "target": 1}))
+    with unscoped("root read-back of both orgs' audit records proves the change was audited in every org"):
+        updates = list(db["audit_log"].find({"action": "registry.agent_update"}, {"_id": 0, "org_id": 1, "target": 1}))
     assert sorted(u["org_id"] for u in updates) == ORGS
     assert {u["target"] for u in updates} == {"agent:db_agent/v2"}
     record = db["audit_log"].find_one({"action": "registry.agent_update", "org_id": "org_acme"})
@@ -114,7 +118,7 @@ def test_changing_a_yaml_and_resyncing_bumps_the_version_and_audits_it_in_mongo(
 
 
 def test_a_failed_audit_write_rolls_back_the_registry_and_the_audit_records(
-    scratch: tuple[str, str], config: Path, root_client: Client
+    scratch: tuple[str, str], config: Path, root_client: Client, unscoped: Unscoped
 ) -> None:
     FailingAuditLog.fail_on, FailingAuditLog.calls = 4, 0
     with pytest.raises(ConnectionError, match="audit write failed"):
@@ -122,7 +126,8 @@ def test_a_failed_audit_write_rolls_back_the_registry_and_the_audit_records(
     db = root_client[scratch[1]]
     assert db["agent_registry"].count_documents({}) == 0
     assert db["tool_catalog"].count_documents({}) == 0
-    assert db["audit_log"].count_documents({}) == 0
+    with unscoped("root count across every org proves the rollback left no audit record in any org"):
+        assert db["audit_log"].count_documents({}) == 0
 
 
 def test_the_sync_command_writes_the_registry(scratch: tuple[str, str], root_client: Client) -> None:
