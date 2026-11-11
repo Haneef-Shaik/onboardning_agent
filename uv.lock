@@ -870,6 +870,7 @@ dependencies = [
     { name = "onb-guardrails" },
     { name = "onb-llm" },
     { name = "pydantic" },
+    { name = "pyjwt" },
     { name = "pymongo" },
     { name = "pyyaml" },
 ]
@@ -882,6 +883,7 @@ requires-dist = [
     { name = "onb-guardrails", editable = "libs/py-guardrails" },
     { name = "onb-llm", editable = "libs/py-llm" },
     { name = "pydantic", specifier = ">=2.9,<3" },
+    { name = "pyjwt", specifier = ">=2.10,<3" },
     { name = "pymongo", specifier = ">=4.10,<5" },
     { name = "pyyaml", specifier = ">=6" },
 ]
