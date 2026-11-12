@@ -1,8 +1,8 @@
-# Handoff — HIL-1 · Pause for approvals and resume on the first decision        attempt 3 · goal/hil-1-approvals-hil · rebased onto main c307fe9 · HEAD: see `git log -1`
+# Handoff — HIL-1 · Pause for approvals and resume on the first decision        attempt 3 · goal/hil-1-approvals-hil · rebased onto main 4493565 (second rebase, after CHAT-1, PII-5, UI-5) · HEAD: see `git log -1`
 
 **Outcome claimed.** An `approval` task pauses its run with `interrupt()`; the Approvals Agent's masked packet is stored on the approval; the approver is told in-app and on the Telegram mock; the first decision (web or Telegram) wins and resumes the run; a refused `requires_approval` tool call, and a `needs_human` answer, become approvals. Design: `docs/adr/0020-approvals-interrupt-and-first-decision.md`.
 
-**Attempt 3 = the same work rebased onto main `c307fe9`** (RUN-2 run control, ADR 0018; AGT-1 agents in runs, ADR 0021; RUN-3 and NOTIF-1 already inherited). The branch was squashed to one commit on its old base and then rebased (one conflict resolution instead of fourteen), so the earlier per-step commits are gone; the pre-rebase tip is the local branch `backup-hil-1-pre-rebase`. See "Rebase onto main" below. Verifier history: attempts 1 and 2 (pre-rebase) failed only box 1 (no Bedrock) and, in attempt 1, box 3 for a missing hardware statement (fixed).
+**Attempt 3 = the same work rebased onto main `c307fe9`, then again onto `4493565`** (CHAT-1, PII-5 and UI-5 had merged; the second rebase had only additive conflicts in `create_app`/`main.py`, the API test conftest, the role matrix and the xt `build_api`/route table: both sides kept, `make contracts` regenerated nothing new) (RUN-2 run control, ADR 0018; AGT-1 agents in runs, ADR 0021; RUN-3 and NOTIF-1 already inherited). The branch was squashed to one commit on its old base and then rebased (one conflict resolution instead of fourteen), so the earlier per-step commits are gone; the pre-rebase tip is the local branch `backup-hil-1-pre-rebase`. See "Rebase onto main" below. Verifier history: attempts 1 and 2 (pre-rebase) failed only box 1 (no Bedrock) and, in attempt 1, box 3 for a missing hardware statement (fixed).
 
 Attempt 1 verifier verdict: fail on box 1 (no Bedrock) and on box 3 only for a missing hardware statement, now added to `resume-latency.json`. Every other box was verified.
 
@@ -50,11 +50,11 @@ Gates ran on compose stack `ob-hil-1` (ports 19600/19601). Evidence is in `docs/
 ## Gates
 | Gate | Command | Result |
 |------|---------|--------|
-| Check | `make check` | exit 0 on the rebased tree (see `gates.txt`, rebased-tree section) |
-| Integration | `make test-int` | exit 0 on the rebased tree (first run failed one AGT-1 test that now meets a real approval, fixed above; re-run exit 0). orchestrator:test-int includes the 9 approval Mongo tests and the latency test |
+| Check | `make check` | exit 0 on the tree rebased onto 4493565 (`gates.txt`) |
+| Integration | `make test-int` | exit 0 on the tree rebased onto 4493565 (on the first rebase one AGT-1 test failed because it met a real approval; fixed above). orchestrator:test-int includes the 9 approval Mongo tests and the latency test |
 | Cross-tenant | `make test-xt` | part of `make check`, exit 0 on the rebased tree (route and consumer rows for RUN-2's and mine; `make-test-xt.txt` is the pre-rebase listing) |
 | Contracts | `make contracts-check` | `contracts-check: openapi.json and the TS client are up to date` |
-| Eval self-test | `make evals-selftest` | rebased tree: `selftest evr_20261112T182011Z_9a88836f: 27 cases x 3, all cases passed: True, gates: PASS, controls caught 8/8`, `result: PASS`. The real eval run needs Bedrock (OW-1). |
+| Eval self-test | `make evals-selftest` | rebased tree (4493565): `selftest evr_20261112T191917Z_6f741632: 27 cases x 3, all cases passed: True, gates: PASS, controls caught 8/8`, `result: PASS`. The real eval run needs Bedrock (OW-1). |
 | Plan | `python3 scripts/plan/plan.py check` | `plan ok: 67 goals, 34 ledger rows` (part of `make check`) |
 
 ## Inherited and used

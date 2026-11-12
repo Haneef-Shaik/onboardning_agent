@@ -23,3 +23,11 @@ make evals-selftest     selftest evr_20261112T182011Z_9a88836f: 27 cases x 3, al
                         controls caught 8/8; result: PASS
 mutations               55: 53 killed in the full run (mutation-checks-full-run.txt); M49 killed after a new test
                         (mutation-checks-rerun.txt); M55 a documented equivalent mutant
+
+--- Second rebase: main 4493565 (CHAT-1, PII-5, UI-5 merged), 2026-11-13 ---
+unit suites             orchestrator 214, py-agents+contracts 1146, mcp-mocks 161, api 848: all passed
+make check              exit 0
+make contracts-check    contracts-check: openapi.json and the TS client are up to date
+make test-int           exit 0
+make evals-selftest     selftest evr_20261112T191917Z_6f741632: 27 cases x 3, all cases passed: True, gates: PASS,
+                        controls caught 8/8; result: PASS
