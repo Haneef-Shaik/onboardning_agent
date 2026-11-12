@@ -44,9 +44,9 @@ sub-nav (Agents, Audit log, PII access log, Eval runs). The PII access log shows
 
 - The API now needs the LLM environment (`LLM_CONNECTOR`, `LLM_MODEL_*`) at startup, as the workers do.
   `.env.example` already lists them. It reads `llm.yaml` from `CONFIG_DIR`, like the template validator.
-- One misconfigured alias in a manifest makes `GET /agents` answer 500 (as one malformed registry record
-  already does, REG-1). Left as is: a misconfiguration should be loud; REG-1's sync could validate the
-  alias against llm.yaml.
+- A manifest alias that llm.yaml lacks leaves only that agent's `resolved_llm` null (logged as a
+  warning); the list still answers 200. REG-1's sync could validate aliases against llm.yaml so this
+  never reaches the registry.
 - Eval run ids must keep the harness's grammar; a test keeps `EVAL_RUN_ID_PATTERN` and
   `onb_evals.session._run_id` in step, and another the collection name.
 
