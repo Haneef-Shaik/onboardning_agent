@@ -25,7 +25,7 @@ from datetime import UTC, datetime, timedelta
 from typing import Any, Final, Protocol
 
 from onb_agents.runs import RUNS, RunState
-from onb_crypto import PURGED, BlindIndexField, PurgeOutcome, Vault
+from onb_crypto import PURGED, BlindIndexField, PurgeIncompleteError, PurgeOutcome, Vault
 from onb_data import Actor, AuditOutcome, AuditPage, AuditQuery, DataStore, tenant_scope
 
 from onb_api.hires.store import HIRES_COLLECTION
@@ -84,6 +84,13 @@ def completed_at(run: Mapping[str, Any]) -> datetime | None:
     return _aware(updated) if isinstance(updated, datetime) else None
 
 
+def _already_purged(hire: Mapping[str, Any], finished: datetime) -> bool:
+    """Purged for this onboarding: marked at or after the newest run completed. A hire onboarded again
+    (a newer completed run) is purged again once that run's 90 days are up."""
+    marked = hire.get(_PURGED_AT)
+    return isinstance(marked, datetime) and _aware(marked) >= finished
+
+
 def _utc_now() -> datetime:
     return datetime.now(UTC)
 
@@ -106,10 +113,14 @@ class PiiRetentionJob:
         self._actor = Actor.agent(ACTOR_ID)
 
     async def run_once(self) -> PurgeReport:
-        """One pass over every org."""
+        """One pass over every org; one org's failure is counted and does not skip the others."""
         report = PurgeReport()
         for org in await self._store.shared("orgs").find({}, projection={"_id": 1}):
-            report = report.plus(await self.run_org(str(org["_id"])))
+            try:
+                report = report.plus(await self.run_org(str(org["_id"])))
+            except Exception as error:
+                log.error("pii retention failed for an org: error=%s", type(error).__name__)
+                report = report.plus(PurgeReport(failures=1))
         return report
 
     async def run_org(self, org_id: str) -> PurgeReport:
@@ -117,11 +128,12 @@ class PiiRetentionJob:
         now = self._clock()
         report = PurgeReport()
         with tenant_scope(org_id):
-            for hire_id in await self._due_hires(now):
-                report = report.plus(await self._purge_hire(org_id, hire_id))
+            for hire_id, finished in await self._due_hires(now):
+                report = report.plus(await self._purge_hire(org_id, hire_id, finished))
         return report
 
-    async def _due_hires(self, now: datetime) -> list[str]:
+    async def _due_hires(self, now: datetime) -> list[tuple[str, datetime]]:
+        """(hire id, when its newest run completed) for hires whose retention is up and that have no live run."""
         runs = await self._store.tenant(RUNS).find(
             {"status": RunState.COMPLETED.value, "dag_hash": {"$exists": True}},
             projection={"hire_id": 1, "history": 1, "updated_at": 1},
@@ -132,18 +144,25 @@ class PiiRetentionJob:
             hire_id = run.get("hire_id")
             if finished is not None and isinstance(hire_id, str):
                 newest[hire_id] = max(finished, newest.get(hire_id, finished))
-        due = [hire_id for hire_id, finished in sorted(newest.items()) if now - finished >= self._retention]
-        return [hire_id for hire_id in due if not await self._has_active_run(hire_id)]
+        due = [(hire_id, finished) for hire_id, finished in sorted(newest.items()) if now - finished >= self._retention]
+        return [(hire_id, finished) for hire_id, finished in due if not await self._has_active_run(hire_id)]
 
     async def _has_active_run(self, hire_id: str) -> bool:
         return bool(await self._store.tenant(RUNS).count({"hire_id": hire_id, "status": {"$in": _ACTIVE}}))
 
-    async def _purge_hire(self, org_id: str, hire_id: str) -> PurgeReport:
+    async def _purge_hire(self, org_id: str, hire_id: str, finished: datetime) -> PurgeReport:
         hire = await self._store.tenant(HIRES_COLLECTION).find_one({"_id": hire_id})
-        if hire is None or _PURGED_AT in hire:
+        if hire is None or _already_purged(hire, finished):
             return PurgeReport()
+        outcomes: tuple[PurgeOutcome, ...] = ()
         try:
-            outcomes = await self._vault.purge_subject(org_id, subject_id=hire_id)
+            try:
+                outcomes = await self._vault.purge_subject(org_id, subject_id=hire_id)
+            except PurgeIncompleteError as incomplete:
+                outcomes = incomplete.outcomes  # what was purged is still audited, then the hire fails
+                for outcome in outcomes:
+                    await self._audit_value(outcome)
+                raise
             for outcome in outcomes:
                 await self._audit_value(outcome)
             await self._clear_hire(hire_id, hire)

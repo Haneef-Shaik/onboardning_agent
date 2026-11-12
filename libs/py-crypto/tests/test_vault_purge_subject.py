@@ -13,7 +13,7 @@ from onb_crypto import (
     VaultField,
     VaultIntegrityError,
 )
-from onb_crypto.vault import PURGED
+from onb_crypto.vault import PURGED, PurgeIncompleteError
 
 from .fakes import ORG_A, ORG_B, in_org
 from .vault_fakes import FakeVaultStore, keyring_for_two_orgs
@@ -94,6 +94,22 @@ def test_purge_subject_leaves_other_subjects_and_orgs_alone() -> None:
 def test_purge_subject_with_no_values_returns_nothing() -> None:
     vault, _ = make_vault()
     assert in_org(ORG_A, vault.purge_subject(ORG_A, subject_id=HIRE_1)) == ()
+
+
+def test_one_tampered_record_does_not_stop_the_purge_of_the_others() -> None:
+    vault, store = make_vault()
+    put(vault, VaultField.MOBILE, "9000000001")
+    pan = put(vault, VaultField.PAN, "BQVPS4821K")
+    aadhaar = put(vault, VaultField.AADHAAR, "999900001231")
+    mobile_doc = next(d for d in store.tenant("pii_vault").documents if d["field"] == "mobile")
+    mobile_doc["created_by"] = "someone_else"
+    with pytest.raises(PurgeIncompleteError) as raised:
+        in_org(ORG_A, vault.purge_subject(ORG_A, subject_id=HIRE_1))
+    assert isinstance(raised.value, VaultIntegrityError)
+    assert {o.token for o in raised.value.outcomes} == {pan, aadhaar}
+    assert len(raised.value.errors) == 1
+    assert mobile_doc["ciphertext"] != b""
+    assert in_org(ORG_A, vault.resolve(pan, org_id=ORG_A, subject_id=HIRE_1, field=VaultField.PAN)) == PURGED
 
 
 def test_purge_subject_fails_closed_on_a_tampered_record() -> None:

@@ -10,7 +10,7 @@ from typing import Any
 
 import pytest
 from onb_agents.runs import RUNS
-from onb_api.retention import RETENTION_PERIOD, PiiRetentionJob, run_forever
+from onb_api.retention import RETENTION_PERIOD, PiiRetentionJob, PurgeReport, run_forever
 from onb_api.testing import InMemoryAuditLog
 from onb_api.testing_mongo import MemoryDatabase, memory_keyring, memory_store
 from onb_crypto import (
@@ -18,9 +18,9 @@ from onb_crypto import (
     PURGED,
     AadhaarConsent,
     Keyring,
+    PurgeIncompleteError,
     Vault,
     VaultField,
-    VaultIntegrityError,
 )
 from onb_data import AuditEntry, AuditOutcome, AuditQuery, DataStore, tenant_scope
 
@@ -407,6 +407,50 @@ def test_a_crash_between_two_audit_writes_does_not_audit_the_first_value_twice(e
     assert len(targets) == len(set(targets)) == 3
 
 
+def test_a_bad_org_record_fails_that_org_only_and_later_orgs_are_still_purged(env: Env) -> None:
+    env.run(env.store.shared("orgs").insert_one({"_id": "bad org!"}))
+    env.add_org(OTHER_ORG)
+    theirs = env.add_hire(OTHER_ORG, "h_0002")
+    env.add_run(org_id=OTHER_ORG, hire_id="h_0002", run_id="run_other")
+    env.clock.set_day(90)
+    report = env.run(env.job.run_once())
+    assert report.failures == 1
+    assert report.hires_purged == 1
+    assert env.resolve(theirs["mobile"], VaultField.MOBILE, org_id=OTHER_ORG, hire_id="h_0002") == PURGED
+
+
+def test_a_partly_purged_hire_still_has_its_purged_values_audited(env: Env) -> None:
+    tokens = env.add_hire()
+    env.add_run()
+    next(d for d in env.db.collections["pii_vault"].documents if d["token"] == tokens["mobile"])["created_by"] = "x"
+    env.clock.set_day(90)
+    report = env.run(env.job.run_once())
+    assert report.failures == 1
+    audited = {e.target for e in env.purge_audits(outcome=AuditOutcome.SUCCESS)}
+    assert audited == {f"pii:{tokens['old_mobile']}", f"pii:{tokens['aadhaar']}"}
+    assert env.resolve(tokens["aadhaar"], VaultField.AADHAAR) == PURGED
+    assert "pii_purged_at" not in env.hire()
+
+
+def test_a_hire_re_onboarded_after_a_purge_is_purged_again_after_its_new_run(env: Env) -> None:
+    env.add_hire()
+    env.add_run()
+    env.clock.set_day(90)
+    env.run(env.job.run_once())
+    new_value = env.in_org(
+        ORG,
+        env.vault.put(ORG, subject_id=HIRE, field=VaultField.PAN, value="BQVPS4821K", created_by="u_hr"),
+    )
+    second_done = env.clock.now + timedelta(days=5)
+    env.add_run(run_id="run_2", completed_at=second_done)
+    env.clock.now = second_done + timedelta(days=89)
+    assert env.run(env.job.run_once()).hires_purged == 0
+    assert env.resolve(new_value, VaultField.PAN) == "BQVPS4821K"
+    env.clock.now = second_done + timedelta(days=90)
+    assert env.run(env.job.run_once()).hires_purged == 1
+    assert env.resolve(new_value, VaultField.PAN) == PURGED
+
+
 def test_a_tampered_record_fails_that_hire_audits_a_failure_and_the_others_go_on(env: Env) -> None:
     env.add_hire(hire_id="h_bad")
     env.add_hire(hire_id="h_ok")
@@ -422,7 +466,7 @@ def test_a_tampered_record_fails_that_hire_audits_a_failure_and_the_others_go_on
     assert "pii_purged_at" in env.hire(hire_id="h_ok")
     failed = [e for e in env.purge_audits() if e.outcome is AuditOutcome.FAILED]
     assert [e.target for e in failed] == ["hire:h_bad"]
-    assert VaultIntegrityError.__name__ in (failed[0].reason or "")
+    assert PurgeIncompleteError.__name__ in (failed[0].reason or "")
 
 
 # --- the scheduled loop -------------------------------------------------------------------------
@@ -445,6 +489,23 @@ def test_the_loop_runs_the_job_each_interval_on_the_fake_clock_and_stops_on_requ
     assert sleeps[:2] == [86_400.0, 86_400.0]
     assert [r.hires_purged for r in reports].count(1) == 1
     assert sum(r.hires_purged for r in reports) == 1
+
+
+def test_a_stop_request_ends_the_wait_between_passes(env: Env) -> None:
+    stop = asyncio.Event()
+
+    class Quiet:
+        async def run_once(self) -> PurgeReport:
+            return PurgeReport()
+
+    async def forever(_: float) -> None:
+        await asyncio.Event().wait()
+
+    async def scenario() -> list[PurgeReport]:
+        asyncio.get_running_loop().call_later(0.05, stop.set)
+        return await asyncio.wait_for(run_forever(Quiet(), interval=3600.0, sleep=forever, stop=stop), timeout=5)
+
+    assert len(env.run(scenario())) == 1
 
 
 def test_the_loop_survives_a_failing_pass(env: Env) -> None:

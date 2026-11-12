@@ -34,6 +34,7 @@ from onb_crypto.errors import (
     TokenNotFoundError,
     UnknownKeyVersionError,
     VaultConflictError,
+    VaultError,
     VaultIntegrityError,
 )
 from onb_crypto.keyring import Keyring, associated_data
@@ -55,6 +56,7 @@ __all__ = [
     "CONSENT_COLLECTION",
     "PURGED",
     "AadhaarConsent",
+    "PurgeIncompleteError",
     "PurgeOutcome",
     "Vault",
     "VaultRepository",
@@ -108,6 +110,16 @@ class PurgeOutcome:
     field: VaultField
     version: int
     newly_purged: bool
+
+
+class PurgeIncompleteError(VaultIntegrityError):
+    """`purge_subject` purged what it could verify; `outcomes` lists those, `errors` the records it refused
+    (tampered, mis-partitioned or changed meanwhile) and left untouched."""
+
+    def __init__(self, outcomes: tuple[PurgeOutcome, ...], errors: tuple[VaultError, ...]) -> None:
+        super().__init__(f"{len(errors)} vault record(s) were not purged: {type(errors[0]).__name__}")
+        self.outcomes = outcomes
+        self.errors = errors
 
 
 def _utcnow() -> datetime:
@@ -239,13 +251,19 @@ class Vault:
         org_id = _check_org(org_id)
         check_id(subject_id, "subject_id")
         outcomes: list[PurgeOutcome] = []
+        errors: list[VaultError] = []
         for collection in sorted({collection_for(field) for field in VaultField}):
             docs = await self._store.tenant(collection).find(
                 {"subject.type": SubjectType.NEW_HIRE.value, "subject.id": subject_id},
                 sort=[("field", 1), ("version", 1)],
             )
             for doc in docs:
-                outcomes.append(await self._purge_document(org_id, subject_id, collection, doc))
+                try:
+                    outcomes.append(await self._purge_document(org_id, subject_id, collection, doc))
+                except (VaultIntegrityError, TokenBindingError, VaultConflictError) as error:
+                    errors.append(error)  # this record stays as it is; the others are still purged
+        if errors:
+            raise PurgeIncompleteError(tuple(outcomes), tuple(errors))
         return tuple(outcomes)
 
     async def _purge_document(

@@ -89,7 +89,7 @@ MUTATIONS = [
         "P11",
         "box 3: a purged hire is purged (and counted) again",
         JOB,
-        "if hire is None or _PURGED_AT in hire:",
+        "if hire is None or _already_purged(hire, finished):",
         "if hire is None:",
     ),
     (
@@ -154,6 +154,41 @@ MUTATIONS = [
         JOB,
         'for org in await self._store.shared("orgs").find({}, projection={"_id": 1}):',
         'for org in (await self._store.shared("orgs").find({}, projection={"_id": 1}))[:1]:',
+    ),
+    (
+        "P21",
+        "review: one org's failure aborts the pass for the later orgs",
+        JOB,
+        '            except Exception as error:\n                log.error("pii retention failed for an org',
+        '            except ZeroDivisionError as error:\n                log.error("pii retention failed for an org',
+    ),
+    (
+        "P22",
+        "review: one tampered record stops the purge of the hire's other values",
+        VAULT,
+        "except (VaultIntegrityError, TokenBindingError, VaultConflictError) as error:",
+        "except ZeroDivisionError as error:",
+    ),
+    (
+        "P23",
+        "review: values purged before a failure are not audited",
+        JOB,
+        "                for outcome in outcomes:\n                    await self._audit_value(outcome)\n                raise\n",
+        "                raise\n",
+    ),
+    (
+        "P24",
+        "review: a purged hire is skipped for good, even after a new run completes",
+        JOB,
+        "return isinstance(marked, datetime) and _aware(marked) >= finished",
+        "return isinstance(marked, datetime)",
+    ),
+    (
+        "P25",
+        "review: a stop request does not end the wait between passes",
+        LOOP,
+        "await asyncio.wait({waiting, stopped}, return_when=asyncio.FIRST_COMPLETED)",
+        "await asyncio.wait({waiting})",
     ),
 ]
 

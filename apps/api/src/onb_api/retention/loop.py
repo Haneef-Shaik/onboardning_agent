@@ -22,6 +22,18 @@ class Pass(Protocol):
     async def run_once(self) -> PurgeReport: ...
 
 
+async def _wait(sleeping: Awaitable[None], stop: asyncio.Event) -> None:
+    """Wait out the interval, or return at once when `stop` is set (a stop request must not sit out the sleep)."""
+    waiting = asyncio.ensure_future(sleeping)
+    stopped = asyncio.ensure_future(stop.wait())
+    try:
+        await asyncio.wait({waiting, stopped}, return_when=asyncio.FIRST_COMPLETED)
+    finally:
+        for task in (waiting, stopped):
+            task.cancel()
+        await asyncio.gather(waiting, stopped, return_exceptions=True)
+
+
 async def run_forever(
     job: Pass,
     *,
@@ -38,5 +50,5 @@ async def run_forever(
             log.error("pii retention pass failed: %s", type(error).__name__)
         if stop.is_set():
             break
-        await sleep(interval)
+        await _wait(sleep(interval), stop)
     return reports
