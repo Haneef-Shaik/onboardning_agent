@@ -1,8 +1,8 @@
-# Handoff — UI-4 · New hires with PII entry, masking and audited reveal        attempt 1 · goal/ui-4-hires-ui · see `git log -1` (handoff commit)
+# Handoff — UI-4 · New hires with PII entry, masking and audited reveal        attempt 2 · goal/ui-4-hires-ui · see `git log -1` (handoff commit)
 
 **Outcome claimed.** HR/HR_ADMIN add a hire with sensitive fields, see every one masked (`MaskedField`), reveal one with a mandatory reason for the API's TTL (30 s) after which it hides, and upload scans whose metadata (type, upload time, verified flag) is listed. Managers have no Hires section and no reveal control; HR has no Aadhaar reveal control (HR_ADMIN does).
 
-Code: `apps/web/src/hires/` (`policy.ts`, `useReveal.ts`, `hires-api.ts`, `new-hire.ts`, `NewHireForm`, `HiresPage`, `HireDetail`, `DocumentsPanel`), wired in `App.tsx` (`Guarded` renders `HiresPage` for `/hires`, after `canAccess`). API (the one addition the card needed, per the orchestrator's note): `GET /hires/{hire_id}/documents`, metadata only, HR/HR_ADMIN (`documents/routes.py`, `service.list_for_hire`, `meta.list_for_hire`, contract `DocumentsEnvelope`). The Playwright API server (`apps/web/e2e/serve_api.py`) now also builds the real `HireService` and `DocumentService` over the in-memory database. No ADR was needed (0017 unused).
+Code: `apps/web/src/hires/` (`policy.ts`, `useReveal.ts`, `hires-api.ts`, `new-hire.ts`, `NewHireForm`, `HiresPage`, `HireDetail`, `DocumentsPanel`), wired in `App.tsx` as a `/hires/*` route inside UI-8's `RequireSection` (the same nav-table check as `/admin/*`; `Guarded` is back to main's form). API (the one addition the card needed, per the orchestrator's note): `GET /hires/{hire_id}/documents`, metadata only, HR/HR_ADMIN (`documents/routes.py`, `service.list_for_hire`, `meta.list_for_hire`, contract `DocumentsEnvelope`). The Playwright API server gets the hire and document services from UI-8's `admin_seed.admin_services` (`apps/web/e2e/admin_seed.py` `hires()` now also builds the real `DocumentService` over the same store, keyring and audit log; `serve_api.py` is main's). No ADR was needed (0017 unused).
 
 ## Done when
 | Box | Met | Evidence |
@@ -17,8 +17,8 @@ Code: `apps/web/src/hires/` (`policy.ts`, `useReveal.ts`, `hires-api.ts`, `new-h
 | `GET /hires/{hire_id}/documents` → `DocumentsEnvelope` (`data: DocumentMeta[]`, oldest first). HR/HR_ADMIN only (manager 403, no service 503); another org's or a missing hire is the same 404. Metadata only. TS client: `listHireDocuments`; `@onb/ts-api-client` now exports `DocumentMeta`, `DocumentType`, `HireRecord`, `NewHireRequest`, `PiiField`, `RevealedValue`. | `test_documents.py` (7 `list` tests), role matrix, `test_xt_api.py ROUTE_CASES[("GET","/hires/{hire_id}/documents")]`, Mongo int test; `make contracts-check` up to date |
 | Revealed values live only in `useReveal` state (never the query cache), each dropped after `expires_in_seconds`, on hide, on unmount, and an answer that lands after hide/clear/unmount is discarded. | `useReveal.test.tsx` (8); mutants M3, M4, M14 |
 | `canRevealField(role, field)` mirrors the API (HR_ADMIN all, HR all but Aadhaar, MANAGER none); `canManageHires(role)` gates the add form and upload form. | `policy.test.ts`; M1, M2 |
-| `/hires/*` is built: list + add form at `/hires`, detail at `/hires/:hireId`. `Guarded` in `App.tsx` calls `HiresPage` for the `/hires` section; `nav.ts` unchanged (UI-1's table still decides access). | `App.test.tsx` (61 → unchanged, all pass), `hires.spec.ts` |
-| Playwright shared steps in `apps/web/e2e/helpers.ts` (`signInAs`, `openSection`, `goInApp`, `createHire`, synthetic `RAW` values). The e2e API server now serves hires and documents; use `E2E_API_PORT`/`E2E_WEB_PORT` to avoid port clashes between sessions. | `playwright-direct.txt` |
+| `/hires/*` is built: list + add form at `/hires`, detail at `/hires/:hireId`. `App.tsx` mounts `HiresPage` at `/hires/*` behind `RequireSection`; `nav.ts` unchanged (UI-1's table still decides access). | `App.test.tsx` (unchanged, passes), `hires.spec.ts` |
+| Playwright shared steps in `apps/web/e2e/helpers.ts` (`signInAs`, `openSection`, `goInApp`, `createHire`, synthetic `RAW` values). The e2e API server (via `admin_seed.py`) serves hires and documents, and the seeded hire from UI-8 (Meera Iyer) is in the list too; use `E2E_API_PORT`/`E2E_WEB_PORT` to avoid port clashes between sessions. | `playwright-direct.txt` |
 
 ## Acceptance evidence
 | Ledger row | Environment, date | Result | Evidence | Row written here? |
@@ -28,11 +28,11 @@ Code: `apps/web/src/hires/` (`policy.ts`, `useReveal.ts`, `hires-api.ts`, `new-h
 ## Gates
 | Gate | Command | Result |
 |------|---------|--------|
-| Check | `make check` | exit 0, `make check: all passed`; `Successfully ran target lint/typecheck/test for 17 projects`; test-xt `cross-tenant surface: 23 API routes, 8 MCP tools, 0 event consumers`, `210 passed` (`docs/evidence/UI-4/make-check.txt`) |
-| Integration | `make test-int` | exit 0, `Successfully ran target test-int for 8 projects` (api `40 passed`, incl. the new list test) (`docs/evidence/UI-4/make-test-int.txt`, run before the final web-only fix; no API change since) |
+| Check | `make check` | exit 0, `make check: all passed`; `Successfully ran target lint/typecheck/test for 17 projects`; test-xt `cross-tenant surface: 25 API routes, 8 MCP tools, 0 event consumers`, `227 passed` (`docs/evidence/UI-4/make-check.txt`) |
+| Integration | `make test-int` | exit 0, `Successfully ran target test-int for 8 projects` (api `44 passed`, incl. the new list test) (`docs/evidence/UI-4/make-test-int.txt`) |
 | Contracts | `make contracts-check` | `contracts-check: openapi.json and the TS client are up to date` |
-| Playwright | `npx playwright test --config apps/web/playwright.config.ts` (ports 19810/19811) | `8 passed` (5 UI-1 + 3 UI-4) |
-| Web unit | `vitest run --config apps/web/vitest.config.ts` | `88 passed (88)`, 9 files |
+| Playwright | `npx playwright test --config apps/web/playwright.config.ts` (ports 19810/19811) | `12 passed` (5 UI-1 + 3 UI-4 + 4 UI-8) |
+| Web unit | `vitest run --config apps/web/vitest.config.ts` | `97 passed (97)`, 10 files |
 | Eval self-test | not run | no agent, prompt, manifest or guardrail touched |
 
 Environment: compose project `ob-ui-4` (ports 19800/19801), `LLM_CONNECTOR=fake`. Playwright ran direct against the e2e API + Vite, not through Caddy.
@@ -67,7 +67,14 @@ Left open:
 - There is no users/managers list route, so the form takes the **Manager ID** as text (the API checks it is a manager in the org). A `GET /users?role=MANAGER` would allow a picker.
 - `apps/mcp-hub/tests_int/test_hub_xt.py::test_org_a_cannot_reach_org_b_through_hub_tool[mongo__find]` failed once in a `make check` run: its random marker (`09099264404b`) tripped the hub's `raw_pii_in_arguments` guard; it passed on re-run. A marker with letters in every position (or a fixed one) would remove the flake. Not touched here.
 - `make test-xt` showed transient Mongo "connection closed / No keys found for HMAC" errors once on a tunnelled port; re-run passed (210). Environmental.
-- UI-8 also edits `App.tsx`; this goal's edit is limited to `Guarded` (gains a `client` prop and a `/hires` branch), `AppRoutes` (takes `client`) and one import.
+- `App.tsx`: after UI-8 merged, this goal's edit is one import and one `<Route path="/hires/*">` next to UI-8's `/admin/*`.
+
+## Attempt 2: rebase on main 8a26916 (HIRE-2, SEED-1, UI-8 merged)
+`git rebase main` (orchestrator-authorised), five commits replayed, no history rewritten beyond that. Conflicts, both sides kept:
+- `apps/api/tests/test_role_matrix.py`: UI-8's `/evals/runs` rows and this goal's `GET /hires/{hire_id}/documents` row.
+- `apps/web/src/App.tsx`: UI-8's `RequireSection` and `/admin/*` kept; hires mounted the same way (`/hires/*`), `Guarded` unchanged from main. `HiresPage`'s inner routes became relative (`index`, `:hireId`) for the new parent.
+- `apps/web/e2e/serve_api.py`: main's version (`create_app(..., **admin_services(users))`); the hire and document services now come from `admin_seed.py`, whose `hires()` returns the `DocumentService` too, and `admin_services` passes `documents`.
+HIRE-2 on main has no documents list route, so this goal's `GET /hires/{hire_id}/documents` stays. Gates re-run on the rebased branch (table above); mutations re-run, `14 of 14 caught`; contracts regenerated by the merge are still up to date (`make contracts-check`).
 
 ## Decisions forced (ADRs written)
 None.
