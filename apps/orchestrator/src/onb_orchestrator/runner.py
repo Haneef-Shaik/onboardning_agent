@@ -36,7 +36,9 @@ only, never a message (messages can hold personal data):
   needs one, an agent that needs a human). Not an error of the run: the graph node pauses with
   `interrupt()` and `settle` finishes the task once the approval is decided.
 - `TaskInProgressError`: another delivery holds the task. Transient.
-- `RunHaltedError` / `DrainRequestedError`: control flow, not failures.
+- `RunHaltedError` / `DrainRequestedError`: control flow, not failures. `TaskCancelledError` (a
+  `RunHaltedError`) says the task itself is `cancelled`, which only a run's end does; a plain
+  `RunHaltedError` says only that the run was not `running` when it was read (FIX-1).
 - `TaskStepError`: what a graph node raises for any other error, by type, marked `transient` for a
   database error, a lost compare-and-set race, a task in progress or an approval not decided yet, and not
   otherwise.
@@ -87,6 +89,7 @@ __all__ = [
     "Sleep",
     "TaskAwaitsApprovalError",
     "TaskBlockedError",
+    "TaskCancelledError",
     "TaskExhaustedError",
     "TaskFailedError",
     "TaskInProgressError",
@@ -152,6 +155,11 @@ class TaskInProgressError(Exception):
 
 class RunHaltedError(Exception):
     """The run is not `running` (paused, blocked, cancelled or finished): start nothing."""
+
+
+class TaskCancelledError(RunHaltedError):
+    """The task is `cancelled`: a run that failed or was cancelled cancelled it. Unlike a pause, a resume
+    cannot bring it back."""
 
 
 class DrainRequestedError(Exception):
@@ -250,7 +258,7 @@ class RunExecutor:
             return
         await self._ensure_runnable(run_id)
         if status is TaskState.CANCELLED:
-            raise RunHaltedError("the task was cancelled")
+            raise TaskCancelledError("the task was cancelled")
         if status is TaskState.WAITING_APPROVAL:
             raise TaskAwaitsApprovalError(str(task["approval_id"]))
         if status is TaskState.RUNNING:
