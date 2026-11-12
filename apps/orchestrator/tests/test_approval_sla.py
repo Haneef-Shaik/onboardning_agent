@@ -204,6 +204,18 @@ def test_an_approval_without_an_sla_takes_the_configured_default() -> None:
     assert world.stages() == [("org_a", tool_call, "reminder")]
 
 
+def test_a_backlog_of_old_approvals_not_yet_due_does_not_starve_a_newer_one() -> None:
+    # review fix: the sweep reads every page, not only the oldest batch
+    world = World()
+    for n in range(5):
+        world.open(_spec(f"long_{n}", sla_hours=24 * 365))  # old, but a year from due
+    due = world.open(_spec("short", sla_hours=2), hours=1)
+    world.clock.at(3)
+    job = ApprovalSlaJob(memory_store(world.db), world.bus, POLICY, clock=world.clock, batch=2)
+    assert run(job.run_once()) == SlaReport(reminders=1)
+    assert world.stages() == [("org_a", due, "reminder")]
+
+
 def test_each_org_is_swept_in_its_own_scope() -> None:
     world = World("org_a", "org_b")
     in_a = world.open(_spec(), org="org_a")
@@ -311,6 +323,27 @@ def test_a_reminder_whose_event_was_published_but_not_stamped_is_not_sent_again(
     world.clock.at(11)
     assert run(world.job().run_once()) == SlaReport()
     assert world.stages() == [("org_a", approval_id, "reminder")]
+    assert world.approval(approval_id)["reminded_at"] == T0 + timedelta(hours=11)  # the stamp is restored
+    world.clock.at(20)  # and the escalation still follows (review fix: a duplicate no longer stops the stages)
+    assert run(world.job().run_once()) == SlaReport(escalations=1)
+    assert world.stages() == [("org_a", approval_id, "reminder"), ("org_a", approval_id, "escalation")]
+
+
+def test_a_lost_stamp_past_both_thresholds_still_escalates_in_the_same_pass() -> None:
+    world = World()
+    approval_id = world.open(_spec(sla_hours=10))
+    world.clock.at(10)
+    run(world.job().run_once())
+
+    async def lose_the_stamp() -> None:
+        with tenant_scope("org_a"):
+            approvals = memory_store(world.db).tenant("approvals")
+            await approvals.update_one({"_id": approval_id}, {"$set": {"reminded_at": None}})
+
+    run(lose_the_stamp())
+    world.clock.at(25)
+    assert run(world.job().run_once()) == SlaReport(escalations=1)
+    assert world.stages() == [("org_a", approval_id, "reminder"), ("org_a", approval_id, "escalation")]
 
 
 # --- the schedule ----------------------------------------------------------------------------------------

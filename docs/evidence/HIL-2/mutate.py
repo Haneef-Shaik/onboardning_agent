@@ -22,7 +22,11 @@ MOCKS = REPO / "apps/mcp-mocks/src/onb_mcp_mocks/notify"
 SUITES: list[list[str]] = [
     ["apps/orchestrator/tests/test_approval_sla.py", "apps/orchestrator/tests/test_worker_main.py"],
     ["libs/py-agents/tests/test_approval_sla.py", "libs/py-agents/tests/test_approvals.py"],
-    ["apps/mcp-mocks/tests/test_notify_approval_sla.py", "apps/mcp-mocks/tests/test_notify_main.py"],
+    [
+        "apps/mcp-mocks/tests/test_notify_approval_sla.py",
+        "apps/mcp-mocks/tests/test_notify_main.py",
+        "apps/mcp-mocks/tests/test_notify_approval.py",
+    ],
     ["apps/orchestrator/tests_int/test_approval_sla_against_mongo.py"],
 ]
 
@@ -136,6 +140,56 @@ MUTATIONS: list[tuple[str, str, Path, str, str]] = [
         MOCKS / "sla.py",
         "approval_recipients(store, approval) if role is None else _role_users(store, role)",
         "approval_recipients(store, approval)",
+    ),
+    # --- review fixes ---------------------------------------------------------------------------------------
+    (
+        "M16",
+        "the notifier acts on a stage the sweep never stamped (a forged or early event is delivered)",
+        MOCKS / "sla.py",
+        "        if approval.get(_STAMPS[stage]) is None:\n",
+        "        if False:\n",
+    ),
+    (
+        "M17",
+        "in-app notes deduplicate per event, not per stage (each republish adds a note)",
+        MOCKS / "sla.py",
+        'dedupe_key=f"sla:{approval_id}:{stage}:{user_id}"',
+        'dedupe_key=f"{job.event_id}:{user_id}"',
+    ),
+    (
+        "M18",
+        "the sweep reads only the first page (a backlog that is not due starves newer approvals)",
+        ORCH / "approval_sla.py",
+        "            if len(page) < self._batch:\n",
+        "            if True:\n",
+    ),
+    (
+        "M19",
+        "a duplicate publish stops the stages (a lost stamp blocks the escalation forever)",
+        ORCH / "approval_sla.py",
+        '        return "already"\n',
+        '        return "taken"\n',
+    ),
+    (
+        "M20",
+        "the sweep keeps starting passes while the worker drains (it ignores the worker's stop)",
+        ORCH / "worker.py",
+        "        await stop.wait()\n        sweep_stop.set()\n",
+        "        await asyncio.Event().wait()\n",
+    ),
+    (
+        "M21",
+        "a stuck sweep is awaited without a bound (shutdown waits forever)",
+        ORCH / "worker.py",
+        "await asyncio.wait_for(sweeping, timeout=settings.drain_seconds)",
+        "await sweeping",
+    ),
+    (
+        "M22",
+        "HIL-1's notifier takes a reminder for its own first message (the approver never gets the original)",
+        MOCKS / "approvals.py",
+        '{**first_message, "sla_stage": {"$exists": False}}',
+        "first_message",
     ),
 ]
 

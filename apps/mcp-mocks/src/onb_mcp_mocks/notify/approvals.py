@@ -155,7 +155,8 @@ def approval_notify_handler(
             )
         except UnknownRecipientError:
             return
-        if await outbox.find_one({"ref.type": APPROVAL_REF_TYPE, "ref.id": approval_id, "audience_user_id": user_id}):
+        first_message = {"ref.type": APPROVAL_REF_TYPE, "ref.id": approval_id, "audience_user_id": user_id}
+        if await outbox.find_one({**first_message, "sla_stage": {"$exists": False}}):  # HIL-2's are not this one
             return  # this approver was already messaged for this approval (a redelivery)
         entry = OutboxEntry(
             recipient_token=None,

@@ -38,6 +38,9 @@ REMINDER_KIND: Final = "approval.reminder"
 ESCALATED_KIND: Final = "approval.escalated"
 _ID: Final = re.compile(r"appr_[A-Za-z0-9_]{1,64}")
 _STAGES: Final = frozenset({"reminder", "escalation"})
+# The approval field the sweep stamps for each stage (onb_agents.approvals.sla.stage_field; mcp-mocks does not
+# depend on onb_agents). The consumer acts only on a stamped stage.
+_STAMPS: Final = {"reminder": "reminded_at", "escalation": "escalated_at"}
 _ESCALATION_ROLES: Final = frozenset({Role.HR.value, Role.HR_ADMIN.value})
 _MAX_ROLE_RECIPIENTS: Final = 20
 _BUTTONS: Final = (DecisionButton("Approve", Decision.APPROVE), DecisionButton("Reject", Decision.REJECT))
@@ -105,7 +108,7 @@ def approval_sla_handler(store: DataStore, telegram: TelegramMockChannel) -> Han
                 ref=ref,
                 run_id=str(approval["run_id"]),
                 agent="orchestrator",
-                dedupe_key=f"{job.event_id}:{user_id}",
+                dedupe_key=f"sla:{approval_id}:{stage}:{user_id}",  # once per stage, whatever event carried it
             )
         except UnknownRecipientError:
             return
@@ -131,6 +134,8 @@ def approval_sla_handler(store: DataStore, telegram: TelegramMockChannel) -> Han
         approval = await store.tenant(APPROVALS_COLLECTION).find_one({"_id": approval_id})
         if approval is None or approval.get("status") != "pending":
             return  # not this org's, or decided meanwhile: nothing to chase
+        if approval.get(_STAMPS[stage]) is None:
+            return  # the sweep never stamped this stage: an early or forged event (the bus is a trust boundary)
         recipients = await (approval_recipients(store, approval) if role is None else _role_users(store, role))
         for user_id in recipients:
             await tell(approval, user_id, stage, job)

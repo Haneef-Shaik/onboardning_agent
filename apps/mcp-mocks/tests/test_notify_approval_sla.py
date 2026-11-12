@@ -41,6 +41,9 @@ def approval(**changes: Any) -> dict[str, Any]:
         "requested_at": NOW,
         "sla_hours": 48,
         "decision": None,
+        # the sweep stamps a stage in the transaction that publishes its event (ADR 0027)
+        "reminded_at": NOW,
+        "escalated_at": NOW,
         **changes,
     }
 
@@ -205,6 +208,47 @@ def test_free_text_is_redacted_before_it_leaves() -> None:
     deliver(db, payload("escalation"), event_id="e2")
     blob = "".join(m["text"] for m in db.raw("mock_outbox")) + "".join(n["body"] for n in db.raw("notifications"))
     assert "9876543210" not in blob
+
+
+@pytest.mark.parametrize(("stage", "field"), [("reminder", "reminded_at"), ("escalation", "escalated_at")])
+def test_an_event_for_a_stage_the_sweep_never_stamped_tells_nobody(stage: str, field: str) -> None:
+    # review fix: the bus is a trust boundary; a forged or early `approval.overdue` changes nothing
+    db = world(approval(**{field: None}))
+    deliver(db, payload(stage))
+    assert db.raw("notifications") == []
+    assert db.raw("mock_outbox") == []
+
+
+@pytest.mark.parametrize("stage", ["reminder", "escalation"])
+def test_the_same_stage_published_again_under_another_event_tells_each_user_once(stage: str) -> None:
+    db = world(approval())
+    deliver(db, payload(stage), event_id="e1")
+    deliver(db, payload(stage), event_id="e2")
+    deliver(db, payload(stage), event_id="e3")
+    users = [n["user_id"] for n in db.raw("notifications")]
+    assert sorted(users) == sorted(set(users))
+    assert len(db.raw("mock_outbox")) == len(users)
+
+
+def test_a_reminder_does_not_stop_the_first_approval_message_from_reaching_the_approver() -> None:
+    # review fix: HIL-1's redelivery check must not mistake a reminder for its own message
+    from onb_contracts.notify import APPROVAL_REQUESTED
+    from onb_mcp_mocks.notify.approvals import approval_notify_handler
+
+    db = world(approval())
+    deliver(db, payload("reminder"))
+    store = memory_store(db)
+    handler = approval_notify_handler(store, TelegramMockChannel(store, TelegramMockTransport()))
+    body = {"approval_id": "appr_1", "run_id": "run_1", "task_id": "manager_approval"}
+    job = JobContext("j-req", ORG_A, "notify.approval", "e-req", APPROVAL_REQUESTED, body, "run_1", 1)
+
+    async def go() -> None:
+        with tenant_scope(ORG_A):
+            await handler(job)
+
+    asyncio.run(go())
+    stages = sorted(str(m.get("sla_stage")) for m in db.raw("mock_outbox"))
+    assert stages == ["None", "reminder"]  # the original message is sent too
 
 
 @pytest.mark.parametrize(

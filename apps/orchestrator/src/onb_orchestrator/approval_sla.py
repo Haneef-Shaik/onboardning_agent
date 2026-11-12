@@ -23,7 +23,7 @@ import logging
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from typing import Any, Final, Protocol
+from typing import Any, Final, Literal, Protocol
 
 from onb_agents.approvals import ApprovalStore
 from onb_agents.approvals.sla import SlaPolicy, SlaStage, due_stages
@@ -36,7 +36,7 @@ __all__ = ["ORGS_COLLECTION", "ApprovalSlaJob", "SlaReport", "overdue_key", "run
 log = logging.getLogger(__name__)
 
 ORGS_COLLECTION: Final = "orgs"
-_BATCH: Final = 500  # approvals per org per pass; the rest wait for the next pass (oldest first)
+_BATCH: Final = 500  # approvals read per page; a pass reads every page of the org
 
 
 def _utc_now() -> datetime:
@@ -60,6 +60,9 @@ class SlaReport:
         return SlaReport(
             self.reminders + other.reminders, self.escalations + other.escalations, self.failures + other.failures
         )
+
+
+_Outcome = Literal["sent", "taken", "already"]
 
 
 class _StageTakenError(Exception):
@@ -96,17 +99,32 @@ class ApprovalSlaJob:
                 report = report.plus(SlaReport(failures=1))
         return report
 
+    async def _candidates(self) -> list[dict[str, Any]]:
+        """Every pending, not yet escalated approval, page by page. All pages are read before anything is stamped,
+        so an escalation (which drops an approval from the query) cannot shift a page; and a backlog of approvals
+        that are not due cannot hide a newer one that is (review fix)."""
+        found: list[dict[str, Any]] = []
+        while True:
+            page = await self._approvals.awaiting_sla(skip=len(found), limit=self._batch)
+            found.extend(page)
+            if len(page) < self._batch:
+                return found
+
     async def _sweep_org(self) -> SlaReport:
         now = self._clock()
         report = SlaReport()
-        for approval in await self._approvals.awaiting_sla(limit=self._batch):
+        for approval in await self._candidates():
             for stage in due_stages(approval, now, self._policy):
-                if not await self._send(approval, stage, now):
+                outcome = await self._send(approval, stage, now)
+                if outcome == "taken":
                     break  # a decision (or another worker) got there first: nothing more is owed
-                report = report.plus(SlaReport(reminders=1) if stage == "reminder" else SlaReport(escalations=1))
+                if outcome == "sent":
+                    report = report.plus(SlaReport(reminders=1) if stage == "reminder" else SlaReport(escalations=1))
         return report
 
-    async def _send(self, approval: dict[str, Any], stage: SlaStage, now: datetime) -> bool:
+    async def _send(self, approval: dict[str, Any], stage: SlaStage, now: datetime) -> _Outcome:
+        """`sent`; `taken` (decided, or another worker stamped it); or `already` (the stage's event exists but
+        its stamp does not: it is re-stamped, nothing is sent again, and the next stage may follow)."""
         approval_id = str(approval["_id"])
 
         async def stamp() -> None:
@@ -129,8 +147,11 @@ class ApprovalSlaJob:
                 change=stamp,
             )
         except _StageTakenError:
-            return False
-        return not published.duplicate
+            return "taken"
+        if not published.duplicate:
+            return "sent"
+        await self._approvals.mark_stage(approval_id, stage, at=now)  # restore the record; a no-op if decided
+        return "already"
 
 
 class SlaPass(Protocol):

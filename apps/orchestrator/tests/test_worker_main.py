@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import time
 from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
@@ -91,8 +92,12 @@ def test_serve_runs_the_worker_until_stopped(monkeypatch: pytest.MonkeyPatch) ->
         async def close(self) -> None:
             FakeStore.closed = True
 
+    async def no_sweep(job: Any, **_: Any) -> list[Any]:  # HIL-2's sweep has its own tests below
+        return []
+
     monkeypatch.setattr(worker_module, "prepare", fake_prepare)
     monkeypatch.setattr(worker_module, "connect", lambda uri, db: FakeStore())
+    monkeypatch.setattr(worker_module, "run_sla_forever", no_sweep)
     policy = RunPolicy(max_attempts=5, lease_seconds=4.0)
     settings = Settings(
         mongo_uri="mongodb://x", mongo_database="onb", stub_delay=0.25, policy=policy, drain_seconds=7.0
@@ -280,3 +285,72 @@ def test_serve_runs_the_sla_sweep_beside_the_worker_and_stops_it_with_the_worker
     assert seen["interval"] == 7.0
     assert isinstance(seen["job"], ApprovalSlaJob)
     assert seen["sweep_stopped"]
+
+
+def _sweep_settings(drain_seconds: float) -> Settings:
+    return Settings(mongo_uri="mongodb://x", mongo_database="onb", stub_delay=0.0, drain_seconds=drain_seconds)
+
+
+def test_the_sweep_stops_when_the_worker_is_asked_to_not_after_its_drain(monkeypatch: pytest.MonkeyPatch) -> None:
+    db = MemoryDatabase()
+    order: list[str] = []
+    stop = asyncio.Event()
+
+    class DrainingWorker:
+        consumers = (START_RUN,)
+
+        async def run(self, given: asyncio.Event) -> int:
+            await given.wait()
+            await asyncio.sleep(0.05)  # the task in hand finishes
+            order.append("worker drained")
+            return 0
+
+    async def fake_prepare(store: Any, **_: Any) -> DrainingWorker:
+        return DrainingWorker()
+
+    async def sweeping(job: Any, *, interval: float, stop: asyncio.Event, **_: Any) -> list[Any]:
+        await stop.wait()
+        order.append("sweep stopped")
+        return []
+
+    async def go() -> int:
+        serving = asyncio.ensure_future(serve(_sweep_settings(5.0), stop))
+        await asyncio.sleep(0.01)
+        stop.set()
+        return await asyncio.wait_for(serving, timeout=5)
+
+    monkeypatch.setattr(worker_module, "prepare", fake_prepare)
+    monkeypatch.setattr(worker_module, "connect", lambda uri, name: memory_store(db))
+    monkeypatch.setattr(worker_module, "run_sla_forever", sweeping)
+    assert asyncio.run(go()) == 0
+    assert order == ["sweep stopped", "worker drained"]  # no new pass starts while the worker drains
+
+
+def test_a_stuck_sweep_is_cancelled_after_the_drain_window(monkeypatch: pytest.MonkeyPatch) -> None:
+    db = MemoryDatabase()
+    seen: dict[str, bool] = {}
+
+    class Done:
+        consumers = (START_RUN,)
+
+        async def run(self, given: asyncio.Event) -> int:
+            return 0
+
+    async def fake_prepare(store: Any, **_: Any) -> Done:
+        return Done()
+
+    async def stuck(job: Any, **_: Any) -> list[Any]:
+        try:
+            await asyncio.Event().wait()  # a pass blocked on Mongo, deaf to its stop
+        except asyncio.CancelledError:
+            seen["cancelled"] = True
+            raise
+        return []
+
+    monkeypatch.setattr(worker_module, "prepare", fake_prepare)
+    monkeypatch.setattr(worker_module, "connect", lambda uri, name: memory_store(db))
+    monkeypatch.setattr(worker_module, "run_sla_forever", stuck)
+    started = time.monotonic()
+    assert asyncio.run(asyncio.wait_for(serve(_sweep_settings(0.05), asyncio.Event()), timeout=5)) == 0
+    assert time.monotonic() - started < 2  # bounded by the drain window, not by the stuck pass
+    assert seen["cancelled"]

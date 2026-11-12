@@ -195,8 +195,16 @@ async def prepare(
 
 
 async def _with_sla_sweep(store: DataStore, settings: Settings, worker: RunWorker, stop: asyncio.Event) -> int:
-    """Run the worker with the approval SLA sweep beside it (HIL-2); the sweep stops when the worker ends."""
+    """Run the worker with the approval SLA sweep beside it (HIL-2). The sweep starts no new pass once `stop` is
+    set (nor after the worker ends); a pass still running is given `drain_seconds`, then cancelled. A stamp and
+    its event commit together, so a cancelled pass loses nothing: the next worker sends what is still owed."""
     sweep_stop = asyncio.Event()
+
+    async def follow_stop() -> None:
+        await stop.wait()
+        sweep_stop.set()
+
+    following = asyncio.ensure_future(follow_stop())
     job = ApprovalSlaJob(store, run_bus(store), settings.approval_sla)
     sweeping = asyncio.ensure_future(
         run_sla_forever(job, interval=settings.approval_sla.check_interval_seconds, stop=sweep_stop)
@@ -205,7 +213,11 @@ async def _with_sla_sweep(store: DataStore, settings: Settings, worker: RunWorke
         return await worker.run(stop)
     finally:
         sweep_stop.set()
-        await sweeping
+        following.cancel()
+        with contextlib.suppress(TimeoutError):  # wait_for cancels the stuck pass; a cancel of serve propagates
+            await asyncio.wait_for(sweeping, timeout=settings.drain_seconds)
+        with contextlib.suppress(asyncio.CancelledError):
+            await following
 
 
 async def serve(settings: Settings, stop: asyncio.Event) -> int:

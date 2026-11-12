@@ -166,10 +166,14 @@ class ApprovalStore:
     async def count_for(self, *, user_id: str, role: str | None, status: ApprovalStatus | None) -> int:
         return await self._approvals.count(self._visible(user_id, role, status))
 
-    async def awaiting_sla(self, *, limit: int) -> list[dict[str, Any]]:
-        """Pending approvals not yet escalated, oldest first: those the SLA sweep may still owe a stage (HIL-2)."""
+    async def awaiting_sla(self, *, skip: int = 0, limit: int) -> list[dict[str, Any]]:
+        """A page of pending approvals not yet escalated, oldest first: those the SLA sweep may still owe a
+        stage (HIL-2)."""
         return await self._approvals.find(
-            {"status": "pending", "escalated_at": None}, sort=[("requested_at", 1), ("_id", 1)], limit=limit
+            {"status": "pending", "escalated_at": None},
+            sort=[("requested_at", 1), ("_id", 1)],
+            skip=skip,
+            limit=limit,
         )
 
     async def mark_stage(self, approval_id: str, stage: SlaStage, *, at: datetime) -> bool:
