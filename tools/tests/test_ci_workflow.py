@@ -19,7 +19,14 @@ ROOT = Path(__file__).resolve().parents[2]
 WORKFLOW = ROOT / ".github" / "workflows" / "ci.yml"
 ADR = ROOT / "docs" / "adr" / "0001-ci-host.md"
 SHA_PIN = re.compile(r"^[\w.-]+/[\w.-]+@[0-9a-f]{40}$")
-CHECK_JOB, INT_JOB = "check", "integration"
+CHECK_JOB, INT_JOB, PII_JOB = "check", "integration", "pii"
+JOBS = (CHECK_JOB, INT_JOB, PII_JOB)
+NX_JOBS = (CHECK_JOB, INT_JOB)  # the pii job runs pytest directly, not through Nx
+# The compose stack (`make up`) needs a `.env`; on a runner it is generated per job (SEC-1, tools/ci_env.py).
+RUNNER_ENV = "uv run --frozen python tools/ci_env.py > .env"
+# Every MASTER-PLAN §7 gate that is a Makefile target runs in CI. `test-xt` runs inside `make check`.
+CI_GATES = ("check", "contracts-check", "test-int", "evals-selftest", "test-pii")
+NOT_GATES = ("bootstrap", "down")
 
 
 def _workflow() -> dict[Any, Any]:
@@ -65,37 +72,90 @@ def test_superseded_runs_on_the_same_ref_are_cancelled() -> None:
     assert concurrency["cancel-in-progress"] == "${{ github.ref != 'refs/heads/main' }}"
 
 
-@pytest.mark.parametrize("job", [CHECK_JOB, INT_JOB])
-def test_no_job_or_step_can_be_skipped_or_allowed_to_fail(job: str) -> None:
-    for node in (_jobs()[job], *_jobs()[job]["steps"]):
-        assert "if" not in node, f"{job}: a condition can silently skip the gate"
-        assert "continue-on-error" not in node, f"{job}: continue-on-error turns red into green"
+def _is_gate_step(step: dict[str, Any]) -> bool:
+    run = str(step.get("run", "")).strip()
+    target = run.removeprefix("make ") if run.startswith("make ") else None
+    # `make bootstrap` counts: a conditional install would skip every gate after it. Only `make down` is free.
+    return run == RUNNER_ENV or (target is not None and target != "down")
 
 
-def test_workflow_has_exactly_the_check_and_integration_jobs() -> None:
-    assert set(_jobs()) == {CHECK_JOB, INT_JOB}
+@pytest.mark.parametrize("job", JOBS)
+def test_no_job_or_gate_step_can_be_skipped_or_allowed_to_fail(job: str) -> None:
+    assert "if" not in _jobs()[job], f"{job}: a condition can silently skip the whole job"
+    assert "continue-on-error" not in _jobs()[job], f"{job}: continue-on-error turns red into green"
+    for step in _jobs()[job]["steps"]:
+        assert "continue-on-error" not in step, f"{job}: continue-on-error turns red into green"
+        if "if" in step:
+            # Only report and clean-up steps may run regardless of the outcome; they never decide it.
+            assert step["if"] == "always()", f"{job}: only `if: always()` is allowed, on {step}"
+            assert not _is_gate_step(step), f"{job}: a gate step must not carry a condition: {step}"
+
+
+def test_workflow_has_exactly_the_check_integration_and_pii_jobs() -> None:
+    assert set(_jobs()) == set(JOBS)
     # Required status checks match the job's display name, so it must equal the key.
-    assert {key: job["name"] for key, job in _jobs().items()} == {CHECK_JOB: CHECK_JOB, INT_JOB: INT_JOB}
+    assert {key: job["name"] for key, job in _jobs().items()} == {job: job for job in JOBS}
 
 
-def test_check_job_bootstraps_then_runs_make_check() -> None:
-    assert _run_lines(CHECK_JOB) == ["make bootstrap", "make check"]
+def test_check_job_bootstraps_writes_the_runner_env_then_runs_check_and_contracts() -> None:
+    assert _run_lines(CHECK_JOB) == ["make bootstrap", RUNNER_ENV, "make check", "make contracts-check"]
 
 
-def test_integration_job_runs_after_check_and_runs_make_test_int() -> None:
+def test_integration_job_runs_after_check_with_the_stack_gates() -> None:
     job = _jobs()[INT_JOB]
     assert job["needs"] == CHECK_JOB
-    assert _run_lines(INT_JOB) == ["make bootstrap", "make test-int"]
+    assert _run_lines(INT_JOB) == ["make bootstrap", RUNNER_ENV, "make test-int", "make evals-selftest"]
 
 
-@pytest.mark.parametrize("job", [CHECK_JOB, INT_JOB])
+def test_pii_job_runs_after_check() -> None:
+    assert _jobs()[PII_JOB]["needs"] == CHECK_JOB
+
+
+def _gate_targets() -> list[str]:
+    return [
+        str(step["run"]).strip().removeprefix("make ")
+        for job in JOBS
+        for step in _jobs()[job]["steps"]
+        if str(step.get("run", "")).strip().startswith("make ")
+        and str(step["run"]).strip().removeprefix("make ") not in NOT_GATES
+    ]
+
+
+def test_every_makefile_gate_runs_in_ci_exactly_once() -> None:
+    makefile = (ROOT / "Makefile").read_text(encoding="utf-8")
+    phony = re.search(r"^\.PHONY:(.*)$", makefile, re.MULTILINE)
+    assert phony is not None
+    for gate in CI_GATES:
+        assert gate in phony.group(1).split(), f"Makefile has no {gate!r} target"
+    assert sorted(_gate_targets()) == sorted(CI_GATES)
+
+
+def test_make_check_includes_the_cross_tenant_suite() -> None:
+    makefile = (ROOT / "Makefile").read_text(encoding="utf-8")
+    check = re.search(r"^check:(.*)$", makefile, re.MULTILINE)
+    assert check is not None
+    assert "test-xt" in check.group(1).split()
+
+
+@pytest.mark.parametrize("job", JOBS)
+def test_the_runner_env_is_written_after_bootstrap_and_before_any_gate(job: str) -> None:
+    runs = _run_lines(job)
+    assert runs.count(RUNNER_ENV) == 1
+    env_at = runs.index(RUNNER_ENV)
+    assert runs.index("make bootstrap") < env_at
+    gates_at = [i for i, run in enumerate(runs) if run.startswith("make ") and run.removeprefix("make ") in CI_GATES]
+    assert gates_at
+    assert env_at < min(gates_at)
+
+
+@pytest.mark.parametrize("job", JOBS)
 def test_job_runs_on_a_pinned_linux_runner_with_a_timeout(job: str) -> None:
-    # testcontainers needs a Docker daemon: GitHub's hosted Ubuntu runners provide one.
+    # testcontainers and the compose stack need a Docker daemon: GitHub's hosted Ubuntu runners provide one.
     assert re.fullmatch(r"ubuntu-\d\d\.\d\d", _jobs()[job]["runs-on"])
-    assert 0 < int(_jobs()[job]["timeout-minutes"]) <= 30
+    assert 0 < int(_jobs()[job]["timeout-minutes"]) <= 45
 
 
-@pytest.mark.parametrize("job", [CHECK_JOB, INT_JOB])
+@pytest.mark.parametrize("job", JOBS)
 def test_every_action_is_pinned_to_a_commit_sha(job: str) -> None:
     uses = _uses(job)
     assert uses, f"{job} uses no actions"
@@ -103,7 +163,7 @@ def test_every_action_is_pinned_to_a_commit_sha(job: str) -> None:
     assert not unpinned, f"actions must be pinned to a full commit SHA: {unpinned}"
 
 
-@pytest.mark.parametrize("job", [CHECK_JOB, INT_JOB])
+@pytest.mark.parametrize("job", JOBS)
 def test_checkout_does_not_persist_the_token(job: str) -> None:
     steps = [s for s in _jobs()[job]["steps"] if str(s.get("uses", "")).startswith("actions/checkout@")]
     assert len(steps) == 1
@@ -120,7 +180,7 @@ def _version(text: str) -> tuple[int, ...]:
     return tuple(int(part) for part in text.split("."))
 
 
-@pytest.mark.parametrize("job", [CHECK_JOB, INT_JOB])
+@pytest.mark.parametrize("job", JOBS)
 def test_uv_is_cached_and_matches_the_pinned_version(job: str) -> None:
     with_ = _step(job, "astral-sh/setup-uv")["with"]
     pyproject = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
@@ -133,14 +193,14 @@ def test_uv_is_cached_and_matches_the_pinned_version(job: str) -> None:
     assert with_["cache-dependency-glob"] == "uv.lock"
 
 
-@pytest.mark.parametrize("job", [CHECK_JOB, INT_JOB])
+@pytest.mark.parametrize("job", JOBS)
 def test_node_comes_from_nvmrc_with_the_npm_cache(job: str) -> None:
     with_ = _step(job, "actions/setup-node")["with"]
     assert with_["node-version-file"] == ".nvmrc"
     assert with_["cache"] == "npm"
 
 
-@pytest.mark.parametrize("job", [CHECK_JOB, INT_JOB])
+@pytest.mark.parametrize("job", NX_JOBS)
 def test_nx_cache_is_restored_and_keyed_on_lockfiles(job: str) -> None:
     with_ = _step(job, "actions/cache")["with"]
     assert with_["path"] == ".nx/cache"

@@ -1,0 +1,93 @@
+.......FF.F.FF...................F                                       [100%]
+=================================== FAILURES ===================================
+_ test_check_job_bootstraps_writes_the_runner_env_then_runs_check_and_contracts _
+
+    def test_check_job_bootstraps_writes_the_runner_env_then_runs_check_and_contracts() -> None:
+>       assert _run_lines(CHECK_JOB) == ["make bootstrap", RUNNER_ENV, "make check", "make contracts-check"]
+E       AssertionError: assert ['make bootst... 'make check'] == ['make bootst...tracts-check']
+E         
+E         At index 1 diff: 'make check' != 'uv run --frozen python tools/ci_env.py > .env'
+E         Right contains 2 more items, first extra item: 'make check'
+E         Use -v to get more diff
+
+tools/tests/test_ci_workflow.py:100: AssertionError
+__________ test_integration_job_runs_after_check_with_the_stack_gates __________
+
+    def test_integration_job_runs_after_check_with_the_stack_gates() -> None:
+        job = _jobs()[INT_JOB]
+        assert job["needs"] == CHECK_JOB
+>       assert _run_lines(INT_JOB) == ["make bootstrap", RUNNER_ENV, "make test-int", "make evals-selftest"]
+E       AssertionError: assert ['make bootst...ake test-int'] == ['make bootst...als-selftest']
+E         
+E         At index 1 diff: 'make test-int' != 'uv run --frozen python tools/ci_env.py > .env'
+E         Right contains 2 more items, first extra item: 'make test-int'
+E         Use -v to get more diff
+
+tools/tests/test_ci_workflow.py:106: AssertionError
+_______________ test_every_makefile_gate_runs_in_ci_exactly_once _______________
+
+    def test_every_makefile_gate_runs_in_ci_exactly_once() -> None:
+        makefile = (ROOT / "Makefile").read_text(encoding="utf-8")
+        phony = re.search(r"^\.PHONY:(.*)$", makefile, re.MULTILINE)
+        assert phony is not None
+        for gate in CI_GATES:
+            assert gate in phony.group(1).split(), f"Makefile has no {gate!r} target"
+>       assert sorted(_gate_targets()) == sorted(CI_GATES)
+E       AssertionError: assert ['check', 'te...', 'test-pii'] == ['check', 'co...', 'test-pii']
+E         
+E         At index 1 diff: 'test-int' != 'contracts-check'
+E         Right contains 2 more items, first extra item: 'test-int'
+E         Use -v to get more diff
+
+tools/tests/test_ci_workflow.py:129: AssertionError
+__ test_the_runner_env_is_written_after_bootstrap_and_before_any_gate[check] ___
+
+job = 'check'
+
+    @pytest.mark.parametrize("job", JOBS)
+    def test_the_runner_env_is_written_after_bootstrap_and_before_any_gate(job: str) -> None:
+        runs = _run_lines(job)
+>       assert runs.count(RUNNER_ENV) == 1
+E       AssertionError: assert 0 == 1
+E        +  where 0 = <built-in method count of list object at 0x10c7e1a00>('uv run --frozen python tools/ci_env.py > .env')
+E        +    where <built-in method count of list object at 0x10c7e1a00> = ['make bootstrap', 'make check'].count
+
+tools/tests/test_ci_workflow.py:142: AssertionError
+_ test_the_runner_env_is_written_after_bootstrap_and_before_any_gate[integration] _
+
+job = 'integration'
+
+    @pytest.mark.parametrize("job", JOBS)
+    def test_the_runner_env_is_written_after_bootstrap_and_before_any_gate(job: str) -> None:
+        runs = _run_lines(job)
+>       assert runs.count(RUNNER_ENV) == 1
+E       AssertionError: assert 0 == 1
+E        +  where 0 = <built-in method count of list object at 0x10c7eb700>('uv run --frozen python tools/ci_env.py > .env')
+E        +    where <built-in method count of list object at 0x10c7eb700> = ['make bootstrap', 'make test-int'].count
+
+tools/tests/test_ci_workflow.py:142: AssertionError
+__________ test_adr_names_the_required_status_checks_as_the_job_names __________
+
+    def test_adr_names_the_required_status_checks_as_the_job_names() -> None:
+        # Branch protection matches checks by job name; renaming a job silently drops the gate.
+        text = ADR.read_text(encoding="utf-8")
+        payload = re.search(r"<<'JSON'\n(.*?)\n\s*JSON\n", text, re.DOTALL)
+        assert payload is not None, "ADR must carry the branch-protection payload"
+        protection = json.loads(payload.group(1))
+        checks = protection["required_status_checks"]
+>       assert sorted(checks["contexts"]) == sorted(_jobs())
+E       AssertionError: assert ['check', 'integration'] == ['check', 'in...ation', 'pii']
+E         
+E         Right contains one more item: 'pii'
+E         Use -v to get more diff
+
+tools/tests/test_ci_workflow.py:230: AssertionError
+=========================== short test summary info ============================
+FAILED tools/tests/test_ci_workflow.py::test_check_job_bootstraps_writes_the_runner_env_then_runs_check_and_contracts
+FAILED tools/tests/test_ci_workflow.py::test_integration_job_runs_after_check_with_the_stack_gates
+FAILED tools/tests/test_ci_workflow.py::test_every_makefile_gate_runs_in_ci_exactly_once
+FAILED tools/tests/test_ci_workflow.py::test_the_runner_env_is_written_after_bootstrap_and_before_any_gate[check]
+FAILED tools/tests/test_ci_workflow.py::test_the_runner_env_is_written_after_bootstrap_and_before_any_gate[integration]
+FAILED tools/tests/test_ci_workflow.py::test_adr_names_the_required_status_checks_as_the_job_names
+6 failed, 28 passed in 0.17s
+exit=1
