@@ -923,6 +923,18 @@
    "doc": "GOALS.md#perf-1--measure-api-latency-and-approval-to-resume-time"
   },
   {
+   "id": "FIX-1",
+   "title": "Fix the defects PERF-1 found under load",
+   "owner": "Haneef",
+   "needs": [
+    "PERF-1"
+   ],
+   "label": "load defects",
+   "size": "S",
+   "track": "M6",
+   "doc": "GOALS.md#fix-1--fix-the-defects-perf-1-found-under-load"
+  },
+  {
    "id": "E2E-1",
    "title": "Automate the golden path end to end",
    "owner": "Haneef",

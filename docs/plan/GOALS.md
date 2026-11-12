@@ -1184,6 +1184,25 @@ the baseline that later changes are compared with; every bug found so far is a r
 - [ ] `docs/evidence/PERF-1/latency.md` states the tool, hardware, sample size and endpoints, and non-LLM endpoints have p95 < 300 ms
 - [ ] Approval decision → run resumed has p95 < 5 s over 30+ decisions (same file)
 
+### FIX-1 · Fix the defects PERF-1 found under load
+- **Size:** S · **Milestone:** M6 · **Label:** load defects
+- **Needs:** PERF-1
+
+**Outcome.** The three defects PERF-1 recorded are fixed, each with a test that failed before the
+fix. Added by the orchestrator on 2026-11-13 from PERF-1's evidence.
+
+**PRD.** FR-R5 (HR pauses and resumes a run), FR-P2 (audited reveal), §10 Templates, §12 Latency.
+
+**Scope.** `docs/evidence/PERF-1/pause-resume-run-failed.txt`: a run paused and resumed about 8 ms
+apart was failed by the worker (`TaskCancelled`), cancelling its pending approval and every remaining
+task. `docs/evidence/PERF-1/concurrent-reveal-500.txt`: a reveal racing a PII update returns 500
+(`SupersededTokenError`). `GET /templates/drafts` has no paging.
+
+**Done when.**
+- [ ] A test pauses and resumes a run back to back many times (including with no delay) and the run is never failed or cancelled; it fails on the code before the fix (test + recorded red run)
+- [ ] A reveal racing an update of the same field returns 200 with a current value or a 409, never a 500; both outcomes are audited (test)
+- [ ] `GET /templates/drafts` pages like `/hires` and `/runs`, and `make test-xt` still covers it (test)
+
 ### E2E-1 · Automate the golden path end to end
 - **Size:** L · **Milestone:** M6 · **Label:** golden-path E2E
 - **Needs:** MS-5, SEED-1
