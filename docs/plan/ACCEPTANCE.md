@@ -52,7 +52,7 @@ a result is malformed.
 | NF-PII-INT | 100% of tampered vault records and forged or widened grants rejected | PII-2, PII-4, SEC-1 | MS-6 | pass · 2026-11-13 · compose · docs/evidence/SEC-1/tamper-report.md |
 | NF-EVAL | Eval gates met before any agent, prompt or model change merges | EVAL-1, EVAL-2 | MS-6 | open |
 | NF-DUR | No run state lost on worker restart; jobs at-least-once with idempotent handlers | EVT-1, RUN-2 | MS-4 | pass · 2026-11-12 · compose · docs/evidence/RUN-2/kill-and-restart.txt |
-| NF-LAT | API p95 < 300 ms (non-LLM); approval decision → run resumed < 5 s | HIL-1, PERF-1 | MS-6 | open |
+| NF-LAT | API p95 < 300 ms (non-LLM); approval decision → run resumed < 5 s | HIL-1, PERF-1 | MS-6 | pass · 2026-11-13 · compose · docs/evidence/PERF-1/latency.md |
 | NF-SEC | No secrets in code; agent tokens ≤ 15 min; inputs validated at boundaries | HUB-1, SEC-2 | MS-6 | open |
 | NF-OBS | 100% of LLM and tool calls traced; every run has a trace link | F-4, RUN-3, UI-5, DEMO-1 | MS-6 | open |
 | NF-PORT | Switching an agent's model/connector requires config only | LLM-1, DEMO-1 | MS-6 | open |

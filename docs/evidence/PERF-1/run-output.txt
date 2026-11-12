@@ -1,0 +1,8 @@
+ ob-perf-1-caddy-1 Copying ob-perf-1-caddy-1:/data/caddy/pki/authorities/local/root.crt to reports/perf/caddy-root.crt
+ ob-perf-1-caddy-1 Copied ob-perf-1-caddy-1:/data/caddy/pki/authorities/local/root.crt to reports/perf/caddy-root.crt
+perf: sequential, 30 endpoints x 200
+perf: decisions x 40
+perf: concurrent, 8 clients
+perf: box 1 (sequential p95 < 300 ms): PASS failing=[]
+perf: box 2 (decision -> resumed p95 < 5 s over 40): PASS p95=1.052 s
+exit 0

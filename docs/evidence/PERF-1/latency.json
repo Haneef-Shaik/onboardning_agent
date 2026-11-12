@@ -1,0 +1,604 @@
+{
+  "goal": "PERF-1",
+  "measured_at": "2026-11-12 22:16 UTC",
+  "params": {
+    "base_url": "https://localhost:19801/api",
+    "ca_file": "reports/perf/caddy-root.crt",
+    "samples": 200,
+    "warmup": 10,
+    "concurrency": 8,
+    "decisions": 40,
+    "poll_ms": 50,
+    "resume_timeout": 30.0,
+    "seed": 20261113,
+    "out": "/Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-perf-1/docs/evidence/PERF-1"
+  },
+  "hardware": {
+    "host": "macOS-27.2.1-arm64-arm-64bit",
+    "cpu": "Apple M5",
+    "cpu_count": 10,
+    "ram_gib": 16.0,
+    "docker_server": "29.8.2",
+    "docker_cpus": "10",
+    "docker_ram_gib": 7.7,
+    "containers_running": 32,
+    "containers_of_this_stack": 4,
+    "load_average_1_5_15": [
+      8.97,
+      5.76,
+      5.17
+    ],
+    "python": "3.12.13"
+  },
+  "excluded": {
+    "POST /runs/{run_id}/chat": "LLM: the Run Assistant answers through a model (out of the non-LLM target)",
+    "POST /runs/{run_id}/chat/confirm": "LLM-driven: confirms an action the Run Assistant proposed",
+    "GET /runs/{run_id}/stream": "SSE stream held open for minutes; not a request/response latency",
+    "POST /webhooks/telegram": "Telegram's callback, authenticated by the webhook secret; same decision path as the mock press (HIL-1 measured it in-process)",
+    "POST /mock-outbox/{message_id}/press": "needs the notify worker's Telegram-mock messages; the web decision is the measured decision path",
+    "POST /templates/drafts/{draft_id}/publish": "lifecycle action: each sample would publish a new template version",
+    "POST /templates/{key}/versions/{version}/archive": "lifecycle action: would archive the seeded template",
+    "GET /evals/runs/{run_id}": "no eval run exists in the seeded org (`GET /evals/runs` is measured, empty)",
+    "POST /runs/{run_id}/cancel": "terminal: each sample would need a fresh run",
+    "POST /runs/{run_id}/tasks/{task_id}/retry": "needs a failed task; the stub executor does not fail",
+    "POST /runs/{run_id}/tasks/{task_id}/complete": "needs a failed task; the stub executor does not fail"
+  },
+  "sequential": {
+    "GET /health": {
+      "count": 200,
+      "p50_ms": 1.4,
+      "p95_ms": 3.1,
+      "p99_ms": 4.4,
+      "max_ms": 5.9,
+      "mean_ms": 1.6
+    },
+    "POST /auth/login": {
+      "count": 200,
+      "p50_ms": 180.3,
+      "p95_ms": 231.9,
+      "p99_ms": 357.9,
+      "max_ms": 1090.3,
+      "mean_ms": 196.8
+    },
+    "GET /me": {
+      "count": 200,
+      "p50_ms": 2.5,
+      "p95_ms": 6.7,
+      "p99_ms": 11.1,
+      "max_ms": 83.3,
+      "mean_ms": 3.6
+    },
+    "GET /agents": {
+      "count": 200,
+      "p50_ms": 3.5,
+      "p95_ms": 9.8,
+      "p99_ms": 21.5,
+      "max_ms": 22.6,
+      "mean_ms": 4.5
+    },
+    "GET /agents/{name}": {
+      "count": 200,
+      "p50_ms": 2.9,
+      "p95_ms": 6.9,
+      "p99_ms": 17.8,
+      "max_ms": 40.2,
+      "mean_ms": 3.9
+    },
+    "GET /audit": {
+      "count": 200,
+      "p50_ms": 47.3,
+      "p95_ms": 54.4,
+      "p99_ms": 70.6,
+      "max_ms": 94.5,
+      "mean_ms": 46.7
+    },
+    "GET /evals/runs": {
+      "count": 200,
+      "p50_ms": 3.8,
+      "p95_ms": 8.0,
+      "p99_ms": 14.6,
+      "max_ms": 110.5,
+      "mean_ms": 5.0
+    },
+    "GET /templates": {
+      "count": 200,
+      "p50_ms": 2.7,
+      "p95_ms": 8.5,
+      "p99_ms": 13.9,
+      "max_ms": 22.6,
+      "mean_ms": 3.5
+    },
+    "GET /templates/{key}/versions/{version}": {
+      "count": 200,
+      "p50_ms": 3.7,
+      "p95_ms": 8.9,
+      "p99_ms": 13.4,
+      "max_ms": 41.2,
+      "mean_ms": 4.8
+    },
+    "GET /templates/drafts": {
+      "count": 200,
+      "p50_ms": 80.5,
+      "p95_ms": 149.1,
+      "p99_ms": 202.0,
+      "max_ms": 230.8,
+      "mean_ms": 83.6
+    },
+    "GET /templates/drafts/{draft_id}": {
+      "count": 200,
+      "p50_ms": 3.0,
+      "p95_ms": 6.6,
+      "p99_ms": 13.8,
+      "max_ms": 36.0,
+      "mean_ms": 3.7
+    },
+    "POST /templates/drafts": {
+      "count": 200,
+      "p50_ms": 6.9,
+      "p95_ms": 14.0,
+      "p99_ms": 21.0,
+      "max_ms": 37.0,
+      "mean_ms": 8.2
+    },
+    "PUT /templates/drafts/{draft_id}": {
+      "count": 200,
+      "p50_ms": 7.9,
+      "p95_ms": 17.9,
+      "p99_ms": 38.0,
+      "max_ms": 88.1,
+      "mean_ms": 10.1
+    },
+    "POST /templates/drafts/{draft_id}/validate": {
+      "count": 200,
+      "p50_ms": 4.9,
+      "p95_ms": 13.2,
+      "p99_ms": 44.8,
+      "max_ms": 99.6,
+      "mean_ms": 7.1
+    },
+    "GET /hires": {
+      "count": 200,
+      "p50_ms": 48.2,
+      "p95_ms": 58.5,
+      "p99_ms": 76.7,
+      "max_ms": 291.6,
+      "mean_ms": 50.8
+    },
+    "POST /hires": {
+      "count": 200,
+      "p50_ms": 15.9,
+      "p95_ms": 36.4,
+      "p99_ms": 80.1,
+      "max_ms": 112.0,
+      "mean_ms": 20.0
+    },
+    "GET /hires/{hire_id}": {
+      "count": 200,
+      "p50_ms": 2.7,
+      "p95_ms": 6.1,
+      "p99_ms": 10.7,
+      "max_ms": 12.5,
+      "mean_ms": 3.2
+    },
+    "GET /hires/{hire_id}/documents": {
+      "count": 200,
+      "p50_ms": 46.7,
+      "p95_ms": 95.0,
+      "p99_ms": 107.4,
+      "max_ms": 123.8,
+      "mean_ms": 51.6
+    },
+    "POST /hires/{hire_id}/documents": {
+      "count": 200,
+      "p50_ms": 10.1,
+      "p95_ms": 22.9,
+      "p99_ms": 110.5,
+      "max_ms": 122.5,
+      "mean_ms": 12.8
+    },
+    "PUT /hires/{hire_id}/pii/{field}": {
+      "count": 200,
+      "p50_ms": 16.7,
+      "p95_ms": 33.6,
+      "p99_ms": 56.5,
+      "max_ms": 96.5,
+      "mean_ms": 18.7
+    },
+    "POST /hires/{hire_id}/pii/{field}/reveal": {
+      "count": 200,
+      "p50_ms": 9.4,
+      "p95_ms": 22.3,
+      "p99_ms": 30.8,
+      "max_ms": 53.3,
+      "mean_ms": 11.1
+    },
+    "GET /pii-access-log": {
+      "count": 200,
+      "p50_ms": 46.3,
+      "p95_ms": 52.4,
+      "p99_ms": 64.4,
+      "max_ms": 73.1,
+      "mean_ms": 45.0
+    },
+    "GET /runs": {
+      "count": 200,
+      "p50_ms": 49.8,
+      "p95_ms": 62.3,
+      "p99_ms": 86.0,
+      "max_ms": 176.8,
+      "mean_ms": 50.0
+    },
+    "POST /runs": {
+      "count": 200,
+      "p50_ms": 12.9,
+      "p95_ms": 38.2,
+      "p99_ms": 59.2,
+      "max_ms": 91.5,
+      "mean_ms": 16.6
+    },
+    "GET /runs/{run_id}": {
+      "count": 200,
+      "p50_ms": 45.9,
+      "p95_ms": 53.2,
+      "p99_ms": 73.4,
+      "max_ms": 110.9,
+      "mean_ms": 41.3
+    },
+    "GET /runs/{run_id}/chat": {
+      "count": 200,
+      "p50_ms": 45.6,
+      "p95_ms": 52.2,
+      "p99_ms": 71.0,
+      "max_ms": 109.0,
+      "mean_ms": 40.9
+    },
+    "POST /runs/{run_id}/pause": {
+      "count": 200,
+      "p50_ms": 139.8,
+      "p95_ms": 156.2,
+      "p99_ms": 167.8,
+      "max_ms": 228.0,
+      "mean_ms": 127.2
+    },
+    "POST /runs/{run_id}/resume": {
+      "count": 200,
+      "p50_ms": 141.7,
+      "p95_ms": 165.6,
+      "p99_ms": 187.4,
+      "max_ms": 207.8,
+      "mean_ms": 132.1
+    },
+    "GET /approvals": {
+      "count": 200,
+      "p50_ms": 48.8,
+      "p95_ms": 56.5,
+      "p99_ms": 69.3,
+      "max_ms": 180.5,
+      "mean_ms": 48.8
+    },
+    "GET /mock-outbox": {
+      "count": 200,
+      "p50_ms": 3.9,
+      "p95_ms": 8.8,
+      "p99_ms": 25.6,
+      "max_ms": 48.3,
+      "mean_ms": 4.9
+    }
+  },
+  "concurrent": {
+    "GET /health": {
+      "count": 200,
+      "p50_ms": 2.2,
+      "p95_ms": 8.1,
+      "p99_ms": 65.0,
+      "max_ms": 104.4,
+      "mean_ms": 4.8
+    },
+    "POST /auth/login": {
+      "count": 200,
+      "p50_ms": 210.7,
+      "p95_ms": 339.6,
+      "p99_ms": 402.0,
+      "max_ms": 453.7,
+      "mean_ms": 227.5
+    },
+    "GET /me": {
+      "count": 200,
+      "p50_ms": 6.4,
+      "p95_ms": 75.0,
+      "p99_ms": 113.6,
+      "max_ms": 127.2,
+      "mean_ms": 14.5
+    },
+    "GET /agents": {
+      "count": 200,
+      "p50_ms": 7.5,
+      "p95_ms": 58.2,
+      "p99_ms": 129.9,
+      "max_ms": 192.9,
+      "mean_ms": 16.3
+    },
+    "GET /agents/{name}": {
+      "count": 200,
+      "p50_ms": 8.0,
+      "p95_ms": 66.1,
+      "p99_ms": 97.3,
+      "max_ms": 116.0,
+      "mean_ms": 14.3
+    },
+    "GET /audit": {
+      "count": 200,
+      "p50_ms": 53.0,
+      "p95_ms": 127.8,
+      "p99_ms": 177.1,
+      "max_ms": 197.5,
+      "mean_ms": 64.2
+    },
+    "GET /evals/runs": {
+      "count": 200,
+      "p50_ms": 9.3,
+      "p95_ms": 86.6,
+      "p99_ms": 158.6,
+      "max_ms": 215.7,
+      "mean_ms": 22.3
+    },
+    "GET /templates": {
+      "count": 200,
+      "p50_ms": 5.9,
+      "p95_ms": 61.5,
+      "p99_ms": 96.2,
+      "max_ms": 131.0,
+      "mean_ms": 14.1
+    },
+    "GET /templates/{key}/versions/{version}": {
+      "count": 200,
+      "p50_ms": 8.4,
+      "p95_ms": 74.5,
+      "p99_ms": 122.0,
+      "max_ms": 159.6,
+      "mean_ms": 17.0
+    },
+    "GET /templates/drafts": {
+      "count": 200,
+      "p50_ms": 127.5,
+      "p95_ms": 241.4,
+      "p99_ms": 278.5,
+      "max_ms": 423.5,
+      "mean_ms": 134.3
+    },
+    "GET /templates/drafts/{draft_id}": {
+      "count": 200,
+      "p50_ms": 6.1,
+      "p95_ms": 51.8,
+      "p99_ms": 120.8,
+      "max_ms": 163.2,
+      "mean_ms": 14.4
+    },
+    "POST /templates/drafts": {
+      "count": 200,
+      "p50_ms": 12.2,
+      "p95_ms": 79.9,
+      "p99_ms": 113.1,
+      "max_ms": 216.1,
+      "mean_ms": 21.7
+    },
+    "PUT /templates/drafts/{draft_id}": {
+      "count": 200,
+      "p50_ms": 15.2,
+      "p95_ms": 100.2,
+      "p99_ms": 170.1,
+      "max_ms": 307.4,
+      "mean_ms": 28.1
+    },
+    "POST /templates/drafts/{draft_id}/validate": {
+      "count": 200,
+      "p50_ms": 9.8,
+      "p95_ms": 65.0,
+      "p99_ms": 122.8,
+      "max_ms": 157.9,
+      "mean_ms": 17.7
+    },
+    "GET /hires": {
+      "count": 200,
+      "p50_ms": 59.0,
+      "p95_ms": 137.1,
+      "p99_ms": 192.1,
+      "max_ms": 217.7,
+      "mean_ms": 74.9
+    },
+    "POST /hires": {
+      "count": 200,
+      "p50_ms": 46.6,
+      "p95_ms": 190.8,
+      "p99_ms": 481.9,
+      "max_ms": 524.1,
+      "mean_ms": 79.4
+    },
+    "GET /hires/{hire_id}": {
+      "count": 200,
+      "p50_ms": 5.9,
+      "p95_ms": 38.1,
+      "p99_ms": 110.5,
+      "max_ms": 162.1,
+      "mean_ms": 11.3
+    },
+    "GET /hires/{hire_id}/documents": {
+      "count": 200,
+      "p50_ms": 9.0,
+      "p95_ms": 71.0,
+      "p99_ms": 133.6,
+      "max_ms": 209.2,
+      "mean_ms": 18.1
+    },
+    "POST /hires/{hire_id}/documents": {
+      "count": 200,
+      "p50_ms": 23.4,
+      "p95_ms": 120.8,
+      "p99_ms": 177.2,
+      "max_ms": 300.6,
+      "mean_ms": 41.9
+    },
+    "PUT /hires/{hire_id}/pii/{field}": {
+      "count": 200,
+      "p50_ms": 44.0,
+      "p95_ms": 199.1,
+      "p99_ms": 407.1,
+      "max_ms": 427.7,
+      "mean_ms": 74.5
+    },
+    "POST /hires/{hire_id}/pii/{field}/reveal": {
+      "count": 200,
+      "p50_ms": 21.5,
+      "p95_ms": 141.1,
+      "p99_ms": 261.2,
+      "max_ms": 366.9,
+      "mean_ms": 44.4
+    },
+    "GET /pii-access-log": {
+      "count": 200,
+      "p50_ms": 10.1,
+      "p95_ms": 116.6,
+      "p99_ms": 165.1,
+      "max_ms": 384.3,
+      "mean_ms": 29.4
+    },
+    "GET /runs": {
+      "count": 200,
+      "p50_ms": 57.6,
+      "p95_ms": 156.6,
+      "p99_ms": 174.6,
+      "max_ms": 253.5,
+      "mean_ms": 72.8
+    },
+    "POST /runs": {
+      "count": 200,
+      "p50_ms": 35.6,
+      "p95_ms": 187.8,
+      "p99_ms": 269.5,
+      "max_ms": 558.5,
+      "mean_ms": 62.6
+    },
+    "GET /runs/{run_id}": {
+      "count": 200,
+      "p50_ms": 9.6,
+      "p95_ms": 93.2,
+      "p99_ms": 200.6,
+      "max_ms": 229.0,
+      "mean_ms": 22.3
+    },
+    "GET /runs/{run_id}/chat": {
+      "count": 200,
+      "p50_ms": 8.6,
+      "p95_ms": 70.6,
+      "p99_ms": 117.3,
+      "max_ms": 206.7,
+      "mean_ms": 16.7
+    },
+    "POST /runs/{run_id}/pause": {
+      "count": 200,
+      "p50_ms": 32.4,
+      "p95_ms": 167.9,
+      "p99_ms": 339.3,
+      "max_ms": 468.4,
+      "mean_ms": 59.7
+    },
+    "POST /runs/{run_id}/resume": {
+      "count": 200,
+      "p50_ms": 32.2,
+      "p95_ms": 155.6,
+      "p99_ms": 325.6,
+      "max_ms": 657.5,
+      "mean_ms": 57.5
+    },
+    "GET /approvals": {
+      "count": 200,
+      "p50_ms": 59.4,
+      "p95_ms": 148.8,
+      "p99_ms": 190.4,
+      "max_ms": 436.9,
+      "mean_ms": 73.6
+    },
+    "GET /mock-outbox": {
+      "count": 200,
+      "p50_ms": 9.5,
+      "p95_ms": 58.0,
+      "p99_ms": 126.2,
+      "max_ms": 134.2,
+      "mean_ms": 17.4
+    }
+  },
+  "decision_to_resumed": {
+    "count": 40,
+    "passed": true,
+    "summary": {
+      "count": 40,
+      "p50_ms": 997.4,
+      "p95_ms": 1051.9,
+      "p99_ms": 1066.6,
+      "max_ms": 1066.6,
+      "mean_ms": 1002.8
+    },
+    "request_summary": {
+      "count": 40,
+      "p50_ms": 13.1,
+      "p95_ms": 18.8,
+      "p99_ms": 19.1,
+      "max_ms": 19.1,
+      "mean_ms": 13.4
+    },
+    "samples_s": [
+      0.9647,
+      1.0666,
+      0.9883,
+      0.951,
+      1.0489,
+      0.9888,
+      0.9905,
+      1.035,
+      0.9794,
+      0.9932,
+      1.0264,
+      1.0519,
+      1.0231,
+      0.9702,
+      1.0075,
+      0.9896,
+      1.0499,
+      0.9968,
+      0.9996,
+      1.0001,
+      1.0601,
+      1.0378,
+      0.9974,
+      0.9559,
+      0.9978,
+      1.0385,
+      1.0416,
+      1.0262,
+      0.9924,
+      0.9442,
+      1.0077,
+      1.0028,
+      0.9744,
+      0.9829,
+      1.0443,
+      1.005,
+      0.9427,
+      0.9743,
+      0.9779,
+      0.9873
+    ]
+  },
+  "verdicts": {
+    "sequential": {
+      "passed": true,
+      "failing": []
+    },
+    "concurrent": {
+      "passed": false,
+      "failing": [
+        "POST /auth/login"
+      ]
+    }
+  }
+}

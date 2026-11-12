@@ -320,23 +320,25 @@ def _sequential(base: str, users: Users, probes: dict[str, Probe], args: argpars
     return _measure(session, probes, args.samples, rng)
 
 
-def _concurrent(base: str, users: Users, probes: dict[str, Probe], args: argparse.Namespace) -> dict[str, list[float]]:
-    # Pause/resume on one shared run would race between clients (a legal 409): left to the sequential phase.
-    shared = {k: v for k, v in probes.items() if "/pause" not in k and "/resume" not in k}
+def _concurrent(base: str, users: Users, args: argparse.Namespace) -> dict[str, list[float]]:
+    # Each client works on its own hire, run and draft, as different HR users would: clients sharing one
+    # record race on it (a pause against a pause is a legal 409; a reveal against a PII update hit a 500,
+    # `concurrent-reveal-500.txt`), which is a correctness question, not latency.
     rounds = max(1, args.samples // args.concurrency)
 
     def worker(n: int) -> dict[str, list[float]]:
         session = Session(_client(base, args.ca_file))
         _login(session, users)
+        probes = _endpoints(_fixture(session, users), users)
         rng = random.Random(args.seed + n + 1)  # noqa: S311 - visiting order, not security
-        _measure(session, shared, 1, rng)
-        return _measure(session, shared, rounds, rng)
+        _measure(session, probes, 1, rng)
+        return _measure(session, probes, rounds, rng)
 
-    merged: dict[str, list[float]] = {name: [] for name in shared}
+    merged: dict[str, list[float]] = {}
     with concurrent.futures.ThreadPoolExecutor(args.concurrency) as pool:
         for result in pool.map(worker, range(args.concurrency)):
             for name, values in result.items():
-                merged[name].extend(values)
+                merged.setdefault(name, []).extend(values)
     return merged
 
 
@@ -460,7 +462,7 @@ def _report(report: dict[str, Any]) -> str:
         f"{report['params']['samples']} samples per endpoint in the sequential phase (each round visits every "
         f"endpoint in a seeded random order, seed {report['params']['seed']}); concurrent phase: "
         f"{report['params']['concurrency']} clients at once, {report['params']['samples']} samples per endpoint "
-        f"in all; {resume['count']} approval decisions.",
+        f"in all, each client on its own hire, run and draft; {resume['count']} approval decisions.",
         "- **Load:** the PRD names no load level. The verdict for box 1 is the sequential phase (one interactive "
         "client: the latency a user sees). The concurrent phase is reported beside it as information.",
         "- **Decision → resumed:** each decision is on a fresh run of the seeded template `engineer-india`, paused "
@@ -543,7 +545,7 @@ def main(argv: list[str] | None = None) -> int:
     print(f"perf: decisions x {args.decisions}", flush=True)
     requests, resumed = _decisions(args.base_url, users, fx.template_version, args)
     print(f"perf: concurrent, {args.concurrency} clients", flush=True)
-    concurrent_ = _summaries(_concurrent(args.base_url, users, probes, args))
+    concurrent_ = _summaries(_concurrent(args.base_url, users, args))
 
     resume_summary = stats.summarise(resumed)
     seq_verdict = stats.verdict(sequential, limit_ms=LIMIT_MS, min_samples=args.samples)
