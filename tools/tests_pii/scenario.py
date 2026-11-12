@@ -36,6 +36,8 @@ class Journey:
     run_status: str
     tasks: Mapping[str, str]
     chat_reply: str
+    responses: tuple[tuple[str, Any], ...]  # (route, body) of every API answer, reveals excluded
+    rejected_input: int  # the status of the deliberately invalid request
 
 
 class Api:
@@ -43,6 +45,7 @@ class Api:
         self._client = httpx.Client(base_url=base_url, timeout=60)
         self._password = password
         self._tokens: dict[str, str] = {}
+        self.responses: list[tuple[str, Any]] = []
 
     def login(self, handle: str) -> None:
         response = self._client.post("/auth/login", json={"email": user_email(handle), "password": self._password})
@@ -54,7 +57,17 @@ class Api:
         response = self._client.request(method, path, headers=headers, **kwargs)
         if response.status_code >= 400:
             raise AssertionError(f"{method} {path} as {handle}: {response.status_code} {_error_code(response)}")
-        return response.json()["data"]
+        body = response.json()
+        if not path.endswith("/reveal"):  # a reveal answers with the value by design (FR-P2)
+            self.responses.append((f"{method} {path} as {handle}", body))
+        return body["data"]
+
+    def refused(self, handle: str, method: str, path: str, **kwargs: Any) -> int:
+        """A request expected to fail; its answer is kept for the scan (an error must not echo input)."""
+        headers = {"Authorization": f"Bearer {self._tokens[handle]}"}
+        response = self._client.request(method, path, headers=headers, **kwargs)
+        self.responses.append((f"{method} {path} as {handle} (refused)", response.text))
+        return response.status_code
 
     def stream(self, handle: str, path: str, body: Mapping[str, Any]) -> str:
         """A server-sent-events answer (the chat route), as its raw text."""
@@ -62,6 +75,7 @@ class Api:
         response = self._client.post(path, headers=headers, json=dict(body))
         if response.status_code >= 400:
             raise AssertionError(f"POST {path} as {handle}: {response.status_code} {_error_code(response)}")
+        self.responses.append((f"POST {path} as {handle}", response.text))
         return response.text
 
     def close(self) -> None:
@@ -83,7 +97,7 @@ def _new_hire(fx: PiiFixture) -> dict[str, Any]:
         "location": "Bangalore",
         "start_date": "2026-12-01",
         "manager_id": MANAGER_ID,
-        "notes": f"Prefers calls on {fx.mobile}; PAN {fx.pan}; personal mail {fx.email}.",
+        "notes": f"Prefers calls on {fx.mobile}; PAN {fx.pan}; mail {fx.email}; salary acct no {fx.bank_account}.",
         "pii": {
             "email": fx.email,
             "mobile": fx.mobile,
@@ -116,14 +130,28 @@ def _states(run: Mapping[str, Any]) -> dict[str, str]:
     return {t["task_id"]: t["status"] for t in run.get("tasks", [])}
 
 
+def _read_back(api: Api, hire_id: str) -> None:
+    """What each role reads back afterwards: masked hire, document list, outbox, access log, audit."""
+    api.call("hr", "GET", f"/hires/{hire_id}")
+    api.call("manager", "GET", f"/hires/{hire_id}")
+    api.call("hr", "GET", f"/hires/{hire_id}/documents")
+    api.call("hr", "GET", "/mock-outbox")
+    api.call("hradmin", "GET", "/pii-access-log")
+    api.call("hradmin", "GET", "/audit")
+    api.call("manager", "GET", "/approvals")
+
+
 def walk(base_url: str, password: str, fx: PiiFixture) -> Journey:
     api = Api(base_url, password)
     try:
         for _, handle, _, _ in USERS:
             api.login(handle)
+        bad = {**_new_hire(fx), "pii": {**_new_hire(fx)["pii"], "pan": "NOTAPAN"}}  # a 422 must not echo values
+        rejected = api.refused("hr", "POST", "/hires", json=bad)
         hire_id = api.call("hr", "POST", "/hires", json=_new_hire(fx))["id"]
         api.call("hr", "PUT", f"/hires/{hire_id}/pii/mobile", json={"value": fx.mobile_updated})
-        api.call("hr", "POST", f"/hires/{hire_id}/pii/email/reveal", json={"reason": "verify the address"})
+        reason = f"called {fx.mobile} to verify the address"  # reasons are free text: stored redacted
+        api.call("hr", "POST", f"/hires/{hire_id}/pii/email/reveal", json={"reason": reason})
         api.call("hradmin", "POST", f"/hires/{hire_id}/pii/aadhaar/reveal", json={"reason": "statutory check"})
         api.call(
             "hr",
@@ -141,8 +169,13 @@ def walk(base_url: str, password: str, fx: PiiFixture) -> Journey:
         assert len(pending) == 1, pending
         api.call("manager", "POST", f"/approvals/{pending[0]['id']}/decision", json={"decision": "approve"})
         finished = _wait(api, run_id, lambda r: r["status"] in {"completed", "failed", "blocked"}, "an end")
-        question = f"Did the welcome reach {fx.mobile_updated}? Her PAN is {fx.pan} and Aadhaar {fx.aadhaar}."
+        question = (
+            f"Did the welcome reach {fx.mobile_updated}? Her PAN is {fx.pan}, Aadhaar {fx.aadhaar}, "
+            f"account number {fx.bank_account}."
+        )
         reply = api.stream("hr", f"/runs/{run_id}/chat", {"message": question})
-        return Journey(hire_id, run_id, finished["status"], _states(finished), reply)
+        _read_back(api, hire_id)
+        states = _states(finished)
+        return Journey(hire_id, run_id, finished["status"], states, reply, tuple(api.responses), rejected)
     finally:
         api.close()

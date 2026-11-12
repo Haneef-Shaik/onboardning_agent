@@ -44,7 +44,8 @@ _CODE_GAP: Final = r"[^0-9A-Za-z]{0,2}"
 _TOKEN: Final = re.compile(r"[A-Za-z0-9_]+")
 # Opaque ids: lowercase hex of 16+ characters (trace/span ids, ObjectIds, `run_`/`h_`/`appr_` + hex), a
 # `ptk_` vault token, or a UUID. A detector hit wholly inside one is an id, not a value.
-_HEX_ID: Final = re.compile(r"(?:[a-z]+_)*([0-9a-f]{16,})")
+_ID_PREFIXES: Final = ("run", "h", "appr", "job", "ev", "evt", "msg", "conv", "doc", "task", "prop", "chat", "evr", "u")
+_HEX_ID: Final = re.compile(rf"(?:(?:{'|'.join(_ID_PREFIXES)})_)*([0-9a-f]{{16,}})")
 _PTK: Final = re.compile(r"ptk_[0-9A-Za-z]{20,}")
 # A redaction marker glued to letters, digits or `_` replaced digits inside an id (over-redaction, OBS-1/RUN-3).
 _GLUED_MARKER: Final = re.compile(
@@ -156,7 +157,8 @@ def raw_patterns(fixture: Mapping[str, str]) -> dict[str, re.Pattern[str]]:
             patterns[label] = re.compile(rf"(?<![A-Za-z0-9]){body}(?![A-Za-z0-9])", re.IGNORECASE)
         else:
             words = [re.escape(word) for word in value.split()]
-            patterns[label] = re.compile(r"[\s_+%20-]{1,3}".join(words), re.IGNORECASE)
+            separator = r"(?:\s|_|\+|%20|-|\.|,\s*){1,3}"
+            patterns[label] = re.compile(separator.join(words), re.IGNORECASE)
     return patterns
 
 
@@ -165,8 +167,11 @@ def inside_opaque_id(text: str, start: int, end: int) -> bool:
     for uuid in _UUID.finditer(text, max(0, start - 36), min(len(text), end + 36)):
         if uuid.start() <= start and end <= uuid.end():
             return True
-    token = next((t for t in _TOKEN.finditer(text, max(0, start - 200)) if t.start() <= start < t.end()), None)
-    if token is None or end > token.end():
+    begin = start
+    while begin > 0 and (text[begin - 1].isalnum() or text[begin - 1] == "_") and text[begin - 1].isascii():
+        begin -= 1
+    token = _TOKEN.match(text, begin)
+    if token is None or token.start() > start or end > token.end():
         return False
     word = token.group()
     if _PTK.fullmatch(word):
@@ -187,14 +192,25 @@ def _leaf(value: Any) -> str | None:
     return str(value)  # ObjectId, Decimal128, Timestamp…: their text is what a leak would look like
 
 
+_SAFE_KEY: Final = re.compile(r"[A-Za-z_][A-Za-z0-9_]{0,63}")
+
+
+def _segment(key: str, index: int) -> str:
+    """A key as a location segment: kept when it is a plain identifier no detector flags, else `<key#i>`,
+    so a value stored as a key never reaches a report through its location."""
+    if _SAFE_KEY.fullmatch(key) and not detect(key) and not re.search(r"[0-9]{6,}", key):
+        return key
+    return f"<key#{index}>"
+
+
 def flatten(source: str, location: str, value: Any) -> Iterator[Item]:
     """Every scalar inside `value` (a document, a list, a JSON text) as an `Item`, keys included: a value
     stored as a key leaks as much as one stored as a value."""
     if isinstance(value, Mapping):
-        for key, child in value.items():
+        for index, (key, child) in enumerate(value.items()):
             name = str(key)
             yield Item(source, f"{location}.<key>", name)
-            yield from flatten(source, f"{location}.{name}", child)
+            yield from flatten(source, f"{location}.{_segment(name, index)}", child)
         return
     if isinstance(value, list | tuple):
         for index, child in enumerate(value):

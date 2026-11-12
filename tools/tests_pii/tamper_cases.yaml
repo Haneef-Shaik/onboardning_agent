@@ -50,6 +50,10 @@ categories:
       - apps/api/tests/test_retention.py::test_a_tampered_record_fails_that_hire_audits_a_failure_and_the_others_go_on
       - libs/py-crypto/tests_int/test_vault_mongo.py::test_put_update_resolve_and_tamper_against_mongo
       - libs/py-crypto/tests_int/test_org_keys_mongo.py::test_two_orgs_keys_are_isolated_and_a_wrong_master_fails_closed
+      # PRD §7.10 MCP: `pii.*` fields are read-only for agents; no agent can alter stored PII.
+      - apps/mcp-mongo/tests/test_validator.py::test_every_update_operator_on_pii_mobile_is_rejected
+      - apps/mcp-mongo/tests/test_server_validator.py::test_an_update_touching_pii_mobile_is_denied_over_mcp
+      - apps/mcp-hub/tests/test_review_fixes.py::test_raw_pii_in_arguments_is_denied
 
   grant:
     title: Forged, widened, replayed or expired grants and swapped tokens at the sink

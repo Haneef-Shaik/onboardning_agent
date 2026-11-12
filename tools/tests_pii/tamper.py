@@ -34,6 +34,7 @@ GUARD: Final = re.compile(
     r"|fails_to_decrypt|rebind|did_not_issue|not_granted"
 )
 SEARCHED: Final = ("apps", "libs")
+FOLDER_TIMEOUT_S: Final = 600
 
 
 @dataclass(frozen=True)
@@ -113,7 +114,10 @@ def _run_folder(folder: str, cases: list[tuple[str, str]], workdir: Path) -> lis
         sys.executable, "-m", "pytest", *[case for _, case in cases], "-q", "-p", "no:cacheprovider",
         "-o", "junit_family=xunit1", f"--junitxml={junit}", "--no-cov",
     ]  # fmt: skip
-    subprocess.run(argv, cwd=ROOT, capture_output=True, text=True, check=False)
+    try:
+        subprocess.run(argv, cwd=ROOT, capture_output=True, text=True, check=False, timeout=FOLDER_TIMEOUT_S)
+    except subprocess.TimeoutExpired:
+        return [Outcome(category, case, False, f"timed out after {FOLDER_TIMEOUT_S}s") for category, case in cases]
     seen = _junit_outcomes(junit) if junit.is_file() else {}
     outcomes: list[Outcome] = []
     for category, case in cases:
@@ -129,8 +133,12 @@ def _junit_outcomes(path: Path) -> dict[str, tuple[bool, str]]:
     found: dict[str, tuple[bool, str]] = {}
     for testcase in ET.parse(path).getroot().iter("testcase"):  # noqa: S314 - our own pytest output
         file, name = testcase.get("file", ""), testcase.get("name", "")
-        problem = next((child.tag for child in testcase if child.tag in {"failure", "error", "skipped"}), None)
-        found[f"{file}::{name}"] = (problem is None, "rejected" if problem is None else problem)
+        problem = next((child for child in testcase if child.tag in {"failure", "error", "skipped"}), None)
+        if problem is None:
+            found[f"{file}::{name}"] = (True, "rejected")
+        else:
+            message = (problem.get("message") or "").splitlines()[0][:200] if problem.get("message") else ""
+            found[f"{file}::{name}"] = (False, f"{problem.tag}: {message}" if message else problem.tag)
     return found
 
 

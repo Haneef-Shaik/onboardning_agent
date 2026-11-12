@@ -94,7 +94,7 @@ def test_only_a_passed_case_reads_as_rejected_in_the_junit_results(tmp_path: Pat
     )
     assert tamper._junit_outcomes(junit) == {
         "a/tests/test_x.py::test_ok": (True, "rejected"),
-        "a/tests/test_x.py::test_failed": (False, "failure"),
-        "a/tests/test_x.py::test_skipped": (False, "skipped"),
-        "a/tests/test_x.py::test_error[p1]": (False, "error"),
+        "a/tests/test_x.py::test_failed": (False, "failure: x"),
+        "a/tests/test_x.py::test_skipped": (False, "skipped: x"),
+        "a/tests/test_x.py::test_error[p1]": (False, "error: x"),
     }

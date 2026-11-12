@@ -71,14 +71,16 @@ def log_file_items(path: Path) -> Iterator[Item]:
     yield from flatten_json_lines("app_logs", path.name, lines)
 
 
-def container_log_items(root: Path) -> Iterator[Item]:
-    """`docker compose logs` of every service of this worktree's stack (the `.env` names the project)."""
+def container_log_items(root: Path, *, since_us: int) -> Iterator[Item]:
+    """`docker compose logs` of every service of this worktree's stack (the `.env` names the project), from
+    the session's start: an earlier session's lines are not this run's."""
     services = _run(root, "docker", "compose", "ps", "--services").split()
     if not services:
         raise RuntimeError("no compose service is running: run `make up`")
+    since = _rfc3339(since_us - 1_000_000)
     for service in services:
-        lines = _run(root, "docker", "compose", "logs", "--no-color", "--no-log-prefix", service).splitlines()
-        yield from flatten_json_lines("container_logs", service, lines)
+        argv = ("docker", "compose", "logs", "--no-color", "--no-log-prefix", "--since", since, service)
+        yield from flatten_json_lines("container_logs", service, _run(root, *argv).splitlines())
 
 
 def _run(root: Path, *argv: str) -> str:
@@ -134,6 +136,19 @@ def span_count(resource_spans: Sequence[dict[str, Any]]) -> int:
 def jaeger_items(resource_spans: Sequence[dict[str, Any]]) -> Iterator[Item]:
     for index, rs in enumerate(resource_spans):
         yield from flatten("jaeger", f"resourceSpans[{index}]", rs)
+
+
+def trace_ids(resource_spans: Sequence[dict[str, Any]]) -> Iterator[str]:
+    for rs in resource_spans:
+        for scope in rs.get("scopeSpans") or []:
+            for span in scope.get("spans") or []:
+                yield str(span.get("traceId"))
+
+
+def response_items(responses: Sequence[tuple[str, Any]]) -> Iterator[Item]:
+    """Every API answer the journey got (reveals excluded: they answer with the value by design)."""
+    for index, (route, body) in enumerate(responses):
+        yield from flatten("api_responses", f"[{index}] {route}", body)
 
 
 def llm_items(calls: Sequence[tuple[str, list[dict[str, Any]]]]) -> Iterator[Item]:

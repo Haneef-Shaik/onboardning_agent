@@ -36,7 +36,9 @@ ALLOW: Final = (
     Allow("container_logs", r"caddy:\d+\.GOMEMLIMIT", "MOBILE", "Caddy's startup line: the Go memory limit in bytes"),
 )
 MIN_SPANS: Final = 50
-SOURCES: Final = ("mongo", "mock_outbox", "events", "app_logs", "container_logs", "jaeger", "llm_inputs")
+SOURCES: Final = (
+    "mongo", "mock_outbox", "events", "app_logs", "container_logs", "jaeger", "llm_inputs", "api_responses",
+)  # fmt: skip
 EXPECTED_TASKS: Final = {
     "collect_docs", "manager_approval", "laptop", "bitbucket_access", "security_training", "orientation",
     "welcome_message",
@@ -78,14 +80,21 @@ def test_a_full_run_leaves_no_raw_pii_outside_the_vault(
             chain(
                 collect.mongo_items(db),
                 collect.log_file_items(session.log_file),
-                collect.container_log_items(ROOT),
+                collect.container_log_items(ROOT, since_us=session.started_us),
                 collect.jaeger_items(traces),
                 collect.llm_items(session.llm.calls()),
+                collect.response_items(journey.responses),
             )
         )
     result: ScanResult = scan(items, fixture_pii.values(), ALLOW)
     flow["jaeger_spans"] = collect.span_count(traces)
     flow["llm_calls"] = len(session.llm.calls())
+    flow["jaeger_traces"] = len({t for t in collect.trace_ids(traces)})
+    flow["assistant_saw_the_redacted_question"] = any(
+        "Did the welcome reach [MOBILE]" in json.dumps(messages) for _, messages in session.llm.calls()
+    )
+    flow["invalid_input_refused_with"] = journey.rejected_input
+    flow["api_responses"] = len(journey.responses)
     write_scan_report(session.report_dir, result, flow, journey)
     print(f"\nSEC-1 PII scan: {json.dumps(result.report()['items_scanned_by_source'])}, hits={len(result.hits)}")
 
@@ -102,6 +111,10 @@ def test_a_full_run_leaves_no_raw_pii_outside_the_vault(
         "the chat question is stored redacted": flow["chat_redacted"] >= 1,
         f"Jaeger holds at least {MIN_SPANS} spans of the session": flow["jaeger_spans"] >= MIN_SPANS,
         "every agent task called its model": flow["llm_calls"] >= len(EXPECTED_TASKS),
+        "the run assistant's model got the redacted question": flow["assistant_saw_the_redacted_question"],
+        "the invalid hire was refused with 422": flow["invalid_input_refused_with"] == 422,
+        f"Jaeger answered below its page size ({collect.JAEGER_PAGE} traces)": flow["jaeger_traces"]
+        < collect.JAEGER_PAGE,
         **{f"something was scanned from {s}": result.items_by_source.get(s, 0) > 0 for s in SOURCES},
     }
     problems = [f"check failed: {name}" for name, ok in checks.items() if not ok]

@@ -181,3 +181,30 @@ def test_markers_glued_into_ids_are_counted_as_over_redaction() -> None:
     result = _scan(*items)
     assert result.clean
     assert result.report()["markers_glued_into_ids_by_source"] == {"jaeger": 1}
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "priya_9123456780abcdef01",  # not a platform id prefix
+        "x" * 209 + "9123456780abcdef0123",  # a long non-hex token ending in hex digits
+    ],
+)
+def test_a_value_in_something_that_only_looks_like_an_id_is_still_found(text: str) -> None:
+    result = _scan(_item(text))
+    assert [h.label for h in result.hits] == ["MOBILE"]
+
+
+def test_a_value_stored_as_a_key_never_reaches_a_location() -> None:
+    items = list(scan_mod.flatten("mongo", "c[0]", {"by": {F["email"]: {"n": F["mobile"]}, F["pan"]: 1}, "ok": 2}))
+    result = _scan(*items)
+    report = json.dumps(result.report())
+    assert {"email", "mobile", "pan"} <= _raw_labels(result)
+    assert all(value not in report for value in FIXTURE.values())
+    assert "c[0].ok" in {i.location for i in items}
+
+
+def test_a_name_is_found_with_its_parts_split_by_any_usual_separator() -> None:
+    first, last = F["account_holder_name"].split()
+    for form in (f"{first}_{last}", f"{first}+{last}", f"{first}%20{last}", f"{first}.{last}"):
+        assert "account_holder_name" in _raw_labels(_scan(_item(form))), form

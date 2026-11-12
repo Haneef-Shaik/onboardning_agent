@@ -14,11 +14,14 @@ from __future__ import annotations
 import re
 import subprocess
 import sys
+import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[3]
-UV = ["uv", "run", "--frozen", "--env-file", ".env", "pytest", "-q", "-s", "-p", "no:cacheprovider"]
+# Reports of mutant runs go to a scratch folder, never over the real reports.
+REPORTS = f"PII_SCAN_REPORT_DIR={tempfile.mkdtemp(prefix='sec1-mutants-')}"
+UV = ["env", REPORTS, "uv", "run", "--frozen", "--env-file", ".env", "pytest", "-q", "-s", "-p", "no:cacheprovider"]
 SCAN = [*UV, "tools/tests_pii/test_pii_scan.py"]
 TAMPER = [*UV, "tools/tests_pii/test_tamper_report.py"]
 UNIT = [*UV, "tools/tests/test_pii_scanner.py", "tools/tests/test_tamper_manifest.py"]
@@ -147,7 +150,7 @@ def run(mutant: Mutant) -> bool:
     ok = failed == mutant.expect_fail
     verdict = ("KILLED" if failed else "SURVIVED") if mutant.expect_fail else ("CLEAN (as expected)" if not failed else "UNEXPECTED FAILURE")
     print(f"=== {mutant.id} {verdict}: {mutant.what}")
-    print(f"    command: {' '.join(mutant.command[5:])}  (exit {done.returncode})")
+    print(f"    command: {' '.join(mutant.command[7:])}  (exit {done.returncode})")
     lines = [line for line in done.stdout.splitlines() if SHOWN.match(line)]
     for line in lines[:12]:
         print(f"    {line[:300]}")

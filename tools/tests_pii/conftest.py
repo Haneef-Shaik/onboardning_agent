@@ -42,6 +42,7 @@ __all__ = ["pytest_configure", "pytest_sessionfinish", "tenant_safety_net", "ten
 SOCAT_IMAGE = "alpine/socat:1.8.1.3@sha256:e8a6e8868a8e6e01d9c2c321a8f8d4474d2d741d962462e5c5a124a8e66a0055"
 TUNNEL_LABEL_KEY = "onb.test.pii-tunnel"  # its own key: another suite's stale-tunnel cleanup never removes these
 QUIET_LOGGERS = ("pymongo", "httpcore", "httpx", "asyncio", "urllib3", "mcp.client.streamable_http")
+OTEL_VARS = ("OTEL_EXPORTER_OTLP_ENDPOINT", "OTEL_TRACES_EXPORTER")
 RootClient = MongoClient[dict[str, Any]]
 Unscoped = Callable[[str], AbstractContextManager[None]]
 
@@ -119,6 +120,7 @@ def session(tunnels: Tunnels, tmp_path_factory: pytest.TempPathFactory) -> Itera
     password = quote_plus(_required_env("MONGO_ROOT_PASSWORD"))
     mongo = tunnels.open("mongo", 27017)
     uri = f"mongodb://{user}:{password}@{mongo}/?authSource=admin&directConnection=true"
+    saved = {name: os.environ.get(name) for name in OTEL_VARS}
     os.environ["OTEL_EXPORTER_OTLP_ENDPOINT"] = f"http://{tunnels.open('otel-collector', 4318)}"
     os.environ["OTEL_TRACES_EXPORTER"] = "otlp"
     jaeger = tunnels.open("jaeger", 16686)
@@ -136,6 +138,11 @@ def session(tunnels: Tunnels, tmp_path_factory: pytest.TempPathFactory) -> Itera
         yield Session(uri, database, jaeger, service, started_us, log_file, telemetry, llm, report_dir)
     finally:
         undo()
+        for name, value in saved.items():  # the tamper report's subprocesses must not export here
+            if value is None:
+                os.environ.pop(name, None)
+            else:
+                os.environ[name] = value
         logging.getLogger().removeHandler(handler)
         telemetry.shutdown()
         client: RootClient = MongoClient(uri, serverSelectionTimeoutMS=10_000)
