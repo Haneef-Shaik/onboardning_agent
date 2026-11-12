@@ -143,10 +143,10 @@ MUTATIONS = [
     ),
     (
         "P19",
-        "the loop ignores the stop request",
+        "the loop runs one pass and never repeats",
         LOOP,
         "    while not stop.is_set():",
-        "    while True:",
+        "    for _ in range(1):",
     ),
     (
         "P20",

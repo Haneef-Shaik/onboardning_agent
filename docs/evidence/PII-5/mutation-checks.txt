@@ -1,0 +1,62 @@
+== P1 (box 1: purge at exactly 90 days needs `>`, not `>=`) -> KILLED
+   FAILED apps/api/tests/test_retention.py::test_on_day_90_the_job_purges_and_tokens_resolve_to_purged
+   1 failed, 2 passed in 0.92s
+== P2 (box 1: purge two days early (day 89 must still resolve)) -> KILLED
+   FAILED apps/api/tests/test_retention.py::test_on_day_89_values_resolve_and_nothing_is_purged
+   1 failed, 1 passed in 0.51s
+== P3 (box 1: retention period of 30 days) -> KILLED
+   FAILED apps/api/tests/test_retention.py::test_the_retention_period_is_ninety_days
+   1 failed in 0.41s
+== P4 (box 1: clock starts at the last update, not the completion) -> KILLED
+   FAILED apps/api/tests/test_retention.py::test_the_clock_starts_at_the_completion_not_at_creation_or_last_update
+   1 failed, 6 passed in 0.39s
+== P5 (box 1: a hire with a run still moving is purged) -> KILLED
+   FAILED apps/api/tests/test_retention.py::test_a_hire_with_another_run_still_active_is_not_purged
+   1 failed, 13 passed in 0.46s
+== P6 (box 1: runs that did not complete start the clock) -> KILLED
+   FAILED apps/api/tests/test_retention.py::test_a_run_that_did_not_complete_never_starts_the_clock[failed]
+   1 failed, 11 passed in 0.63s
+== P7 (box 1: superseded versions keep their ciphertext) -> KILLED
+   FAILED apps/api/tests/test_retention.py::test_on_day_90_the_job_purges_and_tokens_resolve_to_purged
+   1 failed, 2 passed in 0.40s
+== P8 (box 1: the Aadhaar partition is not purged) -> KILLED
+   FAILED apps/api/tests/test_retention.py::test_on_day_90_the_job_purges_and_tokens_resolve_to_purged
+   1 failed, 2 passed in 0.62s
+== P9 (box 2: the consent record is deleted with the values) -> KILLED
+   FAILED apps/api/tests/test_retention.py::test_the_consent_purpose_record_survives_the_purge
+   1 failed, 19 passed in 0.68s
+== P10 (box 3: purges are not audited) -> KILLED
+   FAILED apps/api/tests/test_retention.py::test_every_org_with_a_due_hire_is_purged_in_one_pass
+   1 failed, 17 passed in 0.56s
+== P11 (box 3: a purged hire is purged (and counted) again) -> KILLED
+   FAILED apps/api/tests/test_retention.py::test_running_the_job_again_changes_nothing_and_audits_nothing_new
+   1 failed, 21 passed in 0.49s
+== P12 (box 3: a value already audited by a stopped pass is audited again) -> KILLED
+   FAILED apps/api/tests/test_retention.py::test_a_crash_between_two_audit_writes_does_not_audit_the_first_value_twice
+   1 failed, 23 passed in 0.56s
+== P13 (box 3: the hire is never marked purged) -> KILLED
+   FAILED apps/api/tests/test_retention.py::test_the_hire_keeps_its_tokens_but_loses_masks_blind_indexes_and_versions
+   1 failed, 5 passed in 0.34s
+== P14 (hire document: masks keep a hint of the value) -> KILLED
+   FAILED apps/api/tests/test_retention.py::test_the_hire_keeps_its_tokens_but_loses_masks_blind_indexes_and_versions
+   1 failed, 5 passed in 0.38s
+== P15 (hire document: blind indexes stay) -> KILLED
+   FAILED apps/api/tests/test_retention.py::test_the_hire_keeps_its_tokens_but_loses_masks_blind_indexes_and_versions
+   1 failed, 5 passed in 0.39s
+== P16 (a failing hire stops the whole pass) -> KILLED
+   FAILED apps/api/tests/test_retention.py::test_a_crash_after_the_vault_purge_is_finished_and_audited_once_by_the_next_run
+   1 failed, 22 passed in 0.39s
+== P17 (a failing hire is not audited) -> KILLED
+   FAILED apps/api/tests/test_retention.py::test_a_tampered_record_fails_that_hire_audits_a_failure_and_the_others_go_on
+   1 failed, 24 passed in 0.46s
+== P18 (the loop dies on a failing pass) -> KILLED
+   FAILED apps/api/tests/test_retention.py::test_the_loop_survives_a_failing_pass
+   1 failed, 26 passed in 0.47s
+== P19 (the loop runs one pass and never repeats) -> KILLED
+   FAILED apps/api/tests/test_retention.py::test_the_loop_runs_the_job_each_interval_on_the_fake_clock_and_stops_on_request
+   1 failed, 25 passed in 0.90s
+== P20 (a hire's purge ignores its org (every org's hire id is looked up)) -> KILLED
+   FAILED apps/api/tests/test_retention.py::test_every_org_with_a_due_hire_is_purged_in_one_pass
+   1 failed, 17 passed in 0.47s
+source diff after all mutations: 0 files differ
+survivors: none

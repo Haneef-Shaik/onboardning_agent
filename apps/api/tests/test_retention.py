@@ -304,6 +304,20 @@ def test_a_hire_of_another_org_is_purged_by_its_own_clock_only(env: Env) -> None
     assert env.resolve(theirs["mobile"], VaultField.MOBILE, org_id=OTHER_ORG, hire_id="h_0002") == MOBILE
 
 
+def test_every_org_with_a_due_hire_is_purged_in_one_pass(env: Env) -> None:
+    env.add_org(OTHER_ORG)
+    mine = env.add_hire()
+    theirs = env.add_hire(OTHER_ORG, "h_0002")
+    env.add_run()
+    env.add_run(org_id=OTHER_ORG, hire_id="h_0002", run_id="run_other")
+    env.clock.set_day(90)
+    report = env.run(env.job.run_once())
+    assert report.hires_purged == 2
+    assert env.resolve(mine["mobile"], VaultField.MOBILE) == PURGED
+    assert env.resolve(theirs["mobile"], VaultField.MOBILE, org_id=OTHER_ORG, hire_id="h_0002") == PURGED
+    assert len(env.purge_audits(OTHER_ORG, outcome=AuditOutcome.SUCCESS)) == 3
+
+
 def test_a_run_whose_hire_has_no_document_or_values_is_skipped_quietly(env: Env) -> None:
     env.add_run(hire_id="h_gone")
     env.clock.set_day(90)
