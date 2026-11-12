@@ -56,7 +56,15 @@ from onb_crypto.rotation import rewrap_orgs, rotate_orgs, verify_orgs
 from onb_crypto.sink import GrantAudit, GrantAuditRecord, SinkResolver, SinkToken, ensure_grant_indexes
 from onb_crypto.sink_policy import NEVER_SINKABLE, SinkPolicy, SinkPolicyError, load_sink_policy
 from onb_crypto.tokens import PTK_PREFIX, TOKEN_LENGTH, is_token, new_token
-from onb_crypto.vault import CONSENT_COLLECTION, PURGED, AadhaarConsent, Vault, VaultRepository, VaultStore
+from onb_crypto.vault import (
+    CONSENT_COLLECTION,
+    PURGED,
+    AadhaarConsent,
+    PurgeOutcome,
+    Vault,
+    VaultRepository,
+    VaultStore,
+)
 from onb_crypto.vault_indexes import ensure_vault_indexes
 from onb_crypto.vault_record import (
     AADHAAR_VAULT_COLLECTION,
@@ -123,6 +131,7 @@ __all__ = [
     "TokenBindingError",
     "TokenNotFoundError",
     "UnknownKeyVersionError",
+    "PurgeOutcome",
     "Vault",
     "VaultConflictError",
     "VaultError",

@@ -51,7 +51,15 @@ from onb_crypto.vault_record import (
     signing_payload,
 )
 
-__all__ = ["CONSENT_COLLECTION", "PURGED", "AadhaarConsent", "Vault", "VaultRepository", "VaultStore"]
+__all__ = [
+    "CONSENT_COLLECTION",
+    "PURGED",
+    "AadhaarConsent",
+    "PurgeOutcome",
+    "Vault",
+    "VaultRepository",
+    "VaultStore",
+]
 
 log = logging.getLogger(__name__)
 
@@ -90,6 +98,16 @@ class AadhaarConsent:
     def __post_init__(self) -> None:
         if not isinstance(self.purpose, str) or not self.purpose.strip() or len(self.purpose) > _MAX_PURPOSE_CHARS:
             raise ValueError(f"a consent needs a stated purpose of at most {_MAX_PURPOSE_CHARS} characters")
+
+
+@dataclass(frozen=True, slots=True)
+class PurgeOutcome:
+    """One vault record `purge_subject` found: its token and field, and whether this call purged it."""
+
+    token: str
+    field: VaultField
+    version: int
+    newly_purged: bool
 
 
 def _utcnow() -> datetime:
@@ -212,6 +230,38 @@ class Vault:
         if outcome.matched != 1:
             raise VaultConflictError(f"vault record {token} changed while it was being purged; retry")
         log.info("vault purge: org=%s token=%s field=%s", record.org_id, token, record.field.value)
+
+    async def purge_subject(self, org_id: str, *, subject_id: str) -> tuple[PurgeOutcome, ...]:
+        """Purge every record of the subject, in both partitions, superseded versions included (PRD §7.10
+        Retention). Each record is verified before it is purged, so a tampered one raises and is left as
+        it is. Already purged records are reported with `newly_purged=False`. The consent record is not
+        touched. Idempotent."""
+        org_id = _check_org(org_id)
+        check_id(subject_id, "subject_id")
+        outcomes: list[PurgeOutcome] = []
+        for collection in sorted({collection_for(field) for field in VaultField}):
+            docs = await self._store.tenant(collection).find(
+                {"subject.type": SubjectType.NEW_HIRE.value, "subject.id": subject_id},
+                sort=[("field", 1), ("version", 1)],
+            )
+            for doc in docs:
+                outcomes.append(await self._purge_document(org_id, subject_id, collection, doc))
+        return tuple(outcomes)
+
+    async def _purge_document(
+        self, org_id: str, subject_id: str, collection: str, doc: Mapping[str, Any]
+    ) -> PurgeOutcome:
+        token = doc.get("token")
+        try:
+            field = VaultField(doc.get("field"))
+        except ValueError:
+            raise self._refuse(org_id, str(token), "the record names no known field") from None
+        if collection_for(field) != collection:
+            raise self._refuse(org_id, str(token), f"a {field.value} record is in the {collection} partition")
+        record = await self.verify(str(token), org_id=org_id, subject_id=subject_id, field=field)
+        was_purged = record.status is VaultStatus.PURGED
+        await self.purge(record.token, org_id=org_id, subject_id=subject_id, field=field)
+        return PurgeOutcome(token=record.token, field=field, version=record.version, newly_purged=not was_purged)
 
     # --- reads -------------------------------------------------------------------------------------
 
