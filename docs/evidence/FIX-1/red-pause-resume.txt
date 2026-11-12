@@ -1,0 +1,15 @@
+# FIX-1 box 1 red run: the test on the code before the fix (base 73bd4d4, 2026-11-13)
+$ uv run pytest apps/orchestrator/tests/test_pause_resume_race.py -q -p no:randomly
+E       AssertionError: read 2, during the drive: the run ended failed; tasks {'a': 'cancelled', 'b': 'cancelled', 'c': 'cancelled', 'd': 'cancelled', 'e': 'cancelled', 'f': 'cancelled'}
+WARNING  onb_orchestrator:consumer.py:195 run run_7b61258ba302187801374576 failed: TaskCancelled
+E       AssertionError: read 2, during the drive: the run ended failed; tasks {'a': 'cancelled', 'b': 'cancelled', 'c': 'cancelled', 'd': 'cancelled', 'e': 'cancelled', 'f': 'cancelled'}
+WARNING  onb_orchestrator:consumer.py:195 run run_0ca11b5fc087c4db297e2cae failed: TaskCancelled
+E       AssertionError: read 1: the run ended failed; tasks {'a': 'done', 'appr': 'cancelled', 'b': 'cancelled', 'c': 'done'}
+WARNING  onb_orchestrator:consumer.py:195 run run_d9830303bccc9480761952c5 failed: TaskCancelled
+E       AssertionError: read 1: the run ended failed; tasks {'a': 'done', 'appr': 'cancelled', 'b': 'cancelled', 'c': 'done'}
+WARNING  onb_orchestrator:consumer.py:195 run run_402d68c0308b270eb6136b69 failed: TaskCancelled
+FAILED apps/orchestrator/tests/test_pause_resume_race.py::test_a_pause_and_resume_at_any_read_of_the_run_never_fails_it[1]
+FAILED apps/orchestrator/tests/test_pause_resume_race.py::test_a_pause_and_resume_at_any_read_of_the_run_never_fails_it[3]
+FAILED apps/orchestrator/tests/test_pause_resume_race.py::test_a_pause_and_resume_while_an_approval_is_pending_keeps_the_approval_and_the_tasks[1]
+FAILED apps/orchestrator/tests/test_pause_resume_race.py::test_a_pause_and_resume_while_an_approval_is_pending_keeps_the_approval_and_the_tasks[3]
+4 failed, 1 passed in 1.45s
