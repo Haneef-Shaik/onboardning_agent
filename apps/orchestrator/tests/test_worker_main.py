@@ -4,12 +4,15 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Mapping
+from pathlib import Path
 from typing import Any
 
 import pytest
+from onb_agents.approvals.sla import DEFAULT_SLA_CONFIG, SlaPolicy, load_sla_policy
 from onb_agents.runs import CLEANUP_RUN, RESUME_RUN, START_RUN
 from onb_api.testing_mongo import MemoryDatabase, memory_store
 from onb_orchestrator import worker as worker_module
+from onb_orchestrator.approval_sla import ApprovalSlaJob
 from onb_orchestrator.policy import RunPolicy
 from onb_orchestrator.worker import ConfigError, RunWorker, Settings, prepare, serve
 
@@ -81,6 +84,9 @@ def test_serve_runs_the_worker_until_stopped(monkeypatch: pytest.MonkeyPatch) ->
 
     class FakeStore:
         closed = False
+
+        def tenant(self, name: str) -> object:  # HIL-2: the SLA sweep's ApprovalStore asks for its repository
+            return object()
 
         async def close(self) -> None:
             FakeStore.closed = True
@@ -203,3 +209,74 @@ def test_a_worker_that_ends_by_itself_is_not_drained() -> None:
         return await worker.run(asyncio.Event()), drain.is_set()
 
     assert asyncio.run(go()) == (4, False)
+
+
+# --- HIL-2: the approval SLA sweep runs in the worker, with thresholds from config ----------------------------
+
+
+def test_the_approval_sla_thresholds_come_from_the_config_file_the_environment_names(tmp_path: Path) -> None:
+    config = tmp_path / "sla.yaml"
+    config.write_text("default_sla_hours: 8\nremind_after_sla: 1.5\nescalate_after_sla: 4\ncheck_interval_seconds: 5\n")
+    settings = Settings.from_env({"MONGO_URI": "m", "MONGO_DATABASE": "d", "APPROVAL_SLA_CONFIG": str(config)})
+    assert settings.approval_sla == SlaPolicy(
+        default_sla_hours=8, remind_after_sla=1.5, escalate_after_sla=4.0, check_interval_seconds=5.0
+    )
+
+
+def test_without_the_variable_the_shipped_config_file_is_read() -> None:
+    settings = Settings.from_env({"MONGO_URI": "m", "MONGO_DATABASE": "d"})
+    assert settings.approval_sla == load_sla_policy(DEFAULT_SLA_CONFIG)
+
+
+@pytest.mark.parametrize("text", ["remind_after_sla: 3\nescalate_after_sla: 2\n", "nonsense: 1\n"])
+def test_a_bad_approval_sla_config_fails_startup(tmp_path: Path, text: str) -> None:
+    config = tmp_path / "sla.yaml"
+    config.write_text(text)
+    with pytest.raises(ConfigError):
+        Settings.from_env({"MONGO_URI": "m", "MONGO_DATABASE": "d", "APPROVAL_SLA_CONFIG": str(config)})
+
+
+def test_a_missing_approval_sla_config_fails_startup(tmp_path: Path) -> None:
+    with pytest.raises(ConfigError):
+        Settings.from_env({"MONGO_URI": "m", "MONGO_DATABASE": "d", "APPROVAL_SLA_CONFIG": str(tmp_path / "no.yaml")})
+
+
+def test_serve_runs_the_sla_sweep_beside_the_worker_and_stops_it_with_the_worker(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    db = MemoryDatabase()
+    seen: dict[str, Any] = {}
+    stop = asyncio.Event()
+
+    class FakeWorker:
+        consumers = (START_RUN,)
+
+        async def run(self, given: asyncio.Event) -> int:
+            await given.wait()
+            return 0
+
+    async def fake_prepare(store: Any, **_: Any) -> FakeWorker:
+        return FakeWorker()
+
+    async def sweeping(job: Any, *, interval: float, stop: asyncio.Event, **_: Any) -> list[Any]:
+        seen["interval"] = interval
+        seen["job"] = job
+        outer.set()  # the sweep is running: now stop the whole worker
+        await stop.wait()  # the sweep's own stop is set once the worker has ended
+        seen["sweep_stopped"] = True
+        return []
+
+    outer = stop
+    monkeypatch.setattr(worker_module, "prepare", fake_prepare)
+    monkeypatch.setattr(worker_module, "connect", lambda uri, name: memory_store(db))
+    monkeypatch.setattr(worker_module, "run_sla_forever", sweeping)
+    settings = Settings(
+        mongo_uri="mongodb://x",
+        mongo_database="onb",
+        stub_delay=0.0,
+        approval_sla=SlaPolicy(check_interval_seconds=7.0),
+    )
+    assert asyncio.run(asyncio.wait_for(serve(settings, stop), timeout=5)) == 0
+    assert seen["interval"] == 7.0
+    assert isinstance(seen["job"], ApprovalSlaJob)
+    assert seen["sweep_stopped"]

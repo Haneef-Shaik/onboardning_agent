@@ -9,7 +9,9 @@ and startup fails fast (`ConfigError`) when it is missing or malformed:
 - optionally the run policy (`RunPolicy`): `ORCHESTRATOR_MAX_ATTEMPTS` (3), `ORCHESTRATOR_BACKOFF_BASE`
   (2 s), `ORCHESTRATOR_BACKOFF_MAX` (60 s), `ORCHESTRATOR_LEASE_SECONDS` (30 s: how long a task's, and
   a job's, lease holds without a heartbeat, so how soon a killed worker's work is taken over);
-- optionally `ORCHESTRATOR_DRAIN_SECONDS` (30 s: how long a stopping worker waits for its task in hand).
+- optionally `ORCHESTRATOR_DRAIN_SECONDS` (30 s: how long a stopping worker waits for its task in hand);
+- optionally `APPROVAL_SLA_CONFIG` (`config/approval_sla.yaml`): the approval SLA thresholds (HIL-2). The worker
+  runs the SLA sweep (`approval_sla.py`) beside its consumers, every `check_interval_seconds`, until it stops.
 
 Telemetry starts before the Mongo client, so PyMongo's tracing listener applies to it (F-4).
 
@@ -29,15 +31,18 @@ import os
 import signal
 from collections.abc import Mapping
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Final
 
 from onb_agents.approvals import ApprovalStore
+from onb_agents.approvals.sla import DEFAULT_SLA_CONFIG, SlaConfigError, SlaPolicy, load_sla_policy
 from onb_agents.runs import CLEANUP_RUN, FAIL_TASK, RESUME_APPROVAL, RESUME_RUN, START_RUN, RunStore, run_bus
 from onb_contracts.notify import RECORD_DECISION_CONSUMER
 from onb_data import DataStore, connect
 from onb_eventbus import QueueSettings, Worker
 
 from .agents_setup import AgentSettings, ConfigError, build_agent_executor
+from .approval_sla import ApprovalSlaJob, run_sla_forever
 from .checkpointer import TenantCheckpointSaver
 from .consumer import (
     cleanup_run_handler,
@@ -77,6 +82,8 @@ class Settings:
     """Set when `ORCHESTRATOR_EXECUTOR=agents` (RUN-3); None runs RUN-1's stub executor."""
     policy: RunPolicy = field(default_factory=RunPolicy)
     drain_seconds: float = _DEFAULT_DRAIN_SECONDS
+    approval_sla: SlaPolicy = field(default_factory=SlaPolicy)
+    """HIL-2: the approval SLA thresholds, from `APPROVAL_SLA_CONFIG` (default `config/approval_sla.yaml`)."""
 
     @classmethod
     def from_env(cls, env: Mapping[str, str]) -> Settings:
@@ -100,7 +107,15 @@ class Settings:
             policy=policy,
             drain_seconds=_number(env, "ORCHESTRATOR_DRAIN_SECONDS", _DEFAULT_DRAIN_SECONDS),
             agents=_agent_settings(env),
+            approval_sla=_approval_sla(env),
         )
+
+
+def _approval_sla(env: Mapping[str, str]) -> SlaPolicy:
+    try:
+        return load_sla_policy(Path(env.get("APPROVAL_SLA_CONFIG") or DEFAULT_SLA_CONFIG))
+    except SlaConfigError as error:
+        raise ConfigError(f"invalid approval SLA config: {error}") from None
 
 
 def _agent_settings(env: Mapping[str, str]) -> AgentSettings | None:
@@ -179,6 +194,20 @@ async def prepare(
     return RunWorker(worker=bus.worker(handlers), consumers=tuple(handlers), drain=drain, drain_seconds=drain_seconds)
 
 
+async def _with_sla_sweep(store: DataStore, settings: Settings, worker: RunWorker, stop: asyncio.Event) -> int:
+    """Run the worker with the approval SLA sweep beside it (HIL-2); the sweep stops when the worker ends."""
+    sweep_stop = asyncio.Event()
+    job = ApprovalSlaJob(store, run_bus(store), settings.approval_sla)
+    sweeping = asyncio.ensure_future(
+        run_sla_forever(job, interval=settings.approval_sla.check_interval_seconds, stop=sweep_stop)
+    )
+    try:
+        return await worker.run(stop)
+    finally:
+        sweep_stop.set()
+        await sweeping
+
+
 async def serve(settings: Settings, stop: asyncio.Event) -> int:
     store = connect(settings.mongo_uri, settings.mongo_database)
     try:
@@ -190,7 +219,7 @@ async def serve(settings: Settings, stop: asyncio.Event) -> int:
             drain_seconds=settings.drain_seconds,
             executor=executor,
         )
-        return await worker.run(stop)
+        return await _with_sla_sweep(store, settings, worker, stop)
     finally:
         await store.close()
 
