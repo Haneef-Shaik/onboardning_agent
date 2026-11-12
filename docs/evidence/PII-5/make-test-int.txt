@@ -1,0 +1,6 @@
+make test-int exit=0
+1 matches in 1F:
+
+[file] /Users/Adya/.claude/jobs/5448b003/tmp/int.log (1):
+    61: 12 passed in 5.32s
+

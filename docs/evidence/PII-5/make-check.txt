@@ -1,69 +1,12 @@
- Image onb/otel-collector:0.165.0 Building 
- Image onb/otel-collector:0.165.0 Built 
- Container ob-pii-5-caddy-1 Running 
- Container ob-pii-5-mongo-1 Running 
- Container ob-pii-5-otel-collector-1 Running 
- Container ob-pii-5-jaeger-1 Running 
- Container ob-pii-5-jaeger-1 Waiting 
- Container ob-pii-5-jaeger-1 Waiting 
- Container ob-pii-5-jaeger-1 Healthy 
- Container ob-pii-5-jaeger-1 Healthy 
- Container ob-pii-5-mongo-1 Waiting 
- Container ob-pii-5-otel-collector-1 Waiting 
- Container ob-pii-5-jaeger-1 Waiting 
- Container ob-pii-5-caddy-1 Waiting 
- Container ob-pii-5-otel-collector-1 Healthy 
- Container ob-pii-5-jaeger-1 Healthy 
- Container ob-pii-5-mongo-1 Healthy 
- Container ob-pii-5-caddy-1 Healthy 
-python3 scripts/plan/plan.py check
-plan ok: 67 goals, 34 ledger rows
-python3 scripts/check_env_example.py
-check_env_example: all 9 compose variables are documented in .env.example
-uv run --frozen ruff check tools scripts/check_env_example.py scripts/contracts.py
-All checks passed!
-uv run --frozen ruff format --check tools scripts/check_env_example.py scripts/contracts.py
-20 files already formatted
-uv run --frozen mypy tools scripts/check_env_example.py scripts/contracts.py
-Success: no issues found in 20 source files
-uv run --frozen pytest tools/tests scripts/plan/test_plan.py -q
-........................................................................ [ 40%]
-........................................................................ [ 80%]
-...................................                                           [100%]
-179 passed, 67 subtests passed in 7.96s
-node_modules/.bin/nx run-many -t lint --output-style=static
- NX   Running target lint for 17 projects:
-- py-guardrails
-- ts-api-client
-- orchestrator
-- py-contracts
-- py-telemetry
-- py-eventbus
-- mcp-mocks
-- mcp-mongo
-- py-agents
-- py-crypto
-- py-evals
-- mcp-hub
-- py-data
-- py-llm
-- ts-ui
-- api
-- web
-> nx run py-data:lint
-[2m> [22muv run --frozen ruff check libs/py-data
-[1;32mAll checks passed![0m
-[2m> [22muv run --frozen ruff format --check libs/py-data
-33 files already formatted
-> nx run py-guardrails:lint
-[2m> [22muv run --frozen ruff check libs/py-guardrails
-[1;32mAll checks passed![0m
-[2m> [22muv run --frozen ruff format --check libs/py-guardrails
-28 files already formatted
-> nx run py-telemetry:lint
-[2m> [22muv run --frozen ruff check libs/py-telemetry
-[1;32mAll checks passed![0m
-[2m> [22muv run --frozen ruff format --check libs/py-telemetry
-23 files already formatted
-> nx run py-contracts:lint
-... (913 lines truncated)
+make check = plan-check env-check tooling-test lint typecheck test test-xt (Makefile line 26; make stops at the first failure).
+
+Four runs on 2026-11-12 against this branch, stack ob-pii-5:
+- plan-check, env-check, tooling-test, lint, typecheck and test (every project's unit tests, py-crypto 431+ and api retention tests included) passed in every run.
+- test-xt (tools/tests_xt, the cross-tenant suite) ended `Error 1` in every run, never on an assertion: only
+  setup ERRORs of the form `ServerSelectionTimeoutError ... connection closed (configured timeouts ...)`
+  (the known Mongo flake), a different 2-6 test ids each time, with 310-314 passed:
+    run 2: 314 passed, 2 errors   run 3: 310 passed, 6 errors   run 4: 314 passed, 2 errors
+    standalone `make test-xt`: 314 passed, 2 errors (GET /agents cases)
+  This diff adds no route, MCP tool or consumer, so it adds no xt case; the xt surface line is unchanged
+  (36 API routes, 9 MCP tools, 5 event consumers).
+- Not claimed: a single green `make check` line. Re-run on a quieter machine before merge.

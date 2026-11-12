@@ -82,8 +82,8 @@ MUTATIONS = [
         "P10",
         "box 3: purges are not audited",
         JOB,
-        "                await self._audit_value(outcome)\n",
-        "                pass\n",
+        "            for outcome in outcomes:\n                await self._audit_value(outcome)\n            await self._clear_hire",
+        "            await self._clear_hire",
     ),
     (
         "P11",
