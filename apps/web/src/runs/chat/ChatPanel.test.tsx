@@ -158,7 +158,8 @@ describe("ChatPanel: a proposed action needs confirmation (FR-C2)", () => {
   });
 
   it("offers no review button for an expired or already used proposal", async () => {
-    const expired = { ...proposing, proposal: { ...proposing.proposal!, status: "failed" as const } };
+    if (!proposing.proposal) throw new Error("fixture has no proposal");
+    const expired = { ...proposing, proposal: { ...proposing.proposal, status: "failed" as const } };
     renderPanel("HR", { reply: expired });
     await ask("retry it");
     expect(await screen.findByTestId("chat-answer")).toHaveTextContent("no longer");
@@ -170,5 +171,33 @@ describe("ChatPanel: a proposed action needs confirmation (FR-C2)", () => {
     await ask("retry it");
     expect(await screen.findByTestId("chat-answer")).toBeVisible();
     expect(screen.queryByRole("button", { name: "Review proposed retry" })).toBeNull();
+  });
+});
+
+describe("ChatPanel: the dialog", () => {
+  it("confirms the id of the proposal reviewed, not a constant or the first one", async () => {
+    if (!proposing.proposal) throw new Error("fixture has no proposal");
+    const secondId = "prop_aaaaaaaaaaaaaaaaaaaaaaaa";
+    const second = { ...proposing, id: "m_second", proposal: { ...proposing.proposal, proposal_id: secondId } };
+    const api = renderPanel("HR", { reply: second });
+    await ask("retry it");
+    await userEvent.click(await screen.findByRole("button", { name: "Review proposed retry" }));
+    await userEvent.click(within(screen.getByRole("alertdialog")).getByRole("button", { name: "Confirm retry" }));
+    await waitFor(() =>
+      expect(api.calls.filter((c) => c.path.endsWith("/confirm")).map((c) => c.body)).toEqual([
+        { proposal_id: secondId },
+      ]),
+    );
+  });
+
+  it("closes on Escape and returns focus to the button that opened it", async () => {
+    renderPanel("HR", { reply: proposing });
+    await ask("retry it");
+    const opener = await screen.findByRole("button", { name: "Review proposed retry" });
+    await userEvent.click(opener);
+    expect(screen.getByRole("alertdialog")).toBeVisible();
+    await userEvent.keyboard("{Escape}");
+    expect(screen.queryByRole("alertdialog")).toBeNull();
+    expect(opener).toHaveFocus();
   });
 });

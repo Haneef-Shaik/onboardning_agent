@@ -12,7 +12,21 @@ export interface ConfirmRetryDialogProps {
 /** The one place a chat proposal becomes an action: nothing is sent until "Confirm retry" is pressed. */
 export function ConfirmRetryDialog({ proposal, busy, onConfirm, onCancel }: ConfirmRetryDialogProps) {
   const cancel = useRef<HTMLButtonElement>(null);
-  useEffect(() => cancel.current?.focus(), []);
+  const latest = useRef({ busy, onCancel });
+  latest.current = { busy, onCancel };
+  useEffect(() => {
+    const opener = document.activeElement;
+    cancel.current?.focus();
+    // Escape works wherever focus is, but not while the confirm is in flight.
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && !latest.current.busy) latest.current.onCancel();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      if (opener instanceof HTMLElement && opener.isConnected) opener.focus();
+    };
+  }, []);
   return (
     <div className="fixed inset-0 z-10 flex items-center justify-center bg-slate-900/40">
       <div
@@ -21,7 +35,6 @@ export function ConfirmRetryDialog({ proposal, busy, onConfirm, onCancel }: Conf
         aria-labelledby="confirm-retry-title"
         aria-describedby="confirm-retry-body"
         className="w-full max-w-sm rounded-md bg-white p-4 shadow"
-        onKeyDown={(event) => event.key === "Escape" && onCancel()}
       >
         <h3 id="confirm-retry-title" className="text-sm font-semibold">
           Retry task {proposal.task_id}?

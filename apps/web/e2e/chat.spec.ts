@@ -98,6 +98,8 @@ test("a manager can ask about their report's run but is never offered the retry"
   await openRun(manager, runId);
   await ask(manager, "retry it");
   await expect(manager.getByTestId("chat-answer")).toContainText(`Task ${failed} failed`);
+  // The API never attaches a proposal to a manager's answer (ADR 0024 §2), so no button shows here; the
+  // panel's own second guard (a pending proposal shown to a manager) is the unit test "gives a manager...".
   await expect(manager.getByRole("button", { name: "Review proposed retry" })).toHaveCount(0);
   await context.close();
 });

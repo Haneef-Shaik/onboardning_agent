@@ -3,7 +3,7 @@
  * A proposed retry changes nothing until HR confirms it in a dialog (FR-C2, ADR 0024): the panel never
  * treats words as consent, and a manager gets answers only.
  */
-import type { ApiClient, ChatMessageRecord, Role } from "@onb/ts-api-client";
+import type { ApiClient, Role } from "@onb/ts-api-client";
 import { Button } from "@onb/ts-ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, type FormEvent } from "react";
@@ -26,7 +26,7 @@ export function ChatPanel({ client, role, runId, onRunChanged }: ChatPanelProps)
   const key = ["run-chat", runId] as const;
   const history = useQuery({ queryKey: key, queryFn: () => getChat(client, runId) });
   const [question, setQuestion] = useState("");
-  const [reviewing, setReviewing] = useState<ChatMessageRecord | null>(null);
+  const [reviewingId, setReviewingId] = useState<string | null>(null);
   const canConfirm = canControlRuns(role);
 
   const ask = useMutation({
@@ -39,7 +39,7 @@ export function ChatPanel({ client, role, runId, onRunChanged }: ChatPanelProps)
   const confirm = useMutation({
     mutationFn: (proposalId: string) => confirmProposal(client, runId, proposalId),
     onSettled: () => {
-      setReviewing(null);
+      setReviewingId(null);
       void queryClient.invalidateQueries({ queryKey: key });
     },
     onSuccess: () => onRunChanged(),
@@ -48,17 +48,22 @@ export function ChatPanel({ client, role, runId, onRunChanged }: ChatPanelProps)
   function submit(event: FormEvent) {
     event.preventDefault();
     const text = question.trim();
-    if (text !== "" && !ask.isPending) ask.mutate(text);
+    if (text === "" || ask.isPending) return;
+    confirm.reset(); // an old confirm error is not about this question
+    ask.mutate(text);
   }
 
   const messages = history.data ?? [];
+  // The dialog follows the stored proposal, so one used or expired elsewhere is no longer offered.
+  const open = messages.find((m) => m.id === reviewingId)?.proposal;
+  const reviewing = open?.status === "pending" ? open : null;
   return (
     <section aria-label="Run assistant" className="flex flex-col gap-2 rounded-md border border-slate-200 p-3">
       <h2 className="text-sm font-medium">Ask about this run</h2>
       {history.isError && <ErrorNotice error={history.error} />}
       <ol data-testid="chat-log" className="flex flex-col gap-2">
         {messages.map((message) => (
-          <MessageView key={message.id} message={message} canConfirm={canConfirm} onReview={setReviewing} />
+          <MessageView key={message.id} message={message} canConfirm={canConfirm} onReview={(m) => setReviewingId(m.id)} />
         ))}
       </ol>
       {ask.isPending && <p className="text-xs text-slate-500">Thinking…</p>}
@@ -77,12 +82,12 @@ export function ChatPanel({ client, role, runId, onRunChanged }: ChatPanelProps)
         </Button>
       </form>
       <p className="text-xs text-slate-500">Do not type personal details such as ID or bank numbers.</p>
-      {reviewing?.proposal && (
+      {reviewing && (
         <ConfirmRetryDialog
-          proposal={reviewing.proposal}
+          proposal={reviewing}
           busy={confirm.isPending}
-          onConfirm={() => confirm.mutate(reviewing.proposal?.proposal_id ?? "")}
-          onCancel={() => setReviewing(null)}
+          onConfirm={() => confirm.mutate(reviewing.proposal_id)}
+          onCancel={() => setReviewingId(null)}
         />
       )}
     </section>
