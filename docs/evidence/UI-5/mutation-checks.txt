@@ -1,14 +1,15 @@
-M1 the stream never tells the screen to re-read: caught · ✘  1 [chromium] › apps/web/e2e/runs.spec.ts:39:1 › run detail updates live over SSE as tasks change (11.2s) | Error: expect(locator).toHaveAttribute(expected) failed | 1 failed
-M2 a failed task hides its reason: caught · ✘  1 [chromium] › apps/web/e2e/runs.spec.ts:62:1 › a blocked task shows its reason; retry puts it back in play (12.3s) | Error: expect(locator).toContainText(expected) failed | 70 |   await expect(row).toHaveAttribute("data-status", "failed");
-M3 complete works without a reason: caught · ✘  1 [chromium] › apps/web/e2e/runs.spec.ts:80:1 › a blocked task is completed by hand only with a reason (12.2s) | Error: expect(locator).toBeDisabled() failed | 1 failed
-M4 the trace link points at another id: caught · ✘  2 [chromium] › apps/web/e2e/runs.spec.ts:97:1 › the trace link opens Jaeger on the run's trace id (11.7s) | Error: expect(locator).toHaveAttribute(expected) failed | 1 failed
-M5 managers get run controls: caught · ✘  1 [chromium] › apps/web/e2e/runs.spec.ts:115:1 › a manager sees a run of their report, but no controls and no trace link (11.9s) | Error: expect(locator).toHaveCount(expected) failed | 1 failed
-M6 managers get the trace link: caught · ✘  1 [chromium] › apps/web/e2e/runs.spec.ts:115:1 › a manager sees a run of their report, but no controls and no trace link (11.9s) | Error: expect(locator).toHaveCount(expected) failed | 1 failed
-M7 a timeout end stops the stream instead of reconnecting: caught · ❯ src/runs/useRunStream.test.tsx (5 tests | 1 failed) 311ms | Test Files  1 failed (1) | Tests  1 failed | 4 passed (5)
-M8 a dropped connection is not retried: caught · ❯ src/runs/useRunStream.test.tsx (5 tests | 2 failed) 2218ms | Test Files  1 failed (1) | Tests  2 failed | 3 passed (5)
-M9 the log is not restarted on reconnect: caught · ❯ src/runs/useRunStream.test.tsx (5 tests | 1 failed) 513ms | Test Files  1 failed (1) | Tests  1 failed | 4 passed (5)
-M10 trace id taken from the whole traceparent: caught · =================================== FAILURES =================================== | FAILED apps/api/tests/test_run_trace_id.py::test_the_trace_id_is_the_trace_part_of_the_stored_traceparent | 1 failed in 0.24s
-M11 the all-zero trace id is accepted: caught · =================================== FAILURES =================================== | FAILED apps/api/tests/test_run_trace_id.py::test_a_missing_or_malformed_traceparent_gives_no_trace_id[00-00000000000000000000000000000000-00f067aa0ba902b7-01] | 1 failed, 6 passed in 0.13s
-M12 a trace link for a malformed id: caught · ❯ src/runs/policy.test.ts (11 tests | 1 failed) 7ms | Test Files  1 failed (1) | Tests  1 failed | 10 passed (11)
-M13 blocked run offers pause: caught · ❯ src/runs/policy.test.ts (11 tests | 1 failed) 14ms | Test Files  1 failed (1) | Tests  1 failed | 10 passed (11)
-SUMMARY: 13 of 13 mutations caught
+M1 the stream never tells the screen to re-read: caught · ✘  1 [chromium] › apps/web/e2e/runs.spec.ts:39:1 › run detail updates live over SSE as tasks change (11.9s) | Error: expect(locator).toHaveAttribute(expected) failed | 1 failed
+M2 a failed task hides its reason: caught · ✘  1 [chromium] › apps/web/e2e/runs.spec.ts:62:1 › a blocked task shows its reason; retry puts it back in play (12.2s) | Error: expect(locator).toContainText(expected) failed | 70 |   await expect(row).toHaveAttribute("data-status", "failed");
+M3 complete works without a reason: caught · ✘  1 [chromium] › apps/web/e2e/runs.spec.ts:80:1 › a blocked task is completed by hand only with a reason (12.1s) | Error: expect(locator).toBeDisabled() failed | 1 failed
+M4 the trace link points at another id: caught · ✘  1 [chromium] › apps/web/e2e/runs.spec.ts:97:1 › the trace link opens Jaeger on the run's trace id (11.1s) | Error: expect(locator).toHaveAttribute(expected) failed | 1 failed
+M5 managers get run controls: caught · ✘  1 [chromium] › apps/web/e2e/runs.spec.ts:115:1 › a manager sees a run of their report, but no controls and no trace link (11.4s) | Error: expect(locator).toHaveCount(expected) failed | 1 failed
+M6 managers get the trace link: SURVIVED · 1 passed (9.8s)
+M7 a timeout end stops the stream instead of reconnecting: caught · ❯ src/runs/useRunStream.test.tsx (5 tests | 1 failed) 316ms | Test Files  1 failed (1) | Tests  1 failed | 4 passed (5)
+M8 a dropped connection is not retried: caught · ❯ src/runs/useRunStream.test.tsx (5 tests | 2 failed) 2216ms | Test Files  1 failed (1) | Tests  2 failed | 3 passed (5)
+M9 the log is not restarted on reconnect: caught · ❯ src/runs/useRunStream.test.tsx (5 tests | 1 failed) 566ms | Test Files  1 failed (1) | Tests  1 failed | 4 passed (5)
+M10 trace id taken from the whole traceparent: caught · =================================== FAILURES =================================== | FAILED apps/api/tests/test_run_trace_id.py::test_the_trace_id_is_the_trace_part_of_the_stored_traceparent | 1 failed in 0.13s
+M11 the all-zero trace id is accepted: caught · =================================== FAILURES =================================== | FAILED apps/api/tests/test_run_trace_id.py::test_a_missing_or_malformed_traceparent_gives_no_trace_id[00-00000000000000000000000000000000-00f067aa0ba902b7-01] | 1 failed, 6 passed in 0.08s
+M12 a trace link for a malformed id: caught · ❯ src/runs/policy.test.ts (11 tests | 1 failed) 4ms | Test Files  1 failed (1) | Tests  1 failed | 10 passed (11)
+M14 a manager gets the trace id from the API: caught · =================================== FAILURES =================================== | FAILED apps/api/tests/test_run_control_routes.py::test_hr_and_hr_admin_get_the_runs_trace_id_and_a_manager_does_not | 1 failed, 21 deselected in 0.24s
+M13 blocked run offers pause: caught · ❯ src/runs/policy.test.ts (11 tests | 1 failed) 6ms | Test Files  1 failed (1) | Tests  1 failed | 10 passed (11)
+SUMMARY: 13 of 14 mutations caught
