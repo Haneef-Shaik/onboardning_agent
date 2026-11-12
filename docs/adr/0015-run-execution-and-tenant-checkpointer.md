@@ -62,7 +62,17 @@
    - drives only `started`/`running` runs, leaving finished runs and later goals' states alone;
    - resumes from the checkpoint when one exists;
    - skips each task step whose work is already `done`;
-   - marks a run whose DAG does not match its hash `failed`, and executes none of its tasks.
+   - never executes a task it finds `running`: only the delivery whose compare-and-set moved the task
+     to `running` executes it. Another delivery raises a transient `TaskInProgressError` and is
+     retried, so a task's work runs at most once per attempt. Taking over a task left `running` by a
+     crashed worker needs a per-task lease, which is RUN-2's;
+   - when a task fails, the DAG does not match its hash, or any deterministic error occurs (a blocked
+     task, a broken graph), marks the run `failed` and cancels every unfinished task, including a
+     sibling LangGraph cut off mid-step;
+   - re-raises transient errors (the database, a compare-and-set race) for the bus to retry;
+   - accepts a run already finished by an overlapping delivery as done;
+   - lets a node's error reach the checkpoint (LangGraph stores it as a pending write) by its type
+     only.
 
 ## Consequences
 
