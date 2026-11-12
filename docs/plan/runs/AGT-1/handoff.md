@@ -1,4 +1,4 @@
-# Handoff — AGT-1 · Ship the DB, Templates and Provisioning agents        attempt 1 · goal/agt-1-task-agents · base main 6ce846f (see `git log -1` for the handoff commit)
+# Handoff — AGT-1 · Ship the DB, Templates and Provisioning agents        attempt 2 · goal/agt-1-task-agents · base main 6ce846f (see `git log -1` for the handoff commit)
 
 **Outcome claimed.** The three task agents run their seed-template tasks inside runs through the real hub, mocks, notify sink and MongoDB (boxes 2 and 3 proven); box 1 (eval gates on the real connector) is **not met**: Bedrock (OW-1) is unavailable, and no paid model call was made.
 
@@ -25,6 +25,7 @@
 | Gate | Command | Result |
 |------|---------|--------|
 | Check | `make check` | see `make-check.txt` (final line `exit=0` on the final tree) |
+| Integration (full) | `make test-int` | exit 0 (`make-test-int.txt`); `uv run --frozen pytest apps/mcp-hub/tests_int`: `38 passed` (`hub-int-full.txt`). Attempt 1's verifier found the AGT-1 tests failed inside this target (a `run_tasks` unique-index DuplicateKeyError against other hub tests' documents); fixed by not building the index in the test plumbing. |
 | Integration (this goal's) | `uv run --frozen pytest apps/mcp-hub/tests_int/test_task_agents_int.py` | `5 passed` |
 | Eval self-test | `make evals-selftest` | `PASS`, controls 8/8 (`evals-selftest.txt`) |
 | Mutations | `uv run --frozen python docs/evidence/AGT-1/mutate.py` | `mutations: 11, killed: 11, survivors: none`, `0 files differ` (`mutation-checks.txt`) |
@@ -61,6 +62,7 @@ Two independent reviews (general-purpose agents, code and security) on `git diff
 `docs/adr/0021-task-agent-input-and-references.md`.
 
 ## Traps hit
+- Run the whole `apps/mcp-hub/tests_int` target, not one file: the session database is shared, so an index built by one test can collide with another's documents.
 - `make bootstrap` was needed before `make check` (the contracts tests need `node_modules`).
 - `.env` needed a `JAEGER_BASIC_AUTH_HASH` (bcrypt, `$` doubled) for `make up`.
 - The tenant-scoped test hire must be `h_acme_001` so the stack's vault token matches the grant subject.

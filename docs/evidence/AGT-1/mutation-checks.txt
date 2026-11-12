@@ -3,13 +3,15 @@ baseline: exit=0, failed=0
 M1 KILLED: the hire reference ignores the org (two orgs' hires share a reference)
   file: apps/orchestrator/src/onb_orchestrator/agent_input.py
   suites: unit-orch
-  failing tests (1):
+  failing tests (2):
+    apps/orchestrator/tests/test_agent_input.py::test_the_agent_gets_opaque_24_hex_references_for_the_task_and_the_hire
     apps/orchestrator/tests/test_agent_input.py::test_the_references_are_stable_and_derived_from_org_run_and_task
 
 M2 KILLED: the task reference ignores the run (a later run's task reuses an earlier run's key)
   file: apps/orchestrator/src/onb_orchestrator/agent_input.py
   suites: unit-orch
-  failing tests (1):
+  failing tests (2):
+    apps/orchestrator/tests/test_agent_input.py::test_the_agent_gets_opaque_24_hex_references_for_the_task_and_the_hire
     apps/orchestrator/tests/test_agent_input.py::test_the_references_are_stable_and_derived_from_org_run_and_task
 
 M3 KILLED: reference parts are not length-prefixed (parts can be shifted into each other)
@@ -38,9 +40,10 @@ M5 KILLED: the agent is given no variables (role and location are lost)
 M6 KILLED: every task gets the same task reference (the mocks' idempotency key collides across runs)
   file: apps/orchestrator/src/onb_orchestrator/agent_input.py
   suites: unit-orch, int
-  failing tests (3):
+  failing tests (4):
     apps/mcp-hub/tests_int/test_task_agents_int.py::test_a_designer_gets_a_design_laptop
     apps/mcp-hub/tests_int/test_task_agents_int.py::test_the_run_ends_completed_and_the_order_used_the_executors_stable_references
+    apps/orchestrator/tests/test_agent_input.py::test_the_agent_gets_opaque_24_hex_references_for_the_task_and_the_hire
     apps/orchestrator/tests/test_agent_input.py::test_the_references_are_stable_and_derived_from_org_run_and_task
 
 M7 KILLED: the templates agent cannot read the hire record (name and start date unreachable)

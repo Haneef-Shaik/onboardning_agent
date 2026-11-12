@@ -234,7 +234,6 @@ def on_platform[T](
     async def go() -> T:
         platform = Platform.create(stack, tmp, script)
         try:
-            await RunStore(platform.store).ensure_indexes()
             await platform.add_hire(seed_hire(role))
             return await body(platform)
         finally:
