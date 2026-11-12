@@ -53,7 +53,7 @@ export function HireDetail({ client, role, hireId }: HireDetailProps) {
                   onCancel={() => setAsking(null)}
                   onConfirm={async (reason) => {
                     await reveal(field, reason);
-                    setAsking(null);
+                    setAsking((current) => (current === field ? null : current));
                   }}
                 />
               )}

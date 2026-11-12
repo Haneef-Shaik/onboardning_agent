@@ -18,6 +18,8 @@ export interface UseReveal {
 export function useReveal(revealFn: RevealFn): UseReveal {
   const [values, setValues] = useState<RevealedValues>({});
   const timers = useRef(new Map<PiiField, ReturnType<typeof setTimeout>>());
+  // One ticket per reveal in flight. hide, clear and unmount invalidate it, so a late answer is dropped.
+  const tickets = useRef(new Map<PiiField, symbol>());
 
   const stopTimer = useCallback((field: PiiField) => {
     const timer = timers.current.get(field);
@@ -28,6 +30,7 @@ export function useReveal(revealFn: RevealFn): UseReveal {
   const hide = useCallback(
     (field: PiiField) => {
       stopTimer(field);
+      tickets.current.delete(field);
       setValues((current) => Object.fromEntries(Object.entries(current).filter(([key]) => key !== field)));
     },
     [stopTimer],
@@ -36,12 +39,16 @@ export function useReveal(revealFn: RevealFn): UseReveal {
   const clear = useCallback(() => {
     timers.current.forEach((timer) => clearTimeout(timer));
     timers.current.clear();
+    tickets.current.clear();
     setValues({});
   }, []);
 
   const reveal = useCallback(
     async (field: PiiField, reason: string) => {
+      const ticket = Symbol(field);
+      tickets.current.set(field, ticket);
       const answer = await revealFn(field, reason);
+      if (tickets.current.get(field) !== ticket) return; // hidden, cleared or unmounted meanwhile
       stopTimer(field);
       setValues((current) => ({ ...current, [field]: answer.value }));
       timers.current.set(
@@ -54,9 +61,11 @@ export function useReveal(revealFn: RevealFn): UseReveal {
 
   useEffect(() => {
     const held = timers.current;
+    const pending = tickets.current;
     return () => {
       held.forEach((timer) => clearTimeout(timer));
       held.clear();
+      pending.clear();
     };
   }, []);
 

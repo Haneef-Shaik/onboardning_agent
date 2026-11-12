@@ -71,6 +71,57 @@ describe("useReveal", () => {
     expect(vi.getTimerCount()).toBe(0);
   });
 
+  function deferred() {
+    let resolve!: (value: RevealedValue) => void;
+    const promise = new Promise<RevealedValue>((r) => (resolve = r));
+    return { promise, resolve };
+  }
+
+  it("drops an answer that arrives after unmount, and leaves no timer behind", async () => {
+    const pending = deferred();
+    const reveal = vi.fn().mockReturnValue(pending.promise);
+    const { result, unmount } = renderHook(() => useReveal(reveal));
+    let done!: Promise<void>;
+    act(() => {
+      done = result.current.reveal("mobile", "reason");
+    });
+
+    unmount();
+    pending.resolve(answer("synthetic-value"));
+    await done;
+
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it("drops an answer that arrives after clear() or after hide() of that field", async () => {
+    const first = deferred();
+    const second = deferred();
+    const reveal = vi.fn().mockReturnValueOnce(first.promise).mockReturnValueOnce(second.promise);
+    const { result } = renderHook(() => useReveal(reveal));
+    let a!: Promise<void>;
+    let b!: Promise<void>;
+    act(() => {
+      a = result.current.reveal("mobile", "reason");
+    });
+    act(() => result.current.clear());
+    await act(async () => {
+      first.resolve(answer("late-after-clear"));
+      await a;
+    });
+    expect(result.current.values).toEqual({});
+
+    act(() => {
+      b = result.current.reveal("mobile", "reason");
+    });
+    act(() => result.current.hide("mobile"));
+    await act(async () => {
+      second.resolve(answer("late-after-hide"));
+      await b;
+    });
+    expect(result.current.values).toEqual({});
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
   it("hides every value at once on clear", async () => {
     const reveal = vi.fn().mockImplementation(async (field: string) => ({ ...answer(`v-${field}`), field }));
     const { result } = renderHook(() => useReveal(reveal));

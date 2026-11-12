@@ -71,6 +71,9 @@ MUTANTS = [
     Mutant("M13", "the list is not oldest-first", "apps/api/src/onb_api/documents/meta.py",
            'sort=[("uploaded_at", 1), ("_id", 1)]', 'sort=[("uploaded_at", -1), ("_id", 1)]',
            [*PYTEST, "apps/api/tests/test_documents.py"], "test_hr_lists_a_hires_scans_as_metadata_only"),
+    Mutant("M14", "a reveal that resolves after hide/clear/unmount still shows", "apps/web/src/hires/useReveal.ts",
+           "if (tickets.current.get(field) !== ticket) return;", "if (false) return;",
+           [*VITEST, "src/hires/useReveal"], "drops an answer that arrives after unmount, and leaves no timer behind"),
 ]
 
 

@@ -45,3 +45,6 @@ mongo-keyfile*
 .idea/
 .vscode/
 .claude/worktrees/
+
+# vitest json reporter output
+.vitest/
