@@ -86,6 +86,19 @@ def test_fewer_than_thirty_decisions_is_refused(capsys: pytest.CaptureFixture[st
     assert "--decisions must be at least 30" in capsys.readouterr().err
 
 
+def test_fewer_than_a_hundred_samples_per_endpoint_is_refused(capsys: pytest.CaptureFixture[str]) -> None:
+    # The verdict's sample floor is fixed, not whatever was asked for: `--samples 5` cannot make a PASS.
+    with pytest.raises(SystemExit) as stopped:
+        latency.main(["--base-url", "https://localhost/api", "--ca-file", "x.crt", "--samples", "99"])
+    assert stopped.value.code == 2
+    assert "--samples must be at least 100" in capsys.readouterr().err
+
+
+def test_report_paths_are_relative_to_the_repository() -> None:
+    assert latency._relative(latency.ROOT / "docs" / "evidence" / "PERF-1") == "docs/evidence/PERF-1"
+    assert latency._relative(Path("/somewhere/else/root.crt")) == "root.crt"
+
+
 def test_only_a_local_stack_is_measured(tmp_path: Path) -> None:
     with pytest.raises(SystemExit, match="local"):
         latency._client("https://example.com/api", tmp_path / "root.crt")

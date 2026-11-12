@@ -19,7 +19,14 @@ M8 pause not kept before resume: KILLED
     FAILED tools/tests/test_perf_latency.py::test_every_round_visits_every_endpoint_once_with_pause_right_before_resume
 M9 the 30-decision floor removed: KILLED
     FAILED tools/tests/test_perf_latency.py::test_fewer_than_thirty_decisions_is_refused
+M11 the 100-sample floor removed: KILLED
+    FAILED tools/tests/test_perf_latency.py::test_fewer_than_a_hundred_samples_per_endpoint_is_refused
+M12 report paths kept absolute: KILLED
+    FAILED tools/tests/test_perf_latency.py::test_report_paths_are_relative_to_the_repository
 M10 a non-local host allowed: KILLED
     FAILED tools/tests/test_perf_latency.py::test_only_a_local_stack_is_measured
-10 of 10 killed
-source diff after all mutations: 0 files differ
+12 of 12 killed
+source diff after all mutations: tools/perf/latency.py            | 33 +++++++++++++++++++++++++++------
+ tools/perf/run.sh                | 20 +++++++++++++++++---
+ tools/tests/test_perf_latency.py | 13 +++++++++++++
+ 3 files changed, 57 insertions(+), 9 deletions(-)

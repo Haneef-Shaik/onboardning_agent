@@ -29,6 +29,7 @@ import random
 import ssl
 import subprocess
 import sys
+import threading
 import time
 import uuid
 from collections.abc import Callable
@@ -51,6 +52,7 @@ APPROVAL_TASK = "manager_approval"
 LIMIT_MS = 300.0
 RESUME_LIMIT_S = 5.0
 MIN_DECISIONS = 30
+MIN_SAMPLES = 100  # per endpoint for the box-1 verdict: a p95 of a handful proves nothing
 STARTED = frozenset({"running", "done"})
 TINY_PNG = bytes.fromhex(
     "89504e470d0a1a0a0000000d4948445200000001000000010806000000"
@@ -325,6 +327,7 @@ def _concurrent(base: str, users: Users, args: argparse.Namespace) -> dict[str, 
     # record race on it (a pause against a pause is a legal 409; a reveal against a PII update hit a 500,
     # `concurrent-reveal-500.txt`), which is a correctness question, not latency.
     rounds = max(1, args.samples // args.concurrency)
+    start = threading.Barrier(args.concurrency)
 
     def worker(n: int) -> dict[str, list[float]]:
         session = Session(_client(base, args.ca_file))
@@ -332,6 +335,7 @@ def _concurrent(base: str, users: Users, args: argparse.Namespace) -> dict[str, 
         probes = _endpoints(_fixture(session, users), users)
         rng = random.Random(args.seed + n + 1)  # noqa: S311 - visiting order, not security
         _measure(session, probes, 1, rng)
+        start.wait()  # every client measures at the same time, none while another still sets up
         return _measure(session, probes, rounds, rng)
 
     merged: dict[str, list[float]] = {}
@@ -482,7 +486,9 @@ def _report(report: dict[str, Any]) -> str:
         "",
         "## Endpoints",
         "",
-        f"Measured: {len(seq)} non-LLM endpoints (below). Not measured, and why:",
+        f"Measured: {len(seq)} non-LLM endpoints (below), plus `POST /approvals/{{approval_id}}/decision`, measured "
+        f"in the decision phase ({resume['request_summary']['count']} samples, Result 2) because each sample needs "
+        "a fresh pending approval. Not measured, and why:",
         "",
         *[f"- `{name}`: {why}" for name, why in report["excluded"].items()],
         "",
@@ -514,6 +520,12 @@ def _report(report: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
+def _relative(path: Path) -> str:
+    """A path as the report shows it: relative to the repository, never a home directory."""
+    resolved = path.resolve()
+    return str(resolved.relative_to(ROOT)) if resolved.is_relative_to(ROOT) else path.name
+
+
 def _summaries(samples: dict[str, list[float]]) -> dict[str, stats.Summary]:
     return {name: stats.summarise(values) for name, values in samples.items()}
 
@@ -531,6 +543,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--seed", type=int, default=20261113)
     parser.add_argument("--out", type=Path, default=ROOT / "docs" / "evidence" / "PERF-1")
     args = parser.parse_args(argv)
+    if args.samples < MIN_SAMPLES:
+        parser.error(f"--samples must be at least {MIN_SAMPLES} per endpoint")
     if args.decisions < MIN_DECISIONS:
         parser.error(f"--decisions must be at least {MIN_DECISIONS} (the card's sample size)")
 
@@ -541,20 +555,23 @@ def main(argv: list[str] | None = None) -> int:
     probes = _endpoints(fx, users)
 
     print(f"perf: sequential, {len(probes)} endpoints x {args.samples}", flush=True)
-    sequential = _summaries(_sequential(args.base_url, users, probes, args))
+    sequential_s = _sequential(args.base_url, users, probes, args)
+    sequential = _summaries(sequential_s)
     print(f"perf: decisions x {args.decisions}", flush=True)
     requests, resumed = _decisions(args.base_url, users, fx.template_version, args)
     print(f"perf: concurrent, {args.concurrency} clients", flush=True)
-    concurrent_ = _summaries(_concurrent(args.base_url, users, args))
+    concurrent_s = _concurrent(args.base_url, users, args)
+    concurrent_ = _summaries(concurrent_s)
 
     resume_summary = stats.summarise(resumed)
-    seq_verdict = stats.verdict(sequential, limit_ms=LIMIT_MS, min_samples=args.samples)
+    seq_verdict = stats.verdict(sequential, limit_ms=LIMIT_MS, min_samples=MIN_SAMPLES)
     conc_verdict = stats.verdict(concurrent_, limit_ms=LIMIT_MS, min_samples=1)
     resume_passed = len(resumed) >= MIN_DECISIONS and resume_summary.p95_ms < RESUME_LIMIT_S * 1000
+    now = datetime.now(UTC)
     report: dict[str, Any] = {
         "goal": "PERF-1",
-        "measured_at": datetime.now(UTC).strftime("%Y-%m-%d %H:%M UTC"),
-        "params": {k: (str(v) if isinstance(v, Path) else v) for k, v in vars(args).items()},
+        "measured_at": f"{now:%Y-%m-%d %H:%M} UTC ({now.astimezone():%Y-%m-%d %H:%M %Z} local)",
+        "params": {k: _relative(v) if isinstance(v, Path) else v for k, v in vars(args).items()},
         "hardware": _hardware(),
         "excluded": EXCLUDED,
         "sequential": {k: asdict(v) for k, v in sequential.items()},
@@ -567,6 +584,10 @@ def main(argv: list[str] | None = None) -> int:
             "samples_s": [round(v, 4) for v in resumed],
         },
         "verdicts": {"sequential": asdict(seq_verdict), "concurrent": asdict(conc_verdict)},
+        "samples_s": {
+            "sequential": {k: [round(v, 5) for v in vs] for k, vs in sequential_s.items()},
+            "concurrent": {k: [round(v, 5) for v in vs] for k, vs in concurrent_s.items()},
+        },
     }
     args.out.mkdir(parents=True, exist_ok=True)
     (args.out / "latency.json").write_text(json.dumps(report, indent=2) + "\n")

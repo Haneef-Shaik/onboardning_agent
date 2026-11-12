@@ -33,19 +33,30 @@ LOG_DIR="${PERF_LOG_DIR:-reports/perf}"
   exit 1
 }
 
+if lsof -tiTCP:"$PERF_API_PORT" -sTCP:LISTEN >/dev/null 2>&1; then
+  echo "perf: port $PERF_API_PORT is already in use: stop that process (an old API would be measured)" >&2
+  exit 1
+fi
 mkdir -p "$LOG_DIR"
 pids=()
 label=""
 
 cleanup() {
-  for pid in "${pids[@]}"; do kill -TERM "$pid" 2>/dev/null || true; done
-  for pid in "${pids[@]}"; do wait "$pid" 2>/dev/null || true; done
+  # Tunnels first: they carry the root login, so they go even if stopping a process fails.
   if [[ -n "$label" ]]; then
     local ids
     ids="$(docker ps -aq --filter "label=${label}")"
     # shellcheck disable=SC2086  # one container id per word
     [[ -z "$ids" ]] || docker rm -f $ids >/dev/null 2>&1 || true
   fi
+  # `${a[@]+...}`: an empty array under `set -u` is an error in macOS's bash 3.2.
+  for pid in ${pids[@]+"${pids[@]}"}; do kill -TERM "$pid" 2>/dev/null || true; done
+  for pid in ${pids[@]+"${pids[@]}"}; do wait "$pid" 2>/dev/null || true; done
+  # Whatever still listens on the API port was started by this run (the port was checked free at the start).
+  local left
+  left="$(lsof -tiTCP:"$PERF_API_PORT" -sTCP:LISTEN 2>/dev/null || true)"
+  # shellcheck disable=SC2086  # one pid per word
+  [[ -z "$left" ]] || kill -TERM $left 2>/dev/null || true
 }
 trap cleanup EXIT
 
@@ -112,8 +123,11 @@ curl -fsS "http://127.0.0.1:${PERF_API_PORT}/health" >/dev/null || {
   echo "perf: the API did not start; see $LOG_DIR/api.log" >&2
   exit 1
 }
+for pid in "${pids[@]}"; do
+  kill -0 "$pid" 2>/dev/null || { echo "perf: a process this run started has exited; see $LOG_DIR/" >&2; exit 1; }
+done
 
 # Caddy's dev certificate comes from its local CA: verify against that root, never skip verification.
-docker compose cp caddy:/data/caddy/pki/authorities/local/root.crt "$LOG_DIR/caddy-root.crt" >/dev/null
+docker compose cp caddy:/data/caddy/pki/authorities/local/root.crt "$LOG_DIR/caddy-root.crt" >/dev/null 2>&1
 uv run --frozen python tools/perf/latency.py --base-url "https://localhost:${CADDY_HTTPS_PORT}/api" \
   --ca-file "$LOG_DIR/caddy-root.crt" "$@"

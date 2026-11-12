@@ -1,9 +1,9 @@
-# PERF-1 first full measurement (2026-11-13): the concurrent phase (8 clients sharing one hire) aborted on a 500
+# PERF-1 first full measurement (2026-11-12 ~21:55 UTC, 2026-11-13 local): the concurrent phase (8 clients sharing one hire) aborted on a 500
                          ^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-perf-1/tools/perf/latency.py", line 272, in <lambda>
+  File "tools/perf/latency.py", line 272, in <lambda>
     "POST /hires/{hire_id}/pii/{field}/reveal": lambda s: s.call(
                                                           ^^^^^^^
-  File "/Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-perf-1/tools/perf/latency.py", line 108, in call
+  File "tools/perf/latency.py", line 108, in call
     raise MeasurementError(f"{method} {path}: {response.status_code}, expected {expect}")
 MeasurementError: POST /hires/h_79b82b312a634f229b5042e7/pii/mobile/reveal: 500, expected 200
 exit 1

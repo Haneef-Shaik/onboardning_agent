@@ -65,6 +65,18 @@ MUTATIONS = [
         "if False:",
     ),
     (
+        "M11 the 100-sample floor removed",
+        "tools/perf/latency.py",
+        "if args.samples < MIN_SAMPLES:",
+        "if False:",
+    ),
+    (
+        "M12 report paths kept absolute",
+        "tools/perf/latency.py",
+        "return str(resolved.relative_to(ROOT)) if resolved.is_relative_to(ROOT) else path.name",
+        "return str(resolved)",
+    ),
+    (
         "M10 a non-local host allowed",
         "tools/perf/latency.py",
         'if urlparse(base_url).hostname not in {"localhost", "127.0.0.1"}:',
