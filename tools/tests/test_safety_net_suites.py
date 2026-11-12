@@ -24,6 +24,7 @@ KNOWN_MONGO_SUITES = {
     "libs/py-eventbus/tests_int",
     "libs/py-crypto/tests_int",
     "libs/py-telemetry/tests_int",
+    "apps/orchestrator/tests_int",
     "tools/tests_xt",
 }
 
