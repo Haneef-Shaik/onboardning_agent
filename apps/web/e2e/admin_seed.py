@@ -170,9 +170,9 @@ async def admin_services(users: InMemoryUserStore) -> dict[str, Any]:
     """The `create_app` arguments the admin views read, seeded (plus `run_driver`, UI-5: for the test router,
     not for `create_app`)."""
     log = await audit_log()
-    hire_service, document_service, _ = await hires(users, log)
+    hire_service, document_service, hire_id = await hires(users, log)
     agents = await registry()
-    runs, driver = await run_services(agents, hire_service, log)  # UI-5
+    runs, driver = await run_services(agents, hire_service, log, hire_id)  # UI-5
     return {
         "audit": log,
         "agents": agents,

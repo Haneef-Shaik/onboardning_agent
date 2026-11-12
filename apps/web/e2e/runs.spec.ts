@@ -1,10 +1,10 @@
 /**
  * UI-5: the run board. The API is real (run service, store, SSE stream); no orchestrator runs in this
  * server, so each test plays its part through the test router (`e2e/run_seed.py`), moving tasks the way
- * the orchestrator does. Hires are made through the UI first (UI-4's helper), then a run is started.
+ * the orchestrator does. Runs are started for the seeded hire (Meera Iyer, Ravi's report).
  */
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
-import { createHire, signInAs, uniqueHire } from "./helpers";
+import { signInAs } from "./helpers";
 
 const API = `http://127.0.0.1:${process.env.E2E_API_PORT ?? "18731"}`;
 
@@ -14,14 +14,9 @@ interface Started {
   tasks: string[];
 }
 
-async function hireIdOf(page: Page): Promise<string> {
-  const match = /\/hires\/([^/]+)$/.exec(new URL(page.url()).pathname);
-  if (!match?.[1]) throw new Error("not on a hire page");
-  return match[1];
-}
-
-async function startRun(request: APIRequestContext, hireId: string): Promise<Started> {
-  const response = await request.post(`${API}/e2e/runs`, { data: { hire_id: hireId } });
+/** A run for the seeded hire (not a new hire: UI-8's audit counts must hold while specs share a server). */
+async function startRun(request: APIRequestContext): Promise<Started> {
+  const response = await request.post(`${API}/e2e/runs`);
   expect(response.ok(), await response.text()).toBe(true);
   return (await response.json()) as Started;
 }
@@ -31,11 +26,10 @@ async function move(request: APIRequestContext, runId: string, taskId: string, t
   expect(response.ok(), await response.text()).toBe(true);
 }
 
-/** Signs in, adds a hire, starts a run for it, and opens the run's page through the nav. */
+/** Signs in, starts a run, and opens the run's page through the nav. */
 async function openNewRun(page: Page, request: APIRequestContext, role: "HR" | "HR_ADMIN" = "HR") {
   await signInAs(page, role);
-  await createHire(page, uniqueHire(), { role: "engineer" }) // a value the template accepts;
-  const started = await startRun(request, await hireIdOf(page));
+  const started = await startRun(request);
   await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Runs" }).click();
   await page.getByRole("link", { name: started.run_id }).click();
   await expect(page.getByRole("heading", { level: 1, name: `Run ${started.run_id}` })).toBeVisible();

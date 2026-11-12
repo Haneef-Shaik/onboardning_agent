@@ -60,7 +60,8 @@ for (const c of CASES) {
     const nav = page.getByRole("navigation", { name: "Main" });
     await expect(nav.getByRole("link")).toHaveText([...c.nav]);
     await expect(page.getByRole("heading", { level: 1, name: "Runs" })).toBeVisible();
-    expect(apiCalls).toEqual(["POST /api/auth/login", "GET /api/me"]);
+    // Sign-in makes two calls; the landing page (Runs, since UI-5) then lists the runs and nothing else.
+    await expect.poll(() => apiCalls).toEqual(["POST /api/auth/login", "GET /api/me", "GET /api/runs"]);
 
     if (c.refused !== null) {
       // A full page load drops the in-memory token (ADR 0005), so go there through the app.

@@ -49,10 +49,10 @@ export function uniqueHire() {
 }
 
 /** Fills and submits the add-hire form; resolves on the new hire's page. */
-export async function createHire(page: Page, hire: { name: string; email: string }, options: { aadhaar?: boolean; role?: string } = {}) {
+export async function createHire(page: Page, hire: { name: string; email: string }, options: { aadhaar?: boolean } = {}) {
   await openSection(page, "Hires");
   await page.getByLabel("Name", { exact: true }).fill(hire.name);
-  await page.getByLabel("Role", { exact: true }).fill(options.role ?? "Engineer");
+  await page.getByLabel("Role", { exact: true }).fill("Engineer");
   await page.getByLabel("Location").fill("Pune");
   await page.getByLabel("Start date").fill("2026-12-01");
   await page.getByLabel("Manager ID").fill("u_acme_mgr_ravi");

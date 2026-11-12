@@ -56,7 +56,8 @@ def _traceparent() -> str:
 class RunDriver:
     """What the orchestrator does to a stored run, for tests to play."""
 
-    def __init__(self, store: RunStore, service: RunService) -> None:
+    def __init__(self, store: RunStore, service: RunService, hire_id: str) -> None:
+        self.hire_id = hire_id  # the seeded hire (UI-8's), which every test's run is for
         self._store = store
         self._service = service
 
@@ -111,16 +112,14 @@ class MoveRequest(BaseModel):
     error: str | None = None
 
 
-class StartRequest(BaseModel):
-    hire_id: str
-
-
 def driver_router(driver: RunDriver) -> APIRouter:
     router = APIRouter(prefix="/e2e", include_in_schema=False)
 
     @router.post("/runs")
-    async def start(body: StartRequest) -> dict[str, Any]:
-        return await driver.start(body.hire_id)
+    async def start() -> dict[str, Any]:
+        """A run for the seeded hire. Tests start runs here rather than adding hires, so UI-8's audit-log
+        counts (one `hire.create`) hold while specs run in parallel on this shared server."""
+        return await driver.start(driver.hire_id)
 
     @router.post("/runs/{run_id}/move")
     async def move(run_id: str, body: MoveRequest) -> dict[str, str]:
@@ -131,7 +130,7 @@ def driver_router(driver: RunDriver) -> APIRouter:
 
 
 async def run_services(
-    registry: AgentRegistry, hires: HireService, auditor: InMemoryAuditLog
+    registry: AgentRegistry, hires: HireService, auditor: InMemoryAuditLog, hire_id: str
 ) -> tuple[RunService, RunDriver]:
     """The run service (templates published) and the driver over the same in-memory run store."""
     templates = TemplateLifecycle(
@@ -149,4 +148,4 @@ async def run_services(
     with tenant_scope(ORG):
         draft = await templates.create_draft(Template.model_validate(document), actor_id=ADMIN.user_id)
         await templates.publish(draft.id, actor_id=ADMIN.user_id)
-    return service, RunDriver(run_store, service)
+    return service, RunDriver(run_store, service, hire_id)
