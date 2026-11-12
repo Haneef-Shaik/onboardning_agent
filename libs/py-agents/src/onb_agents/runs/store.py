@@ -89,6 +89,40 @@ class RunStore:
             raise TransitionConflictError("the task changed state while this move was decided")
         return {**current, **changes}
 
+    async def record_model(self, run_id: str, task_id: str, record: Mapping[str, Any]) -> dict[str, Any]:
+        """Record the model a task started with, once, and return what is recorded (PRD §7.1: running
+        tasks keep the model they started with). A task that already has one keeps it: the stored record
+        is returned and nothing is written."""
+        await self._tasks.update_one(
+            {"run_id": run_id, "task_id": task_id, "llm": {"$exists": False}}, {"$set": {"llm": dict(record)}}
+        )
+        stored = await self.task(run_id, task_id)
+        if stored is None:
+            raise LookupError("no such task in this run")
+        recorded: dict[str, Any] = stored["llm"]
+        return recorded
+
+    async def record_outcome(
+        self, run_id: str, task_id: str, *, result: Mapping[str, Any] | None, failure: Mapping[str, str] | None
+    ) -> None:
+        """Store what an agent task produced (`result`; left as it is when None) and why it failed, if it did
+        (`failure = {kind, reason}`: codes and counts, never message text). Call it before the state move,
+        so a failed task shows its cause."""
+        changes: dict[str, Any] = {"failure": dict(failure) if failure else None}
+        if result is not None:
+            changes["result"] = dict(result)
+        outcome = await self._tasks.update_one({"run_id": run_id, "task_id": task_id}, {"$set": changes})
+        if outcome.matched == 0:
+            raise LookupError("no such task in this run")
+
+    async def run_tokens(self, run_id: str) -> int:
+        """The tokens the run's tasks have recorded so far (their `result.usage.tokens`)."""
+        total = 0
+        for task in await self.tasks(run_id):
+            usage = (task.get("result") or {}).get("usage") or {}
+            total += int(usage.get("tokens", 0))
+        return total
+
     async def cancel_unfinished(self, run_id: str, *, at: datetime) -> list[str]:
         """Cancel every task of the run that has not finished (pending, ready, running, waiting), for a
         run that is ending. Returns the ids cancelled. A task that finishes concurrently keeps its state."""
