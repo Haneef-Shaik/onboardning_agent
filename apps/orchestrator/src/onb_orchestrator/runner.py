@@ -23,13 +23,15 @@ Errors carry their type only, never a message (messages can hold personal data):
 
 from __future__ import annotations
 
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Iterator, Mapping
+from contextlib import contextmanager
 from datetime import UTC, datetime
 from typing import Any
 
 from onb_agents.runs import RunStore, TaskState, TransitionConflictError, dependencies_met
 from onb_data import DataStore, current_tenant
 from onb_telemetry import continue_from, span_attributes
+from opentelemetry import trace
 from pymongo.errors import PyMongoError
 
 from .executor import TaskExecutor, TaskWork
@@ -46,6 +48,20 @@ __all__ = [
 
 def _utc_now() -> datetime:
     return datetime.now(UTC)
+
+
+@contextmanager
+def _task_span(traceparent: str | None, attributes: Mapping[str, str]) -> Iterator[trace.Span]:
+    """The task's span: a child of the run's span when one is current (run → task), else a child of the
+    run's stored traceparent (F-4), so a task always joins the trace of the request that started the run."""
+    if trace.get_current_span().get_span_context().is_valid:
+        with trace.get_tracer("onb_orchestrator").start_as_current_span(
+            "orchestrator.task", attributes=attributes
+        ) as span:
+            yield span
+    else:
+        with continue_from(traceparent, "orchestrator.task", attributes=attributes) as span:
+            yield span
 
 
 class TaskFailedError(Exception):
@@ -119,7 +135,7 @@ class RunExecutor:
             attempt=int(task["attempts"]),
         )
         failure: str | None = None
-        with continue_from(traceparent, "orchestrator.task", attributes=attributes):
+        with _task_span(traceparent, attributes):
             try:
                 await self._executor.execute(work)
             except Exception as error:

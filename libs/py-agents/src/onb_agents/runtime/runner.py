@@ -49,6 +49,8 @@ from onb_guardrails import (
     StructuredOutputError,
 )
 from onb_llm import LLMRuntime, LLMSelection
+from onb_telemetry import span_attributes
+from opentelemetry import trace
 
 from onb_agents.registry import AgentManifest, RegisteredAgent
 from onb_agents.runtime.graph import AgentState, build_agent_graph, recursion_limit
@@ -71,6 +73,7 @@ __all__ = [
 
 FailureKind = Literal["budget_exceeded", "invalid_output", "guardrail_blocked", "timeout", "error"]
 INJECTION_REFUSAL: Final = "injection_blocked"
+AGENT_SPAN: Final = "agent.run"
 _log = logging.getLogger("onb_agents.runtime")
 
 
@@ -227,7 +230,14 @@ class AgentRunner:
         )
         context = GuardContext(agent=manifest.name, run_id=task.run_id, task_id=task.task_id)
         prepared = _Prepared(manifest, contract, task, token, choice, local, budget, context)
-        with tenant_scope(task.org_id):
+        attributes = span_attributes(
+            org_id=task.org_id, run_id=task.run_id, task_id=task.task_id, agent_name=manifest.name
+        )
+        # One span per agent task (run → task → agent → LLM/tool, PRD §7.7); ids only, never a prompt.
+        with (
+            tenant_scope(task.org_id),
+            trace.get_tracer("onb_agents").start_as_current_span(AGENT_SPAN, attributes=attributes),
+        ):
             ended = await self._run_graph(prepared)
         return _result(prepared, ended)
 

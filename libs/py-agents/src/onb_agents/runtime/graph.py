@@ -34,15 +34,18 @@ from onb_guardrails import (
     trusted_message,
 )
 from onb_guardrails.structured import SchemaErrors, parse_structured, repair_prompt
+from onb_telemetry import span_attributes
+from opentelemetry import trace
 
 from onb_agents.runtime.tools import ToolSet
-from onb_agents.runtime.trajectory import TrajectoryStep, capped_step, llm_step, tool_step
+from onb_agents.runtime.trajectory import TrajectoryStep, capped_step, llm_step, safe_name, tool_step
 
 __all__ = ["MAX_TOOL_CALLS_PER_TURN", "AgentState", "build_agent_graph", "recursion_limit"]
 
 AGENT: Final = "agent"
 TOOLS: Final = "tools"
 FINISH: Final = "finish"
+TOOL_SPAN: Final = "tool.call"
 MAX_TOOL_CALLS_PER_TURN: Final = 8
 TOO_MANY_CALLS: Final = f"too many tool calls in one turn (at most {MAX_TOOL_CALLS_PER_TURN}); this one was not run"
 _FIELD: Final = re.compile(r"[A-Za-z0-9_]{1,64}")
@@ -119,6 +122,12 @@ class _Nodes:
         return {"messages": [message], "trajectory": [tool_step(call["name"], call["args"], message)]}
 
     async def _execute(self, call: ToolCall) -> ToolMessage:
+        # One span per tool call, named by the plain identifier the trajectory records (ids only).
+        attributes = span_attributes(tool_name=safe_name(call["name"]))
+        with trace.get_tracer("onb_agents").start_as_current_span(TOOL_SPAN, attributes=attributes):
+            return await self._run_tool(call)
+
+    async def _run_tool(self, call: ToolCall) -> ToolMessage:
         call_id = call.get("id") or ""
         tool = self._bound.get(call["name"])
         if tool is None:  # never given to the agent: the hub decides, and audits it

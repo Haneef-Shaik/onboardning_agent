@@ -105,6 +105,7 @@ class Tools:
 
     opened: list[tuple[AgentTask, str]] = field(default_factory=list)
     on_open: Callable[[AgentTask], None] | None = None
+    bound: tuple[Any, ...] = ()
 
     @asynccontextmanager
     async def open(self, manifest: AgentManifest, task: AgentTask, token: str) -> AsyncIterator[ToolSet]:
@@ -115,7 +116,7 @@ class Tools:
         async def forward(name: str, args: Mapping[str, Any]) -> ForwardResult:
             return ForwardResult("denied", True)
 
-        yield ToolSet(bound=(), forward=forward)
+        yield ToolSet(bound=self.bound, forward=forward)
 
     def for_task(self, task_id: str) -> list[tuple[AgentTask, str]]:
         return [(t, token) for t, token in self.opened if t.task_id == task_id]
@@ -239,6 +240,12 @@ class Harness:
             )
         return str(started.run["_id"])
 
+    async def start_diamond(self, org: str = ORG) -> str:
+        """A run of the diamond a → (b, c) → d, every task on `db_agent`."""
+        return await self.start(
+            template(task_doc("a"), task_doc("b", "a"), task_doc("c", "a"), task_doc("d", "b", "c")), org
+        )
+
     async def execute(self, run_id: str, executor: AgentTaskExecutor, org: str = ORG) -> None:
         handler = start_run_handler(self.store, executor)
         job = JobContext(
@@ -269,3 +276,23 @@ class Harness:
     def everything_stored(self) -> str:
         """Every document of every collection as text, for scans."""
         return json.dumps([[name, doc] for name, doc in self.db.all_documents()], default=str, sort_keys=True)
+
+
+def find_tool() -> Any:
+    """A bound hub tool for tests: `mongo__find` answering a fixed document."""
+    from langchain_core.tools import StructuredTool
+    from pydantic import BaseModel
+
+    class FindArgs(BaseModel):
+        collection: str
+
+    async def find(collection: str) -> str:
+        return json.dumps({"documents": [], "count": 0})
+
+    return StructuredTool.from_function(
+        coroutine=find, name="mongo__find", description="Find documents", args_schema=FindArgs
+    )
+
+
+def tool_turn(name: str, args: Mapping[str, Any]) -> dict[str, Any]:
+    return {"content": "", "tool_calls": [{"name": name, "args": dict(args)}]}

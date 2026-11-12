@@ -30,8 +30,9 @@ from datetime import UTC, datetime
 from typing import Any, Final
 
 from onb_agents.runs import IllegalTransitionError, RunState, TransitionConflictError
-from onb_data import DataStore
+from onb_data import DataStore, current_tenant
 from onb_eventbus import Handler, JobContext
+from onb_telemetry import continue_from, span_attributes
 from pymongo.errors import PyMongoError
 
 from .executor import TaskExecutor
@@ -91,8 +92,11 @@ def start_run_handler(store: DataStore, executor: TaskExecutor, clock: Callable[
             return
         if run.get("status") not in _DRIVEN:
             return
+        attributes = span_attributes(org_id=current_tenant().org_id, run_id=run_id)
         try:
-            await _drive(runner, run)
+            # The run's span: every task span is its child (PRD §7.7), and it continues the request's trace.
+            with continue_from(run.get("traceparent"), "orchestrator.run", attributes=attributes):
+                await _drive(runner, run)
         except (PyMongoError, TransitionConflictError):
             raise  # transient: the bus retries the job
         except TaskStepError as error:
