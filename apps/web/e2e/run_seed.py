@@ -33,7 +33,7 @@ from onb_api.testing_mongo import memory_store
 from onb_contracts.auth import Role
 from onb_contracts.runs import RunCreate
 from onb_contracts.templates import Template
-from onb_data import tenant_scope
+from onb_data import DataStore, tenant_scope
 from pydantic import BaseModel
 
 ROOT: Final = Path(__file__).resolve().parents[3]
@@ -58,8 +58,11 @@ def _traceparent() -> str:
 class RunDriver:
     """What the orchestrator does to a stored run, for tests to play."""
 
-    def __init__(self, store: RunStore, service: RunService, hire_id: str, chat: ChatService) -> None:
+    def __init__(
+        self, store: RunStore, service: RunService, hire_id: str, chat: ChatService, data: DataStore | None = None
+    ) -> None:
         self.chat = chat  # UI-7: the run assistant's service, handed to `create_app`
+        self.data = data  # UI-6: the database under the runs, which the approvals and the outbox share
         self.hire_id = hire_id  # the seeded hire (UI-8's), which every test's run is for
         self._store = store
         self._service = service
@@ -152,4 +155,4 @@ async def run_services(
         draft = await templates.create_draft(Template.model_validate(document), actor_id=ADMIN.user_id)
         await templates.publish(draft.id, actor_id=ADMIN.user_id)
     await (chat := chat_service(store, run_store, control)).ensure_indexes()
-    return service, RunDriver(run_store, service, hire_id, chat)
+    return service, RunDriver(run_store, service, hire_id, chat, data=store)

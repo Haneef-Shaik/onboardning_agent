@@ -6,6 +6,8 @@ by their own integration tests, and the compose golden path is E2E-1's.
 
 UI-8: the admin routes' services, seeded in memory through the real services (`admin_seed.py`).
 UI-5: runs are seeded by `run_seed.py` and a test router (`/e2e/...`, 127.0.0.1 only) plays the orchestrator.
+UI-6: approvals (`approval_seed.py`) run through the real orchestrator consumers and the real webhook; the
+webhook secret is made up per run and never leaves this process.
 UI-4: that seed also builds the real document service next to the hire service (vault, masking, audited
 reveal, encrypted scans, one master key per run), which the hires screens use.
 
@@ -17,10 +19,12 @@ from __future__ import annotations
 
 import asyncio
 import os
+import secrets
 import sys
 
 import uvicorn
 from admin_seed import admin_services
+from approval_seed import WebhookCounter, approval_router, approval_world, counter_router
 from onb_api.app import create_app
 from onb_api.auth.passwords import hash_password
 from onb_api.auth.settings import AuthSettings, require_env
@@ -50,8 +54,17 @@ def main() -> int:
     users = asyncio.run(seeded(password))
     admin = asyncio.run(admin_services(users))  # includes the hire and document services (UI-4)
     driver = admin.pop("run_driver")  # UI-5: the test's stand-in for the orchestrator
-    app = create_app(auth=settings, users=users, chat=driver.chat, **admin)
+    # UI-6: approvals and the mock outbox over the runs' database, with the real orchestrator consumers.
+    approvals = asyncio.run(
+        approval_world(driver.data, admin["runs"], admin["hires"], driver.hire_id, secrets.token_urlsafe(32))
+    )
+    app = create_app(
+        auth=settings, users=users, chat=driver.chat, approvals=approvals.approvals, notify=approvals.notify, **admin
+    )
     app.include_router(driver_router(driver))
+    app.include_router(approval_router(approvals))
+    app.include_router(counter_router())
+    app.add_middleware(WebhookCounter)
     uvicorn.run(app, host=HOST, port=port, log_level="warning")
     return 0
 
