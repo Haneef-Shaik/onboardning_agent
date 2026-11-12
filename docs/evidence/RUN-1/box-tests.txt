@@ -88,5 +88,5 @@ libs/py-agents/tests/test_run_states.py::test_illegal_run_transitions_are_reject
 libs/py-agents/tests/test_run_states.py::test_illegal_run_transitions_are_rejected[failed-failed] PASSED [ 98%]
 apps/api/tests/test_runs_route.py::test_a_run_stays_pinned_to_its_version_after_a_newer_version_is_published PASSED [100%]
 
-====================== 81 passed, 65 deselected in 1.24s =======================
+====================== 81 passed, 65 deselected in 1.07s =======================
 exit=0

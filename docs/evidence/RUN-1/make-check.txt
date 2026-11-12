@@ -5,14 +5,14 @@ check_env_example: all 9 compose variables are documented in .env.example
 uv run --frozen ruff check tools scripts/check_env_example.py scripts/contracts.py
 All checks passed!
 uv run --frozen ruff format --check tools scripts/check_env_example.py scripts/contracts.py
-18 files already formatted
+20 files already formatted
 uv run --frozen mypy tools scripts/check_env_example.py scripts/contracts.py
-Success: no issues found in 18 source files
+Success: no issues found in 20 source files
 uv run --frozen pytest tools/tests scripts/plan/test_plan.py -q
-........................................................................ [ 41%]
-........................................................................ [ 82%]
-..............................                                                [100%]
-174 passed, 67 subtests passed in 6.25s
+........................................................................ [ 40%]
+........................................................................ [ 80%]
+...................................                                           [100%]
+179 passed, 67 subtests passed in 3.91s
 node_modules/.bin/nx run-many -t lint --output-style=static
 
  NX   Running target lint for 17 projects:
@@ -37,15 +37,6 @@ node_modules/.bin/nx run-many -t lint --output-style=static
 
 
 
-> nx run py-guardrails:lint
-
-[2m> [22muv run --frozen ruff check libs/py-guardrails
-
-[1;32mAll checks passed![0m
-[2m> [22muv run --frozen ruff format --check libs/py-guardrails
-
-28 files already formatted
-
 > nx run py-data:lint
 
 [2m> [22muv run --frozen ruff check libs/py-data
@@ -55,21 +46,21 @@ node_modules/.bin/nx run-many -t lint --output-style=static
 
 33 files already formatted
 
+> nx run py-guardrails:lint
+
+[2m> [22muv run --frozen ruff check libs/py-guardrails
+
+[1;32mAll checks passed![0m
+[2m> [22muv run --frozen ruff format --check libs/py-guardrails
+
+28 files already formatted
+
 > nx run py-telemetry:lint
 
 [2m> [22muv run --frozen ruff check libs/py-telemetry
 
 [1;32mAll checks passed![0m
 [2m> [22muv run --frozen ruff format --check libs/py-telemetry
-
-23 files already formatted
-
-> nx run py-contracts:lint
-
-[2m> [22muv run --frozen ruff check libs/py-contracts
-
-[1;32mAll checks passed![0m
-[2m> [22muv run --frozen ruff format --check libs/py-contracts
 
 23 files already formatted
 
@@ -81,6 +72,15 @@ node_modules/.bin/nx run-many -t lint --output-style=static
 [2m> [22muv run --frozen ruff format --check libs/py-crypto
 
 45 files already formatted
+
+> nx run py-contracts:lint
+
+[2m> [22muv run --frozen ruff check libs/py-contracts
+
+[1;32mAll checks passed![0m
+[2m> [22muv run --frozen ruff format --check libs/py-contracts
+
+28 files already formatted
 
 > nx run py-llm:lint
 
@@ -125,21 +125,7 @@ node_modules/.bin/nx run-many -t lint --output-style=static
 [1;32mAll checks passed![0m
 [2m> [22muv run --frozen ruff format --check apps/mcp-mocks
 
-19 files already formatted
-
-> nx run orchestrator:lint
-
-[2m> [22muv run --frozen ruff check apps/orchestrator
-
-[1;32mAll checks passed![0m
-[2m> [22muv run --frozen ruff format --check apps/orchestrator
-
-17 files already formatted
-
-> nx run ts-ui:lint
-
-> eslint --max-warnings=0 libs/ts-ui
-
+38 files already formatted
 
 > nx run py-evals:lint
 
@@ -150,19 +136,15 @@ node_modules/.bin/nx run-many -t lint --output-style=static
 
 56 files already formatted
 
+> nx run ts-ui:lint
+
+> eslint --max-warnings=0 libs/ts-ui
+
+
 > nx run ts-api-client:lint
 
 > eslint --max-warnings=0 libs/ts-api-client
 
-
-> nx run mcp-hub:lint
-
-[2m> [22muv run --frozen ruff check apps/mcp-hub
-
-[1;32mAll checks passed![0m
-[2m> [22muv run --frozen ruff format --check apps/mcp-hub
-
-31 files already formatted
 
 > nx run api:lint
 
@@ -171,22 +153,40 @@ node_modules/.bin/nx run-many -t lint --output-style=static
 [1;32mAll checks passed![0m
 [2m> [22muv run --frozen ruff format --check apps/api
 
-72 files already formatted
+96 files already formatted
+
+> nx run mcp-hub:lint
+
+[2m> [22muv run --frozen ruff check apps/mcp-hub
+
+[1;32mAll checks passed![0m
+[2m> [22muv run --frozen ruff format --check apps/mcp-hub
+
+32 files already formatted
 
 > nx run web:lint
 
 > eslint --max-warnings=0 apps/web
 
 
+> nx run orchestrator:lint
+
+[2m> [22muv run --frozen ruff check apps/orchestrator
+
+[1;32mAll checks passed![0m
+[2m> [22muv run --frozen ruff format --check apps/orchestrator
+
+17 files already formatted
+
 
 
  NX   Successfully ran target lint for 17 projects
 
 
-  Run duration:      2.8s
+  Run duration:      1.6s
   Cache:             0/17 hit (0%)
-  Critical path:     1.2s (1 task)
-  Recoverable time:  1.6s (56% of the run)
+  Critical path:     526ms (1 task)
+  Recoverable time:  1.1s (68% of the run)
 node_modules/.bin/nx run-many -t typecheck --output-style=static
 
  NX   Running target typecheck for 17 projects:
@@ -217,9 +217,9 @@ node_modules/.bin/nx run-many -t typecheck --output-style=static
 
 [1m[32mSuccess: no issues found in 33 source files(B[m
 
-> nx run py-contracts:typecheck
+> nx run py-telemetry:typecheck
 
-[2m> [22muv run --frozen mypy --cache-dir .mypy_cache/py-contracts libs/py-contracts/src libs/py-contracts/tests
+[2m> [22muv run --frozen mypy --cache-dir .mypy_cache/py-telemetry libs/py-telemetry/src libs/py-telemetry/tests libs/py-telemetry/tests_int
 
 [1m[32mSuccess: no issues found in 23 source files(B[m
 
@@ -229,11 +229,11 @@ node_modules/.bin/nx run-many -t typecheck --output-style=static
 
 [1m[32mSuccess: no issues found in 28 source files(B[m
 
-> nx run py-telemetry:typecheck
+> nx run py-contracts:typecheck
 
-[2m> [22muv run --frozen mypy --cache-dir .mypy_cache/py-telemetry libs/py-telemetry/src libs/py-telemetry/tests libs/py-telemetry/tests_int
+[2m> [22muv run --frozen mypy --cache-dir .mypy_cache/py-contracts libs/py-contracts/src libs/py-contracts/tests
 
-[1m[32mSuccess: no issues found in 23 source files(B[m
+[1m[32mSuccess: no issues found in 28 source files(B[m
 
 > nx run py-crypto:typecheck
 
@@ -241,11 +241,11 @@ node_modules/.bin/nx run-many -t typecheck --output-style=static
 
 [1m[32mSuccess: no issues found in 45 source files(B[m
 
-> nx run py-agents:typecheck
+> nx run py-llm:typecheck
 
-[2m> [22muv run --frozen mypy --cache-dir .mypy_cache/py-agents libs/py-agents/src libs/py-agents/tests
+[2m> [22muv run --frozen mypy --cache-dir .mypy_cache/py-llm libs/py-llm/src libs/py-llm/tests
 
-[1m[32mSuccess: no issues found in 59 source files(B[m
+[1m[32mSuccess: no issues found in 27 source files(B[m
 
 > nx run py-eventbus:typecheck
 
@@ -253,11 +253,17 @@ node_modules/.bin/nx run-many -t typecheck --output-style=static
 
 [1m[32mSuccess: no issues found in 19 source files(B[m
 
-> nx run py-llm:typecheck
+> nx run py-agents:typecheck
 
-[2m> [22muv run --frozen mypy --cache-dir .mypy_cache/py-llm libs/py-llm/src libs/py-llm/tests
+[2m> [22muv run --frozen mypy --cache-dir .mypy_cache/py-agents libs/py-agents/src libs/py-agents/tests
 
-[1m[32mSuccess: no issues found in 27 source files(B[m
+[1m[32mSuccess: no issues found in 59 source files(B[m
+
+> nx run mcp-mongo:typecheck
+
+[2m> [22muv run --frozen mypy --cache-dir .mypy_cache/mcp-mongo apps/mcp-mongo/src apps/mcp-mongo/tests apps/mcp-mongo/tests_int
+
+[1m[32mSuccess: no issues found in 34 source files(B[m
 
 > nx run ts-api-client:typecheck
 
@@ -269,23 +275,11 @@ node_modules/.bin/nx run-many -t typecheck --output-style=static
 > tsc -p libs/ts-ui/tsconfig.json
 
 
-> nx run orchestrator:typecheck
-
-[2m> [22muv run --frozen mypy --cache-dir .mypy_cache/orchestrator apps/orchestrator/src apps/orchestrator/tests apps/orchestrator/tests_int
-
-[1m[32mSuccess: no issues found in 17 source files(B[m
-
-> nx run mcp-mongo:typecheck
-
-[2m> [22muv run --frozen mypy --cache-dir .mypy_cache/mcp-mongo apps/mcp-mongo/src apps/mcp-mongo/tests apps/mcp-mongo/tests_int
-
-[1m[32mSuccess: no issues found in 34 source files(B[m
-
 > nx run mcp-mocks:typecheck
 
-[2m> [22muv run --frozen mypy --cache-dir .mypy_cache/mcp-mocks apps/mcp-mocks/src apps/mcp-mocks/tests
+[2m> [22muv run --frozen mypy --cache-dir .mypy_cache/mcp-mocks apps/mcp-mocks/src apps/mcp-mocks/tests apps/mcp-mocks/tests_int
 
-[1m[32mSuccess: no issues found in 19 source files(B[m
+[1m[32mSuccess: no issues found in 38 source files(B[m
 
 > nx run py-evals:typecheck
 
@@ -297,33 +291,37 @@ node_modules/.bin/nx run-many -t typecheck --output-style=static
 
 [2m> [22muv run --frozen mypy --cache-dir .mypy_cache/mcp-hub apps/mcp-hub/src apps/mcp-hub/tests apps/mcp-hub/tests_int
 
-[1m[32mSuccess: no issues found in 31 source files(B[m
+[1m[32mSuccess: no issues found in 32 source files(B[m
+
+> nx run api:typecheck
+
+[2m> [22muv run --frozen mypy --cache-dir .mypy_cache/api apps/api/src apps/api/tests
+
+[1m[32mSuccess: no issues found in 90 source files(B[m
+[2m> [22muv run --frozen mypy --cache-dir .mypy_cache/api-int apps/api/src apps/api/tests_int
+
+[1m[32mSuccess: no issues found in 69 source files(B[m
+
+> nx run orchestrator:typecheck
+
+[2m> [22muv run --frozen mypy --cache-dir .mypy_cache/orchestrator apps/orchestrator/src apps/orchestrator/tests apps/orchestrator/tests_int
+
+[1m[32mSuccess: no issues found in 17 source files(B[m
 
 > nx run web:typecheck
 
 > tsc -p apps/web/tsconfig.json && tsc -p apps/web/tsconfig.node.json
 
 
-> nx run api:typecheck
-
-[2m> [22muv run --frozen mypy --cache-dir .mypy_cache/api apps/api/src apps/api/tests
-
-[1m[32mSuccess: no issues found in 65 source files(B[m
-[2m> [22muv run --frozen mypy --cache-dir .mypy_cache/api-int apps/api/src apps/api/tests_int
-
-[1m[32mSuccess: no issues found in 49 source files(B[m
-
 
 
  NX   Successfully ran target typecheck for 17 projects
 
 
-  Run duration:      39.3s
+  Run duration:      4.7s
   Cache:             0/17 hit (0%)
-  Critical path:     12.0s (1 task)
-  Recoverable time:  27.3s (70% of the run)
-
-  Recommendation: Increase parallelism to recover up to 27.3s → https://nx.dev/docs/concepts/ci-concepts/parallelization-distribution?utm_source=nx-cli&utm_medium=cli&utm_campaign=performance-report&utm_content=parallelization.
+  Critical path:     1.4s (1 task)
+  Recoverable time:  3.3s (70% of the run)
 node_modules/.bin/nx run-many -t test --output-style=static
 
  NX   Running target test for 17 projects:
@@ -388,58 +386,7 @@ libs/py-telemetry/src/onb_telemetry/testing.py           41      1    98%   32
 -----------------------------------------------------------------------------------
 TOTAL                                                   575     14    98%
 [32mRequired test coverage of 80% reached. Total coverage: 97.57%
-[0m[32m============================= [32m[1m115 passed[0m[32m in 1.99s[0m[32m ==============================[0m
-
-> nx run py-contracts:test
-
-[2m> [22muv run --frozen pytest libs/py-contracts/tests -o cache_dir=.pytest_cache/py-contracts --cov=onb_contracts --cov-report=term-missing --cov-fail-under=80
-
-[1m============================= test session starts ==============================[0m
-platform darwin -- Python 3.12.13, pytest-9.2.0, pluggy-1.7.0
-cachedir: .pytest_cache/py-contracts
-rootdir: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-run-1
-configfile: pyproject.toml
-plugins: hypothesis-6.170.15, langsmith-0.14.17, cov-7.1.0, anyio-4.16.0
-collected 341 items
-
-libs/py-contracts/tests/test_agent_contracts.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                   [  1%][0m
-libs/py-contracts/tests/test_agent_output_contracts.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m [  6%]
-[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m [ 27%]
-[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                                               [ 35%][0m
-libs/py-contracts/tests/test_audit_contracts.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                    [ 36%][0m
-libs/py-contracts/tests/test_auth_contracts.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                [ 39%][0m
-libs/py-contracts/tests/test_envelope.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m [ 48%]
-[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                                                                     [ 50%][0m
-libs/py-contracts/tests/test_hires_contracts.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m    [ 56%][0m
-libs/py-contracts/tests/test_onb_contracts.py [32m.[0m[32m                          [ 56%][0m
-libs/py-contracts/tests/test_request_inputs.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m [ 63%]
-[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                                                 [ 70%][0m
-libs/py-contracts/tests/test_run_contracts.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m         [ 76%][0m
-libs/py-contracts/tests/test_template_contracts.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m [ 82%]
-[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m             [100%][0m
-
-================================ tests coverage ================================
-______________ coverage: platform darwin, python 3.12.13-final-0 _______________
-
-Name                                                        Stmts   Miss  Cover   Missing
------------------------------------------------------------------------------------------
-libs/py-contracts/src/onb_contracts/__init__.py                 5      0   100%
-libs/py-contracts/src/onb_contracts/agent_outputs.py          146      0   100%
-libs/py-contracts/src/onb_contracts/agents.py                  43      0   100%
-libs/py-contracts/src/onb_contracts/audit.py                   37      0   100%
-libs/py-contracts/src/onb_contracts/auth.py                    30      0   100%
-libs/py-contracts/src/onb_contracts/envelope.py                44      0   100%
-libs/py-contracts/src/onb_contracts/errors.py                  24      0   100%
-libs/py-contracts/src/onb_contracts/health.py                   9      0   100%
-libs/py-contracts/src/onb_contracts/hires.py                  110      0   100%
-libs/py-contracts/src/onb_contracts/inputs.py                  90      0   100%
-libs/py-contracts/src/onb_contracts/runs.py                    40      0   100%
-libs/py-contracts/src/onb_contracts/template_lifecycle.py      74      0   100%
-libs/py-contracts/src/onb_contracts/templates.py              159      0   100%
------------------------------------------------------------------------------------------
-TOTAL                                                         811      0   100%
-[32mRequired test coverage of 80% reached. Total coverage: 100.00%
-[0m[32m============================= [32m[1m341 passed[0m[32m in 0.69s[0m[32m ==============================[0m
+[0m[32m============================= [32m[1m115 passed[0m[32m in 1.00s[0m[32m ==============================[0m
 
 > nx run py-data:test
 
@@ -451,22 +398,22 @@ cachedir: .pytest_cache/py-data
 rootdir: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-run-1
 configfile: pyproject.toml
 plugins: hypothesis-6.170.15, langsmith-0.14.17, cov-7.1.0, anyio-4.16.0
-collected 441 items
+collected 446 items
 
 libs/py-data/tests/test_audit.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m [  8%]
-[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                                         [ 16%][0m
+[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                                         [ 15%][0m
 libs/py-data/tests/test_context.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                        [ 19%][0m
 libs/py-data/tests/test_exports.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                   [ 23%][0m
 libs/py-data/tests/test_onb_data.py [32m.[0m[32m                                    [ 23%][0m
 libs/py-data/tests/test_repository.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m [ 31%]
-[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                           [ 41%][0m
+[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                        [ 42%][0m
 libs/py-data/tests/test_safety_net.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m [ 49%]
 [0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m              [ 63%][0m
 libs/py-data/tests/test_safety_net_pytest.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                     [ 64%][0m
 libs/py-data/tests/test_safety_net_queue.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m [ 70%]
 [0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                                      [ 78%][0m
 libs/py-data/tests/test_store.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m [ 87%]
-[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                                                                 [ 89%][0m
+[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                                                               [ 89%][0m
 libs/py-data/tests/test_transactions_and_queue.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m [ 94%]
 [0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                                                 [100%][0m
 
@@ -482,17 +429,17 @@ libs/py-data/src/onb_data/context.py                28      0   100%
 libs/py-data/src/onb_data/errors.py                 11      0   100%
 libs/py-data/src/onb_data/queue.py                  72      1    99%   70
 libs/py-data/src/onb_data/queue_allowance.py        68      0   100%
-libs/py-data/src/onb_data/repository.py            104      0   100%
+libs/py-data/src/onb_data/repository.py            107      0   100%
 libs/py-data/src/onb_data/safety_net.py            266      0   100%
 libs/py-data/src/onb_data/safety_net_pytest.py      25      4    84%   52, 63-64, 70
 libs/py-data/src/onb_data/scoping.py               115      0   100%
 libs/py-data/src/onb_data/session.py                29      0   100%
-libs/py-data/src/onb_data/store.py                  97      1    99%   146
+libs/py-data/src/onb_data/store.py                  97      1    99%   149
 libs/py-data/src/onb_data/testing.py                34      3    91%   38, 78, 80
 ------------------------------------------------------------------------------
-TOTAL                                             1052      9    99%
-[32mRequired test coverage of 80% reached. Total coverage: 99.14%
-[0m[32m============================= [32m[1m441 passed[0m[32m in 6.89s[0m[32m ==============================[0m
+TOTAL                                             1055      9    99%
+[32mRequired test coverage of 80% reached. Total coverage: 99.15%
+[0m[32m============================= [32m[1m446 passed[0m[32m in 2.80s[0m[32m ==============================[0m
 
 > nx run py-crypto:test
 
@@ -540,7 +487,7 @@ libs/py-crypto/src/onb_crypto/blind_index.py        22      0   100%
 libs/py-crypto/src/onb_crypto/envelope.py           31      0   100%
 libs/py-crypto/src/onb_crypto/errors.py             15      0   100%
 libs/py-crypto/src/onb_crypto/grant_keys.py         92      5    95%   60, 84, 88, 91, 101
-libs/py-crypto/src/onb_crypto/grants.py            190      5    97%   102, 113-114, 143-144
+libs/py-crypto/src/onb_crypto/grants.py            191      5    97%   104, 115-116, 145-146
 libs/py-crypto/src/onb_crypto/key_store.py          77      2    97%   68, 86
 libs/py-crypto/src/onb_crypto/keyring.py           197      1    99%   277
 libs/py-crypto/src/onb_crypto/keys.py               90      1    99%   132
@@ -554,9 +501,66 @@ libs/py-crypto/src/onb_crypto/vault.py             202      6    97%   96, 102-1
 libs/py-crypto/src/onb_crypto/vault_indexes.py      10      0   100%
 libs/py-crypto/src/onb_crypto/vault_record.py      124      8    94%   116, 177, 190, 203, 216, 225, 228-229
 ------------------------------------------------------------------------------
-TOTAL                                             1414     39    97%
+TOTAL                                             1415     39    97%
 [32mRequired test coverage of 80% reached. Total coverage: 97.24%
-[0m[32m============================= [32m[1m424 passed[0m[32m in 3.51s[0m[32m ==============================[0m
+[0m[32m============================= [32m[1m424 passed[0m[32m in 1.42s[0m[32m ==============================[0m
+
+> nx run py-contracts:test
+
+[2m> [22muv run --frozen pytest libs/py-contracts/tests -o cache_dir=.pytest_cache/py-contracts --cov=onb_contracts --cov-report=term-missing --cov-fail-under=80
+
+[1m============================= test session starts ==============================[0m
+platform darwin -- Python 3.12.13, pytest-9.2.0, pluggy-1.7.0
+cachedir: .pytest_cache/py-contracts
+rootdir: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-run-1
+configfile: pyproject.toml
+plugins: hypothesis-6.170.15, langsmith-0.14.17, cov-7.1.0, anyio-4.16.0
+collected 375 items
+
+libs/py-contracts/tests/test_agent_contracts.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                  [  1%][0m
+libs/py-contracts/tests/test_agent_output_contracts.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m [  6%]
+[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m [ 25%]
+[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                                               [ 32%][0m
+libs/py-contracts/tests/test_audit_contracts.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                    [ 33%][0m
+libs/py-contracts/tests/test_auth_contracts.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                [ 36%][0m
+libs/py-contracts/tests/test_document_contracts.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m             [ 38%][0m
+libs/py-contracts/tests/test_envelope.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m [ 47%]
+[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                                                                     [ 48%][0m
+libs/py-contracts/tests/test_hires_contracts.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m    [ 53%][0m
+libs/py-contracts/tests/test_notify_contracts.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m [ 60%]
+[0m[32m.[0m[32m                                                                        [ 60%][0m
+libs/py-contracts/tests/test_onb_contracts.py [32m.[0m[32m                          [ 60%][0m
+libs/py-contracts/tests/test_request_inputs.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m [ 67%]
+[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                                                 [ 73%][0m
+libs/py-contracts/tests/test_run_contracts.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m         [ 78%][0m
+libs/py-contracts/tests/test_template_contracts.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m [ 84%]
+[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m             [100%][0m
+
+================================ tests coverage ================================
+______________ coverage: platform darwin, python 3.12.13-final-0 _______________
+
+Name                                                        Stmts   Miss  Cover   Missing
+-----------------------------------------------------------------------------------------
+libs/py-contracts/src/onb_contracts/__init__.py                 5      0   100%
+libs/py-contracts/src/onb_contracts/agent_outputs.py          146      0   100%
+libs/py-contracts/src/onb_contracts/agents.py                  50      0   100%
+libs/py-contracts/src/onb_contracts/audit.py                   37      0   100%
+libs/py-contracts/src/onb_contracts/auth.py                    30      0   100%
+libs/py-contracts/src/onb_contracts/documents.py               25      0   100%
+libs/py-contracts/src/onb_contracts/envelope.py                44      0   100%
+libs/py-contracts/src/onb_contracts/errors.py                  24      0   100%
+libs/py-contracts/src/onb_contracts/evals.py                   54     54     0%   9-109
+libs/py-contracts/src/onb_contracts/health.py                   9      0   100%
+libs/py-contracts/src/onb_contracts/hires.py                  110      0   100%
+libs/py-contracts/src/onb_contracts/inputs.py                  90      0   100%
+libs/py-contracts/src/onb_contracts/notify.py                 119      0   100%
+libs/py-contracts/src/onb_contracts/runs.py                    40      0   100%
+libs/py-contracts/src/onb_contracts/template_lifecycle.py      74      0   100%
+libs/py-contracts/src/onb_contracts/templates.py              159      0   100%
+-----------------------------------------------------------------------------------------
+TOTAL                                                        1016     54    95%
+[32mRequired test coverage of 80% reached. Total coverage: 94.69%
+[0m[32m============================= [32m[1m375 passed[0m[32m in 0.38s[0m[32m ==============================[0m
 
 > nx run py-eventbus:test
 
@@ -591,7 +595,7 @@ libs/py-eventbus/src/onb_eventbus/worker.py        160      7    96%   62, 67, 2
 ------------------------------------------------------------------------------
 TOTAL                                              409     15    96%
 [32mRequired test coverage of 80% reached. Total coverage: 96.33%
-[0m[32m============================== [32m[1m77 passed[0m[32m in 0.97s[0m[32m ==============================[0m
+[0m[32m============================== [32m[1m77 passed[0m[32m in 0.50s[0m[32m ==============================[0m
 
 > nx run py-llm:test
 
@@ -639,7 +643,7 @@ libs/py-llm/src/onb_llm/telemetry.py                 56      3    95%   48, 55, 
 -------------------------------------------------------------------------------
 TOTAL                                               584      7    99%
 [32mRequired test coverage of 80% reached. Total coverage: 98.80%
-[0m[32m============================= [32m[1m123 passed[0m[32m in 3.95s[0m[32m ==============================[0m
+[0m[32m============================= [32m[1m123 passed[0m[32m in 1.85s[0m[32m ==============================[0m
 
 > nx run py-guardrails:test
 
@@ -676,7 +680,7 @@ Name                                                      Stmts   Miss  Cover   
 ---------------------------------------------------------------------------------------
 libs/py-guardrails/src/onb_guardrails/__init__.py            10      0   100%
 libs/py-guardrails/src/onb_guardrails/budget.py              65      0   100%
-libs/py-guardrails/src/onb_guardrails/decision.py            41      0   100%
+libs/py-guardrails/src/onb_guardrails/decision.py            42      0   100%
 libs/py-guardrails/src/onb_guardrails/delimit.py             13      0   100%
 libs/py-guardrails/src/onb_guardrails/external.py            43      0   100%
 libs/py-guardrails/src/onb_guardrails/guarded.py            127      0   100%
@@ -690,9 +694,50 @@ libs/py-guardrails/src/onb_guardrails/pii/verhoeff.py        24      0   100%
 libs/py-guardrails/src/onb_guardrails/recorder.py            36      0   100%
 libs/py-guardrails/src/onb_guardrails/structured.py          29      0   100%
 ---------------------------------------------------------------------------------------
-TOTAL                                                       717      0   100%
+TOTAL                                                       718      0   100%
 [32mRequired test coverage of 80% reached. Total coverage: 100.00%
-[0m[32m============================= [32m[1m307 passed[0m[32m in 22.73s[0m[32m =============================[0m
+[0m[32m============================= [32m[1m307 passed[0m[32m in 11.05s[0m[32m =============================[0m
+
+> nx run mcp-mocks:test
+
+[2m> [22muv run --frozen pytest apps/mcp-mocks/tests -o cache_dir=.pytest_cache/mcp-mocks
+
+[1m============================= test session starts ==============================[0m
+platform darwin -- Python 3.12.13, pytest-9.2.0, pluggy-1.7.0
+cachedir: .pytest_cache/mcp-mocks
+rootdir: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-run-1
+configfile: pyproject.toml
+plugins: hypothesis-6.170.15, langsmith-0.14.17, cov-7.1.0, anyio-4.16.0
+collected 145 items
+
+apps/mcp-mocks/tests/test_contracts.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m            [ 15%][0m
+apps/mcp-mocks/tests/test_main.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                               [ 20%][0m
+apps/mcp-mocks/tests/test_no_external_calls.py [32m.[0m[32m.[0m[32m                        [ 22%][0m
+apps/mcp-mocks/tests/test_notify_in_app.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                     [ 28%][0m
+apps/mcp-mocks/tests/test_notify_main.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                    [ 36%][0m
+apps/mcp-mocks/tests/test_notify_server.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m              [ 47%][0m
+apps/mcp-mocks/tests/test_notify_sink.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m         [ 63%][0m
+apps/mcp-mocks/tests/test_onb_mcp_mocks.py [32m.[0m[32m                             [ 64%][0m
+apps/mcp-mocks/tests/test_review_fixes.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                      [ 70%][0m
+apps/mcp-mocks/tests/test_server.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                        [ 79%][0m
+apps/mcp-mocks/tests/test_telegram.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                  [ 91%][0m
+apps/mcp-mocks/tests/test_tools.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                         [100%][0m
+
+[32m============================= [32m[1m145 passed[0m[32m in 0.74s[0m[32m ==============================[0m
+
+> nx run ts-ui:test
+
+> vitest run --config libs/ts-ui/vitest.config.ts
+
+
+[1m[30m[46m RUN [49m[39m[22m [36mv5.1.0 [39m[90m/Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-run-1/libs/ts-ui[39m
+
+
+[2m Test Files [22m [1m[32m2 passed[39m[22m[90m (2)[39m
+[2m      Tests [22m [1m[32m11 passed[39m[22m[90m (11)[39m
+[2m   Start at [22m 16:36:02
+[2m   Duration [22m 586ms[2m (environment 73%, setup 14%, tests 6%, import 5%, transform 2%)[22m
+
 
 > nx run ts-api-client:test
 
@@ -704,9 +749,43 @@ TOTAL                                                       717      0   100%
 
 [2m Test Files [22m [1m[32m2 passed[39m[22m[90m (2)[39m
 [2m      Tests [22m [1m[32m6 passed[39m[22m[90m (6)[39m
-[2m   Start at [22m 15:17:08
-[2m   Duration [22m 236ms[2m (transform 55%, tests 22%, import 14%, worker 10%)[22m
+[2m   Start at [22m 16:36:03
+[2m   Duration [22m 82ms[2m (transform 46%, tests 28%, import 20%, worker 6%)[22m
 
+
+> nx run mcp-mongo:test
+
+[2m> [22muv run --frozen pytest apps/mcp-mongo/tests -o cache_dir=.pytest_cache/mcp-mongo
+
+[1m============================= test session starts ==============================[0m
+platform darwin -- Python 3.12.13, pytest-9.2.0, pluggy-1.7.0
+cachedir: .pytest_cache/mcp-mongo
+rootdir: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-run-1
+configfile: pyproject.toml
+plugins: hypothesis-6.170.15, langsmith-0.14.17, cov-7.1.0, anyio-4.16.0
+collected 523 items
+
+apps/mcp-mongo/tests/test_call_context.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m [  5%]
+[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                                                                   [  6%][0m
+apps/mcp-mongo/tests/test_contracts.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m [ 13%]
+[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                                                              [ 15%][0m
+apps/mcp-mongo/tests/test_db_users.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m    [ 21%][0m
+apps/mcp-mongo/tests/test_main.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                        [ 24%][0m
+apps/mcp-mongo/tests/test_onb_mcp_mongo.py [32m.[0m[32m                             [ 24%][0m
+apps/mcp-mongo/tests/test_policy.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m   [ 30%][0m
+apps/mcp-mongo/tests/test_server.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m [ 37%]
+[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                                                        [ 40%][0m
+apps/mcp-mongo/tests/test_server_validator.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m [ 45%]
+[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m            [ 57%][0m
+apps/mcp-mongo/tests/test_spans.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                     [ 60%][0m
+apps/mcp-mongo/tests/test_store_routing.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                     [ 62%][0m
+apps/mcp-mongo/tests/test_tool_surface.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m            [ 66%][0m
+apps/mcp-mongo/tests/test_validator.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m [ 72%]
+[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m [ 86%]
+[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m          [ 98%][0m
+apps/mcp-mongo/tests/test_validator_properties.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m              [100%][0m
+
+[32m============================= [32m[1m523 passed[0m[32m in 7.28s[0m[32m ==============================[0m
 
 > nx run py-agents:test
 
@@ -793,102 +872,24 @@ libs/py-agents/src/onb_agents/tokens.py                   94      3    97%   88,
 ------------------------------------------------------------------------------------
 TOTAL                                                   2351     55    98%
 [32mRequired test coverage of 80% reached. Total coverage: 97.66%
-[0m[32m============================= [32m[1m676 passed[0m[32m in 14.34s[0m[32m =============================[0m
+[0m[32m============================= [32m[1m676 passed[0m[32m in 9.03s[0m[32m ==============================[0m
 
-> nx run ts-ui:test
+> nx run web:test
 
-> vitest run --config libs/ts-ui/vitest.config.ts
+> vitest run --config apps/web/vitest.config.ts
 
+[33m(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - import "./aliases" without a file extension (apps/web/vitest.config.ts:3:25). Add the file extension
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.[39m
 
-[1m[30m[46m RUN [49m[39m[22m [36mv5.1.0 [39m[90m/Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-run-1/libs/ts-ui[39m
-
-
-[2m Test Files [22m [1m[32m2 passed[39m[22m[90m (2)[39m
-[2m      Tests [22m [1m[32m11 passed[39m[22m[90m (11)[39m
-[2m   Start at [22m 15:17:10
-[2m   Duration [22m 2.20s[2m (environment 78%, setup 13%, import 4%, transform 3%, tests 3%)[22m
+[1m[30m[46m RUN [49m[39m[22m [36mv5.1.0 [39m[90m/Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-run-1/apps/web[39m
 
 
-> nx run mcp-mocks:test
+[2m Test Files [22m [1m[32m10 passed[39m[22m[90m (10)[39m
+[2m      Tests [22m [1m[32m97 passed[39m[22m[90m (97)[39m
+[2m   Start at [22m 16:36:04
+[2m   Duration [22m 3.12s[2m (environment 47%, tests 38%, setup 8%, transform 4%, import 3%)[22m
 
-[2m> [22muv run --frozen pytest apps/mcp-mocks/tests -o cache_dir=.pytest_cache/mcp-mocks
-
-[1m============================= test session starts ==============================[0m
-platform darwin -- Python 3.12.13, pytest-9.2.0, pluggy-1.7.0
-cachedir: .pytest_cache/mcp-mocks
-rootdir: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-run-1
-configfile: pyproject.toml
-plugins: hypothesis-6.170.15, langsmith-0.14.17, cov-7.1.0, anyio-4.16.0
-collected 85 items
-
-apps/mcp-mocks/tests/test_contracts.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m            [ 25%][0m
-apps/mcp-mocks/tests/test_main.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                               [ 35%][0m
-apps/mcp-mocks/tests/test_no_external_calls.py [32m.[0m[32m.[0m[32m                        [ 37%][0m
-apps/mcp-mocks/tests/test_onb_mcp_mocks.py [32m.[0m[32m                             [ 38%][0m
-apps/mcp-mocks/tests/test_review_fixes.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                      [ 49%][0m
-apps/mcp-mocks/tests/test_server.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                        [ 64%][0m
-apps/mcp-mocks/tests/test_telegram.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                  [ 84%][0m
-apps/mcp-mocks/tests/test_tools.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                         [100%][0m
-
-[32m============================== [32m[1m85 passed[0m[32m in 1.42s[0m[32m ==============================[0m
-
-> nx run mcp-mongo:test
-
-[2m> [22muv run --frozen pytest apps/mcp-mongo/tests -o cache_dir=.pytest_cache/mcp-mongo
-
-[1m============================= test session starts ==============================[0m
-platform darwin -- Python 3.12.13, pytest-9.2.0, pluggy-1.7.0
-cachedir: .pytest_cache/mcp-mongo
-rootdir: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-run-1
-configfile: pyproject.toml
-plugins: hypothesis-6.170.15, langsmith-0.14.17, cov-7.1.0, anyio-4.16.0
-collected 523 items
-
-apps/mcp-mongo/tests/test_call_context.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m [  5%]
-[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                                                                   [  6%][0m
-apps/mcp-mongo/tests/test_contracts.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m [ 13%]
-[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                                                              [ 15%][0m
-apps/mcp-mongo/tests/test_db_users.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m    [ 21%][0m
-apps/mcp-mongo/tests/test_main.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                        [ 24%][0m
-apps/mcp-mongo/tests/test_onb_mcp_mongo.py [32m.[0m[32m                             [ 24%][0m
-apps/mcp-mongo/tests/test_policy.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m   [ 30%][0m
-apps/mcp-mongo/tests/test_server.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m [ 37%]
-[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                                                        [ 40%][0m
-apps/mcp-mongo/tests/test_server_validator.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m [ 45%]
-[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m            [ 57%][0m
-apps/mcp-mongo/tests/test_spans.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                     [ 60%][0m
-apps/mcp-mongo/tests/test_store_routing.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                     [ 62%][0m
-apps/mcp-mongo/tests/test_tool_surface.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m            [ 66%][0m
-apps/mcp-mongo/tests/test_validator.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m [ 72%]
-[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m [ 86%]
-[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m          [ 98%][0m
-apps/mcp-mongo/tests/test_validator_properties.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m              [100%][0m
-
-[32m============================= [32m[1m523 passed[0m[32m in 16.05s[0m[32m =============================[0m
-
-> nx run mcp-hub:test
-
-[2m> [22muv run --frozen pytest apps/mcp-hub/tests -o cache_dir=.pytest_cache/mcp-hub
-
-[1m============================= test session starts ==============================[0m
-platform darwin -- Python 3.12.13, pytest-9.2.0, pluggy-1.7.0
-cachedir: .pytest_cache/mcp-hub
-rootdir: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-run-1
-configfile: pyproject.toml
-plugins: hypothesis-6.170.15, langsmith-0.14.17, cov-7.1.0, anyio-4.16.0
-collected 138 items
-
-apps/mcp-hub/tests/test_downstream.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                            [  5%][0m
-apps/mcp-hub/tests/test_gateway.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                  [ 19%][0m
-apps/mcp-hub/tests/test_main.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                 [ 36%][0m
-apps/mcp-hub/tests/test_mocks.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                          [ 47%][0m
-apps/mcp-hub/tests/test_onb_mcp_hub.py [32m.[0m[32m                                 [ 47%][0m
-apps/mcp-hub/tests/test_policy.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m        [ 70%][0m
-apps/mcp-hub/tests/test_review_fixes.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                   [ 80%][0m
-apps/mcp-hub/tests/test_scan.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                             [ 89%][0m
-apps/mcp-hub/tests/test_server.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                        [100%][0m
-
-[32m============================= [32m[1m138 passed[0m[32m in 1.04s[0m[32m ==============================[0m
 
 > nx run orchestrator:test
 
@@ -908,24 +909,32 @@ apps/orchestrator/tests/test_run_failures.py [32m.[0m[32m.[0m[32m.[0m[32m
 apps/orchestrator/tests/test_run_graph.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m        [ 82%][0m
 apps/orchestrator/tests/test_worker_main.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                  [100%][0m
 
-[32m============================== [32m[1m62 passed[0m[32m in 1.83s[0m[32m ==============================[0m
+[32m============================== [32m[1m62 passed[0m[32m in 1.34s[0m[32m ==============================[0m
 
-> nx run web:test
+> nx run mcp-hub:test
 
-> vitest run --config apps/web/vitest.config.ts
+[2m> [22muv run --frozen pytest apps/mcp-hub/tests -o cache_dir=.pytest_cache/mcp-hub
 
-[33m(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
-  - import "./aliases" without a file extension (apps/web/vitest.config.ts:3:25). Add the file extension
-Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.[39m
+[1m============================= test session starts ==============================[0m
+platform darwin -- Python 3.12.13, pytest-9.2.0, pluggy-1.7.0
+cachedir: .pytest_cache/mcp-hub
+rootdir: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-run-1
+configfile: pyproject.toml
+plugins: hypothesis-6.170.15, langsmith-0.14.17, cov-7.1.0, anyio-4.16.0
+collected 158 items
 
-[1m[30m[46m RUN [49m[39m[22m [36mv5.1.0 [39m[90m/Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-run-1/apps/web[39m
+apps/mcp-hub/tests/test_downstream.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                            [  4%][0m
+apps/mcp-hub/tests/test_gateway.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                  [ 17%][0m
+apps/mcp-hub/tests/test_main.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m          [ 36%][0m
+apps/mcp-hub/tests/test_mocks.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                          [ 45%][0m
+apps/mcp-hub/tests/test_notify.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                          [ 53%][0m
+apps/mcp-hub/tests/test_onb_mcp_hub.py [32m.[0m[32m                                 [ 54%][0m
+apps/mcp-hub/tests/test_policy.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m        [ 74%][0m
+apps/mcp-hub/tests/test_review_fixes.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                   [ 82%][0m
+apps/mcp-hub/tests/test_scan.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                             [ 90%][0m
+apps/mcp-hub/tests/test_server.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                        [100%][0m
 
-
-[2m Test Files [22m [1m[32m5 passed[39m[22m[90m (5)[39m
-[2m      Tests [22m [1m[32m61 passed[39m[22m[90m (61)[39m
-[2m   Start at [22m 15:17:15
-[2m   Duration [22m 3.17s[2m (tests 42%, environment 40%, setup 10%, transform 5%, import 3%)[22m
-
+[32m============================= [32m[1m158 passed[0m[32m in 0.86s[0m[32m ==============================[0m
 
 > nx run py-evals:test
 
@@ -937,26 +946,26 @@ cachedir: .pytest_cache/py-evals
 rootdir: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-run-1
 configfile: pyproject.toml
 plugins: hypothesis-6.170.15, langsmith-0.14.17, cov-7.1.0, anyio-4.16.0
-collected 255 items
+collected 256 items
 
 libs/py-evals/tests/test_cases.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                    [  7%][0m
 libs/py-evals/tests/test_check_catalog.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m [ 19%]
 [0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                                         [ 31%][0m
 libs/py-evals/tests/test_check_rules.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m [ 44%]
 [0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                                                  [ 53%][0m
-libs/py-evals/tests/test_cli.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                             [ 58%][0m
+libs/py-evals/tests/test_cli.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                             [ 57%][0m
 libs/py-evals/tests/test_fixture.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                          [ 62%][0m
 libs/py-evals/tests/test_harness_boundary.py [32m.[0m[32m.[0m[32m.[0m[32m                         [ 63%][0m
 libs/py-evals/tests/test_hub_audit.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                             [ 65%][0m
-libs/py-evals/tests/test_metrics_gates.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m               [ 72%][0m
+libs/py-evals/tests/test_metrics_gates.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m               [ 71%][0m
 libs/py-evals/tests/test_onb_evals.py [32m.[0m[32m                                  [ 72%][0m
-libs/py-evals/tests/test_paths.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                         [ 78%][0m
-libs/py-evals/tests/test_reporting.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                           [ 81%][0m
-libs/py-evals/tests/test_review_fixes.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                        [ 84%][0m
-libs/py-evals/tests/test_runner.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                          [ 89%][0m
+libs/py-evals/tests/test_paths.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                         [ 77%][0m
+libs/py-evals/tests/test_reporting.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                           [ 80%][0m
+libs/py-evals/tests/test_review_fixes.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                        [ 83%][0m
+libs/py-evals/tests/test_runner.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                          [ 88%][0m
 libs/py-evals/tests/test_session.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                            [ 92%][0m
-libs/py-evals/tests/test_template_contract.py [32m.[0m[32m.[0m[32m                         [ 93%][0m
-libs/py-evals/tests/test_toolbox.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                    [100%][0m
+libs/py-evals/tests/test_template_contract.py [32m.[0m[32m.[0m[32m                         [ 92%][0m
+libs/py-evals/tests/test_toolbox.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                   [100%][0m
 
 ================================ tests coverage ================================
 ______________ coverage: platform darwin, python 3.12.13-final-0 _______________
@@ -993,13 +1002,13 @@ libs/py-evals/src/onb_evals/session.py               133      1    99%   101
 libs/py-evals/src/onb_evals/spans.py                  56      2    96%   37, 71
 libs/py-evals/src/onb_evals/template_graph.py         84      4    95%   43, 108-110
 libs/py-evals/src/onb_evals/tokens.py                 30      0   100%
-libs/py-evals/src/onb_evals/toolbox.py               145      2    99%   158, 178
+libs/py-evals/src/onb_evals/toolbox.py               139      2    99%   153, 173
 libs/py-evals/src/onb_evals/values.py                 20      0   100%
 libs/py-evals/src/onb_evals/vault_seed.py             57      0   100%
 --------------------------------------------------------------------------------
-TOTAL                                               1949     42    98%
-[32mRequired test coverage of 80% reached. Total coverage: 97.85%
-[0m[32m============================= [32m[1m255 passed[0m[32m in 9.04s[0m[32m ==============================[0m
+TOTAL                                               1943     42    98%
+[32mRequired test coverage of 80% reached. Total coverage: 97.84%
+[0m[32m============================= [32m[1m256 passed[0m[32m in 7.16s[0m[32m ==============================[0m
 
 > nx run api:test
 
@@ -1011,47 +1020,55 @@ cachedir: .pytest_cache/api
 rootdir: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-run-1
 configfile: pyproject.toml
 plugins: hypothesis-6.170.15, langsmith-0.14.17, cov-7.1.0, anyio-4.16.0
-collected 446 items
+collected 679 items
 
-apps/api/tests/test_agents_route.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                   [  4%][0m
-apps/api/tests/test_audit_route.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m [ 12%]
-[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                                                                   [ 13%][0m
-apps/api/tests/test_auth_settings.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m             [ 18%][0m
-apps/api/tests/test_body_limit.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                                [ 20%][0m
-apps/api/tests/test_data_errors.py [32m.[0m[32m.[0m[32m.[0m[32m                                   [ 21%][0m
-apps/api/tests/test_errors.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                             [ 24%][0m
-apps/api/tests/test_hires.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m [ 33%]
-[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                                                        [ 37%][0m
-apps/api/tests/test_hires_failures.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                              [ 38%][0m
-apps/api/tests/test_login.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                    [ 44%][0m
-apps/api/tests/test_manager_scope.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                           [ 46%][0m
-apps/api/tests/test_onb_api.py [32m.[0m[32m                                         [ 46%][0m
-apps/api/tests/test_openapi_export.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                             [ 47%][0m
-apps/api/tests/test_org_from_token.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                    [ 51%][0m
-apps/api/tests/test_passwords.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                                [ 52%][0m
-apps/api/tests/test_role_matrix.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m [ 61%]
-[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m           [ 75%][0m
-apps/api/tests/test_routes.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                                     [ 76%][0m
-apps/api/tests/test_runs_route.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                      [ 80%][0m
-apps/api/tests/test_telemetry.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                                    [ 81%][0m
-apps/api/tests/test_template_lifecycle.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                      [ 83%][0m
-apps/api/tests/test_templates_route.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m           [ 88%][0m
-apps/api/tests/test_tokens.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m          [ 95%][0m
+apps/api/tests/test_agents_route.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m              [  3%][0m
+apps/api/tests/test_audit_route.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m [  8%]
+[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                                                                   [  9%][0m
+apps/api/tests/test_auth_settings.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m          [ 13%][0m
+apps/api/tests/test_body_limit.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                                [ 14%][0m
+apps/api/tests/test_data_errors.py [32m.[0m[32m.[0m[32m.[0m[32m                                   [ 15%][0m
+apps/api/tests/test_document_bucket.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m [ 19%]
+[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                                                            [ 21%][0m
+apps/api/tests/test_documents.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m [ 27%]
+[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                                                [ 31%][0m
+apps/api/tests/test_errors.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                             [ 33%][0m
+apps/api/tests/test_evals_route.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m               [ 36%][0m
+apps/api/tests/test_hires.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m [ 43%]
+[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                                                        [ 45%][0m
+apps/api/tests/test_hires_failures.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                              [ 46%][0m
+apps/api/tests/test_login.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                    [ 49%][0m
+apps/api/tests/test_manager_scope.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                           [ 51%][0m
+apps/api/tests/test_notify_routes.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m              [ 54%][0m
+apps/api/tests/test_onb_api.py [32m.[0m[32m                                         [ 54%][0m
+apps/api/tests/test_openapi_export.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                             [ 55%][0m
+apps/api/tests/test_org_from_token.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                    [ 57%][0m
+apps/api/tests/test_passwords.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                                [ 58%][0m
+apps/api/tests/test_role_matrix.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m [ 64%]
+[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m [ 74%]
+[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                                                               [ 76%][0m
+apps/api/tests/test_routes.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                                     [ 77%][0m
+apps/api/tests/test_runs_route.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                      [ 79%][0m
+apps/api/tests/test_seed_command.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                          [ 81%][0m
+apps/api/tests/test_seed_spec.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                 [ 84%][0m
+apps/api/tests/test_seeder.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                           [ 87%][0m
+apps/api/tests/test_telemetry.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                                    [ 87%][0m
+apps/api/tests/test_template_lifecycle.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                      [ 88%][0m
+apps/api/tests/test_templates_route.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m           [ 92%][0m
+apps/api/tests/test_tokens.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m          [ 97%][0m
 apps/api/tests/test_validation_details.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m            [100%][0m
 
-[32m============================= [32m[1m446 passed[0m[32m in 13.26s[0m[32m =============================[0m
+[32m============================= [32m[1m679 passed[0m[32m in 14.50s[0m[32m =============================[0m
 
 
 
  NX   Successfully ran target test for 17 projects
 
 
-  Run duration:      47.1s
+  Run duration:      29.7s
   Cache:             0/17 hit (0%)
-  Critical path:     24.8s (1 task)
-  Recoverable time:  22.4s (47% of the run)
-
-  Recommendation: Increase parallelism to recover up to 22.4s → https://nx.dev/docs/concepts/ci-concepts/parallelization-distribution?utm_source=nx-cli&utm_medium=cli&utm_campaign=performance-report&utm_content=parallelization.
+  Critical path:     15.2s (1 task)
+  Recoverable time:  14.5s (49% of the run)
 infra/mongo/gen-keyfile.sh
 gen-keyfile: keeping existing infra/mongo/keyfile
 docker compose up -d --wait --build
@@ -1061,29 +1078,26 @@ docker compose up -d --wait --build
 #1 DONE 0.0s
 
 #2 [internal] load build definition from Dockerfile
-#2 DONE 0.0s
-
-#2 [internal] load build definition from Dockerfile
-#2 transferring dockerfile: 578B 0.0s done
+#2 transferring dockerfile: 578B done
 #2 DONE 0.0s
 
 #3 [internal] load metadata for docker.io/otel/opentelemetry-collector-contrib:0.165.0@sha256:e40d61f10c9a617cca1ffd1be4d7e2b3a4b0f0001798ff07e58cabe82e618cea
-#3 DONE 0.6s
+#3 DONE 0.1s
 
 #4 [internal] load metadata for docker.io/library/alpine:3.24.4@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf
-#4 DONE 0.6s
+#4 DONE 0.1s
 
 #5 [internal] load .dockerignore
 #5 transferring context: 2B done
-#5 DONE 0.1s
+#5 DONE 0.0s
 
-#6 [stage-1 1/3] FROM docker.io/library/alpine:3.24.4@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf
-#6 resolve docker.io/library/alpine:3.24.4@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf 0.1s done
-#6 DONE 0.1s
+#6 [upstream 1/1] FROM docker.io/otel/opentelemetry-collector-contrib:0.165.0@sha256:e40d61f10c9a617cca1ffd1be4d7e2b3a4b0f0001798ff07e58cabe82e618cea
+#6 resolve docker.io/otel/opentelemetry-collector-contrib:0.165.0@sha256:e40d61f10c9a617cca1ffd1be4d7e2b3a4b0f0001798ff07e58cabe82e618cea done
+#6 DONE 0.0s
 
-#7 [upstream 1/1] FROM docker.io/otel/opentelemetry-collector-contrib:0.165.0@sha256:e40d61f10c9a617cca1ffd1be4d7e2b3a4b0f0001798ff07e58cabe82e618cea
-#7 resolve docker.io/otel/opentelemetry-collector-contrib:0.165.0@sha256:e40d61f10c9a617cca1ffd1be4d7e2b3a4b0f0001798ff07e58cabe82e618cea 0.1s done
-#7 DONE 0.1s
+#7 [stage-1 1/3] FROM docker.io/library/alpine:3.24.4@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf
+#7 resolve docker.io/library/alpine:3.24.4@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf done
+#7 DONE 0.0s
 
 #8 [stage-1 2/3] RUN adduser -D -H -u 10001 otel
 #8 CACHED
@@ -1093,31 +1107,50 @@ docker compose up -d --wait --build
 
 #10 exporting to image
 #10 exporting layers done
-#10 exporting manifest sha256:dca50eab0e27e57934f87d2564d4b61ac26a43cc8cacdaf683224ca73a4634cf 0.0s done
+#10 exporting manifest sha256:dca50eab0e27e57934f87d2564d4b61ac26a43cc8cacdaf683224ca73a4634cf done
 #10 exporting config sha256:a2f3b9372f597bec59d692c27769526847380e98c52516dc9206711ad257125e done
-#10 exporting attestation manifest sha256:072995069e14b095be157718b1dff5d31dacf2d39b68957f9b90669169e67974
-#10 exporting attestation manifest sha256:072995069e14b095be157718b1dff5d31dacf2d39b68957f9b90669169e67974 0.0s done
-#10 exporting manifest list sha256:33b3475cb54a7c61b40515820d132d08f699753a17ffbf8c9d33f62852515b89 0.1s done
-#10 naming to docker.io/onb/otel-collector:0.165.0
+#10 exporting attestation manifest sha256:cc0f6c9444abbd728b4eee0a0636d8386f1fb8c55ccfc91d24d537a5b39c4ac9 done
+#10 exporting manifest list sha256:39cf34d6a33478c6456039b8a107fbecffb1cc7f647d8f904fa192e4163113e8
+#10 exporting manifest list sha256:39cf34d6a33478c6456039b8a107fbecffb1cc7f647d8f904fa192e4163113e8 done
 #10 naming to docker.io/onb/otel-collector:0.165.0 done
-#10 unpacking to docker.io/onb/otel-collector:0.165.0 0.0s done
-#10 DONE 0.3s
+#10 unpacking to docker.io/onb/otel-collector:0.165.0 done
+#10 DONE 0.0s
 
 #11 resolving provenance for metadata file
-#11 DONE 0.2s
+#11 DONE 0.0s
  Image onb/otel-collector:0.165.0 Built 
- Container ob-run-1-otel-collector-1 Running 
- Container ob-run-1-jaeger-1 Running 
- Container ob-run-1-caddy-1 Running 
- Container ob-run-1-mongo-1 Running 
+ Network ob-run-1_backend Creating 
+ Network ob-run-1_edge Creating 
+ Network ob-run-1_backend Creating 
+ Network ob-run-1_edge Creating 
+ Network ob-run-1_edge Created 
+ Network ob-run-1_edge Created 
+ Network ob-run-1_backend Created 
+ Network ob-run-1_backend Created 
+ Container ob-run-1-mongo-1 Creating 
+ Container ob-run-1-jaeger-1 Creating 
+ Container ob-run-1-jaeger-1 Created 
+ Container ob-run-1-otel-collector-1 Creating 
+ Container ob-run-1-caddy-1 Creating 
+ Container ob-run-1-otel-collector-1 Created 
+ Container ob-run-1-mongo-1 Created 
+ Container ob-run-1-caddy-1 Created 
+ Container ob-run-1-jaeger-1 Starting 
+ Container ob-run-1-mongo-1 Starting 
+ Container ob-run-1-jaeger-1 Started 
  Container ob-run-1-jaeger-1 Waiting 
  Container ob-run-1-jaeger-1 Waiting 
+ Container ob-run-1-mongo-1 Started 
  Container ob-run-1-jaeger-1 Healthy 
  Container ob-run-1-jaeger-1 Healthy 
+ Container ob-run-1-otel-collector-1 Starting 
+ Container ob-run-1-caddy-1 Starting 
+ Container ob-run-1-otel-collector-1 Started 
+ Container ob-run-1-caddy-1 Started 
+ Container ob-run-1-caddy-1 Waiting 
  Container ob-run-1-mongo-1 Waiting 
  Container ob-run-1-otel-collector-1 Waiting 
  Container ob-run-1-jaeger-1 Waiting 
- Container ob-run-1-caddy-1 Waiting 
  Container ob-run-1-jaeger-1 Healthy 
  Container ob-run-1-otel-collector-1 Healthy 
  Container ob-run-1-mongo-1 Healthy 
@@ -1125,17 +1158,22 @@ docker compose up -d --wait --build
 set -a && . ./.env && set +a && \
 	uv run --frozen pytest tools/tests_xt -q -o cache_dir=.pytest_cache/tests-xt && \
 	node_modules/.bin/nx run-many -t test-xt --output-style=static
-........................................................................ [ 34%]
-........................................................................ [ 69%]
-..............................................................           [100%]
-cross-tenant surface: 22 API routes, 8 MCP tools, 1 event consumers
+........................................................................ [ 28%]
+........................................................................ [ 56%]
+........................................................................ [ 84%]
+........................................                                 [100%]
+cross-tenant surface: 28 API routes, 9 MCP tools, 2 event consumers
   route    GET    /agents
   route    GET    /agents/{name}
   route    GET    /audit
+  route    GET    /evals/runs
+  route    GET    /evals/runs/{run_id}
   route    GET    /health
   route    GET    /hires
   route    GET    /hires/{hire_id}
+  route    GET    /hires/{hire_id}/documents
   route    GET    /me
+  route    GET    /mock-outbox
   route    GET    /pii-access-log
   route    GET    /templates
   route    GET    /templates/drafts
@@ -1143,12 +1181,14 @@ cross-tenant surface: 22 API routes, 8 MCP tools, 1 event consumers
   route    GET    /templates/{key}/versions/{version}
   route    POST   /auth/login
   route    POST   /hires
+  route    POST   /hires/{hire_id}/documents
   route    POST   /hires/{hire_id}/pii/{field}/reveal
   route    POST   /runs
   route    POST   /templates/drafts
   route    POST   /templates/drafts/{draft_id}/publish
   route    POST   /templates/drafts/{draft_id}/validate
   route    POST   /templates/{key}/versions/{version}/archive
+  route    POST   /webhooks/telegram
   route    PUT    /hires/{hire_id}/pii/{field}
   route    PUT    /templates/drafts/{draft_id}
   tool     mcp-mocks.create_bitbucket_account
@@ -1159,8 +1199,10 @@ cross-tenant surface: 22 API routes, 8 MCP tools, 1 event consumers
   tool     mcp-mongo.insert_one
   tool     mcp-mongo.list_collections
   tool     mcp-mongo.update_one
+  tool     mcp-notify.notify_send
+  consumer notify.in_app
   consumer orchestrator.start_run
-206 passed in 358.04s (0:05:58)
+256 passed in 254.12s (0:04:14)
 
  NX   Running target test-xt for project mcp-hub:
 
@@ -1178,23 +1220,23 @@ cachedir: .pytest_cache/mcp-hub-xt
 rootdir: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-run-1
 configfile: pyproject.toml
 plugins: hypothesis-6.170.15, langsmith-0.14.17, cov-7.1.0, anyio-4.16.0
-collected 12 items
+collected 13 items
 
 apps/mcp-hub/tests_int/test_hub_xt.py 
-make test-xt: hub tools covered: mocks__create_bitbucket_account, mocks__provision_laptop, mongo__aggregate, mongo__count, mongo__find, mongo__insert_one, mongo__list_collections, mongo__update_one
-[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m
+make test-xt: hub tools covered: mocks__create_bitbucket_account, mocks__provision_laptop, mongo__aggregate, mongo__count, mongo__find, mongo__insert_one, mongo__list_collections, mongo__update_one, notify__notify_send
+[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m
 apps/mcp-hub/tests_int/test_safety_net_guard.py [32m.[0m[32m.[0m
 
-[32m============================= [32m[1m12 passed[0m[32m in 14.70s[0m[32m ==============================[0m
+[32m============================== [32m[1m13 passed[0m[32m in 5.81s[0m[32m ==============================[0m
 
 
 
  NX   Successfully ran target test-xt for project mcp-hub
 
 
-  Run duration:      17.5s
+  Run duration:      7.2s
   Cache:             0/1 hit (0%)
-  Critical path:     17.5s (1 task)
+  Critical path:     7.2s (1 task)
   Recoverable time:  <1ms
 make check: all passed
 exit=0
