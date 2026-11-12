@@ -18,8 +18,9 @@
    and, when the agent failed, `failure = {kind, reason}` (codes and counts only). A failed outcome raises
    `AgentTaskFailedError`, so the runner marks the task `failed` and the run fails visibly.
 
-A task never sees a hire's values: the agent's input is the action, the template's `inputs` (which the
-template validator keeps free of PII), and the hire's id. Raw PII is resolved only at a sink.
+A task never sees a hire's PII: the agent's input is built by `agent_input` (ADR 0021): the action, the
+template's `inputs`, the hire's id, two opaque references and the hire's non-PII variables. Raw PII is
+resolved only at a sink.
 """
 
 from __future__ import annotations
@@ -40,6 +41,7 @@ from onb_guardrails import Budget, BudgetLimits, ExternalGuard
 from onb_llm import LLMRuntime, LLMSelection
 from pymongo.errors import PyMongoError
 
+from .agent_input import agent_input
 from .executor import TaskWork
 
 __all__ = [
@@ -135,6 +137,7 @@ class AgentTaskExecutor:
     ) -> None:
         if run_max_tokens < 1:
             raise ValueError("run_max_tokens must be a positive number of tokens")
+        self._store = store
         self._runs = RunStore(store)
         self._agents = agents
         self._models = models
@@ -157,7 +160,9 @@ class AgentTaskExecutor:
                 org_id=current_tenant().org_id,
                 run_id=work.run_id,
                 task_id=work.task_id,
-                input=_agent_input(template_task, str(run["hire_id"])),
+                input=await agent_input(
+                    self._store, current_tenant().org_id, work.run_id, template_task, str(run["hire_id"])
+                ),
             )
             choice = await self._model(registered.manifest, task)
             budget = await self._run_budget(work.run_id)
@@ -272,16 +277,6 @@ def _template_task(run: Mapping[str, Any], task_id: str) -> Mapping[str, Any]:
             found: Mapping[str, Any] = task
             return found
     raise LookupError("the run's DAG has no such task")
-
-
-def _agent_input(template_task: Mapping[str, Any], hire_id: str) -> dict[str, Any]:
-    """What the agent is asked: the action, the template's inputs and the hire's id. Never a hire value."""
-    return {
-        "action": template_task["action"],
-        "title": template_task["title"],
-        "inputs": dict(template_task.get("inputs") or {}),
-        "hire_id": hire_id,
-    }
 
 
 def _stored(result: AgentRunResult) -> dict[str, Any]:
