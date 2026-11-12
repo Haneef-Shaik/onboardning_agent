@@ -4,6 +4,7 @@ import { QueryClientProvider, type QueryClient } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { Navigate, Route, Routes, useLocation } from "react-router";
 import { AdminSection } from "./admin/AdminSection";
+import { ApprovalsSection } from "./approvals/ApprovalsSection";
 import { AuthProvider, useAuth } from "./auth/AuthProvider";
 import type { SessionStore } from "./auth/session";
 import { canAccess, navFor, safeReturnPath, sectionOf } from "./nav/nav";
@@ -96,6 +97,14 @@ function AppRoutes({ client }: { client: ApiClient }) {
           element={
             <RequireSection me={me}>
               <RunsPage client={client} role={me.role} />
+            </RequireSection>
+          }
+        />
+        <Route
+          path="/approvals/*"
+          element={
+            <RequireSection me={me}>
+              <ApprovalsSection client={client} me={me} basePath="/approvals" />
             </RequireSection>
           }
         />
