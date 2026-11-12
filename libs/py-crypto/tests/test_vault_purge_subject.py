@@ -73,7 +73,8 @@ def test_purge_subject_keeps_the_consent_record() -> None:
     put(vault, VaultField.AADHAAR, "999900001231")
     before = list(store.tenant(CONSENT_COLLECTION).documents)
     in_org(ORG_A, vault.purge_subject(ORG_A, subject_id=HIRE_1))
-    assert before and store.tenant(CONSENT_COLLECTION).documents == before
+    assert before
+    assert store.tenant(CONSENT_COLLECTION).documents == before
 
 
 def test_purge_subject_leaves_other_subjects_and_orgs_alone() -> None:
