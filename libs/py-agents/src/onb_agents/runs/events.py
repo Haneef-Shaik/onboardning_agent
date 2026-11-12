@@ -12,14 +12,20 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Final
 
+from onb_contracts.notify import SINK_REJECTED, SINK_REJECTED_CONSUMER
 from onb_data import DataStore
 from onb_eventbus import MongoEventBus, QueueSettings
 
-__all__ = ["RUN_STARTED", "START_RUN", "SUBSCRIPTIONS", "run_bus", "started_key"]
+__all__ = ["FAIL_TASK", "RUN_STARTED", "SINK_REJECTED", "START_RUN", "SUBSCRIPTIONS", "run_bus", "started_key"]
 
 RUN_STARTED: Final = "run.started"
 START_RUN: Final = "orchestrator.start_run"
-SUBSCRIPTIONS: Final[Mapping[str, tuple[str, ...]]] = {RUN_STARTED: (START_RUN,)}
+FAIL_TASK: Final = SINK_REJECTED_CONSUMER
+"""`orchestrator.fail_task`: fails the task a sink refused a grant for (`task.sink_rejected`, NOTIF-1)."""
+SUBSCRIPTIONS: Final[Mapping[str, tuple[str, ...]]] = {
+    RUN_STARTED: (START_RUN,),
+    SINK_REJECTED: (FAIL_TASK,),
+}
 
 
 def started_key(run_id: str) -> str:

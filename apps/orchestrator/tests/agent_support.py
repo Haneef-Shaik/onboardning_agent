@@ -11,9 +11,10 @@ test double that keeps the production interfaces.
 
 from __future__ import annotations
 
+import inspect
 import json
 import secrets
-from collections.abc import AsyncIterator, Callable, Mapping, Sequence
+from collections.abc import AsyncIterator, Awaitable, Callable, Mapping, Sequence
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
@@ -104,14 +105,16 @@ class Tools:
     """A `ToolSource` with no tools. `on_open` runs when the runtime opens its hub connection."""
 
     opened: list[tuple[AgentTask, str]] = field(default_factory=list)
-    on_open: Callable[[AgentTask], None] | None = None
+    on_open: Callable[[AgentTask], Awaitable[None] | None] | None = None
     bound: tuple[Any, ...] = ()
 
     @asynccontextmanager
     async def open(self, manifest: AgentManifest, task: AgentTask, token: str) -> AsyncIterator[ToolSet]:
         self.opened.append((task, token))
         if self.on_open is not None:
-            self.on_open(task)
+            outcome = self.on_open(task)
+            if inspect.isawaitable(outcome):
+                await outcome
 
         async def forward(name: str, args: Mapping[str, Any]) -> ForwardResult:
             return ForwardResult("denied", True)

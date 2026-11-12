@@ -22,12 +22,12 @@ from dataclasses import dataclass
 from typing import Any
 
 import pytest
-from onb_agents.runs import RUN_STARTED, START_RUN
+from onb_agents.runs import FAIL_TASK, RUN_STARTED, SINK_REJECTED, START_RUN
 from onb_contracts.notify import CHANGE_REQUEST_DECIDED, IN_APP_CONSUMER, NOTIFY_SUBSCRIPTIONS, RUN_BLOCKED
 from onb_data import DataStore, current_tenant, tenant_scope
 from onb_eventbus import Handler, JobContext, MongoEventBus
 from onb_mcp_mocks.notify.in_app import in_app_handler
-from onb_orchestrator.consumer import start_run_handler
+from onb_orchestrator.consumer import fail_task_handler, start_run_handler
 from onb_orchestrator.executor import StubExecutor
 
 from .conftest import Unscoped, World
@@ -52,6 +52,11 @@ def _start_run(store: DataStore) -> Handler:
     return start_run_handler(store, StubExecutor())
 
 
+def _fail_task(store: DataStore) -> Handler:
+    """The orchestrator's real `task.sink_rejected` consumer (RUN-3)."""
+    return fail_task_handler(store)
+
+
 # One row per platform consumer.
 CONSUMER_CASES: Mapping[str, ConsumerCase] = {
     # NOTIF-1: a blocked run tells the org's HR users in-app; `test_the_in_app_consumer_*` covers its
@@ -62,6 +67,18 @@ CONSUMER_CASES: Mapping[str, ConsumerCase] = {
     # RUN-1: the orchestrator executes the org's seeded run (`XT_RUNS`): it reads and writes
     # `onboarding_runs`, `run_tasks` and its checkpoints, all in the job's org.
     START_RUN: ConsumerCase(RUN_STARTED, lambda org: {"run_id": XT_RUNS[org][0]}, _start_run),
+    # RUN-3: a sink refused a grant; the consumer fails that org's running task (the seeded runs are
+    # only `started`, so it finds none to fail: the cross-tenant check is that it touches nothing of org B).
+    FAIL_TASK: ConsumerCase(
+        SINK_REJECTED,
+        lambda org: {
+            "run_id": XT_RUNS[org][0],
+            "agent": "provisioning_agent",
+            "sink": "notify.telegram",
+            "reason": "wrong_run",
+        },
+        _fail_task,
+    ),
 }
 
 
@@ -232,3 +249,42 @@ def test_the_orchestrator_completes_an_org_a_run_entirely_in_org_a(xt_world: Wor
     assert checkpoints
     assert {c["org_id"] for c in checkpoints} == {ORG_A}
     assert foreign_threads == 0
+
+
+# --- orchestrator.fail_task (RUN-3): its own cross-tenant check ---------------------------------------
+
+
+def test_an_org_a_rejection_naming_org_bs_running_task_fails_nothing_in_org_b(
+    xt_world: World, unscoped: Unscoped
+) -> None:
+    """A confused deputy: org A's `task.sink_rejected` carries org B's run and task ids while that task is
+    `running`. The consumer reads in org A only, so org B's task keeps running and nothing of B changes."""
+    b_run = XT_RUNS[ORG_B][0]
+    with unscoped("root setup: org B's first task is running, as if its agent were mid-task"):
+        db = xt_world.root_db
+        first = db["run_tasks"].find_one({"run_id": b_run}, sort=[("position", 1)])
+        assert first is not None
+        db["run_tasks"].update_one({"_id": first["_id"]}, {"$set": {"status": "running"}})
+
+    async def go() -> None:
+        store = xt_world.store()
+        try:
+            bus = MongoEventBus(store, subscriptions={SINK_REJECTED: [FAIL_TASK]})
+            await bus.ensure_indexes()
+            payload = {"run_id": b_run, "task_id": first["task_id"], "agent": "x", "sink": "s", "reason": "wrong_run"}
+            with tenant_scope(ORG_A):
+                await bus.publish(SINK_REJECTED, payload, idempotency_key="xt-foreign-reject", run_id=b_run)
+            worker = bus.worker({FAIL_TASK: fail_task_handler(store)})
+            while await worker.run_once() is not None:
+                pass
+        finally:
+            await store.close()
+
+    before = xt_world.org_b_snapshot(unscoped)
+    asyncio.run(go())
+    assert xt_world.org_b_snapshot(unscoped) == before, "an org-A rejection changed org B"
+    with unscoped("root read-back of org B's task"):
+        after = xt_world.root_db["run_tasks"].find_one({"_id": first["_id"]})
+    assert after is not None
+    assert after["status"] == "running"
+    assert "failure" not in after

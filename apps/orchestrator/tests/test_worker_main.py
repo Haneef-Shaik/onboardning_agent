@@ -43,10 +43,10 @@ def test_the_secret_is_never_in_the_settings_repr() -> None:
     assert "hunter2" not in repr(settings)
 
 
-def test_prepare_makes_every_index_and_subscribes_only_the_start_run_consumer() -> None:
+def test_prepare_makes_every_index_and_subscribes_the_run_consumers() -> None:
     db = MemoryDatabase()
     worker = asyncio.run(prepare(memory_store(db), stub_delay=0.0))
-    assert worker.consumers == (START_RUN,)
+    assert worker.consumers == (START_RUN, "orchestrator.fail_task")  # RUN-3 adds fail_task
     indexed = {name for name, coll in db.collections.items() if coll.indexes}
     assert {"onboarding_runs", "run_tasks", "run_checkpoints", "run_checkpoint_writes", "events", "jobs"} <= indexed
 

@@ -251,7 +251,8 @@ def test_the_traceparent_of_the_request_is_stored_on_the_run() -> None:
 
 
 def test_the_run_bus_subscribes_the_orchestrator_to_run_started() -> None:
-    assert SUBSCRIPTIONS == {RUN_STARTED: (START_RUN,)}
+    # RUN-3 adds `orchestrator.fail_task` for `task.sink_rejected` (NOTIF-1); run.started is unchanged.
+    assert SUBSCRIPTIONS == {RUN_STARTED: (START_RUN,), "task.sink_rejected": ("orchestrator.fail_task",)}
     assert started_key("run_x") == "run:run_x:started"
     bus = run_bus(memory_store(MemoryDatabase()))
-    assert bus.consumers() == (START_RUN,)
+    assert bus.consumers() == ("orchestrator.fail_task", START_RUN)

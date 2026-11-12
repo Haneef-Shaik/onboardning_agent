@@ -8,7 +8,7 @@
 The orchestrator (`apps/orchestrator`) consumes `run.started` and executes the run's tasks.
 """
 
-from .events import RUN_STARTED, START_RUN, SUBSCRIPTIONS, run_bus, started_key
+from .events import FAIL_TASK, RUN_STARTED, SINK_REJECTED, START_RUN, SUBSCRIPTIONS, run_bus, started_key
 from .records import (
     HIRE_VARIABLES,
     RUN_TASKS,
@@ -33,10 +33,12 @@ from .states import (
 from .store import RunStore, TransitionConflictError
 
 __all__ = [
+    "FAIL_TASK",
     "HIRE_VARIABLES",
     "RUNS",
     "RUN_STARTED",
     "RUN_TASKS",
+    "SINK_REJECTED",
     "START_ACTION",
     "START_RUN",
     "SUBSCRIPTIONS",

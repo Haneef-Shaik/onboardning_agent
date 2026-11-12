@@ -143,4 +143,12 @@ class RunExecutor:
         if failure is not None:
             await self.runs.move_task(run_id, task["task_id"], TaskState.FAILED, at=self.clock(), expected=task)
             raise TaskFailedError(failure)
-        await self.runs.move_task(run_id, task["task_id"], TaskState.DONE, at=self.clock(), expected=task)
+        try:
+            await self.runs.move_task(run_id, task["task_id"], TaskState.DONE, at=self.clock(), expected=task)
+        except TransitionConflictError:
+            # The task was moved while it ran: a sink's rejection fails it (`orchestrator.fail_task`).
+            # A task failed from outside never turns `done`, whatever its agent reports.
+            current = await self.runs.task(run_id, task["task_id"])
+            if current is not None and current["status"] == TaskState.FAILED.value:
+                raise TaskFailedError(TaskState.FAILED.value) from None
+            raise

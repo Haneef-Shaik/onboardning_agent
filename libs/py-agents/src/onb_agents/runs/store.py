@@ -108,9 +108,13 @@ class RunStore:
         """Store what an agent task produced (`result`; left as it is when None) and why it failed, if it did
         (`failure = {kind, reason}`: codes and counts, never message text). Call it before the state move,
         so a failed task shows its cause."""
-        changes: dict[str, Any] = {"failure": dict(failure) if failure else None}
+        changes: dict[str, Any] = {}
+        if failure is not None:  # never clear a cause another writer recorded (a sink's rejection)
+            changes["failure"] = dict(failure)
         if result is not None:
             changes["result"] = dict(result)
+        if not changes:
+            return
         outcome = await self._tasks.update_one({"run_id": run_id, "task_id": task_id}, {"$set": changes})
         if outcome.matched == 0:
             raise LookupError("no such task in this run")

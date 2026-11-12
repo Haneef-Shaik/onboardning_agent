@@ -113,4 +113,8 @@ def test_foreign_callback_data_is_not_ours(data: str | None) -> None:
 
 
 def test_the_in_app_consumer_is_subscribed_to_its_events() -> None:
-    assert NOTIFY_SUBSCRIPTIONS == {"change_request.decided": [IN_APP_CONSUMER], "run.blocked": [IN_APP_CONSUMER]}
+    assert NOTIFY_SUBSCRIPTIONS == {
+        "change_request.decided": [IN_APP_CONSUMER],
+        "run.blocked": [IN_APP_CONSUMER],
+        "task.sink_rejected": ["orchestrator.fail_task"],  # RUN-3: the orchestrator fails the task
+    }

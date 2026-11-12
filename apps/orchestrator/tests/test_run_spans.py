@@ -69,10 +69,10 @@ def test_a_runs_spans_form_run_task_agent_llm_and_tool(tmp_path: Path) -> None:
     for task_span in tasks:
         assert parent_of(task_span, spans) is run_span  # run → task, parallel branches included
     for agent_span in agents:
-        task_span = parent_of(agent_span, spans)
-        assert task_span is not None
-        assert task_span.name == "orchestrator.task"
-        assert attr(agent_span, "task_id") == attr(task_span, "task_id")
+        owner = parent_of(agent_span, spans)
+        assert owner is not None
+        assert owner.name == "orchestrator.task"
+        assert attr(agent_span, "task_id") == attr(owner, "task_id")
         assert attr(agent_span, "agent.name") == "db_agent"
     for tool_span in tools:
         parent = parent_of(tool_span, spans)

@@ -25,11 +25,12 @@ belong to RUN-2. Logs carry ids and error types only.
 from __future__ import annotations
 
 import logging
+import re
 from collections.abc import Callable, Mapping
 from datetime import UTC, datetime
 from typing import Any, Final
 
-from onb_agents.runs import IllegalTransitionError, RunState, TransitionConflictError
+from onb_agents.runs import IllegalTransitionError, RunState, RunStore, TaskState, TransitionConflictError
 from onb_data import DataStore, current_tenant
 from onb_eventbus import Handler, JobContext
 from onb_telemetry import continue_from, span_attributes
@@ -39,7 +40,7 @@ from .executor import TaskExecutor
 from .graph import RunGraphState, build_run_graph
 from .runner import RunExecutor, TaskStepError
 
-__all__ = ["start_run_handler"]
+__all__ = ["fail_task_handler", "start_run_handler"]
 
 _log = logging.getLogger("onb_orchestrator")
 _MAX_RUN_ID: Final = 128
@@ -115,3 +116,74 @@ def start_run_handler(store: DataStore, executor: TaskExecutor, clock: Callable[
 async def _fail(runner: RunExecutor, run_id: str, error_type: str) -> None:
     _log.warning("run failed", extra={"run_id": run_id, "error_type": error_type})
     await _finish(runner, run_id, RunState.FAILED)
+
+
+# --- orchestrator.fail_task: a sink refused a task's grant (NOTIF-1, ADR 0013) -------------------------
+
+SINK_REJECTED_KIND: Final = "sink_rejected"
+_REASON: Final = re.compile(r"[a-z][a-z0-9_]{0,63}")
+_PAYLOAD_ERROR: Final = "a task.sink_rejected payload needs a run_id, a reason code and an optional task_id/agent"
+
+
+def _text(payload: Mapping[str, Any], name: str, *, required: bool) -> str | None:
+    value = payload.get(name)
+    if value is None and not required:
+        return None
+    if not isinstance(value, str) or not 0 < len(value) <= _MAX_RUN_ID:
+        raise ValueError(_PAYLOAD_ERROR)
+    return value
+
+
+def _rejection(payload: Mapping[str, Any]) -> tuple[str, str | None, str | None, str]:
+    """(run_id, task_id, agent, reason) of a `task.sink_rejected` payload; `ValueError` for any other shape."""
+    reason = _text(payload, "reason", required=True)
+    run_id = _text(payload, "run_id", required=True)
+    if reason is None or run_id is None or not _REASON.fullmatch(reason):
+        raise ValueError(_PAYLOAD_ERROR)
+    return run_id, _text(payload, "task_id", required=False), _text(payload, "agent", required=False), reason
+
+
+async def _fail_running(runs: RunStore, run_id: str, task_id: str, reason: str, at: datetime) -> bool:
+    """Fail one task if it is `running`, with the sink's reason on it. A task that finished meanwhile
+    (its own move won the race) stays as it is."""
+    for _ in range(2):
+        task = await runs.task(run_id, task_id)
+        if task is None or task["status"] != TaskState.RUNNING.value:
+            return False
+        await runs.record_outcome(run_id, task_id, result=None, failure={"kind": SINK_REJECTED_KIND, "reason": reason})
+        try:
+            await runs.move_task(run_id, task_id, TaskState.FAILED, at=at, expected=task)
+        except TransitionConflictError:
+            continue
+        return True
+    return False
+
+
+def fail_task_handler(store: DataStore, clock: Callable[[], datetime] = _utc_now) -> Handler:
+    """The `orchestrator.fail_task` consumer: a sink refused a grant, so the task it was for fails.
+
+    The task is the payload's `task_id` or, when the sink did not know it, every `running` task of the
+    run for the payload's agent (every running task when no agent is named): fail closed. Only `running`
+    tasks fail, since a grant exists only for a task that started; finished tasks and other orgs' runs
+    are left alone (the read is tenant-scoped, so a foreign run id is a run that does not exist). The
+    run itself fails when its driver sees the failed task (`orchestrator.start_run`)."""
+    runs = RunStore(store)
+
+    async def handle(job: JobContext) -> None:
+        run_id, task_id, agent, reason = _rejection({**job.payload})
+        if await runs.get(run_id) is None:
+            _log.info("task.sink_rejected for a run this org does not have; nothing to do")
+            return
+        if task_id is not None:
+            targets = [task_id]
+        else:
+            targets = [
+                t["task_id"]
+                for t in await runs.tasks(run_id)
+                if t["status"] == TaskState.RUNNING.value and agent in (None, t["agent"])
+            ]
+        for target in targets:
+            if await _fail_running(runs, run_id, target, reason, clock()):
+                _log.warning("task failed by a sink rejection", extra={"run_id": run_id, "task_id": target})
+
+    return handle

@@ -45,6 +45,7 @@ __all__ = [
     "PTK_PATTERN",
     "RUN_BLOCKED",
     "SINK_REJECTED",
+    "SINK_REJECTED_CONSUMER",
     "TELEGRAM_AUTH_HEADER",
     "TELEGRAM_CALLBACKS_COLLECTION",
     "TELEGRAM_SINK",
@@ -101,9 +102,13 @@ RUN_BLOCKED: Final = "run.blocked"
 """Published by RUN-2: `{run_id, task_id}`; the org's HR and HR_ADMIN users are told in-app."""
 
 IN_APP_CONSUMER: Final = "notify.in_app"
+SINK_REJECTED_CONSUMER: Final = "orchestrator.fail_task"
+"""The orchestrator's consumer of `task.sink_rejected` (RUN-3): it fails the task. It is subscribed here,
+not only in the run bus, because the sink that publishes the event builds its bus with this map."""
 NOTIFY_SUBSCRIPTIONS: Final[dict[str, list[str]]] = {
     CHANGE_REQUEST_DECIDED: [IN_APP_CONSUMER],
     RUN_BLOCKED: [IN_APP_CONSUMER],
+    SINK_REJECTED: [SINK_REJECTED_CONSUMER],
 }
 """The notification consumers, by event type: every publisher of these events builds its bus with them."""
 
