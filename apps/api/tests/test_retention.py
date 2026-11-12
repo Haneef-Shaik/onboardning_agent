@@ -50,8 +50,14 @@ class FlakyAudit:
     def __init__(self, inner: InMemoryAuditLog) -> None:
         self.inner = inner
         self.fail_next = False
+        self.allow_before_failing: int | None = None
 
     async def audit(self, **kwargs: Any) -> str:
+        if self.allow_before_failing is not None:
+            if self.allow_before_failing == 0:
+                self.allow_before_failing = None
+                raise RuntimeError("audit write failed")
+            self.allow_before_failing -= 1
         if self.fail_next:
             self.fail_next = False
             raise RuntimeError("audit write failed")
@@ -372,6 +378,19 @@ def test_a_crash_after_the_vault_purge_is_finished_and_audited_once_by_the_next_
     third = env.run(env.job.run_once())
     assert third.hires_purged == 0
     assert len(env.purge_audits(outcome=AuditOutcome.SUCCESS)) == 3
+
+
+def test_a_crash_between_two_audit_writes_does_not_audit_the_first_value_twice(env: Env) -> None:
+    env.add_hire()
+    env.add_run()
+    env.clock.set_day(90)
+    env.flaky.allow_before_failing = 1
+    assert env.run(env.job.run_once()).failures == 1
+    assert len(env.purge_audits(outcome=AuditOutcome.SUCCESS)) == 1
+    env.clock.set_day(91)
+    assert env.run(env.job.run_once()).hires_purged == 1
+    targets = [e.target for e in env.purge_audits(outcome=AuditOutcome.SUCCESS)]
+    assert len(targets) == len(set(targets)) == 3
 
 
 def test_a_tampered_record_fails_that_hire_audits_a_failure_and_the_others_go_on(env: Env) -> None:
