@@ -1,0 +1,251 @@
+python3 scripts/plan/plan.py check
+plan ok: 67 goals, 34 ledger rows
+python3 scripts/check_env_example.py
+check_env_example: all 9 compose variables are documented in .env.example
+uv run --frozen ruff check tools scripts/check_env_example.py scripts/contracts.py
+All checks passed!
+uv run --frozen ruff format --check tools scripts/check_env_example.py scripts/contracts.py
+20 files already formatted
+uv run --frozen mypy tools scripts/check_env_example.py scripts/contracts.py
+Success: no issues found in 20 source files
+uv run --frozen pytest tools/tests scripts/plan/test_plan.py -q
+..........................................FFFFFFF....................... [ 40%]
+........................................................................ [ 80%]
+...................................                                           [100%]
+=================================== FAILURES ===================================
+__________________ test_the_committed_contracts_match_the_api __________________
+
+contracts = <module 'contracts_script' from '/Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-agt-1/scripts/contracts.py'>
+
+    def test_the_committed_contracts_match_the_api(contracts: ModuleType) -> None:
+>       assert contracts.drifted(contracts.OPENAPI, contracts.SCHEMA) == []
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tools/tests/test_contracts.py:41: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/contracts.py:64: in drifted
+    return [path for path, _ in _differences(openapi_path, schema_path)]
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+scripts/contracts.py:68: in _differences
+    openapi, schema = _expected()
+                      ^^^^^^^^^^^
+scripts/contracts.py:59: in _expected
+    return _render(Path(tmp))
+           ^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+workdir = PosixPath('/var/folders/0s/4k0smcx56zl9hdj404qnz2s80000gp/T/onb-contracts-wyn0lu_1')
+
+    def _render(workdir: Path) -> tuple[str, str]:
+        """The OpenAPI document and the TS schema the current API produces."""
+        if not GENERATOR.exists():
+>           raise FileNotFoundError(f"{GENERATOR} is missing: run `npm ci` (or `make bootstrap`)")
+E           FileNotFoundError: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-agt-1/node_modules/.bin/openapi-typescript is missing: run `npm ci` (or `make bootstrap`)
+
+scripts/contracts.py:37: FileNotFoundError
+____________________ test_a_stale_openapi_document_is_drift ____________________
+
+contracts = <module 'contracts_script' from '/Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-agt-1/scripts/contracts.py'>
+committed_copy = (PosixPath('/private/var/folders/0s/4k0smcx56zl9hdj404qnz2s80000gp/T/pytest-of-Adya/pytest-1763/test_a_stale_openapi_d...var/folders/0s/4k0smcx56zl9hdj404qnz2s80000gp/T/pytest-of-Adya/pytest-1763/test_a_stale_openapi_document_0/schema.ts'))
+
+    def test_a_stale_openapi_document_is_drift(contracts: ModuleType, committed_copy: tuple[Path, Path]) -> None:
+        openapi, schema = committed_copy
+        openapi.write_text(openapi.read_text(encoding="utf-8").replace('"getHealth"', '"getHealthOld"'), encoding="utf-8")
+>       assert contracts.drifted(openapi, schema) == [openapi]
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tools/tests/test_contracts.py:47: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/contracts.py:64: in drifted
+    return [path for path, _ in _differences(openapi_path, schema_path)]
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+scripts/contracts.py:68: in _differences
+    openapi, schema = _expected()
+                      ^^^^^^^^^^^
+scripts/contracts.py:59: in _expected
+    return _render(Path(tmp))
+           ^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+workdir = PosixPath('/var/folders/0s/4k0smcx56zl9hdj404qnz2s80000gp/T/onb-contracts-xymvdmdz')
+
+    def _render(workdir: Path) -> tuple[str, str]:
+        """The OpenAPI document and the TS schema the current API produces."""
+        if not GENERATOR.exists():
+>           raise FileNotFoundError(f"{GENERATOR} is missing: run `npm ci` (or `make bootstrap`)")
+E           FileNotFoundError: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-agt-1/node_modules/.bin/openapi-typescript is missing: run `npm ci` (or `make bootstrap`)
+
+scripts/contracts.py:37: FileNotFoundError
+_______________________ test_a_stale_ts_client_is_drift ________________________
+
+contracts = <module 'contracts_script' from '/Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-agt-1/scripts/contracts.py'>
+committed_copy = (PosixPath('/private/var/folders/0s/4k0smcx56zl9hdj404qnz2s80000gp/T/pytest-of-Adya/pytest-1763/test_a_stale_ts_client...var/folders/0s/4k0smcx56zl9hdj404qnz2s80000gp/T/pytest-of-Adya/pytest-1763/test_a_stale_ts_client_is_drif0/schema.ts'))
+
+    def test_a_stale_ts_client_is_drift(contracts: ModuleType, committed_copy: tuple[Path, Path]) -> None:
+        openapi, schema = committed_copy
+        schema.write_text(schema.read_text(encoding="utf-8") + "// edited by hand\n", encoding="utf-8")
+>       assert contracts.drifted(openapi, schema) == [schema]
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tools/tests/test_contracts.py:53: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/contracts.py:64: in drifted
+    return [path for path, _ in _differences(openapi_path, schema_path)]
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+scripts/contracts.py:68: in _differences
+    openapi, schema = _expected()
+                      ^^^^^^^^^^^
+scripts/contracts.py:59: in _expected
+    return _render(Path(tmp))
+           ^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+workdir = PosixPath('/var/folders/0s/4k0smcx56zl9hdj404qnz2s80000gp/T/onb-contracts-rm_x6otw')
+
+    def _render(workdir: Path) -> tuple[str, str]:
+        """The OpenAPI document and the TS schema the current API produces."""
+        if not GENERATOR.exists():
+>           raise FileNotFoundError(f"{GENERATOR} is missing: run `npm ci` (or `make bootstrap`)")
+E           FileNotFoundError: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-agt-1/node_modules/.bin/openapi-typescript is missing: run `npm ci` (or `make bootstrap`)
+
+scripts/contracts.py:37: FileNotFoundError
+____________________ test_a_missing_committed_file_is_drift ____________________
+
+contracts = <module 'contracts_script' from '/Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-agt-1/scripts/contracts.py'>
+committed_copy = (PosixPath('/private/var/folders/0s/4k0smcx56zl9hdj404qnz2s80000gp/T/pytest-of-Adya/pytest-1763/test_a_missing_committ...var/folders/0s/4k0smcx56zl9hdj404qnz2s80000gp/T/pytest-of-Adya/pytest-1763/test_a_missing_committed_file_0/schema.ts'))
+
+    def test_a_missing_committed_file_is_drift(contracts: ModuleType, committed_copy: tuple[Path, Path]) -> None:
+        openapi, schema = committed_copy
+        schema.unlink()
+>       assert contracts.drifted(openapi, schema) == [schema]
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tools/tests/test_contracts.py:59: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/contracts.py:64: in drifted
+    return [path for path, _ in _differences(openapi_path, schema_path)]
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+scripts/contracts.py:68: in _differences
+    openapi, schema = _expected()
+                      ^^^^^^^^^^^
+scripts/contracts.py:59: in _expected
+    return _render(Path(tmp))
+           ^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+workdir = PosixPath('/var/folders/0s/4k0smcx56zl9hdj404qnz2s80000gp/T/onb-contracts-nergxhcf')
+
+    def _render(workdir: Path) -> tuple[str, str]:
+        """The OpenAPI document and the TS schema the current API produces."""
+        if not GENERATOR.exists():
+>           raise FileNotFoundError(f"{GENERATOR} is missing: run `npm ci` (or `make bootstrap`)")
+E           FileNotFoundError: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-agt-1/node_modules/.bin/openapi-typescript is missing: run `npm ci` (or `make bootstrap`)
+
+scripts/contracts.py:37: FileNotFoundError
+___________________ test_check_fails_with_a_diff_and_the_fix ___________________
+
+contracts = <module 'contracts_script' from '/Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-agt-1/scripts/contracts.py'>
+committed_copy = (PosixPath('/private/var/folders/0s/4k0smcx56zl9hdj404qnz2s80000gp/T/pytest-of-Adya/pytest-1763/test_check_fails_with_...var/folders/0s/4k0smcx56zl9hdj404qnz2s80000gp/T/pytest-of-Adya/pytest-1763/test_check_fails_with_a_diff_a0/schema.ts'))
+capsys = <_pytest.capture.CaptureFixture object at 0x10bcbafc0>
+
+    def test_check_fails_with_a_diff_and_the_fix(
+        contracts: ModuleType, committed_copy: tuple[Path, Path], capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        openapi, schema = committed_copy
+        openapi.write_text("{}\n", encoding="utf-8")
+>       assert contracts.check(openapi, schema) == 1
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tools/tests/test_contracts.py:67: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/contracts.py:81: in check
+    stale = _differences(openapi_path, schema_path)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+scripts/contracts.py:68: in _differences
+    openapi, schema = _expected()
+                      ^^^^^^^^^^^
+scripts/contracts.py:59: in _expected
+    return _render(Path(tmp))
+           ^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+workdir = PosixPath('/var/folders/0s/4k0smcx56zl9hdj404qnz2s80000gp/T/onb-contracts-i_yilz7t')
+
+    def _render(workdir: Path) -> tuple[str, str]:
+        """The OpenAPI document and the TS schema the current API produces."""
+        if not GENERATOR.exists():
+>           raise FileNotFoundError(f"{GENERATOR} is missing: run `npm ci` (or `make bootstrap`)")
+E           FileNotFoundError: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-agt-1/node_modules/.bin/openapi-typescript is missing: run `npm ci` (or `make bootstrap`)
+
+scripts/contracts.py:37: FileNotFoundError
+______________________ test_check_passes_on_current_files ______________________
+
+contracts = <module 'contracts_script' from '/Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-agt-1/scripts/contracts.py'>
+capsys = <_pytest.capture.CaptureFixture object at 0x10bcfe720>
+
+    def test_check_passes_on_current_files(contracts: ModuleType, capsys: pytest.CaptureFixture[str]) -> None:
+>       assert contracts.check(contracts.OPENAPI, contracts.SCHEMA) == 0
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tools/tests/test_contracts.py:74: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/contracts.py:81: in check
+    stale = _differences(openapi_path, schema_path)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+scripts/contracts.py:68: in _differences
+    openapi, schema = _expected()
+                      ^^^^^^^^^^^
+scripts/contracts.py:59: in _expected
+    return _render(Path(tmp))
+           ^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+workdir = PosixPath('/var/folders/0s/4k0smcx56zl9hdj404qnz2s80000gp/T/onb-contracts-cmk6bx3s')
+
+    def _render(workdir: Path) -> tuple[str, str]:
+        """The OpenAPI document and the TS schema the current API produces."""
+        if not GENERATOR.exists():
+>           raise FileNotFoundError(f"{GENERATOR} is missing: run `npm ci` (or `make bootstrap`)")
+E           FileNotFoundError: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-agt-1/node_modules/.bin/openapi-typescript is missing: run `npm ci` (or `make bootstrap`)
+
+scripts/contracts.py:37: FileNotFoundError
+___________________ test_generate_writes_what_check_expects ____________________
+
+contracts = <module 'contracts_script' from '/Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-agt-1/scripts/contracts.py'>
+tmp_path = PosixPath('/private/var/folders/0s/4k0smcx56zl9hdj404qnz2s80000gp/T/pytest-of-Adya/pytest-1763/test_generate_writes_what_chec0')
+
+    def test_generate_writes_what_check_expects(contracts: ModuleType, tmp_path: Path) -> None:
+        openapi = tmp_path / "out" / "openapi.json"
+        schema = tmp_path / "out" / "generated" / "schema.ts"
+>       contracts.generate(openapi, schema)
+
+tools/tests/test_contracts.py:81: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/contracts.py:74: in generate
+    openapi, schema = _expected()
+                      ^^^^^^^^^^^
+scripts/contracts.py:59: in _expected
+    return _render(Path(tmp))
+           ^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+workdir = PosixPath('/var/folders/0s/4k0smcx56zl9hdj404qnz2s80000gp/T/onb-contracts-dz7pc7qi')
+
+    def _render(workdir: Path) -> tuple[str, str]:
+        """The OpenAPI document and the TS schema the current API produces."""
+        if not GENERATOR.exists():
+>           raise FileNotFoundError(f"{GENERATOR} is missing: run `npm ci` (or `make bootstrap`)")
+E           FileNotFoundError: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-agt-1/node_modules/.bin/openapi-typescript is missing: run `npm ci` (or `make bootstrap`)
+
+scripts/contracts.py:37: FileNotFoundError
+=========================== short test summary info ============================
+FAILED tools/tests/test_contracts.py::test_the_committed_contracts_match_the_api
+FAILED tools/tests/test_contracts.py::test_a_stale_openapi_document_is_drift
+FAILED tools/tests/test_contracts.py::test_a_stale_ts_client_is_drift - FileN...
+FAILED tools/tests/test_contracts.py::test_a_missing_committed_file_is_drift
+FAILED tools/tests/test_contracts.py::test_check_fails_with_a_diff_and_the_fix
+FAILED tools/tests/test_contracts.py::test_check_passes_on_current_files - Fi...
+FAILED tools/tests/test_contracts.py::test_generate_writes_what_check_expects
+7 failed, 172 passed, 67 subtests passed in 3.22s
+make: *** [tooling-test] Error 1
+exit=2

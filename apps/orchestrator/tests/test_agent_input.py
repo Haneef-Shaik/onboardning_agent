@@ -63,13 +63,13 @@ def _input(h: Harness, task_id: str) -> dict[str, Any]:
 
 
 def test_the_agent_gets_opaque_24_hex_references_for_the_task_and_the_hire(tmp_path: Path) -> None:
-    h, _ = _ran(tmp_path, task_doc("laptop"))
+    h, run_id = _ran(tmp_path, task_doc("laptop"))
     given = _input(h, "laptop")
     assert HEX24.match(given["task_key"])
     assert HEX24.match(given["hire_key"])
     assert given["task_key"] != given["hire_key"]
-    assert "laptop" not in given["task_key"]
-    assert HIRE not in given["hire_key"]
+    assert given["task_key"] == opaque_ref(ORG, "task", run_id, "laptop")
+    assert given["hire_key"] == opaque_ref(ORG, "hire", HIRE)
 
 
 def test_the_references_are_stable_and_derived_from_org_run_and_task(tmp_path: Path) -> None:

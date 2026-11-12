@@ -3,7 +3,7 @@
 The agent gets the action, the template's `inputs`, the hire's id, two opaque references and the hire's
 non-PII variables. The references exist because the mock integrations (MOCK-1) take 24-hex ids and a run's
 task ids are slugs and a hire's id is `h_…`: each reference is a digest of org, kind and ids, so
-it is stable across attempts (the mocks' idempotency key) and reveals nothing. Variables are
+it is stable across attempts (the mocks' idempotency key) and is not a secret: an unkeyed digest of ids the agent is already given. Variables are
 `onb_agents.runs.hire_variables` of the hire record: role, location, start date and manager id. Nothing
 else of the hire (name, notes, tokens, masks) is read into the input.
 """
