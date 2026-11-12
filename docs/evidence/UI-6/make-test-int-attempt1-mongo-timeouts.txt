@@ -1,0 +1,2088 @@
+infra/mongo/gen-keyfile.sh
+gen-keyfile: keeping existing infra/mongo/keyfile
+docker compose up -d --wait --build
+ Image onb/otel-collector:0.165.0 Building 
+#1 [internal] load local bake definitions
+#1 reading from stdin 644B done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 578B done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/alpine:3.24.4@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf
+#3 DONE 0.0s
+
+#4 [internal] load metadata for docker.io/otel/opentelemetry-collector-contrib:0.165.0@sha256:e40d61f10c9a617cca1ffd1be4d7e2b3a4b0f0001798ff07e58cabe82e618cea
+#4 DONE 0.0s
+
+#5 [internal] load .dockerignore
+#5 transferring context: 2B done
+#5 DONE 0.0s
+
+#6 [upstream 1/1] FROM docker.io/otel/opentelemetry-collector-contrib:0.165.0@sha256:e40d61f10c9a617cca1ffd1be4d7e2b3a4b0f0001798ff07e58cabe82e618cea
+#6 resolve docker.io/otel/opentelemetry-collector-contrib:0.165.0@sha256:e40d61f10c9a617cca1ffd1be4d7e2b3a4b0f0001798ff07e58cabe82e618cea 0.0s done
+#6 DONE 0.0s
+
+#7 [stage-1 1/3] FROM docker.io/library/alpine:3.24.4@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf
+#7 resolve docker.io/library/alpine:3.24.4@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf 0.0s done
+#7 DONE 0.0s
+
+#8 [stage-1 2/3] RUN adduser -D -H -u 10001 otel
+#8 CACHED
+
+#9 [stage-1 3/3] COPY --from=upstream /otelcol-contrib /otelcol-contrib
+#9 CACHED
+
+#10 exporting to image
+#10 exporting layers done
+#10 exporting manifest sha256:ec67467a294a5cfa11d8cdfebdc4f750c9fe51741c63f06e2fc349eabe077f39 done
+#10 exporting config sha256:8a2a6a9b7a0f98f12eea4604ed937beafb68926a6b05a0678f6d0d67374244f8 done
+#10 exporting attestation manifest sha256:bd9d25b79def8af54c66c45ff575a0a5c775f7ae5ea086dd9563bb290f315d81
+#10 exporting attestation manifest sha256:bd9d25b79def8af54c66c45ff575a0a5c775f7ae5ea086dd9563bb290f315d81 0.0s done
+#10 exporting manifest list sha256:eed24878f0c4524b4ee6979cb8e8b4f6fb1736fe86f2b48009935ae39526138e 0.0s done
+#10 naming to docker.io/onb/otel-collector:0.165.0 done
+#10 unpacking to docker.io/onb/otel-collector:0.165.0 done
+#10 DONE 0.1s
+
+#11 resolving provenance for metadata file
+#11 DONE 0.1s
+ Image onb/otel-collector:0.165.0 Built 
+ Container ob-ui-6-otel-collector-1 Running 
+ Container ob-ui-6-jaeger-1 Running 
+ Container ob-ui-6-caddy-1 Running 
+ Container ob-ui-6-mongo-1 Running 
+ Container ob-ui-6-jaeger-1 Waiting 
+ Container ob-ui-6-jaeger-1 Waiting 
+ Container ob-ui-6-jaeger-1 Healthy 
+ Container ob-ui-6-jaeger-1 Healthy 
+ Container ob-ui-6-otel-collector-1 Waiting 
+ Container ob-ui-6-jaeger-1 Waiting 
+ Container ob-ui-6-caddy-1 Waiting 
+ Container ob-ui-6-mongo-1 Waiting 
+ Container ob-ui-6-jaeger-1 Healthy 
+ Container ob-ui-6-mongo-1 Healthy 
+ Container ob-ui-6-caddy-1 Healthy 
+ Container ob-ui-6-otel-collector-1 Healthy 
+set -a && . ./.env && set +a && \
+	uv run --frozen pytest tools/tests_int -q -o cache_dir=.pytest_cache/tools-int && \
+	node_modules/.bin/nx run-many -t test-int --output-style=static
+............                                                             [100%]
+12 passed in 7.11s
+
+ NX   Running target test-int for 10 projects:
+
+- orchestrator
+- py-telemetry
+- py-eventbus
+- mcp-mocks
+- mcp-mongo
+- py-crypto
+- py-evals
+- mcp-hub
+- py-data
+- api
+
+
+
+> nx run py-crypto:test-int
+
+[2m> [22muv run --frozen pytest libs/py-crypto/tests_int -o cache_dir=.pytest_cache/py-crypto-int
+
+[1m============================= test session starts ==============================[0m
+platform darwin -- Python 3.12.13, pytest-9.2.0, pluggy-1.7.0
+cachedir: .pytest_cache/py-crypto-int
+rootdir: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-ui-6
+configfile: pyproject.toml
+plugins: hypothesis-6.170.15, langsmith-0.14.17, cov-7.1.0, anyio-4.16.0
+collected 12 items
+
+libs/py-crypto/tests_int/test_grants_mongo.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                       [ 33%][0m
+libs/py-crypto/tests_int/test_org_keys_mongo.py [32m.[0m[32m.[0m[32m                       [ 50%][0m
+libs/py-crypto/tests_int/test_safety_net_guard.py [32m.[0m[32m.[0m[32m                     [ 66%][0m
+libs/py-crypto/tests_int/test_vault_mongo.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                        [100%][0m
+
+[32m============================= [32m[1m12 passed[0m[32m in 10.01s[0m[32m ==============================[0m
+
+> nx run py-data:test-int
+
+[2m> [22muv run --frozen pytest libs/py-data/tests_int -o cache_dir=.pytest_cache/py-data-int
+
+[1m============================= test session starts ==============================[0m
+platform darwin -- Python 3.12.13, pytest-9.2.0, pluggy-1.7.0
+cachedir: .pytest_cache/py-data-int
+rootdir: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-ui-6
+configfile: pyproject.toml
+plugins: hypothesis-6.170.15, langsmith-0.14.17, cov-7.1.0, anyio-4.16.0
+collected 50 items
+
+libs/py-data/tests_int/test_compose_mongo_transaction.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m            [  8%][0m
+libs/py-data/tests_int/test_safety_net.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                         [ 20%][0m
+libs/py-data/tests_int/test_safety_net_queue.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m             [ 44%][0m
+libs/py-data/tests_int/test_tenant_indexes.py [32m.[0m[32m.[0m[32m.[0m[32m                        [ 50%][0m
+libs/py-data/tests_int/test_tenant_repository.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m   [ 92%][0m
+libs/py-data/tests_int/test_transactions_and_queue.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m               [100%][0m
+
+[32m============================= [32m[1m50 passed[0m[32m in 10.18s[0m[32m ==============================[0m
+
+> nx run py-telemetry:test-int
+
+[2m> [22muv run --frozen pytest libs/py-telemetry/tests_int -o cache_dir=.pytest_cache/py-telemetry-int -rA -s
+
+[1m============================= test session starts ==============================[0m
+platform darwin -- Python 3.12.13, pytest-9.2.0, pluggy-1.7.0
+cachedir: .pytest_cache/py-telemetry-int
+rootdir: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-ui-6
+configfile: pyproject.toml
+plugins: hypothesis-6.170.15, langsmith-0.14.17, cov-7.1.0, anyio-4.16.0
+collected 5 items
+
+libs/py-telemetry/tests_int/test_jaeger_roundtrip.py 
+Jaeger returned trace 7738599684f759e567de15d4b408c2f0 for service f4-probe-7b5eaf6d: [('f4-probe-7b5eaf6d', 'onb_telemetry', 'f4.resumed-after-wait'), ('f4-probe-7b5eaf6d', 'opentelemetry.instrumentation.fastapi', 'GET /ping'), ('f4-probe-7b5eaf6d', 'opentelemetry.instrumentation.fastapi', 'GET /ping http send')]
+[32m.[0m[32m.[0m[32m.[0m
+libs/py-telemetry/tests_int/test_safety_net_guard.py [32m.[0m[32m.[0m
+
+==================================== PASSES ====================================
+[36m[1m=========================== short test summary info ============================[0m
+[32mPASSED[0m libs/py-telemetry/tests_int/test_jaeger_roundtrip.py::[1mtest_fastapi_span_is_returned_by_jaeger_through_the_collector[0m
+[32mPASSED[0m libs/py-telemetry/tests_int/test_jaeger_roundtrip.py::[1mtest_jaeger_lists_the_probe_service[0m
+[32mPASSED[0m libs/py-telemetry/tests_int/test_jaeger_roundtrip.py::[1mtest_pymongo_commands_get_spans[0m
+[32mPASSED[0m libs/py-telemetry/tests_int/test_safety_net_guard.py::[1mtest_every_py_telemetry_integration_test_runs_under_the_safety_net_guard[0m
+[32mPASSED[0m libs/py-telemetry/tests_int/test_safety_net_guard.py::[1mtest_the_listener_is_registered_globally[0m
+[32m============================== [32m[1m5 passed[0m[32m in 11.06s[0m[32m ==============================[0m
+
+> nx run mcp-mocks:test-int
+
+[2m> [22muv run --frozen pytest apps/mcp-mocks/tests_int -o cache_dir=.pytest_cache/mcp-mocks-int
+
+[1m============================= test session starts ==============================[0m
+platform darwin -- Python 3.12.13, pytest-9.2.0, pluggy-1.7.0
+cachedir: .pytest_cache/mcp-mocks-int
+rootdir: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-ui-6
+configfile: pyproject.toml
+plugins: hypothesis-6.170.15, langsmith-0.14.17, cov-7.1.0, anyio-4.16.0
+collected 11 items
+
+apps/mcp-mocks/tests_int/test_notify_against_mongo.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m          [ 81%][0m
+apps/mcp-mocks/tests_int/test_safety_net_guard.py [32m.[0m[32m.[0m[32m                     [100%][0m
+
+[32m============================= [32m[1m11 passed[0m[32m in 14.74s[0m[32m ==============================[0m
+
+> nx run mcp-mongo:test-int
+
+[2m> [22muv run --frozen pytest apps/mcp-mongo/tests_int -o cache_dir=.pytest_cache/mcp-mongo-int
+
+[1m============================= test session starts ==============================[0m
+platform darwin -- Python 3.12.13, pytest-9.2.0, pluggy-1.7.0
+cachedir: .pytest_cache/mcp-mongo-int
+rootdir: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-ui-6
+configfile: pyproject.toml
+plugins: hypothesis-6.170.15, langsmith-0.14.17, cov-7.1.0, anyio-4.16.0
+collected 79 items
+
+apps/mcp-mongo/tests_int/test_db_users_int.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m [ 32%]
+[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                                        [ 74%][0m
+apps/mcp-mongo/tests_int/test_mcp_mongo_int.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m        [ 97%][0m
+apps/mcp-mongo/tests_int/test_safety_net_guard.py [32m.[0m[32m.[0m[32m                     [100%][0m
+
+[32m============================= [32m[1m79 passed[0m[32m in 13.72s[0m[32m ==============================[0m
+
+> nx run py-eventbus:test-int
+
+[2m> [22muv run --frozen pytest libs/py-eventbus/tests_int -o cache_dir=.pytest_cache/py-eventbus-int
+
+[1m============================= test session starts ==============================[0m
+platform darwin -- Python 3.12.13, pytest-9.2.0, pluggy-1.7.0
+cachedir: .pytest_cache/py-eventbus-int
+rootdir: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-ui-6
+configfile: pyproject.toml
+plugins: hypothesis-6.170.15, langsmith-0.14.17, cov-7.1.0, anyio-4.16.0
+collected 19 items
+
+libs/py-eventbus/tests_int/test_bus_against_mongo.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m   [ 89%][0m
+libs/py-eventbus/tests_int/test_safety_net_guard.py [32m.[0m[32m.[0m[32m                   [100%][0m
+
+[32m============================= [32m[1m19 passed[0m[32m in 27.21s[0m[32m ==============================[0m
+
+> nx run mcp-hub:test-int
+
+[2m> [22muv run --frozen pytest apps/mcp-hub/tests_int -o cache_dir=.pytest_cache/mcp-hub-int
+
+[1m============================= test session starts ==============================[0m
+platform darwin -- Python 3.12.13, pytest-9.2.0, pluggy-1.7.0
+cachedir: .pytest_cache/mcp-hub-int
+rootdir: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-ui-6
+configfile: pyproject.toml
+plugins: hypothesis-6.170.15, langsmith-0.14.17, cov-7.1.0, anyio-4.16.0
+collected 38 items
+
+apps/mcp-hub/tests_int/test_hub_int.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                      [ 31%][0m
+apps/mcp-hub/tests_int/test_hub_mocks_int.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                    [ 52%][0m
+apps/mcp-hub/tests_int/test_hub_xt.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                        [ 81%][0m
+apps/mcp-hub/tests_int/test_safety_net_guard.py [32m.[0m[32m.[0m[32m                       [ 86%][0m
+apps/mcp-hub/tests_int/test_task_agents_int.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m
+AGT-1 seed run run_efcb13e4d36e58628d8f40f8: 7 tasks, 1 approval, 6/6 non-approval tasks completed without human action
+[32m.[0m[32m                     [100%][0m
+
+[32m============================= [32m[1m38 passed[0m[32m in 33.87s[0m[32m ==============================[0m
+
+> nx run py-evals:test-int
+
+[2m> [22muv run --frozen pytest libs/py-evals/tests_int -o cache_dir=.pytest_cache/py-evals-int
+
+[1m============================= test session starts ==============================[0m
+platform darwin -- Python 3.12.13, pytest-9.2.0, pluggy-1.7.0
+cachedir: .pytest_cache/py-evals-int
+rootdir: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-ui-6
+configfile: pyproject.toml
+plugins: hypothesis-6.170.15, langsmith-0.14.17, cov-7.1.0, anyio-4.16.0
+collected 4 items
+
+libs/py-evals/tests_int/test_fixture_mongo.py [32m.[0m[32m                          [ 25%][0m
+libs/py-evals/tests_int/test_safety_net_guard.py [32m.[0m[32m.[0m[32m                      [ 75%][0m
+libs/py-evals/tests_int/test_selftest.py [31mF[0m[31m                               [100%][0m
+
+=================================== FAILURES ===================================
+[31m[1m_______ test_make_evals_selftest_passes_all_27_cases_and_records_the_run _______[0m
+
+self = <pymongo.asynchronous.mongo_client._ClientConnectionRetryable object at 0x10f82c860>
+
+    [0m[94masync[39;49;00m [94mdef[39;49;00m[90m [39;49;00m[92mrun[39;49;00m([96mself[39;49;00m) -> T:[90m[39;49;00m
+    [90m    [39;49;00m[33m"""Runs the supplied func() and attempts a retry[39;49;00m
+    [33m[39;49;00m
+    [33m    :raises: self._last_error: Last exception raised[39;49;00m
+    [33m[39;49;00m
+    [33m    :return: Result of the func() call[39;49;00m
+    [33m    """[39;49;00m[90m[39;49;00m
+        [90m# Increment the transaction id up front to ensure any retry attempt[39;49;00m[90m[39;49;00m
+        [90m# will use the proper txnNumber, even if server or socket selection[39;49;00m[90m[39;49;00m
+        [90m# fails before the command can be sent.[39;49;00m[90m[39;49;00m
+        [94mif[39;49;00m [96mself[39;49;00m._is_session_state_retryable() [95mand[39;49;00m [96mself[39;49;00m._retryable [95mand[39;49;00m [95mnot[39;49;00m [96mself[39;49;00m._is_read:[90m[39;49;00m
+            [96mself[39;49;00m._session._start_retryable_write()  [90m# type: ignore[39;49;00m[90m[39;49;00m
+            [94mif[39;49;00m [96mself[39;49;00m._bulk:[90m[39;49;00m
+                [96mself[39;49;00m._bulk.started_retryable_write = [94mTrue[39;49;00m[90m[39;49;00m
+    [90m[39;49;00m
+        [94mwhile[39;49;00m [94mTrue[39;49;00m:[90m[39;49;00m
+            [96mself[39;49;00m._check_last_error(check_csot=[94mTrue[39;49;00m)[90m[39;49;00m
+            [94mtry[39;49;00m:[90m[39;49;00m
+>               res = [94mawait[39;49;00m [96mself[39;49;00m._read() [94mif[39;49;00m [96mself[39;49;00m._is_read [94melse[39;49;00m [94mawait[39;49;00m [96mself[39;49;00m._write()[90m[39;49;00m
+                                                               ^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/asynchronous/mongo_client.py[0m:2958: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/asynchronous/mongo_client.py[0m:3155: in _write
+    [0m[96mself[39;49;00m._server = [94mawait[39;49;00m [96mself[39;49;00m._get_server()[90m[39;49;00m
+                   ^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/asynchronous/mongo_client.py[0m:3131: in _get_server
+    [0m[94mreturn[39;49;00m [94mawait[39;49;00m [96mself[39;49;00m._client._select_server([90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/asynchronous/mongo_client.py[0m:1920: in _select_server
+    [0mserver = [94mawait[39;49;00m topology.select_server([90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/asynchronous/topology.py[0m:357: in select_server
+    [0mserver = [94mawait[39;49;00m [96mself[39;49;00m._select_server([90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/asynchronous/topology.py[0m:331: in _select_server
+    [0mservers = [94mawait[39;49;00m [96mself[39;49;00m.select_servers([90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/asynchronous/topology.py[0m:249: in select_servers
+    [0mserver_descriptions = [94mawait[39;49;00m [96mself[39;49;00m._select_servers_loop([90m[39;49;00m
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <Topology CLOSED <TopologyDescription id: 6af6236c784ad653d72a2062, topology_type: Single, servers: [<ServerDescription ('127.0.0.1', 56857) server_type: Unknown, rtt: None>]>>
+selector = <function writable_server_selector at 0x10d20e0c0>, timeout = 30
+operation = <_Op.INSERT: 'insert'>, operation_id = -1276045664, address = None
+deprioritized_servers = None
+
+    [0m[94masync[39;49;00m [94mdef[39;49;00m[90m [39;49;00m[92m_select_servers_loop[39;49;00m([90m[39;49;00m
+        [96mself[39;49;00m,[90m[39;49;00m
+        selector: Callable[[Selection], Selection],[90m[39;49;00m
+        timeout: [96mfloat[39;49;00m,[90m[39;49;00m
+        operation: [96mstr[39;49;00m,[90m[39;49;00m
+        operation_id: Optional[[96mint[39;49;00m],[90m[39;49;00m
+        address: Optional[_Address],[90m[39;49;00m
+        deprioritized_servers: Optional[[96mlist[39;49;00m[Server]] = [94mNone[39;49;00m,[90m[39;49;00m
+    ) -> [96mlist[39;49;00m[ServerDescription]:[90m[39;49;00m
+    [90m    [39;49;00m[33m"""select_servers() guts. Hold the lock when calling this."""[39;49;00m[90m[39;49;00m
+        now = time.monotonic()[90m[39;49;00m
+        end_time = now + timeout[90m[39;49;00m
+        logged_waiting = [94mFalse[39;49;00m[90m[39;49;00m
+        [90m# Server selection does not have APM events, gate only on logging[39;49;00m[90m[39;49;00m
+        ss: Optional[_ServerSelectionTelemetry] = [94mNone[39;49;00m[90m[39;49;00m
+        [94mif[39;49;00m _is_debug_enabled(_SERVER_SELECTION_LOGGER):[90m[39;49;00m
+            ss = _ServerSelectionTelemetry([90m[39;49;00m
+                [96mself[39;49;00m._topology_id, selector, operation, operation_id, [96mself[39;49;00m.description[90m[39;49;00m
+            )[90m[39;49;00m
+            ss.started()[90m[39;49;00m
+    [90m[39;49;00m
+        server_descriptions = [96mself[39;49;00m._description.apply_selector([90m[39;49;00m
+            selector,[90m[39;49;00m
+            address,[90m[39;49;00m
+            custom_selector=[96mself[39;49;00m._settings.server_selector,[90m[39;49;00m
+            deprioritized_servers=[server.description [94mfor[39;49;00m server [95min[39;49;00m deprioritized_servers][90m[39;49;00m
+            [94mif[39;49;00m deprioritized_servers[90m[39;49;00m
+            [94melse[39;49;00m [94mNone[39;49;00m,[90m[39;49;00m
+        )[90m[39;49;00m
+    [90m[39;49;00m
+        [94mwhile[39;49;00m [95mnot[39;49;00m server_descriptions:[90m[39;49;00m
+            [90m# No suitable servers.[39;49;00m[90m[39;49;00m
+            [94mif[39;49;00m timeout == [94m0[39;49;00m [95mor[39;49;00m now > end_time:[90m[39;49;00m
+                [94mif[39;49;00m ss [95mis[39;49;00m [95mnot[39;49;00m [94mNone[39;49;00m:[90m[39;49;00m
+                    ss.failed([96mself[39;49;00m._error_message(selector), [96mself[39;49;00m.description)[90m[39;49;00m
+>               [94mraise[39;49;00m ServerSelectionTimeoutError([90m[39;49;00m
+                    [33mf[39;49;00m[33m"[39;49;00m[33m{[39;49;00m[96mself[39;49;00m._error_message(selector)[33m}[39;49;00m[33m, Timeout: [39;49;00m[33m{[39;49;00mtimeout[33m}[39;49;00m[33ms, Topology Description: [39;49;00m[33m{[39;49;00m[96mself[39;49;00m.description[33m!r}[39;49;00m[33m"[39;49;00m[90m[39;49;00m
+                )[90m[39;49;00m
+[1m[31mE               pymongo.errors.ServerSelectionTimeoutError: 127.0.0.1:56857: timed out (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms), Timeout: 30s, Topology Description: <TopologyDescription id: 6af6236c784ad653d72a2062, topology_type: Single, servers: [<ServerDescription ('127.0.0.1', 56857) server_type: Unknown, rtt: None, error=NetworkTimeout('127.0.0.1:56857: timed out (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms)')>]>[0m
+
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/asynchronous/topology.py[0m:297: ServerSelectionTimeoutError
+
+[33mDuring handling of the above exception, another exception occurred:[0m
+
+self = <onb_evals.databases.ThrowawayDatabases object at 0x10e428860>
+
+    [0m[37m@asynccontextmanager[39;49;00m[90m[39;49;00m
+    [94masync[39;49;00m [94mdef[39;49;00m[90m [39;49;00m[92mfresh[39;49;00m([96mself[39;49;00m) -> AsyncIterator[DataStore]:[90m[39;49;00m
+        name = [33mf[39;49;00m[33m"[39;49;00m[33m{[39;49;00mDATABASE_PREFIX[33m}[39;49;00m[33m{[39;49;00msecrets.token_hex([94m8[39;49;00m)[33m}[39;49;00m[33m"[39;49;00m[90m[39;49;00m
+        store = [96mself[39;49;00m._connect([96mself[39;49;00m._uri, name)[90m[39;49;00m
+        [94mtry[39;49;00m:[90m[39;49;00m
+>           [94myield[39;49;00m store[90m[39;49;00m
+
+[1m[31mlibs/py-evals/src/onb_evals/databases.py[0m:54: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+[1m[31mlibs/py-evals/src/onb_evals/runner.py[0m:123: in _execute
+    [0mfixture = [94mawait[39;49;00m load_fixture(store, [96mself[39;49;00m._seed)[90m[39;49;00m
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31mlibs/py-evals/src/onb_evals/fixture.py[0m:83: in load_fixture
+    [0m[94mawait[39;49;00m store.tenant(collection).insert_many(documents)[90m[39;49;00m
+[1m[31mlibs/py-data/src/onb_data/repository.py[0m:110: in insert_many
+    [0mresult = [94mawait[39;49;00m [96mself[39;49;00m._collection.insert_many(prepared, **session_kwargs())[90m[39;49;00m
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/_csot.py[0m:116: in csot_wrapper
+    [0m[94mreturn[39;49;00m [94mawait[39;49;00m func([96mself[39;49;00m, *args, **kwargs)[90m[39;49;00m
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/asynchronous/collection.py[0m:959: in insert_many
+    [0m[94mawait[39;49;00m blk.execute(write_concern, session, _Op.INSERT)[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/asynchronous/bulk.py[0m:451: in execute
+    [0m[94mreturn[39;49;00m [94mawait[39;49;00m [96mself[39;49;00m.execute_command(generator, write_concern, session, operation)[90m[39;49;00m
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/asynchronous/bulk.py[0m:310: in execute_command
+    [0m_ = [94mawait[39;49;00m client._retryable_write([90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/asynchronous/mongo_client.py[0m:2159: in _retryable_write
+    [0m[94mreturn[39;49;00m [94mawait[39;49;00m [96mself[39;49;00m._retry_with_session(retryable, func, s, bulk, operation, operation_id)[90m[39;49;00m
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/asynchronous/mongo_client.py[0m:2029: in _retry_with_session
+    [0m[94mreturn[39;49;00m [94mawait[39;49;00m [96mself[39;49;00m._retry_internal([90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/_csot.py[0m:116: in csot_wrapper
+    [0m[94mreturn[39;49;00m [94mawait[39;49;00m func([96mself[39;49;00m, *args, **kwargs)[90m[39;49;00m
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/asynchronous/mongo_client.py[0m:2069: in _retry_internal
+    [0m[94mreturn[39;49;00m [94mawait[39;49;00m _ClientConnectionRetryable([90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/asynchronous/mongo_client.py[0m:2969: in run
+    [0m[96mself[39;49;00m._check_last_error()[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/asynchronous/mongo_client.py[0m:3124: in _check_last_error
+    [0m[94mraise[39;49;00m [96mself[39;49;00m._last_error[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/asynchronous/mongo_client.py[0m:2958: in run
+    [0mres = [94mawait[39;49;00m [96mself[39;49;00m._read() [94mif[39;49;00m [96mself[39;49;00m._is_read [94melse[39;49;00m [94mawait[39;49;00m [96mself[39;49;00m._write()[90m[39;49;00m
+                                                   ^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/asynchronous/mongo_client.py[0m:3173: in _write
+    [0m[94mreturn[39;49;00m [94mawait[39;49;00m [96mself[39;49;00m._func([96mself[39;49;00m._session, conn, [96mself[39;49;00m._retryable)  [90m# type: ignore[39;49;00m[90m[39;49;00m
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/asynchronous/bulk.py[0m:300: in retryable_bulk
+    [0m[94mawait[39;49;00m [96mself[39;49;00m._execute_command([90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/asynchronous/bulk.py[0m:244: in _execute_command
+    [0mresult, to_send = [94mawait[39;49;00m [96mself[39;49;00m._execute_batch(bwc, cmd, ops, client)[90m[39;49;00m
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/asynchronous/bulk.py[0m:168: in _execute_batch
+    [0mresult = [94mawait[39;49;00m [96mself[39;49;00m.write_command(bwc, cmd, request_id, msg, to_send, client)  [90m# type: ignore[arg-type][39;49;00m[90m[39;49;00m
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/asynchronous/helpers.py[0m:50: in inner
+    [0m[94mreturn[39;49;00m [94mawait[39;49;00m func(*args, **kwargs)[90m[39;49;00m
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/asynchronous/bulk.py[0m:86: in write_command
+    [0mresult_docs, _, _ = [94mawait[39;49;00m run_bulk_write_command([90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/asynchronous/command_runner.py[0m:269: in run_bulk_write_command
+    [0m[94mreturn[39;49;00m [94mawait[39;49;00m _run_command([90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/asynchronous/command_runner.py[0m:192: in _run_command
+    [0mreply = [94mawait[39;49;00m conn.receive_message(request_id)[90m[39;49;00m
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/asynchronous/pool.py[0m:458: in receive_message
+    [0m[94mawait[39;49;00m [96mself[39;49;00m._raise_connection_failure(error)[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/asynchronous/pool.py[0m:578: in _raise_connection_failure
+    [0m[94mraise[39;49;00m error[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/asynchronous/pool.py[0m:455: in receive_message
+    [0m[94mreturn[39;49;00m [94mawait[39;49;00m async_receive_message([96mself[39;49;00m, request_id, [96mself[39;49;00m.max_message_size)[90m[39;49;00m
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+conn = AsyncConnection(<pymongo.network_layer.AsyncNetworkingInterface object at 0x10f8401a0>) CLOSED at 4555289088
+request_id = 669943571, max_message_size = 48000000
+
+    [0m[94masync[39;49;00m [94mdef[39;49;00m[90m [39;49;00m[92masync_receive_message[39;49;00m([90m[39;49;00m
+        conn: AsyncConnection,[90m[39;49;00m
+        request_id: Optional[[96mint[39;49;00m],[90m[39;49;00m
+        max_message_size: [96mint[39;49;00m = MAX_MESSAGE_SIZE,[90m[39;49;00m
+    ) -> _OpMsg:[90m[39;49;00m
+    [90m    [39;49;00m[33m"""Receive a raw BSON message or raise socket.error."""[39;49;00m[90m[39;49;00m
+        timeout: Optional[Union[[96mfloat[39;49;00m, [96mint[39;49;00m]][90m[39;49;00m
+        timeout = conn.conn.gettimeout[90m[39;49;00m
+        [94mif[39;49;00m _csot.get_timeout():[90m[39;49;00m
+            deadline = _csot.get_deadline()[90m[39;49;00m
+        [94melse[39;49;00m:[90m[39;49;00m
+            [94mif[39;49;00m timeout:[90m[39;49;00m
+                deadline = time.monotonic() + timeout[90m[39;49;00m
+            [94melse[39;49;00m:[90m[39;49;00m
+                deadline = [94mNone[39;49;00m[90m[39;49;00m
+        [94mif[39;49;00m deadline:[90m[39;49;00m
+            [90m# When the timeout has expired perform one final check to[39;49;00m[90m[39;49;00m
+            [90m# see if the socket is readable. This helps avoid spurious[39;49;00m[90m[39;49;00m
+            [90m# timeouts on AWS Lambda and other FaaS environments.[39;49;00m[90m[39;49;00m
+            timeout = [96mmax[39;49;00m(deadline - time.monotonic(), [94m0[39;49;00m)[90m[39;49;00m
+    [90m[39;49;00m
+        cancellation_task = asyncio.create_task(_poll_cancellation(conn))[90m[39;49;00m
+        read_task = asyncio.create_task(conn.conn.get_conn.read(request_id, max_message_size))[90m[39;49;00m
+        tasks = [read_task, cancellation_task][90m[39;49;00m
+        [94mtry[39;49;00m:[90m[39;49;00m
+            done, pending = [94mawait[39;49;00m asyncio.wait([90m[39;49;00m
+                tasks, timeout=timeout, return_when=asyncio.FIRST_COMPLETED[90m[39;49;00m
+            )[90m[39;49;00m
+            [94mfor[39;49;00m task [95min[39;49;00m pending:[90m[39;49;00m
+                task.cancel()[90m[39;49;00m
+            [94mif[39;49;00m pending:[90m[39;49;00m
+                [94mawait[39;49;00m asyncio.wait(pending)[90m[39;49;00m
+            [94mif[39;49;00m [96mlen[39;49;00m(done) == [94m0[39;49;00m:[90m[39;49;00m
+                [94mraise[39;49;00m socket.timeout([33m"[39;49;00m[33mtimed out[39;49;00m[33m"[39;49;00m)[90m[39;49;00m
+            [94mif[39;49;00m read_task [95min[39;49;00m done:[90m[39;49;00m
+                data, op_code = read_task.result()[90m[39;49;00m
+                [94mtry[39;49;00m:[90m[39;49;00m
+                    unpack_reply = _UNPACK_REPLY[op_code][90m[39;49;00m
+                [94mexcept[39;49;00m [96mKeyError[39;49;00m:[90m[39;49;00m
+                    [94mraise[39;49;00m ProtocolError([90m[39;49;00m
+                        [33mf[39;49;00m[33m"[39;49;00m[33mGot opcode [39;49;00m[33m{[39;49;00mop_code[33m!r}[39;49;00m[33m but expected [39;49;00m[33m{[39;49;00m_UNPACK_REPLY.keys()[33m!r}[39;49;00m[33m"[39;49;00m[90m[39;49;00m
+                    ) [94mfrom[39;49;00m[90m [39;49;00m[94mNone[39;49;00m[90m[39;49;00m
+                [94mreturn[39;49;00m unpack_reply(data)[90m[39;49;00m
+>           [94mraise[39;49;00m _OperationCancelled([33m"[39;49;00m[33moperation cancelled[39;49;00m[33m"[39;49;00m)[90m[39;49;00m
+[1m[31mE           pymongo.errors._OperationCancelled: operation cancelled[0m
+
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/network_layer.py[0m:727: _OperationCancelled
+
+[33mDuring handling of the above exception, another exception occurred:[0m
+
+mongo_uri = 'mongodb://root:9e59b0c4fa9569a04659ce2b8fd02ecf@127.0.0.1:56857/?authSource=admin&directConnection=true'
+root_client = MongoClient(host=['127.0.0.1:56857'], document_class=dict, tz_aware=False, connect=True, authsource='admin', directconnection=True, serverselectiontimeoutms=10000)
+capsys = <_pytest.capture.CaptureFixture object at 0x10e2f37a0>
+unscoped = <bound method TenantCommandListener.allowing_unscoped of <onb_data.safety_net.TenantCommandListener object at 0x10d26fa40>>
+
+    [0m[94mdef[39;49;00m[90m [39;49;00m[92mtest_make_evals_selftest_passes_all_27_cases_and_records_the_run[39;49;00m([90m[39;49;00m
+        mongo_uri: [96mstr[39;49;00m, root_client: MongoClient[[96mdict[39;49;00m[[96mstr[39;49;00m, Any]], capsys: pytest.CaptureFixture[[96mstr[39;49;00m], unscoped: Unscoped[90m[39;49;00m
+    ) -> [94mNone[39;49;00m:[90m[39;49;00m
+        results_db = [33mf[39;49;00m[33m"[39;49;00m[33monb_evalresults_[39;49;00m[33m{[39;49;00msecrets.token_hex([94m4[39;49;00m)[33m}[39;49;00m[33m"[39;49;00m[90m[39;49;00m
+        env = {**os.environ, ENV_MONGO_URI: mongo_uri, ENV_RESULTS_DATABASE: results_db, ENV_RESULTS_ORG: RESULTS_ORG}[90m[39;49;00m
+        [94mtry[39;49;00m:[90m[39;49;00m
+            [94mwith[39;49;00m captured_telemetry() [94mas[39;49;00m telemetry:[90m[39;49;00m
+>               code = main([[33m"[39;49;00m[33mselftest[39;49;00m[33m"[39;49;00m, [33m"[39;49;00m[33m--repeat[39;49;00m[33m"[39;49;00m, [33m"[39;49;00m[33m3[39;49;00m[33m"[39;49;00m], env=env)[90m[39;49;00m
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+
+[1m[31mlibs/py-evals/tests_int/test_selftest.py[0m:46: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+[1m[31mlibs/py-evals/src/onb_evals/cli.py[0m:158: in main
+    [0moutcome = asyncio.run(_dispatch(args, environment, spans))[90m[39;49;00m
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m/Users/Adya/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/asyncio/runners.py[0m:195: in run
+    [0m[94mreturn[39;49;00m runner.run(main)[90m[39;49;00m
+           ^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m/Users/Adya/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/asyncio/runners.py[0m:118: in run
+    [0m[94mreturn[39;49;00m [96mself[39;49;00m._loop.run_until_complete(task)[90m[39;49;00m
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m/Users/Adya/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/asyncio/base_events.py[0m:691: in run_until_complete
+    [0m[94mreturn[39;49;00m future.result()[90m[39;49;00m
+           ^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31mlibs/py-evals/src/onb_evals/cli.py[0m:119: in _dispatch
+    [0m[94mreturn[39;49;00m [94mawait[39;49;00m run_selftest([90m[39;49;00m
+[1m[31mlibs/py-evals/src/onb_evals/session.py[0m:193: in run_selftest
+    [0mresults = [94mawait[39;49;00m runner([94mlambda[39;49;00m c: ScriptedLLM(runtime, scripts[c.id])).run(cases, repeat=repeat, run_id=run_id)[90m[39;49;00m
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31mlibs/py-evals/src/onb_evals/runner.py[0m:97: in run
+    [0mreps = [96mtuple[39;49;00m([[94mawait[39;49;00m [96mself[39;49;00m._repetition(case, rep, run_id) [94mfor[39;49;00m rep [95min[39;49;00m [96mrange[39;49;00m(repeat)])[90m[39;49;00m
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31mlibs/py-evals/src/onb_evals/runner.py[0m:105: in _repetition
+    [0mran = [94mawait[39;49;00m [96mself[39;49;00m._execute(case, repetition, run_id)[90m[39;49;00m
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31mlibs/py-evals/src/onb_evals/runner.py[0m:122: in _execute
+    [0m[94masync[39;49;00m [94mwith[39;49;00m [96mself[39;49;00m._databases.fresh() [94mas[39;49;00m store:[90m[39;49;00m
+               ^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m/Users/Adya/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/contextlib.py[0m:231: in __aexit__
+    [0m[94mawait[39;49;00m [96mself[39;49;00m.gen.athrow(value)[90m[39;49;00m
+[1m[31mlibs/py-evals/src/onb_evals/databases.py[0m:57: in fresh
+    [0m[94mawait[39;49;00m [96mself[39;49;00m.drop(name)[90m[39;49;00m
+[1m[31mlibs/py-evals/src/onb_evals/databases.py[0m:66: in drop
+    [0m[94mawait[39;49;00m client.drop_database(name)[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/_csot.py[0m:116: in csot_wrapper
+    [0m[94mreturn[39;49;00m [94mawait[39;49;00m func([96mself[39;49;00m, *args, **kwargs)[90m[39;49;00m
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/asynchronous/mongo_client.py[0m:2528: in drop_database
+    [0m[94mawait[39;49;00m [96mself[39;49;00m[name].command([90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/_csot.py[0m:116: in csot_wrapper
+    [0m[94mreturn[39;49;00m [94mawait[39;49;00m func([96mself[39;49;00m, *args, **kwargs)[90m[39;49;00m
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/asynchronous/database.py[0m:946: in command
+    [0m[94mreturn[39;49;00m [94mawait[39;49;00m [96mself[39;49;00m._client._retryable_read([90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/asynchronous/mongo_client.py[0m:2121: in _retryable_read
+    [0m[94mreturn[39;49;00m [94mawait[39;49;00m [96mself[39;49;00m._retry_internal([90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/_csot.py[0m:116: in csot_wrapper
+    [0m[94mreturn[39;49;00m [94mawait[39;49;00m func([96mself[39;49;00m, *args, **kwargs)[90m[39;49;00m
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/asynchronous/mongo_client.py[0m:2069: in _retry_internal
+    [0m[94mreturn[39;49;00m [94mawait[39;49;00m _ClientConnectionRetryable([90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/asynchronous/mongo_client.py[0m:2958: in run
+    [0mres = [94mawait[39;49;00m [96mself[39;49;00m._read() [94mif[39;49;00m [96mself[39;49;00m._is_read [94melse[39;49;00m [94mawait[39;49;00m [96mself[39;49;00m._write()[90m[39;49;00m
+          ^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/asynchronous/mongo_client.py[0m:3188: in _read
+    [0m[94masync[39;49;00m [94mwith[39;49;00m [96mself[39;49;00m._client._conn_from_server([96mself[39;49;00m._read_pref, [96mself[39;49;00m._server, [96mself[39;49;00m._session) [94mas[39;49;00m ([90m[39;49;00m
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/asynchronous/mongo_client.py[0m:2854: in __aenter__
+    [0mconn = [94mawait[39;49;00m [96msuper[39;49;00m().[92m__aenter__[39;49;00m()[90m[39;49;00m
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/asynchronous/mongo_client.py[0m:2765: in __aenter__
+    [0mconn = [94mawait[39;49;00m pool_checkout.[92m__aenter__[39;49;00m()[90m[39;49;00m
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/asynchronous/pool.py[0m:1302: in __aenter__
+    [0mconn = [94mawait[39;49;00m pool._get_conn(time.monotonic(), handler=[96mself[39;49;00m._handler)[90m[39;49;00m
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/asynchronous/pool.py[0m:1047: in _get_conn
+    [0mconn = [94mawait[39;49;00m [96mself[39;49;00m.connect(handler=handler)[90m[39;49;00m
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/asynchronous/pool.py[0m:917: in connect
+    [0m[94mawait[39;49;00m conn.authenticate()[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/asynchronous/pool.py[0m:482: in authenticate
+    [0m[94mawait[39;49;00m auth.authenticate(creds, [96mself[39;49;00m, reauthenticate=reauthenticate)[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/asynchronous/auth.py[0m:377: in authenticate
+    [0m[94mawait[39;49;00m auth_func(credentials, conn)[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/asynchronous/auth.py[0m:342: in _authenticate_default
+    [0m[94mreturn[39;49;00m [94mawait[39;49;00m _authenticate_scram(credentials, conn, [33m"[39;49;00m[33mSCRAM-SHA-256[39;49;00m[33m"[39;49;00m)[90m[39;49;00m
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/asynchronous/auth.py[0m:138: in _authenticate_scram
+    [0mres = [94mawait[39;49;00m conn.command(source, cmd)[90m[39;49;00m
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/asynchronous/helpers.py[0m:50: in inner
+    [0m[94mreturn[39;49;00m [94mawait[39;49;00m func(*args, **kwargs)[90m[39;49;00m
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/asynchronous/pool.py[0m:430: in command
+    [0m[94mawait[39;49;00m [96mself[39;49;00m._raise_connection_failure(error)[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/asynchronous/pool.py[0m:578: in _raise_connection_failure
+    [0m[94mraise[39;49;00m error[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/asynchronous/pool.py[0m:405: in command
+    [0m[94mreturn[39;49;00m [94mawait[39;49;00m run_command([90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/asynchronous/command_runner.py[0m:440: in run_command
+    [0mdocs, _, _ = [94mawait[39;49;00m _run_command([90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/asynchronous/command_runner.py[0m:192: in _run_command
+    [0mreply = [94mawait[39;49;00m conn.receive_message(request_id)[90m[39;49;00m
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/asynchronous/pool.py[0m:458: in receive_message
+    [0m[94mawait[39;49;00m [96mself[39;49;00m._raise_connection_failure(error)[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/asynchronous/pool.py[0m:578: in _raise_connection_failure
+    [0m[94mraise[39;49;00m error[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/asynchronous/pool.py[0m:455: in receive_message
+    [0m[94mreturn[39;49;00m [94mawait[39;49;00m async_receive_message([96mself[39;49;00m, request_id, [96mself[39;49;00m.max_message_size)[90m[39;49;00m
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+conn = AsyncConnection(<pymongo.network_layer.AsyncNetworkingInterface object at 0x10f8764b0>) CLOSED at 4555496992
+request_id = 824948438, max_message_size = 48000000
+
+    [0m[94masync[39;49;00m [94mdef[39;49;00m[90m [39;49;00m[92masync_receive_message[39;49;00m([90m[39;49;00m
+        conn: AsyncConnection,[90m[39;49;00m
+        request_id: Optional[[96mint[39;49;00m],[90m[39;49;00m
+        max_message_size: [96mint[39;49;00m = MAX_MESSAGE_SIZE,[90m[39;49;00m
+    ) -> _OpMsg:[90m[39;49;00m
+    [90m    [39;49;00m[33m"""Receive a raw BSON message or raise socket.error."""[39;49;00m[90m[39;49;00m
+        timeout: Optional[Union[[96mfloat[39;49;00m, [96mint[39;49;00m]][90m[39;49;00m
+        timeout = conn.conn.gettimeout[90m[39;49;00m
+        [94mif[39;49;00m _csot.get_timeout():[90m[39;49;00m
+            deadline = _csot.get_deadline()[90m[39;49;00m
+        [94melse[39;49;00m:[90m[39;49;00m
+            [94mif[39;49;00m timeout:[90m[39;49;00m
+                deadline = time.monotonic() + timeout[90m[39;49;00m
+            [94melse[39;49;00m:[90m[39;49;00m
+                deadline = [94mNone[39;49;00m[90m[39;49;00m
+        [94mif[39;49;00m deadline:[90m[39;49;00m
+            [90m# When the timeout has expired perform one final check to[39;49;00m[90m[39;49;00m
+            [90m# see if the socket is readable. This helps avoid spurious[39;49;00m[90m[39;49;00m
+            [90m# timeouts on AWS Lambda and other FaaS environments.[39;49;00m[90m[39;49;00m
+            timeout = [96mmax[39;49;00m(deadline - time.monotonic(), [94m0[39;49;00m)[90m[39;49;00m
+    [90m[39;49;00m
+        cancellation_task = asyncio.create_task(_poll_cancellation(conn))[90m[39;49;00m
+        read_task = asyncio.create_task(conn.conn.get_conn.read(request_id, max_message_size))[90m[39;49;00m
+        tasks = [read_task, cancellation_task][90m[39;49;00m
+        [94mtry[39;49;00m:[90m[39;49;00m
+            done, pending = [94mawait[39;49;00m asyncio.wait([90m[39;49;00m
+                tasks, timeout=timeout, return_when=asyncio.FIRST_COMPLETED[90m[39;49;00m
+            )[90m[39;49;00m
+            [94mfor[39;49;00m task [95min[39;49;00m pending:[90m[39;49;00m
+                task.cancel()[90m[39;49;00m
+            [94mif[39;49;00m pending:[90m[39;49;00m
+                [94mawait[39;49;00m asyncio.wait(pending)[90m[39;49;00m
+            [94mif[39;49;00m [96mlen[39;49;00m(done) == [94m0[39;49;00m:[90m[39;49;00m
+                [94mraise[39;49;00m socket.timeout([33m"[39;49;00m[33mtimed out[39;49;00m[33m"[39;49;00m)[90m[39;49;00m
+            [94mif[39;49;00m read_task [95min[39;49;00m done:[90m[39;49;00m
+                data, op_code = read_task.result()[90m[39;49;00m
+                [94mtry[39;49;00m:[90m[39;49;00m
+                    unpack_reply = _UNPACK_REPLY[op_code][90m[39;49;00m
+                [94mexcept[39;49;00m [96mKeyError[39;49;00m:[90m[39;49;00m
+                    [94mraise[39;49;00m ProtocolError([90m[39;49;00m
+                        [33mf[39;49;00m[33m"[39;49;00m[33mGot opcode [39;49;00m[33m{[39;49;00mop_code[33m!r}[39;49;00m[33m but expected [39;49;00m[33m{[39;49;00m_UNPACK_REPLY.keys()[33m!r}[39;49;00m[33m"[39;49;00m[90m[39;49;00m
+                    ) [94mfrom[39;49;00m[90m [39;49;00m[94mNone[39;49;00m[90m[39;49;00m
+                [94mreturn[39;49;00m unpack_reply(data)[90m[39;49;00m
+>           [94mraise[39;49;00m _OperationCancelled([33m"[39;49;00m[33moperation cancelled[39;49;00m[33m"[39;49;00m)[90m[39;49;00m
+[1m[31mE           pymongo.errors._OperationCancelled: operation cancelled[0m
+
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/network_layer.py[0m:727: _OperationCancelled
+
+[33mDuring handling of the above exception, another exception occurred:[0m
+
+mongo_uri = 'mongodb://root:9e59b0c4fa9569a04659ce2b8fd02ecf@127.0.0.1:56857/?authSource=admin&directConnection=true'
+root_client = MongoClient(host=['127.0.0.1:56857'], document_class=dict, tz_aware=False, connect=True, authsource='admin', directconnection=True, serverselectiontimeoutms=10000)
+capsys = <_pytest.capture.CaptureFixture object at 0x10e2f37a0>
+unscoped = <bound method TenantCommandListener.allowing_unscoped of <onb_data.safety_net.TenantCommandListener object at 0x10d26fa40>>
+
+    [0m[94mdef[39;49;00m[90m [39;49;00m[92mtest_make_evals_selftest_passes_all_27_cases_and_records_the_run[39;49;00m([90m[39;49;00m
+        mongo_uri: [96mstr[39;49;00m, root_client: MongoClient[[96mdict[39;49;00m[[96mstr[39;49;00m, Any]], capsys: pytest.CaptureFixture[[96mstr[39;49;00m], unscoped: Unscoped[90m[39;49;00m
+    ) -> [94mNone[39;49;00m:[90m[39;49;00m
+        results_db = [33mf[39;49;00m[33m"[39;49;00m[33monb_evalresults_[39;49;00m[33m{[39;49;00msecrets.token_hex([94m4[39;49;00m)[33m}[39;49;00m[33m"[39;49;00m[90m[39;49;00m
+        env = {**os.environ, ENV_MONGO_URI: mongo_uri, ENV_RESULTS_DATABASE: results_db, ENV_RESULTS_ORG: RESULTS_ORG}[90m[39;49;00m
+        [94mtry[39;49;00m:[90m[39;49;00m
+            [94mwith[39;49;00m captured_telemetry() [94mas[39;49;00m telemetry:[90m[39;49;00m
+                code = main([[33m"[39;49;00m[33mselftest[39;49;00m[33m"[39;49;00m, [33m"[39;49;00m[33m--repeat[39;49;00m[33m"[39;49;00m, [33m"[39;49;00m[33m3[39;49;00m[33m"[39;49;00m], env=env)[90m[39;49;00m
+                spans = telemetry.spans()[90m[39;49;00m
+            out = capsys.readouterr().out[90m[39;49;00m
+            [96mprint[39;49;00m(out)  [90m# the summary lands in the make output (pytest -s)[39;49;00m[90m[39;49;00m
+            [94massert[39;49;00m code == [94m0[39;49;00m, out[90m[39;49;00m
+            run_id = _printed([33mr[39;49;00m[33m"[39;49;00m[33meval_runs: ([39;49;00m[33m\[39;49;00m[33mS+)[39;49;00m[33m"[39;49;00m, out)[90m[39;49;00m
+            report_path = find_repo_file([33m"[39;49;00m[33mevals/reports[39;49;00m[33m"[39;49;00m) / _printed([33mr[39;49;00m[33m"[39;49;00m[33mreport: .*/([39;49;00m[33m\[39;49;00m[33mS+[39;49;00m[33m\[39;49;00m[33m.json)[39;49;00m[33m"[39;49;00m, out)[90m[39;49;00m
+            report = json.loads(report_path.read_text())[90m[39;49;00m
+            [94massert[39;49;00m report[[33m"[39;49;00m[33mrun_id[39;49;00m[33m"[39;49;00m] == run_id[90m[39;49;00m
+            [94massert[39;49;00m [96mlen[39;49;00m(report[[33m"[39;49;00m[33mcases[39;49;00m[33m"[39;49;00m]) == [94m27[39;49;00m[90m[39;49;00m
+            [94massert[39;49;00m report[[33m"[39;49;00m[33mall_cases_passed[39;49;00m[33m"[39;49;00m][90m[39;49;00m
+            [94massert[39;49;00m report[[33m"[39;49;00m[33mpassed[39;49;00m[33m"[39;49;00m][90m[39;49;00m
+            [94massert[39;49;00m [96mlen[39;49;00m(report[[33m"[39;49;00m[33mnegative_controls[39;49;00m[33m"[39;49;00m]) == [94m8[39;49;00m[90m[39;49;00m
+            [94massert[39;49;00m [96mall[39;49;00m(control[[33m"[39;49;00m[33mcaught[39;49;00m[33m"[39;49;00m] [94mfor[39;49;00m control [95min[39;49;00m report[[33m"[39;49;00m[33mnegative_controls[39;49;00m[33m"[39;49;00m])[90m[39;49;00m
+    [90m[39;49;00m
+            [94mwith[39;49;00m unscoped([33m"[39;49;00m[33mroot read-back by id, without assuming the org, proves which org the run was recorded under[39;49;00m[33m"[39;49;00m):[90m[39;49;00m
+                record = root_client[results_db][[33m"[39;49;00m[33meval_runs[39;49;00m[33m"[39;49;00m].find_one({[33m"[39;49;00m[33m_id[39;49;00m[33m"[39;49;00m: run_id})[90m[39;49;00m
+            [94massert[39;49;00m record [95mis[39;49;00m [95mnot[39;49;00m [94mNone[39;49;00m[90m[39;49;00m
+            [94massert[39;49;00m record[[33m"[39;49;00m[33morg_id[39;49;00m[33m"[39;49;00m] == RESULTS_ORG[90m[39;49;00m
+            [94massert[39;49;00m record[[33m"[39;49;00m[33mmode[39;49;00m[33m"[39;49;00m] == [33m"[39;49;00m[33mselftest[39;49;00m[33m"[39;49;00m[90m[39;49;00m
+            [94massert[39;49;00m [96mlen[39;49;00m(record[[33m"[39;49;00m[33msummary[39;49;00m[33m"[39;49;00m]) == [94m27[39;49;00m[90m[39;49;00m
+    [90m[39;49;00m
+            case_spans = [s [94mfor[39;49;00m s [95min[39;49;00m spans [94mif[39;49;00m (s.attributes [95mor[39;49;00m {}).get(EVAL_RUN_ID) == run_id][90m[39;49;00m
+            [94massert[39;49;00m {(s.attributes [95mor[39;49;00m {}).get(EVAL_CASE_ID) [94mfor[39;49;00m s [95min[39;49;00m case_spans} >= {c[[33m"[39;49;00m[33mcase_id[39;49;00m[33m"[39;49;00m] [94mfor[39;49;00m c [95min[39;49;00m report[[33m"[39;49;00m[33mcases[39;49;00m[33m"[39;49;00m]}[90m[39;49;00m
+            [94massert[39;49;00m [96mall[39;49;00m([90m[39;49;00m
+                (s.attributes [95mor[39;49;00m {}).get(EVAL_RUN_ID) == run_id [94mfor[39;49;00m s [95min[39;49;00m spans [94mif[39;49;00m s.name [95min[39;49;00m {[33m"[39;49;00m[33mllm.chat[39;49;00m[33m"[39;49;00m, [33m"[39;49;00m[33meval.tool[39;49;00m[33m"[39;49;00m}[90m[39;49;00m
+            )[90m[39;49;00m
+    [90m[39;49;00m
+            leftovers = [n [94mfor[39;49;00m n [95min[39;49;00m root_client.list_database_names() [94mif[39;49;00m n.startswith(DATABASE_PREFIX)][90m[39;49;00m
+            [94massert[39;49;00m leftovers == [][90m[39;49;00m
+        [94mfinally[39;49;00m:[90m[39;49;00m
+>           root_client.drop_database(results_db)[90m[39;49;00m
+
+[1m[31mlibs/py-evals/tests_int/test_selftest.py[0m:77: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/_csot.py[0m:126: in csot_wrapper
+    [0m[94mreturn[39;49;00m func([96mself[39;49;00m, *args, **kwargs)[90m[39;49;00m
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py[0m:2517: in drop_database
+    [0m[96mself[39;49;00m[name].command([90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/_csot.py[0m:126: in csot_wrapper
+    [0m[94mreturn[39;49;00m func([96mself[39;49;00m, *args, **kwargs)[90m[39;49;00m
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/database.py[0m:946: in command
+    [0m[94mreturn[39;49;00m [96mself[39;49;00m._client._retryable_read([90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py[0m:2116: in _retryable_read
+    [0m[94mreturn[39;49;00m [96mself[39;49;00m._retry_internal([90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/_csot.py[0m:126: in csot_wrapper
+    [0m[94mreturn[39;49;00m func([96mself[39;49;00m, *args, **kwargs)[90m[39;49;00m
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py[0m:2077: in _retry_internal
+    [0m).run()[90m[39;49;00m
+      ^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py[0m:2947: in run
+    [0mres = [96mself[39;49;00m._read() [94mif[39;49;00m [96mself[39;49;00m._is_read [94melse[39;49;00m [96mself[39;49;00m._write()[90m[39;49;00m
+          ^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py[0m:3175: in _read
+    [0m[96mself[39;49;00m._server = [96mself[39;49;00m._get_server()[90m[39;49;00m
+                   ^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py[0m:3120: in _get_server
+    [0m[94mreturn[39;49;00m [96mself[39;49;00m._client._select_server([90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py[0m:1917: in _select_server
+    [0mserver = topology.select_server([90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/topology.py[0m:357: in select_server
+    [0mserver = [96mself[39;49;00m._select_server([90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/topology.py[0m:331: in _select_server
+    [0mservers = [96mself[39;49;00m.select_servers([90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/topology.py[0m:249: in select_servers
+    [0mserver_descriptions = [96mself[39;49;00m._select_servers_loop([90m[39;49;00m
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <Topology <TopologyDescription id: 6af6233d784ad653d72a1c0e, topology_type: Single, servers: [<ServerDescription ('127...imeout('127.0.0.1:56857: timed out (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms)')>]>>
+selector = Primary(), timeout = 10.0, operation = 'dropDatabase'
+operation_id = -1921951152, address = None, deprioritized_servers = None
+
+    [0m[94mdef[39;49;00m[90m [39;49;00m[92m_select_servers_loop[39;49;00m([90m[39;49;00m
+        [96mself[39;49;00m,[90m[39;49;00m
+        selector: Callable[[Selection], Selection],[90m[39;49;00m
+        timeout: [96mfloat[39;49;00m,[90m[39;49;00m
+        operation: [96mstr[39;49;00m,[90m[39;49;00m
+        operation_id: Optional[[96mint[39;49;00m],[90m[39;49;00m
+        address: Optional[_Address],[90m[39;49;00m
+        deprioritized_servers: Optional[[96mlist[39;49;00m[Server]] = [94mNone[39;49;00m,[90m[39;49;00m
+    ) -> [96mlist[39;49;00m[ServerDescription]:[90m[39;49;00m
+    [90m    [39;49;00m[33m"""select_servers() guts. Hold the lock when calling this."""[39;49;00m[90m[39;49;00m
+        now = time.monotonic()[90m[39;49;00m
+        end_time = now + timeout[90m[39;49;00m
+        logged_waiting = [94mFalse[39;49;00m[90m[39;49;00m
+        [90m# Server selection does not have APM events, gate only on logging[39;49;00m[90m[39;49;00m
+        ss: Optional[_ServerSelectionTelemetry] = [94mNone[39;49;00m[90m[39;49;00m
+        [94mif[39;49;00m _is_debug_enabled(_SERVER_SELECTION_LOGGER):[90m[39;49;00m
+            ss = _ServerSelectionTelemetry([90m[39;49;00m
+                [96mself[39;49;00m._topology_id, selector, operation, operation_id, [96mself[39;49;00m.description[90m[39;49;00m
+            )[90m[39;49;00m
+            ss.started()[90m[39;49;00m
+    [90m[39;49;00m
+        server_descriptions = [96mself[39;49;00m._description.apply_selector([90m[39;49;00m
+            selector,[90m[39;49;00m
+            address,[90m[39;49;00m
+            custom_selector=[96mself[39;49;00m._settings.server_selector,[90m[39;49;00m
+            deprioritized_servers=[server.description [94mfor[39;49;00m server [95min[39;49;00m deprioritized_servers][90m[39;49;00m
+            [94mif[39;49;00m deprioritized_servers[90m[39;49;00m
+            [94melse[39;49;00m [94mNone[39;49;00m,[90m[39;49;00m
+        )[90m[39;49;00m
+    [90m[39;49;00m
+        [94mwhile[39;49;00m [95mnot[39;49;00m server_descriptions:[90m[39;49;00m
+            [90m# No suitable servers.[39;49;00m[90m[39;49;00m
+            [94mif[39;49;00m timeout == [94m0[39;49;00m [95mor[39;49;00m now > end_time:[90m[39;49;00m
+                [94mif[39;49;00m ss [95mis[39;49;00m [95mnot[39;49;00m [94mNone[39;49;00m:[90m[39;49;00m
+                    ss.failed([96mself[39;49;00m._error_message(selector), [96mself[39;49;00m.description)[90m[39;49;00m
+>               [94mraise[39;49;00m ServerSelectionTimeoutError([90m[39;49;00m
+                    [33mf[39;49;00m[33m"[39;49;00m[33m{[39;49;00m[96mself[39;49;00m._error_message(selector)[33m}[39;49;00m[33m, Timeout: [39;49;00m[33m{[39;49;00mtimeout[33m}[39;49;00m[33ms, Topology Description: [39;49;00m[33m{[39;49;00m[96mself[39;49;00m.description[33m!r}[39;49;00m[33m"[39;49;00m[90m[39;49;00m
+                )[90m[39;49;00m
+[1m[31mE               pymongo.errors.ServerSelectionTimeoutError: 127.0.0.1:56857: timed out (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms), Timeout: 10.0s, Topology Description: <TopologyDescription id: 6af6233d784ad653d72a1c0e, topology_type: Single, servers: [<ServerDescription ('127.0.0.1', 56857) server_type: Unknown, rtt: None, error=NetworkTimeout('127.0.0.1:56857: timed out (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms)')>]>[0m
+
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/topology.py[0m:297: ServerSelectionTimeoutError
+[36m[1m=========================== short test summary info ============================[0m
+[31mFAILED[0m libs/py-evals/tests_int/test_selftest.py::[1mtest_make_evals_selftest_passes_all_27_cases_and_records_the_run[0m - pymongo.errors.ServerSelectionTimeoutError: 127.0.0.1:56857: timed out (con...
+[31m=================== [31m[1m1 failed[0m, [32m3 passed[0m[31m in 262.21s (0:04:22)[0m[31m ====================[0m
+
+> nx run orchestrator:test-int
+
+[2m> [22muv run --frozen pytest apps/orchestrator/tests_int -o cache_dir=.pytest_cache/orchestrator-int
+
+[1m============================= test session starts ==============================[0m
+platform darwin -- Python 3.12.13, pytest-9.2.0, pluggy-1.7.0
+cachedir: .pytest_cache/orchestrator-int
+rootdir: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-ui-6
+configfile: pyproject.toml
+plugins: hypothesis-6.170.15, langsmith-0.14.17, cov-7.1.0, anyio-4.16.0
+collected 26 items
+
+apps/orchestrator/tests_int/test_agents_against_mongo.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m            [ 15%][0m
+apps/orchestrator/tests_int/test_approvals_against_mongo.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m    [ 50%][0m
+apps/orchestrator/tests_int/test_block_and_resume_against_mongo.py [32m.[0m[32m     [ 53%][0m
+apps/orchestrator/tests_int/test_kill_and_restart.py [32m.[0m[31mF[0m[31mE[0m[31m                 [ 61%][0m
+apps/orchestrator/tests_int/test_resume_latency.py [31mE[0m[31m                     [ 65%][0m
+apps/orchestrator/tests_int/test_runs_against_mongo.py [31mE[0m[31mE[0m[31mE[0m[31mE[0m[31mE[0m[31mE[0m[31mE[0m[31m           [ 92%][0m
+apps/orchestrator/tests_int/test_safety_net_guard.py [32m.[0m[32m.[0m[31m                  [100%][0m
+
+==================================== ERRORS ====================================
+[31m[1m_ ERROR at teardown of test_a_worker_killed_with_sigkill_mid_run_restarts_and_the_run_completes_with_no_effect_twice[after] _[0m
+
+root_client = MongoClient(host=['127.0.0.1:56856'], document_class=dict, tz_aware=True, connect=True, authsource='admin', directconnection=True, serverselectiontimeoutms=10000)
+mongo_uri = 'mongodb://root:9e59b0c4fa9569a04659ce2b8fd02ecf@127.0.0.1:56856/?authSource=admin&directConnection=true'
+tenant_safety_net = <onb_data.safety_net.TenantCommandListener object at 0x10ac24ec0>
+
+    [0m[37m@pytest[39;49;00m.fixture[90m[39;49;00m
+    [94mdef[39;49;00m[90m [39;49;00m[92mscratch[39;49;00m(root_client: Client, mongo_uri: [96mstr[39;49;00m, tenant_safety_net: TenantCommandListener) -> Iterator[Scratch]:[90m[39;49;00m
+    [90m    [39;49;00m[33m"""A fresh database with the bus collections created up front, dropped afterwards."""[39;49;00m[90m[39;49;00m
+        name = [33mf[39;49;00m[33m"[39;49;00m[33mit_run1_[39;49;00m[33m{[39;49;00muuid.uuid4().hex[:[94m12[39;49;00m][33m}[39;49;00m[33m"[39;49;00m[90m[39;49;00m
+        db = root_client[name][90m[39;49;00m
+        collections = ([33m"[39;49;00m[33mevents[39;49;00m[33m"[39;49;00m, [33m"[39;49;00m[33mjobs[39;49;00m[33m"[39;49;00m, [33m"[39;49;00m[33mdead_letters[39;49;00m[33m"[39;49;00m, [33m"[39;49;00m[33monboarding_runs[39;49;00m[33m"[39;49;00m, [33m"[39;49;00m[33mrun_tasks[39;49;00m[33m"[39;49;00m, [33m"[39;49;00m[33mrun_checkpoints[39;49;00m[33m"[39;49;00m,[90m[39;49;00m
+                       [33m"[39;49;00m[33mrun_checkpoint_writes[39;49;00m[33m"[39;49;00m, [33m"[39;49;00m[33maudit_log[39;49;00m[33m"[39;49;00m)  [90m# fmt: skip[39;49;00m[90m[39;49;00m
+        [94mfor[39;49;00m collection [95min[39;49;00m collections:[90m[39;49;00m
+            db.create_collection(collection)[90m[39;49;00m
+        [94mtry[39;49;00m:[90m[39;49;00m
+            [94myield[39;49;00m Scratch(mongo_uri, name, db, tenant_safety_net)[90m[39;49;00m
+        [94mfinally[39;49;00m:[90m[39;49;00m
+>           root_client.drop_database(name)[90m[39;49;00m
+
+[1m[31mapps/orchestrator/tests_int/conftest.py[0m:134: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/_csot.py[0m:126: in csot_wrapper
+    [0m[94mreturn[39;49;00m func([96mself[39;49;00m, *args, **kwargs)[90m[39;49;00m
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py[0m:2517: in drop_database
+    [0m[96mself[39;49;00m[name].command([90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/_csot.py[0m:126: in csot_wrapper
+    [0m[94mreturn[39;49;00m func([96mself[39;49;00m, *args, **kwargs)[90m[39;49;00m
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/database.py[0m:946: in command
+    [0m[94mreturn[39;49;00m [96mself[39;49;00m._client._retryable_read([90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py[0m:2116: in _retryable_read
+    [0m[94mreturn[39;49;00m [96mself[39;49;00m._retry_internal([90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/_csot.py[0m:126: in csot_wrapper
+    [0m[94mreturn[39;49;00m func([96mself[39;49;00m, *args, **kwargs)[90m[39;49;00m
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py[0m:2077: in _retry_internal
+    [0m).run()[90m[39;49;00m
+      ^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py[0m:2947: in run
+    [0mres = [96mself[39;49;00m._read() [94mif[39;49;00m [96mself[39;49;00m._is_read [94melse[39;49;00m [96mself[39;49;00m._write()[90m[39;49;00m
+          ^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py[0m:3175: in _read
+    [0m[96mself[39;49;00m._server = [96mself[39;49;00m._get_server()[90m[39;49;00m
+                   ^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py[0m:3120: in _get_server
+    [0m[94mreturn[39;49;00m [96mself[39;49;00m._client._select_server([90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py[0m:1917: in _select_server
+    [0mserver = topology.select_server([90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/topology.py[0m:357: in select_server
+    [0mserver = [96mself[39;49;00m._select_server([90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/topology.py[0m:331: in _select_server
+    [0mservers = [96mself[39;49;00m.select_servers([90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/topology.py[0m:249: in select_servers
+    [0mserver_descriptions = [96mself[39;49;00m._select_servers_loop([90m[39;49;00m
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <Topology <TopologyDescription id: 6af6233d4735f6ad79edc558, topology_type: Single, servers: [<ServerDescription ('127...imeout('127.0.0.1:56856: timed out (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms)')>]>>
+selector = Primary(), timeout = 10.0, operation = 'dropDatabase'
+operation_id = -807995278, address = None, deprioritized_servers = None
+
+    [0m[94mdef[39;49;00m[90m [39;49;00m[92m_select_servers_loop[39;49;00m([90m[39;49;00m
+        [96mself[39;49;00m,[90m[39;49;00m
+        selector: Callable[[Selection], Selection],[90m[39;49;00m
+        timeout: [96mfloat[39;49;00m,[90m[39;49;00m
+        operation: [96mstr[39;49;00m,[90m[39;49;00m
+        operation_id: Optional[[96mint[39;49;00m],[90m[39;49;00m
+        address: Optional[_Address],[90m[39;49;00m
+        deprioritized_servers: Optional[[96mlist[39;49;00m[Server]] = [94mNone[39;49;00m,[90m[39;49;00m
+    ) -> [96mlist[39;49;00m[ServerDescription]:[90m[39;49;00m
+    [90m    [39;49;00m[33m"""select_servers() guts. Hold the lock when calling this."""[39;49;00m[90m[39;49;00m
+        now = time.monotonic()[90m[39;49;00m
+        end_time = now + timeout[90m[39;49;00m
+        logged_waiting = [94mFalse[39;49;00m[90m[39;49;00m
+        [90m# Server selection does not have APM events, gate only on logging[39;49;00m[90m[39;49;00m
+        ss: Optional[_ServerSelectionTelemetry] = [94mNone[39;49;00m[90m[39;49;00m
+        [94mif[39;49;00m _is_debug_enabled(_SERVER_SELECTION_LOGGER):[90m[39;49;00m
+            ss = _ServerSelectionTelemetry([90m[39;49;00m
+                [96mself[39;49;00m._topology_id, selector, operation, operation_id, [96mself[39;49;00m.description[90m[39;49;00m
+            )[90m[39;49;00m
+            ss.started()[90m[39;49;00m
+    [90m[39;49;00m
+        server_descriptions = [96mself[39;49;00m._description.apply_selector([90m[39;49;00m
+            selector,[90m[39;49;00m
+            address,[90m[39;49;00m
+            custom_selector=[96mself[39;49;00m._settings.server_selector,[90m[39;49;00m
+            deprioritized_servers=[server.description [94mfor[39;49;00m server [95min[39;49;00m deprioritized_servers][90m[39;49;00m
+            [94mif[39;49;00m deprioritized_servers[90m[39;49;00m
+            [94melse[39;49;00m [94mNone[39;49;00m,[90m[39;49;00m
+        )[90m[39;49;00m
+    [90m[39;49;00m
+        [94mwhile[39;49;00m [95mnot[39;49;00m server_descriptions:[90m[39;49;00m
+            [90m# No suitable servers.[39;49;00m[90m[39;49;00m
+            [94mif[39;49;00m timeout == [94m0[39;49;00m [95mor[39;49;00m now > end_time:[90m[39;49;00m
+                [94mif[39;49;00m ss [95mis[39;49;00m [95mnot[39;49;00m [94mNone[39;49;00m:[90m[39;49;00m
+                    ss.failed([96mself[39;49;00m._error_message(selector), [96mself[39;49;00m.description)[90m[39;49;00m
+>               [94mraise[39;49;00m ServerSelectionTimeoutError([90m[39;49;00m
+                    [33mf[39;49;00m[33m"[39;49;00m[33m{[39;49;00m[96mself[39;49;00m._error_message(selector)[33m}[39;49;00m[33m, Timeout: [39;49;00m[33m{[39;49;00mtimeout[33m}[39;49;00m[33ms, Topology Description: [39;49;00m[33m{[39;49;00m[96mself[39;49;00m.description[33m!r}[39;49;00m[33m"[39;49;00m[90m[39;49;00m
+                )[90m[39;49;00m
+[1m[31mE               pymongo.errors.ServerSelectionTimeoutError: 127.0.0.1:56856: timed out (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms), Timeout: 10.0s, Topology Description: <TopologyDescription id: 6af6233d4735f6ad79edc558, topology_type: Single, servers: [<ServerDescription ('127.0.0.1', 56856) server_type: Unknown, rtt: None, error=NetworkTimeout('127.0.0.1:56856: timed out (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms)')>]>[0m
+
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/topology.py[0m:297: ServerSelectionTimeoutError
+[31m[1m_ ERROR at setup of test_decision_to_resume_is_under_5_seconds_at_p95_over_30_plus_decisions _[0m
+
+root_client = MongoClient(host=['127.0.0.1:56856'], document_class=dict, tz_aware=True, connect=True, authsource='admin', directconnection=True, serverselectiontimeoutms=10000)
+mongo_uri = 'mongodb://root:9e59b0c4fa9569a04659ce2b8fd02ecf@127.0.0.1:56856/?authSource=admin&directConnection=true'
+tenant_safety_net = <onb_data.safety_net.TenantCommandListener object at 0x10ac24ec0>
+
+    [0m[37m@pytest[39;49;00m.fixture[90m[39;49;00m
+    [94mdef[39;49;00m[90m [39;49;00m[92mscratch[39;49;00m(root_client: Client, mongo_uri: [96mstr[39;49;00m, tenant_safety_net: TenantCommandListener) -> Iterator[Scratch]:[90m[39;49;00m
+    [90m    [39;49;00m[33m"""A fresh database with the bus collections created up front, dropped afterwards."""[39;49;00m[90m[39;49;00m
+        name = [33mf[39;49;00m[33m"[39;49;00m[33mit_run1_[39;49;00m[33m{[39;49;00muuid.uuid4().hex[:[94m12[39;49;00m][33m}[39;49;00m[33m"[39;49;00m[90m[39;49;00m
+        db = root_client[name][90m[39;49;00m
+        collections = ([33m"[39;49;00m[33mevents[39;49;00m[33m"[39;49;00m, [33m"[39;49;00m[33mjobs[39;49;00m[33m"[39;49;00m, [33m"[39;49;00m[33mdead_letters[39;49;00m[33m"[39;49;00m, [33m"[39;49;00m[33monboarding_runs[39;49;00m[33m"[39;49;00m, [33m"[39;49;00m[33mrun_tasks[39;49;00m[33m"[39;49;00m, [33m"[39;49;00m[33mrun_checkpoints[39;49;00m[33m"[39;49;00m,[90m[39;49;00m
+                       [33m"[39;49;00m[33mrun_checkpoint_writes[39;49;00m[33m"[39;49;00m, [33m"[39;49;00m[33maudit_log[39;49;00m[33m"[39;49;00m)  [90m# fmt: skip[39;49;00m[90m[39;49;00m
+        [94mfor[39;49;00m collection [95min[39;49;00m collections:[90m[39;49;00m
+>           db.create_collection(collection)[90m[39;49;00m
+
+[1m[31mapps/orchestrator/tests_int/conftest.py[0m:130: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/_csot.py[0m:126: in csot_wrapper
+    [0m[94mreturn[39;49;00m func([96mself[39;49;00m, *args, **kwargs)[90m[39;49;00m
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/database.py[0m:618: in create_collection
+    [0m[95mand[39;49;00m name [95min[39;49;00m [96mself[39;49;00m._list_collection_names([96mfilter[39;49;00m={[33m"[39;49;00m[33mname[39;49;00m[33m"[39;49;00m: name}, session=s)[90m[39;49;00m
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/database.py[0m:1212: in _list_collection_names
+    [0mresult[[33m"[39;49;00m[33mname[39;49;00m[33m"[39;49;00m] [94mfor[39;49;00m result [95min[39;49;00m [96mself[39;49;00m._list_collections_helper(session=session, **kwargs)[90m[39;49;00m
+                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/database.py[0m:1150: in _list_collections_helper
+    [0m[94mreturn[39;49;00m [96mself[39;49;00m._client._retryable_read([90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py[0m:2116: in _retryable_read
+    [0m[94mreturn[39;49;00m [96mself[39;49;00m._retry_internal([90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/_csot.py[0m:126: in csot_wrapper
+    [0m[94mreturn[39;49;00m func([96mself[39;49;00m, *args, **kwargs)[90m[39;49;00m
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py[0m:2077: in _retry_internal
+    [0m).run()[90m[39;49;00m
+      ^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py[0m:2958: in run
+    [0m[96mself[39;49;00m._check_last_error()[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py[0m:3113: in _check_last_error
+    [0m[94mraise[39;49;00m [96mself[39;49;00m._last_error[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py[0m:2947: in run
+    [0mres = [96mself[39;49;00m._read() [94mif[39;49;00m [96mself[39;49;00m._is_read [94melse[39;49;00m [96mself[39;49;00m._write()[90m[39;49;00m
+          ^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py[0m:3189: in _read
+    [0m[94mreturn[39;49;00m [96mself[39;49;00m._func([96mself[39;49;00m._session, [96mself[39;49;00m._server, conn, read_pref)  [90m# type: ignore[39;49;00m[90m[39;49;00m
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/database.py[0m:1148: in _cmd
+    [0m[94mreturn[39;49;00m [96mself[39;49;00m._list_collections(conn, session, read_preference=read_preference, **kwargs)[90m[39;49;00m
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/database.py[0m:1098: in _list_collections
+    [0m[96mself[39;49;00m._command(conn, cmd, read_preference=read_preference, session=tmp_session)[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/database.py[0m:773: in _command
+    [0m[94mreturn[39;49;00m conn.command([90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/helpers.py[0m:50: in inner
+    [0m[94mreturn[39;49;00m func(*args, **kwargs)[90m[39;49;00m
+           ^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/pool.py[0m:430: in command
+    [0m[96mself[39;49;00m._raise_connection_failure(error)[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/pool.py[0m:576: in _raise_connection_failure
+    [0m[94mraise[39;49;00m error[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/pool.py[0m:405: in command
+    [0m[94mreturn[39;49;00m run_command([90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/command_runner.py[0m:440: in run_command
+    [0mdocs, _, _ = _run_command([90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/command_runner.py[0m:192: in _run_command
+    [0mreply = conn.receive_message(request_id)[90m[39;49;00m
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/pool.py[0m:458: in receive_message
+    [0m[96mself[39;49;00m._raise_connection_failure(error)[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/pool.py[0m:576: in _raise_connection_failure
+    [0m[94mraise[39;49;00m error[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/pool.py[0m:455: in receive_message
+    [0m[94mreturn[39;49;00m receive_message([96mself[39;49;00m, request_id, [96mself[39;49;00m.max_message_size)[90m[39;49;00m
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/network_layer.py[0m:748: in receive_message
+    [0mlength, _, response_to, op_code = _UNPACK_HEADER(receive_data(conn, [94m16[39;49;00m, deadline))[90m[39;49;00m
+                                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+conn = Connection(<pymongo.network_layer.NetworkingInterface object at 0x10dfb30b0>) CLOSED at 4529535168
+length = 16, deadline = None
+
+    [0m[94mdef[39;49;00m[90m [39;49;00m[92mreceive_data[39;49;00m(conn: Connection, length: [96mint[39;49;00m, deadline: Optional[[96mfloat[39;49;00m]) -> [96mmemoryview[39;49;00m:[90m[39;49;00m
+        buf = [96mbytearray[39;49;00m(length)[90m[39;49;00m
+        mv = [96mmemoryview[39;49;00m(buf)[90m[39;49;00m
+        bytes_read = [94m0[39;49;00m[90m[39;49;00m
+        [90m# To support cancelling a network read, we shorten the socket timeout and[39;49;00m[90m[39;49;00m
+        [90m# check for the cancellation signal after each timeout. Alternatively we[39;49;00m[90m[39;49;00m
+        [90m# could close the socket but that does not reliably cancel recv() calls[39;49;00m[90m[39;49;00m
+        [90m# on all OSes.[39;49;00m[90m[39;49;00m
+        [90m# When the timeout has expired we perform one final non-blocking recv.[39;49;00m[90m[39;49;00m
+        [90m# This helps avoid spurious timeouts when the response is actually already[39;49;00m[90m[39;49;00m
+        [90m# buffered on the client.[39;49;00m[90m[39;49;00m
+        orig_timeout = conn.conn.gettimeout()[90m[39;49;00m
+        [94mtry[39;49;00m:[90m[39;49;00m
+            [94mwhile[39;49;00m bytes_read < length:[90m[39;49;00m
+                [94mtry[39;49;00m:[90m[39;49;00m
+                    [90m# Use the legacy wait_for_read cancellation approach on Windows due to PYTHON-5405.[39;49;00m[90m[39;49;00m
+                    [94mif[39;49;00m _WINDOWS:[90m[39;49;00m
+                        wait_for_read(conn, deadline)[90m[39;49;00m
+                        [94mif[39;49;00m _csot.get_timeout() [95mand[39;49;00m deadline [95mis[39;49;00m [95mnot[39;49;00m [94mNone[39;49;00m:[90m[39;49;00m
+                            conn.set_conn_timeout([96mmax[39;49;00m(deadline - time.monotonic(), [94m0[39;49;00m))[90m[39;49;00m
+                    [94melse[39;49;00m:[90m[39;49;00m
+                        [94mif[39;49;00m deadline [95mis[39;49;00m [95mnot[39;49;00m [94mNone[39;49;00m:[90m[39;49;00m
+                            short_timeout = [96mmin[39;49;00m([96mmax[39;49;00m(deadline - time.monotonic(), [94m0[39;49;00m), _POLL_TIMEOUT)[90m[39;49;00m
+                        [94melse[39;49;00m:[90m[39;49;00m
+                            short_timeout = _POLL_TIMEOUT[90m[39;49;00m
+                        conn.set_conn_timeout(short_timeout)[90m[39;49;00m
+    [90m[39;49;00m
+                    chunk_length = conn.conn.recv_into(mv[bytes_read:])[90m[39;49;00m
+                [94mexcept[39;49;00m BLOCKING_IO_ERRORS:[90m[39;49;00m
+                    [94mif[39;49;00m conn.cancel_context.cancelled:[90m[39;49;00m
+                        [94mraise[39;49;00m _OperationCancelled([33m"[39;49;00m[33moperation cancelled[39;49;00m[33m"[39;49;00m) [94mfrom[39;49;00m[90m [39;49;00m[94mNone[39;49;00m[90m[39;49;00m
+                    [90m# We reached the true deadline.[39;49;00m[90m[39;49;00m
+                    [94mraise[39;49;00m socket.timeout([33m"[39;49;00m[33mtimed out[39;49;00m[33m"[39;49;00m) [94mfrom[39;49;00m[90m [39;49;00m[94mNone[39;49;00m[90m[39;49;00m
+                [94mexcept[39;49;00m socket.timeout:[90m[39;49;00m
+                    [94mif[39;49;00m conn.cancel_context.cancelled:[90m[39;49;00m
+>                       [94mraise[39;49;00m _OperationCancelled([33m"[39;49;00m[33moperation cancelled[39;49;00m[33m"[39;49;00m) [94mfrom[39;49;00m[90m [39;49;00m[94mNone[39;49;00m[90m[39;49;00m
+[1m[31mE                       pymongo.errors._OperationCancelled: operation cancelled[0m
+
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/network_layer.py[0m:339: _OperationCancelled
+[31m[1m_ ERROR at setup of test_a_diamond_started_through_the_outbox_runs_b_and_c_in_parallel_and_d_after_both _[0m
+
+root_client = MongoClient(host=['127.0.0.1:56856'], document_class=dict, tz_aware=True, connect=True, authsource='admin', directconnection=True, serverselectiontimeoutms=10000)
+mongo_uri = 'mongodb://root:9e59b0c4fa9569a04659ce2b8fd02ecf@127.0.0.1:56856/?authSource=admin&directConnection=true'
+tenant_safety_net = <onb_data.safety_net.TenantCommandListener object at 0x10ac24ec0>
+
+    [0m[37m@pytest[39;49;00m.fixture[90m[39;49;00m
+    [94mdef[39;49;00m[90m [39;49;00m[92mscratch[39;49;00m(root_client: Client, mongo_uri: [96mstr[39;49;00m, tenant_safety_net: TenantCommandListener) -> Iterator[Scratch]:[90m[39;49;00m
+    [90m    [39;49;00m[33m"""A fresh database with the bus collections created up front, dropped afterwards."""[39;49;00m[90m[39;49;00m
+        name = [33mf[39;49;00m[33m"[39;49;00m[33mit_run1_[39;49;00m[33m{[39;49;00muuid.uuid4().hex[:[94m12[39;49;00m][33m}[39;49;00m[33m"[39;49;00m[90m[39;49;00m
+        db = root_client[name][90m[39;49;00m
+        collections = ([33m"[39;49;00m[33mevents[39;49;00m[33m"[39;49;00m, [33m"[39;49;00m[33mjobs[39;49;00m[33m"[39;49;00m, [33m"[39;49;00m[33mdead_letters[39;49;00m[33m"[39;49;00m, [33m"[39;49;00m[33monboarding_runs[39;49;00m[33m"[39;49;00m, [33m"[39;49;00m[33mrun_tasks[39;49;00m[33m"[39;49;00m, [33m"[39;49;00m[33mrun_checkpoints[39;49;00m[33m"[39;49;00m,[90m[39;49;00m
+                       [33m"[39;49;00m[33mrun_checkpoint_writes[39;49;00m[33m"[39;49;00m, [33m"[39;49;00m[33maudit_log[39;49;00m[33m"[39;49;00m)  [90m# fmt: skip[39;49;00m[90m[39;49;00m
+        [94mfor[39;49;00m collection [95min[39;49;00m collections:[90m[39;49;00m
+>           db.create_collection(collection)[90m[39;49;00m
+
+[1m[31mapps/orchestrator/tests_int/conftest.py[0m:130: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/_csot.py[0m:126: in csot_wrapper
+    [0m[94mreturn[39;49;00m func([96mself[39;49;00m, *args, **kwargs)[90m[39;49;00m
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/database.py[0m:618: in create_collection
+    [0m[95mand[39;49;00m name [95min[39;49;00m [96mself[39;49;00m._list_collection_names([96mfilter[39;49;00m={[33m"[39;49;00m[33mname[39;49;00m[33m"[39;49;00m: name}, session=s)[90m[39;49;00m
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/database.py[0m:1212: in _list_collection_names
+    [0mresult[[33m"[39;49;00m[33mname[39;49;00m[33m"[39;49;00m] [94mfor[39;49;00m result [95min[39;49;00m [96mself[39;49;00m._list_collections_helper(session=session, **kwargs)[90m[39;49;00m
+                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/database.py[0m:1150: in _list_collections_helper
+    [0m[94mreturn[39;49;00m [96mself[39;49;00m._client._retryable_read([90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py[0m:2116: in _retryable_read
+    [0m[94mreturn[39;49;00m [96mself[39;49;00m._retry_internal([90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/_csot.py[0m:126: in csot_wrapper
+    [0m[94mreturn[39;49;00m func([96mself[39;49;00m, *args, **kwargs)[90m[39;49;00m
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py[0m:2077: in _retry_internal
+    [0m).run()[90m[39;49;00m
+      ^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py[0m:2947: in run
+    [0mres = [96mself[39;49;00m._read() [94mif[39;49;00m [96mself[39;49;00m._is_read [94melse[39;49;00m [96mself[39;49;00m._write()[90m[39;49;00m
+          ^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py[0m:3175: in _read
+    [0m[96mself[39;49;00m._server = [96mself[39;49;00m._get_server()[90m[39;49;00m
+                   ^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py[0m:3120: in _get_server
+    [0m[94mreturn[39;49;00m [96mself[39;49;00m._client._select_server([90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py[0m:1917: in _select_server
+    [0mserver = topology.select_server([90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/topology.py[0m:357: in select_server
+    [0mserver = [96mself[39;49;00m._select_server([90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/topology.py[0m:331: in _select_server
+    [0mservers = [96mself[39;49;00m.select_servers([90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/topology.py[0m:249: in select_servers
+    [0mserver_descriptions = [96mself[39;49;00m._select_servers_loop([90m[39;49;00m
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <Topology <TopologyDescription id: 6af6233d4735f6ad79edc558, topology_type: Single, servers: [<ServerDescription ('127...imeout('127.0.0.1:56856: timed out (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms)')>]>>
+selector = Primary(), timeout = 10.0
+operation = <_Op.LIST_COLLECTIONS: 'listCollections'>, operation_id = -312146535
+address = None, deprioritized_servers = None
+
+    [0m[94mdef[39;49;00m[90m [39;49;00m[92m_select_servers_loop[39;49;00m([90m[39;49;00m
+        [96mself[39;49;00m,[90m[39;49;00m
+        selector: Callable[[Selection], Selection],[90m[39;49;00m
+        timeout: [96mfloat[39;49;00m,[90m[39;49;00m
+        operation: [96mstr[39;49;00m,[90m[39;49;00m
+        operation_id: Optional[[96mint[39;49;00m],[90m[39;49;00m
+        address: Optional[_Address],[90m[39;49;00m
+        deprioritized_servers: Optional[[96mlist[39;49;00m[Server]] = [94mNone[39;49;00m,[90m[39;49;00m
+    ) -> [96mlist[39;49;00m[ServerDescription]:[90m[39;49;00m
+    [90m    [39;49;00m[33m"""select_servers() guts. Hold the lock when calling this."""[39;49;00m[90m[39;49;00m
+        now = time.monotonic()[90m[39;49;00m
+        end_time = now + timeout[90m[39;49;00m
+        logged_waiting = [94mFalse[39;49;00m[90m[39;49;00m
+        [90m# Server selection does not have APM events, gate only on logging[39;49;00m[90m[39;49;00m
+        ss: Optional[_ServerSelectionTelemetry] = [94mNone[39;49;00m[90m[39;49;00m
+        [94mif[39;49;00m _is_debug_enabled(_SERVER_SELECTION_LOGGER):[90m[39;49;00m
+            ss = _ServerSelectionTelemetry([90m[39;49;00m
+                [96mself[39;49;00m._topology_id, selector, operation, operation_id, [96mself[39;49;00m.description[90m[39;49;00m
+            )[90m[39;49;00m
+            ss.started()[90m[39;49;00m
+    [90m[39;49;00m
+        server_descriptions = [96mself[39;49;00m._description.apply_selector([90m[39;49;00m
+            selector,[90m[39;49;00m
+            address,[90m[39;49;00m
+            custom_selector=[96mself[39;49;00m._settings.server_selector,[90m[39;49;00m
+            deprioritized_servers=[server.description [94mfor[39;49;00m server [95min[39;49;00m deprioritized_servers][90m[39;49;00m
+            [94mif[39;49;00m deprioritized_servers[90m[39;49;00m
+            [94melse[39;49;00m [94mNone[39;49;00m,[90m[39;49;00m
+        )[90m[39;49;00m
+    [90m[39;49;00m
+        [94mwhile[39;49;00m [95mnot[39;49;00m server_descriptions:[90m[39;49;00m
+            [90m# No suitable servers.[39;49;00m[90m[39;49;00m
+            [94mif[39;49;00m timeout == [94m0[39;49;00m [95mor[39;49;00m now > end_time:[90m[39;49;00m
+                [94mif[39;49;00m ss [95mis[39;49;00m [95mnot[39;49;00m [94mNone[39;49;00m:[90m[39;49;00m
+                    ss.failed([96mself[39;49;00m._error_message(selector), [96mself[39;49;00m.description)[90m[39;49;00m
+>               [94mraise[39;49;00m ServerSelectionTimeoutError([90m[39;49;00m
+                    [33mf[39;49;00m[33m"[39;49;00m[33m{[39;49;00m[96mself[39;49;00m._error_message(selector)[33m}[39;49;00m[33m, Timeout: [39;49;00m[33m{[39;49;00mtimeout[33m}[39;49;00m[33ms, Topology Description: [39;49;00m[33m{[39;49;00m[96mself[39;49;00m.description[33m!r}[39;49;00m[33m"[39;49;00m[90m[39;49;00m
+                )[90m[39;49;00m
+[1m[31mE               pymongo.errors.ServerSelectionTimeoutError: 127.0.0.1:56856: timed out (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms), Timeout: 10.0s, Topology Description: <TopologyDescription id: 6af6233d4735f6ad79edc558, topology_type: Single, servers: [<ServerDescription ('127.0.0.1', 56856) server_type: Unknown, rtt: None, error=NetworkTimeout('127.0.0.1:56856: timed out (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms)')>]>[0m
+
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/topology.py[0m:297: ServerSelectionTimeoutError
+[31m[1m_ ERROR at setup of test_the_checkpoint_thread_id_is_org_id_colon_run_id_and_every_checkpoint_carries_the_org _[0m
+
+root_client = MongoClient(host=['127.0.0.1:56856'], document_class=dict, tz_aware=True, connect=True, authsource='admin', directconnection=True, serverselectiontimeoutms=10000)
+mongo_uri = 'mongodb://root:9e59b0c4fa9569a04659ce2b8fd02ecf@127.0.0.1:56856/?authSource=admin&directConnection=true'
+tenant_safety_net = <onb_data.safety_net.TenantCommandListener object at 0x10ac24ec0>
+
+    [0m[37m@pytest[39;49;00m.fixture[90m[39;49;00m
+    [94mdef[39;49;00m[90m [39;49;00m[92mscratch[39;49;00m(root_client: Client, mongo_uri: [96mstr[39;49;00m, tenant_safety_net: TenantCommandListener) -> Iterator[Scratch]:[90m[39;49;00m
+    [90m    [39;49;00m[33m"""A fresh database with the bus collections created up front, dropped afterwards."""[39;49;00m[90m[39;49;00m
+        name = [33mf[39;49;00m[33m"[39;49;00m[33mit_run1_[39;49;00m[33m{[39;49;00muuid.uuid4().hex[:[94m12[39;49;00m][33m}[39;49;00m[33m"[39;49;00m[90m[39;49;00m
+        db = root_client[name][90m[39;49;00m
+        collections = ([33m"[39;49;00m[33mevents[39;49;00m[33m"[39;49;00m, [33m"[39;49;00m[33mjobs[39;49;00m[33m"[39;49;00m, [33m"[39;49;00m[33mdead_letters[39;49;00m[33m"[39;49;00m, [33m"[39;49;00m[33monboarding_runs[39;49;00m[33m"[39;49;00m, [33m"[39;49;00m[33mrun_tasks[39;49;00m[33m"[39;49;00m, [33m"[39;49;00m[33mrun_checkpoints[39;49;00m[33m"[39;49;00m,[90m[39;49;00m
+                       [33m"[39;49;00m[33mrun_checkpoint_writes[39;49;00m[33m"[39;49;00m, [33m"[39;49;00m[33maudit_log[39;49;00m[33m"[39;49;00m)  [90m# fmt: skip[39;49;00m[90m[39;49;00m
+        [94mfor[39;49;00m collection [95min[39;49;00m collections:[90m[39;49;00m
+>           db.create_collection(collection)[90m[39;49;00m
+
+[1m[31mapps/orchestrator/tests_int/conftest.py[0m:130: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/_csot.py[0m:126: in csot_wrapper
+    [0m[94mreturn[39;49;00m func([96mself[39;49;00m, *args, **kwargs)[90m[39;49;00m
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/database.py[0m:618: in create_collection
+    [0m[95mand[39;49;00m name [95min[39;49;00m [96mself[39;49;00m._list_collection_names([96mfilter[39;49;00m={[33m"[39;49;00m[33mname[39;49;00m[33m"[39;49;00m: name}, session=s)[90m[39;49;00m
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/database.py[0m:1212: in _list_collection_names
+    [0mresult[[33m"[39;49;00m[33mname[39;49;00m[33m"[39;49;00m] [94mfor[39;49;00m result [95min[39;49;00m [96mself[39;49;00m._list_collections_helper(session=session, **kwargs)[90m[39;49;00m
+                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/database.py[0m:1150: in _list_collections_helper
+    [0m[94mreturn[39;49;00m [96mself[39;49;00m._client._retryable_read([90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py[0m:2116: in _retryable_read
+    [0m[94mreturn[39;49;00m [96mself[39;49;00m._retry_internal([90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/_csot.py[0m:126: in csot_wrapper
+    [0m[94mreturn[39;49;00m func([96mself[39;49;00m, *args, **kwargs)[90m[39;49;00m
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py[0m:2077: in _retry_internal
+    [0m).run()[90m[39;49;00m
+      ^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py[0m:2947: in run
+    [0mres = [96mself[39;49;00m._read() [94mif[39;49;00m [96mself[39;49;00m._is_read [94melse[39;49;00m [96mself[39;49;00m._write()[90m[39;49;00m
+          ^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py[0m:3175: in _read
+    [0m[96mself[39;49;00m._server = [96mself[39;49;00m._get_server()[90m[39;49;00m
+                   ^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py[0m:3120: in _get_server
+    [0m[94mreturn[39;49;00m [96mself[39;49;00m._client._select_server([90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py[0m:1917: in _select_server
+    [0mserver = topology.select_server([90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/topology.py[0m:357: in select_server
+    [0mserver = [96mself[39;49;00m._select_server([90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/topology.py[0m:331: in _select_server
+    [0mservers = [96mself[39;49;00m.select_servers([90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/topology.py[0m:249: in select_servers
+    [0mserver_descriptions = [96mself[39;49;00m._select_servers_loop([90m[39;49;00m
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <Topology <TopologyDescription id: 6af6233d4735f6ad79edc558, topology_type: Single, servers: [<ServerDescription ('127...imeout('127.0.0.1:56856: timed out (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms)')>]>>
+selector = Primary(), timeout = 10.0
+operation = <_Op.LIST_COLLECTIONS: 'listCollections'>, operation_id = 1676294717
+address = None, deprioritized_servers = None
+
+    [0m[94mdef[39;49;00m[90m [39;49;00m[92m_select_servers_loop[39;49;00m([90m[39;49;00m
+        [96mself[39;49;00m,[90m[39;49;00m
+        selector: Callable[[Selection], Selection],[90m[39;49;00m
+        timeout: [96mfloat[39;49;00m,[90m[39;49;00m
+        operation: [96mstr[39;49;00m,[90m[39;49;00m
+        operation_id: Optional[[96mint[39;49;00m],[90m[39;49;00m
+        address: Optional[_Address],[90m[39;49;00m
+        deprioritized_servers: Optional[[96mlist[39;49;00m[Server]] = [94mNone[39;49;00m,[90m[39;49;00m
+    ) -> [96mlist[39;49;00m[ServerDescription]:[90m[39;49;00m
+    [90m    [39;49;00m[33m"""select_servers() guts. Hold the lock when calling this."""[39;49;00m[90m[39;49;00m
+        now = time.monotonic()[90m[39;49;00m
+        end_time = now + timeout[90m[39;49;00m
+        logged_waiting = [94mFalse[39;49;00m[90m[39;49;00m
+        [90m# Server selection does not have APM events, gate only on logging[39;49;00m[90m[39;49;00m
+        ss: Optional[_ServerSelectionTelemetry] = [94mNone[39;49;00m[90m[39;49;00m
+        [94mif[39;49;00m _is_debug_enabled(_SERVER_SELECTION_LOGGER):[90m[39;49;00m
+            ss = _ServerSelectionTelemetry([90m[39;49;00m
+                [96mself[39;49;00m._topology_id, selector, operation, operation_id, [96mself[39;49;00m.description[90m[39;49;00m
+            )[90m[39;49;00m
+            ss.started()[90m[39;49;00m
+    [90m[39;49;00m
+        server_descriptions = [96mself[39;49;00m._description.apply_selector([90m[39;49;00m
+            selector,[90m[39;49;00m
+            address,[90m[39;49;00m
+            custom_selector=[96mself[39;49;00m._settings.server_selector,[90m[39;49;00m
+            deprioritized_servers=[server.description [94mfor[39;49;00m server [95min[39;49;00m deprioritized_servers][90m[39;49;00m
+            [94mif[39;49;00m deprioritized_servers[90m[39;49;00m
+            [94melse[39;49;00m [94mNone[39;49;00m,[90m[39;49;00m
+        )[90m[39;49;00m
+    [90m[39;49;00m
+        [94mwhile[39;49;00m [95mnot[39;49;00m server_descriptions:[90m[39;49;00m
+            [90m# No suitable servers.[39;49;00m[90m[39;49;00m
+            [94mif[39;49;00m timeout == [94m0[39;49;00m [95mor[39;49;00m now > end_time:[90m[39;49;00m
+                [94mif[39;49;00m ss [95mis[39;49;00m [95mnot[39;49;00m [94mNone[39;49;00m:[90m[39;49;00m
+                    ss.failed([96mself[39;49;00m._error_message(selector), [96mself[39;49;00m.description)[90m[39;49;00m
+>               [94mraise[39;49;00m ServerSelectionTimeoutError([90m[39;49;00m
+                    [33mf[39;49;00m[33m"[39;49;00m[33m{[39;49;00m[96mself[39;49;00m._error_message(selector)[33m}[39;49;00m[33m, Timeout: [39;49;00m[33m{[39;49;00mtimeout[33m}[39;49;00m[33ms, Topology Description: [39;49;00m[33m{[39;49;00m[96mself[39;49;00m.description[33m!r}[39;49;00m[33m"[39;49;00m[90m[39;49;00m
+                )[90m[39;49;00m
+[1m[31mE               pymongo.errors.ServerSelectionTimeoutError: 127.0.0.1:56856: timed out (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms), Timeout: 10.0s, Topology Description: <TopologyDescription id: 6af6233d4735f6ad79edc558, topology_type: Single, servers: [<ServerDescription ('127.0.0.1', 56856) server_type: Unknown, rtt: None, error=NetworkTimeout('127.0.0.1:56856: timed out (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms)')>]>[0m
+
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/topology.py[0m:297: ServerSelectionTimeoutError
+[31m[1m_ ERROR at setup of test_a_run_stays_pinned_to_its_version_after_a_newer_version_is_published _[0m
+
+root_client = MongoClient(host=['127.0.0.1:56856'], document_class=dict, tz_aware=True, connect=True, authsource='admin', directconnection=True, serverselectiontimeoutms=10000)
+mongo_uri = 'mongodb://root:9e59b0c4fa9569a04659ce2b8fd02ecf@127.0.0.1:56856/?authSource=admin&directConnection=true'
+tenant_safety_net = <onb_data.safety_net.TenantCommandListener object at 0x10ac24ec0>
+
+    [0m[37m@pytest[39;49;00m.fixture[90m[39;49;00m
+    [94mdef[39;49;00m[90m [39;49;00m[92mscratch[39;49;00m(root_client: Client, mongo_uri: [96mstr[39;49;00m, tenant_safety_net: TenantCommandListener) -> Iterator[Scratch]:[90m[39;49;00m
+    [90m    [39;49;00m[33m"""A fresh database with the bus collections created up front, dropped afterwards."""[39;49;00m[90m[39;49;00m
+        name = [33mf[39;49;00m[33m"[39;49;00m[33mit_run1_[39;49;00m[33m{[39;49;00muuid.uuid4().hex[:[94m12[39;49;00m][33m}[39;49;00m[33m"[39;49;00m[90m[39;49;00m
+        db = root_client[name][90m[39;49;00m
+        collections = ([33m"[39;49;00m[33mevents[39;49;00m[33m"[39;49;00m, [33m"[39;49;00m[33mjobs[39;49;00m[33m"[39;49;00m, [33m"[39;49;00m[33mdead_letters[39;49;00m[33m"[39;49;00m, [33m"[39;49;00m[33monboarding_runs[39;49;00m[33m"[39;49;00m, [33m"[39;49;00m[33mrun_tasks[39;49;00m[33m"[39;49;00m, [33m"[39;49;00m[33mrun_checkpoints[39;49;00m[33m"[39;49;00m,[90m[39;49;00m
+                       [33m"[39;49;00m[33mrun_checkpoint_writes[39;49;00m[33m"[39;49;00m, [33m"[39;49;00m[33maudit_log[39;49;00m[33m"[39;49;00m)  [90m# fmt: skip[39;49;00m[90m[39;49;00m
+        [94mfor[39;49;00m collection [95min[39;49;00m collections:[90m[39;49;00m
+>           db.create_collection(collection)[90m[39;49;00m
+
+[1m[31mapps/orchestrator/tests_int/conftest.py[0m:130: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/_csot.py[0m:126: in csot_wrapper
+    [0m[94mreturn[39;49;00m func([96mself[39;49;00m, *args, **kwargs)[90m[39;49;00m
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/database.py[0m:618: in create_collection
+    [0m[95mand[39;49;00m name [95min[39;49;00m [96mself[39;49;00m._list_collection_names([96mfilter[39;49;00m={[33m"[39;49;00m[33mname[39;49;00m[33m"[39;49;00m: name}, session=s)[90m[39;49;00m
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/database.py[0m:1212: in _list_collection_names
+    [0mresult[[33m"[39;49;00m[33mname[39;49;00m[33m"[39;49;00m] [94mfor[39;49;00m result [95min[39;49;00m [96mself[39;49;00m._list_collections_helper(session=session, **kwargs)[90m[39;49;00m
+                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/database.py[0m:1150: in _list_collections_helper
+    [0m[94mreturn[39;49;00m [96mself[39;49;00m._client._retryable_read([90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py[0m:2116: in _retryable_read
+    [0m[94mreturn[39;49;00m [96mself[39;49;00m._retry_internal([90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/_csot.py[0m:126: in csot_wrapper
+    [0m[94mreturn[39;49;00m func([96mself[39;49;00m, *args, **kwargs)[90m[39;49;00m
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py[0m:2077: in _retry_internal
+    [0m).run()[90m[39;49;00m
+      ^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py[0m:2947: in run
+    [0mres = [96mself[39;49;00m._read() [94mif[39;49;00m [96mself[39;49;00m._is_read [94melse[39;49;00m [96mself[39;49;00m._write()[90m[39;49;00m
+          ^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py[0m:3175: in _read
+    [0m[96mself[39;49;00m._server = [96mself[39;49;00m._get_server()[90m[39;49;00m
+                   ^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py[0m:3120: in _get_server
+    [0m[94mreturn[39;49;00m [96mself[39;49;00m._client._select_server([90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py[0m:1917: in _select_server
+    [0mserver = topology.select_server([90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/topology.py[0m:357: in select_server
+    [0mserver = [96mself[39;49;00m._select_server([90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/topology.py[0m:331: in _select_server
+    [0mservers = [96mself[39;49;00m.select_servers([90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/topology.py[0m:249: in select_servers
+    [0mserver_descriptions = [96mself[39;49;00m._select_servers_loop([90m[39;49;00m
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <Topology <TopologyDescription id: 6af6233d4735f6ad79edc558, topology_type: Single, servers: [<ServerDescription ('127...imeout('127.0.0.1:56856: timed out (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms)')>]>>
+selector = Primary(), timeout = 10.0
+operation = <_Op.LIST_COLLECTIONS: 'listCollections'>, operation_id = 856820943
+address = None, deprioritized_servers = None
+
+    [0m[94mdef[39;49;00m[90m [39;49;00m[92m_select_servers_loop[39;49;00m([90m[39;49;00m
+        [96mself[39;49;00m,[90m[39;49;00m
+        selector: Callable[[Selection], Selection],[90m[39;49;00m
+        timeout: [96mfloat[39;49;00m,[90m[39;49;00m
+        operation: [96mstr[39;49;00m,[90m[39;49;00m
+        operation_id: Optional[[96mint[39;49;00m],[90m[39;49;00m
+        address: Optional[_Address],[90m[39;49;00m
+        deprioritized_servers: Optional[[96mlist[39;49;00m[Server]] = [94mNone[39;49;00m,[90m[39;49;00m
+    ) -> [96mlist[39;49;00m[ServerDescription]:[90m[39;49;00m
+    [90m    [39;49;00m[33m"""select_servers() guts. Hold the lock when calling this."""[39;49;00m[90m[39;49;00m
+        now = time.monotonic()[90m[39;49;00m
+        end_time = now + timeout[90m[39;49;00m
+        logged_waiting = [94mFalse[39;49;00m[90m[39;49;00m
+        [90m# Server selection does not have APM events, gate only on logging[39;49;00m[90m[39;49;00m
+        ss: Optional[_ServerSelectionTelemetry] = [94mNone[39;49;00m[90m[39;49;00m
+        [94mif[39;49;00m _is_debug_enabled(_SERVER_SELECTION_LOGGER):[90m[39;49;00m
+            ss = _ServerSelectionTelemetry([90m[39;49;00m
+                [96mself[39;49;00m._topology_id, selector, operation, operation_id, [96mself[39;49;00m.description[90m[39;49;00m
+            )[90m[39;49;00m
+            ss.started()[90m[39;49;00m
+    [90m[39;49;00m
+        server_descriptions = [96mself[39;49;00m._description.apply_selector([90m[39;49;00m
+            selector,[90m[39;49;00m
+            address,[90m[39;49;00m
+            custom_selector=[96mself[39;49;00m._settings.server_selector,[90m[39;49;00m
+            deprioritized_servers=[server.description [94mfor[39;49;00m server [95min[39;49;00m deprioritized_servers][90m[39;49;00m
+            [94mif[39;49;00m deprioritized_servers[90m[39;49;00m
+            [94melse[39;49;00m [94mNone[39;49;00m,[90m[39;49;00m
+        )[90m[39;49;00m
+    [90m[39;49;00m
+        [94mwhile[39;49;00m [95mnot[39;49;00m server_descriptions:[90m[39;49;00m
+            [90m# No suitable servers.[39;49;00m[90m[39;49;00m
+            [94mif[39;49;00m timeout == [94m0[39;49;00m [95mor[39;49;00m now > end_time:[90m[39;49;00m
+                [94mif[39;49;00m ss [95mis[39;49;00m [95mnot[39;49;00m [94mNone[39;49;00m:[90m[39;49;00m
+                    ss.failed([96mself[39;49;00m._error_message(selector), [96mself[39;49;00m.description)[90m[39;49;00m
+>               [94mraise[39;49;00m ServerSelectionTimeoutError([90m[39;49;00m
+                    [33mf[39;49;00m[33m"[39;49;00m[33m{[39;49;00m[96mself[39;49;00m._error_message(selector)[33m}[39;49;00m[33m, Timeout: [39;49;00m[33m{[39;49;00mtimeout[33m}[39;49;00m[33ms, Topology Description: [39;49;00m[33m{[39;49;00m[96mself[39;49;00m.description[33m!r}[39;49;00m[33m"[39;49;00m[90m[39;49;00m
+                )[90m[39;49;00m
+[1m[31mE               pymongo.errors.ServerSelectionTimeoutError: 127.0.0.1:56856: timed out (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms), Timeout: 10.0s, Topology Description: <TopologyDescription id: 6af6233d4735f6ad79edc558, topology_type: Single, servers: [<ServerDescription ('127.0.0.1', 56856) server_type: Unknown, rtt: None, error=NetworkTimeout('127.0.0.1:56856: timed out (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms)')>]>[0m
+
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/topology.py[0m:297: ServerSelectionTimeoutError
+[31m[1m_ ERROR at setup of test_a_start_whose_audit_write_fails_leaves_no_run_task_event_or_job _[0m
+
+root_client = MongoClient(host=['127.0.0.1:56856'], document_class=dict, tz_aware=True, connect=True, authsource='admin', directconnection=True, serverselectiontimeoutms=10000)
+mongo_uri = 'mongodb://root:9e59b0c4fa9569a04659ce2b8fd02ecf@127.0.0.1:56856/?authSource=admin&directConnection=true'
+tenant_safety_net = <onb_data.safety_net.TenantCommandListener object at 0x10ac24ec0>
+
+    [0m[37m@pytest[39;49;00m.fixture[90m[39;49;00m
+    [94mdef[39;49;00m[90m [39;49;00m[92mscratch[39;49;00m(root_client: Client, mongo_uri: [96mstr[39;49;00m, tenant_safety_net: TenantCommandListener) -> Iterator[Scratch]:[90m[39;49;00m
+    [90m    [39;49;00m[33m"""A fresh database with the bus collections created up front, dropped afterwards."""[39;49;00m[90m[39;49;00m
+        name = [33mf[39;49;00m[33m"[39;49;00m[33mit_run1_[39;49;00m[33m{[39;49;00muuid.uuid4().hex[:[94m12[39;49;00m][33m}[39;49;00m[33m"[39;49;00m[90m[39;49;00m
+        db = root_client[name][90m[39;49;00m
+        collections = ([33m"[39;49;00m[33mevents[39;49;00m[33m"[39;49;00m, [33m"[39;49;00m[33mjobs[39;49;00m[33m"[39;49;00m, [33m"[39;49;00m[33mdead_letters[39;49;00m[33m"[39;49;00m, [33m"[39;49;00m[33monboarding_runs[39;49;00m[33m"[39;49;00m, [33m"[39;49;00m[33mrun_tasks[39;49;00m[33m"[39;49;00m, [33m"[39;49;00m[33mrun_checkpoints[39;49;00m[33m"[39;49;00m,[90m[39;49;00m
+                       [33m"[39;49;00m[33mrun_checkpoint_writes[39;49;00m[33m"[39;49;00m, [33m"[39;49;00m[33maudit_log[39;49;00m[33m"[39;49;00m)  [90m# fmt: skip[39;49;00m[90m[39;49;00m
+        [94mfor[39;49;00m collection [95min[39;49;00m collections:[90m[39;49;00m
+>           db.create_collection(collection)[90m[39;49;00m
+
+[1m[31mapps/orchestrator/tests_int/conftest.py[0m:130: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/_csot.py[0m:126: in csot_wrapper
+    [0m[94mreturn[39;49;00m func([96mself[39;49;00m, *args, **kwargs)[90m[39;49;00m
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/database.py[0m:618: in create_collection
+    [0m[95mand[39;49;00m name [95min[39;49;00m [96mself[39;49;00m._list_collection_names([96mfilter[39;49;00m={[33m"[39;49;00m[33mname[39;49;00m[33m"[39;49;00m: name}, session=s)[90m[39;49;00m
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/database.py[0m:1212: in _list_collection_names
+    [0mresult[[33m"[39;49;00m[33mname[39;49;00m[33m"[39;49;00m] [94mfor[39;49;00m result [95min[39;49;00m [96mself[39;49;00m._list_collections_helper(session=session, **kwargs)[90m[39;49;00m
+                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/database.py[0m:1150: in _list_collections_helper
+    [0m[94mreturn[39;49;00m [96mself[39;49;00m._client._retryable_read([90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py[0m:2116: in _retryable_read
+    [0m[94mreturn[39;49;00m [96mself[39;49;00m._retry_internal([90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/_csot.py[0m:126: in csot_wrapper
+    [0m[94mreturn[39;49;00m func([96mself[39;49;00m, *args, **kwargs)[90m[39;49;00m
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py[0m:2077: in _retry_internal
+    [0m).run()[90m[39;49;00m
+      ^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py[0m:2947: in run
+    [0mres = [96mself[39;49;00m._read() [94mif[39;49;00m [96mself[39;49;00m._is_read [94melse[39;49;00m [96mself[39;49;00m._write()[90m[39;49;00m
+          ^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py[0m:3175: in _read
+    [0m[96mself[39;49;00m._server = [96mself[39;49;00m._get_server()[90m[39;49;00m
+                   ^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py[0m:3120: in _get_server
+    [0m[94mreturn[39;49;00m [96mself[39;49;00m._client._select_server([90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py[0m:1917: in _select_server
+    [0mserver = topology.select_server([90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/topology.py[0m:357: in select_server
+    [0mserver = [96mself[39;49;00m._select_server([90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/topology.py[0m:331: in _select_server
+    [0mservers = [96mself[39;49;00m.select_servers([90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/topology.py[0m:249: in select_servers
+    [0mserver_descriptions = [96mself[39;49;00m._select_servers_loop([90m[39;49;00m
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <Topology <TopologyDescription id: 6af6233d4735f6ad79edc558, topology_type: Single, servers: [<ServerDescription ('127...imeout('127.0.0.1:56856: timed out (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms)')>]>>
+selector = Primary(), timeout = 10.0
+operation = <_Op.LIST_COLLECTIONS: 'listCollections'>
+operation_id = -1785215676, address = None, deprioritized_servers = None
+
+    [0m[94mdef[39;49;00m[90m [39;49;00m[92m_select_servers_loop[39;49;00m([90m[39;49;00m
+        [96mself[39;49;00m,[90m[39;49;00m
+        selector: Callable[[Selection], Selection],[90m[39;49;00m
+        timeout: [96mfloat[39;49;00m,[90m[39;49;00m
+        operation: [96mstr[39;49;00m,[90m[39;49;00m
+        operation_id: Optional[[96mint[39;49;00m],[90m[39;49;00m
+        address: Optional[_Address],[90m[39;49;00m
+        deprioritized_servers: Optional[[96mlist[39;49;00m[Server]] = [94mNone[39;49;00m,[90m[39;49;00m
+    ) -> [96mlist[39;49;00m[ServerDescription]:[90m[39;49;00m
+    [90m    [39;49;00m[33m"""select_servers() guts. Hold the lock when calling this."""[39;49;00m[90m[39;49;00m
+        now = time.monotonic()[90m[39;49;00m
+        end_time = now + timeout[90m[39;49;00m
+        logged_waiting = [94mFalse[39;49;00m[90m[39;49;00m
+        [90m# Server selection does not have APM events, gate only on logging[39;49;00m[90m[39;49;00m
+        ss: Optional[_ServerSelectionTelemetry] = [94mNone[39;49;00m[90m[39;49;00m
+        [94mif[39;49;00m _is_debug_enabled(_SERVER_SELECTION_LOGGER):[90m[39;49;00m
+            ss = _ServerSelectionTelemetry([90m[39;49;00m
+                [96mself[39;49;00m._topology_id, selector, operation, operation_id, [96mself[39;49;00m.description[90m[39;49;00m
+            )[90m[39;49;00m
+            ss.started()[90m[39;49;00m
+    [90m[39;49;00m
+        server_descriptions = [96mself[39;49;00m._description.apply_selector([90m[39;49;00m
+            selector,[90m[39;49;00m
+            address,[90m[39;49;00m
+            custom_selector=[96mself[39;49;00m._settings.server_selector,[90m[39;49;00m
+            deprioritized_servers=[server.description [94mfor[39;49;00m server [95min[39;49;00m deprioritized_servers][90m[39;49;00m
+            [94mif[39;49;00m deprioritized_servers[90m[39;49;00m
+            [94melse[39;49;00m [94mNone[39;49;00m,[90m[39;49;00m
+        )[90m[39;49;00m
+    [90m[39;49;00m
+        [94mwhile[39;49;00m [95mnot[39;49;00m server_descriptions:[90m[39;49;00m
+            [90m# No suitable servers.[39;49;00m[90m[39;49;00m
+            [94mif[39;49;00m timeout == [94m0[39;49;00m [95mor[39;49;00m now > end_time:[90m[39;49;00m
+                [94mif[39;49;00m ss [95mis[39;49;00m [95mnot[39;49;00m [94mNone[39;49;00m:[90m[39;49;00m
+                    ss.failed([96mself[39;49;00m._error_message(selector), [96mself[39;49;00m.description)[90m[39;49;00m
+>               [94mraise[39;49;00m ServerSelectionTimeoutError([90m[39;49;00m
+                    [33mf[39;49;00m[33m"[39;49;00m[33m{[39;49;00m[96mself[39;49;00m._error_message(selector)[33m}[39;49;00m[33m, Timeout: [39;49;00m[33m{[39;49;00mtimeout[33m}[39;49;00m[33ms, Topology Description: [39;49;00m[33m{[39;49;00m[96mself[39;49;00m.description[33m!r}[39;49;00m[33m"[39;49;00m[90m[39;49;00m
+                )[90m[39;49;00m
+[1m[31mE               pymongo.errors.ServerSelectionTimeoutError: 127.0.0.1:56856: timed out (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms), Timeout: 10.0s, Topology Description: <TopologyDescription id: 6af6233d4735f6ad79edc558, topology_type: Single, servers: [<ServerDescription ('127.0.0.1', 56856) server_type: Unknown, rtt: None, error=NetworkTimeout('127.0.0.1:56856: timed out (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms)')>]>[0m
+
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/topology.py[0m:297: ServerSelectionTimeoutError
+[31m[1m______ ERROR at setup of test_a_start_is_audited_in_the_same_transaction _______[0m
+
+root_client = MongoClient(host=['127.0.0.1:56856'], document_class=dict, tz_aware=True, connect=True, authsource='admin', directconnection=True, serverselectiontimeoutms=10000)
+mongo_uri = 'mongodb://root:9e59b0c4fa9569a04659ce2b8fd02ecf@127.0.0.1:56856/?authSource=admin&directConnection=true'
+tenant_safety_net = <onb_data.safety_net.TenantCommandListener object at 0x10ac24ec0>
+
+    [0m[37m@pytest[39;49;00m.fixture[90m[39;49;00m
+    [94mdef[39;49;00m[90m [39;49;00m[92mscratch[39;49;00m(root_client: Client, mongo_uri: [96mstr[39;49;00m, tenant_safety_net: TenantCommandListener) -> Iterator[Scratch]:[90m[39;49;00m
+    [90m    [39;49;00m[33m"""A fresh database with the bus collections created up front, dropped afterwards."""[39;49;00m[90m[39;49;00m
+        name = [33mf[39;49;00m[33m"[39;49;00m[33mit_run1_[39;49;00m[33m{[39;49;00muuid.uuid4().hex[:[94m12[39;49;00m][33m}[39;49;00m[33m"[39;49;00m[90m[39;49;00m
+        db = root_client[name][90m[39;49;00m
+        collections = ([33m"[39;49;00m[33mevents[39;49;00m[33m"[39;49;00m, [33m"[39;49;00m[33mjobs[39;49;00m[33m"[39;49;00m, [33m"[39;49;00m[33mdead_letters[39;49;00m[33m"[39;49;00m, [33m"[39;49;00m[33monboarding_runs[39;49;00m[33m"[39;49;00m, [33m"[39;49;00m[33mrun_tasks[39;49;00m[33m"[39;49;00m, [33m"[39;49;00m[33mrun_checkpoints[39;49;00m[33m"[39;49;00m,[90m[39;49;00m
+                       [33m"[39;49;00m[33mrun_checkpoint_writes[39;49;00m[33m"[39;49;00m, [33m"[39;49;00m[33maudit_log[39;49;00m[33m"[39;49;00m)  [90m# fmt: skip[39;49;00m[90m[39;49;00m
+        [94mfor[39;49;00m collection [95min[39;49;00m collections:[90m[39;49;00m
+>           db.create_collection(collection)[90m[39;49;00m
+
+[1m[31mapps/orchestrator/tests_int/conftest.py[0m:130: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/_csot.py[0m:126: in csot_wrapper
+    [0m[94mreturn[39;49;00m func([96mself[39;49;00m, *args, **kwargs)[90m[39;49;00m
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/database.py[0m:618: in create_collection
+    [0m[95mand[39;49;00m name [95min[39;49;00m [96mself[39;49;00m._list_collection_names([96mfilter[39;49;00m={[33m"[39;49;00m[33mname[39;49;00m[33m"[39;49;00m: name}, session=s)[90m[39;49;00m
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/database.py[0m:1212: in _list_collection_names
+    [0mresult[[33m"[39;49;00m[33mname[39;49;00m[33m"[39;49;00m] [94mfor[39;49;00m result [95min[39;49;00m [96mself[39;49;00m._list_collections_helper(session=session, **kwargs)[90m[39;49;00m
+                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/database.py[0m:1150: in _list_collections_helper
+    [0m[94mreturn[39;49;00m [96mself[39;49;00m._client._retryable_read([90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py[0m:2116: in _retryable_read
+    [0m[94mreturn[39;49;00m [96mself[39;49;00m._retry_internal([90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/_csot.py[0m:126: in csot_wrapper
+    [0m[94mreturn[39;49;00m func([96mself[39;49;00m, *args, **kwargs)[90m[39;49;00m
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py[0m:2077: in _retry_internal
+    [0m).run()[90m[39;49;00m
+      ^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py[0m:2947: in run
+    [0mres = [96mself[39;49;00m._read() [94mif[39;49;00m [96mself[39;49;00m._is_read [94melse[39;49;00m [96mself[39;49;00m._write()[90m[39;49;00m
+          ^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py[0m:3175: in _read
+    [0m[96mself[39;49;00m._server = [96mself[39;49;00m._get_server()[90m[39;49;00m
+                   ^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py[0m:3120: in _get_server
+    [0m[94mreturn[39;49;00m [96mself[39;49;00m._client._select_server([90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py[0m:1917: in _select_server
+    [0mserver = topology.select_server([90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/topology.py[0m:357: in select_server
+    [0mserver = [96mself[39;49;00m._select_server([90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/topology.py[0m:331: in _select_server
+    [0mservers = [96mself[39;49;00m.select_servers([90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/topology.py[0m:249: in select_servers
+    [0mserver_descriptions = [96mself[39;49;00m._select_servers_loop([90m[39;49;00m
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <Topology <TopologyDescription id: 6af6233d4735f6ad79edc558, topology_type: Single, servers: [<ServerDescription ('127...imeout('127.0.0.1:56856: timed out (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms)')>]>>
+selector = Primary(), timeout = 10.0
+operation = <_Op.LIST_COLLECTIONS: 'listCollections'>, operation_id = 1535379711
+address = None, deprioritized_servers = None
+
+    [0m[94mdef[39;49;00m[90m [39;49;00m[92m_select_servers_loop[39;49;00m([90m[39;49;00m
+        [96mself[39;49;00m,[90m[39;49;00m
+        selector: Callable[[Selection], Selection],[90m[39;49;00m
+        timeout: [96mfloat[39;49;00m,[90m[39;49;00m
+        operation: [96mstr[39;49;00m,[90m[39;49;00m
+        operation_id: Optional[[96mint[39;49;00m],[90m[39;49;00m
+        address: Optional[_Address],[90m[39;49;00m
+        deprioritized_servers: Optional[[96mlist[39;49;00m[Server]] = [94mNone[39;49;00m,[90m[39;49;00m
+    ) -> [96mlist[39;49;00m[ServerDescription]:[90m[39;49;00m
+    [90m    [39;49;00m[33m"""select_servers() guts. Hold the lock when calling this."""[39;49;00m[90m[39;49;00m
+        now = time.monotonic()[90m[39;49;00m
+        end_time = now + timeout[90m[39;49;00m
+        logged_waiting = [94mFalse[39;49;00m[90m[39;49;00m
+        [90m# Server selection does not have APM events, gate only on logging[39;49;00m[90m[39;49;00m
+        ss: Optional[_ServerSelectionTelemetry] = [94mNone[39;49;00m[90m[39;49;00m
+        [94mif[39;49;00m _is_debug_enabled(_SERVER_SELECTION_LOGGER):[90m[39;49;00m
+            ss = _ServerSelectionTelemetry([90m[39;49;00m
+                [96mself[39;49;00m._topology_id, selector, operation, operation_id, [96mself[39;49;00m.description[90m[39;49;00m
+            )[90m[39;49;00m
+            ss.started()[90m[39;49;00m
+    [90m[39;49;00m
+        server_descriptions = [96mself[39;49;00m._description.apply_selector([90m[39;49;00m
+            selector,[90m[39;49;00m
+            address,[90m[39;49;00m
+            custom_selector=[96mself[39;49;00m._settings.server_selector,[90m[39;49;00m
+            deprioritized_servers=[server.description [94mfor[39;49;00m server [95min[39;49;00m deprioritized_servers][90m[39;49;00m
+            [94mif[39;49;00m deprioritized_servers[90m[39;49;00m
+            [94melse[39;49;00m [94mNone[39;49;00m,[90m[39;49;00m
+        )[90m[39;49;00m
+    [90m[39;49;00m
+        [94mwhile[39;49;00m [95mnot[39;49;00m server_descriptions:[90m[39;49;00m
+            [90m# No suitable servers.[39;49;00m[90m[39;49;00m
+            [94mif[39;49;00m timeout == [94m0[39;49;00m [95mor[39;49;00m now > end_time:[90m[39;49;00m
+                [94mif[39;49;00m ss [95mis[39;49;00m [95mnot[39;49;00m [94mNone[39;49;00m:[90m[39;49;00m
+                    ss.failed([96mself[39;49;00m._error_message(selector), [96mself[39;49;00m.description)[90m[39;49;00m
+>               [94mraise[39;49;00m ServerSelectionTimeoutError([90m[39;49;00m
+                    [33mf[39;49;00m[33m"[39;49;00m[33m{[39;49;00m[96mself[39;49;00m._error_message(selector)[33m}[39;49;00m[33m, Timeout: [39;49;00m[33m{[39;49;00mtimeout[33m}[39;49;00m[33ms, Topology Description: [39;49;00m[33m{[39;49;00m[96mself[39;49;00m.description[33m!r}[39;49;00m[33m"[39;49;00m[90m[39;49;00m
+                )[90m[39;49;00m
+[1m[31mE               pymongo.errors.ServerSelectionTimeoutError: 127.0.0.1:56856: timed out (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms), Timeout: 10.0s, Topology Description: <TopologyDescription id: 6af6233d4735f6ad79edc558, topology_type: Single, servers: [<ServerDescription ('127.0.0.1', 56856) server_type: Unknown, rtt: None, error=NetworkTimeout('127.0.0.1:56856: timed out (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms)')>]>[0m
+
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/topology.py[0m:297: ServerSelectionTimeoutError
+[31m[1m______ ERROR at setup of test_a_redelivered_start_executes_no_task_twice _______[0m
+
+root_client = MongoClient(host=['127.0.0.1:56856'], document_class=dict, tz_aware=True, connect=True, authsource='admin', directconnection=True, serverselectiontimeoutms=10000)
+mongo_uri = 'mongodb://root:9e59b0c4fa9569a04659ce2b8fd02ecf@127.0.0.1:56856/?authSource=admin&directConnection=true'
+tenant_safety_net = <onb_data.safety_net.TenantCommandListener object at 0x10ac24ec0>
+
+    [0m[37m@pytest[39;49;00m.fixture[90m[39;49;00m
+    [94mdef[39;49;00m[90m [39;49;00m[92mscratch[39;49;00m(root_client: Client, mongo_uri: [96mstr[39;49;00m, tenant_safety_net: TenantCommandListener) -> Iterator[Scratch]:[90m[39;49;00m
+    [90m    [39;49;00m[33m"""A fresh database with the bus collections created up front, dropped afterwards."""[39;49;00m[90m[39;49;00m
+        name = [33mf[39;49;00m[33m"[39;49;00m[33mit_run1_[39;49;00m[33m{[39;49;00muuid.uuid4().hex[:[94m12[39;49;00m][33m}[39;49;00m[33m"[39;49;00m[90m[39;49;00m
+        db = root_client[name][90m[39;49;00m
+        collections = ([33m"[39;49;00m[33mevents[39;49;00m[33m"[39;49;00m, [33m"[39;49;00m[33mjobs[39;49;00m[33m"[39;49;00m, [33m"[39;49;00m[33mdead_letters[39;49;00m[33m"[39;49;00m, [33m"[39;49;00m[33monboarding_runs[39;49;00m[33m"[39;49;00m, [33m"[39;49;00m[33mrun_tasks[39;49;00m[33m"[39;49;00m, [33m"[39;49;00m[33mrun_checkpoints[39;49;00m[33m"[39;49;00m,[90m[39;49;00m
+                       [33m"[39;49;00m[33mrun_checkpoint_writes[39;49;00m[33m"[39;49;00m, [33m"[39;49;00m[33maudit_log[39;49;00m[33m"[39;49;00m)  [90m# fmt: skip[39;49;00m[90m[39;49;00m
+        [94mfor[39;49;00m collection [95min[39;49;00m collections:[90m[39;49;00m
+>           db.create_collection(collection)[90m[39;49;00m
+
+[1m[31mapps/orchestrator/tests_int/conftest.py[0m:130: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/_csot.py[0m:126: in csot_wrapper
+    [0m[94mreturn[39;49;00m func([96mself[39;49;00m, *args, **kwargs)[90m[39;49;00m
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/database.py[0m:618: in create_collection
+    [0m[95mand[39;49;00m name [95min[39;49;00m [96mself[39;49;00m._list_collection_names([96mfilter[39;49;00m={[33m"[39;49;00m[33mname[39;49;00m[33m"[39;49;00m: name}, session=s)[90m[39;49;00m
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/database.py[0m:1212: in _list_collection_names
+    [0mresult[[33m"[39;49;00m[33mname[39;49;00m[33m"[39;49;00m] [94mfor[39;49;00m result [95min[39;49;00m [96mself[39;49;00m._list_collections_helper(session=session, **kwargs)[90m[39;49;00m
+                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/database.py[0m:1150: in _list_collections_helper
+    [0m[94mreturn[39;49;00m [96mself[39;49;00m._client._retryable_read([90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py[0m:2116: in _retryable_read
+    [0m[94mreturn[39;49;00m [96mself[39;49;00m._retry_internal([90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/_csot.py[0m:126: in csot_wrapper
+    [0m[94mreturn[39;49;00m func([96mself[39;49;00m, *args, **kwargs)[90m[39;49;00m
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py[0m:2077: in _retry_internal
+    [0m).run()[90m[39;49;00m
+      ^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py[0m:2947: in run
+    [0mres = [96mself[39;49;00m._read() [94mif[39;49;00m [96mself[39;49;00m._is_read [94melse[39;49;00m [96mself[39;49;00m._write()[90m[39;49;00m
+          ^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py[0m:3175: in _read
+    [0m[96mself[39;49;00m._server = [96mself[39;49;00m._get_server()[90m[39;49;00m
+                   ^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py[0m:3120: in _get_server
+    [0m[94mreturn[39;49;00m [96mself[39;49;00m._client._select_server([90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py[0m:1917: in _select_server
+    [0mserver = topology.select_server([90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/topology.py[0m:357: in select_server
+    [0mserver = [96mself[39;49;00m._select_server([90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/topology.py[0m:331: in _select_server
+    [0mservers = [96mself[39;49;00m.select_servers([90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/topology.py[0m:249: in select_servers
+    [0mserver_descriptions = [96mself[39;49;00m._select_servers_loop([90m[39;49;00m
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <Topology <TopologyDescription id: 6af6233d4735f6ad79edc558, topology_type: Single, servers: [<ServerDescription ('127...127.0.0.1:56856: connection closed (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms)')>]>>
+selector = Primary(), timeout = 10.0
+operation = <_Op.LIST_COLLECTIONS: 'listCollections'>, operation_id = -288177530
+address = None, deprioritized_servers = None
+
+    [0m[94mdef[39;49;00m[90m [39;49;00m[92m_select_servers_loop[39;49;00m([90m[39;49;00m
+        [96mself[39;49;00m,[90m[39;49;00m
+        selector: Callable[[Selection], Selection],[90m[39;49;00m
+        timeout: [96mfloat[39;49;00m,[90m[39;49;00m
+        operation: [96mstr[39;49;00m,[90m[39;49;00m
+        operation_id: Optional[[96mint[39;49;00m],[90m[39;49;00m
+        address: Optional[_Address],[90m[39;49;00m
+        deprioritized_servers: Optional[[96mlist[39;49;00m[Server]] = [94mNone[39;49;00m,[90m[39;49;00m
+    ) -> [96mlist[39;49;00m[ServerDescription]:[90m[39;49;00m
+    [90m    [39;49;00m[33m"""select_servers() guts. Hold the lock when calling this."""[39;49;00m[90m[39;49;00m
+        now = time.monotonic()[90m[39;49;00m
+        end_time = now + timeout[90m[39;49;00m
+        logged_waiting = [94mFalse[39;49;00m[90m[39;49;00m
+        [90m# Server selection does not have APM events, gate only on logging[39;49;00m[90m[39;49;00m
+        ss: Optional[_ServerSelectionTelemetry] = [94mNone[39;49;00m[90m[39;49;00m
+        [94mif[39;49;00m _is_debug_enabled(_SERVER_SELECTION_LOGGER):[90m[39;49;00m
+            ss = _ServerSelectionTelemetry([90m[39;49;00m
+                [96mself[39;49;00m._topology_id, selector, operation, operation_id, [96mself[39;49;00m.description[90m[39;49;00m
+            )[90m[39;49;00m
+            ss.started()[90m[39;49;00m
+    [90m[39;49;00m
+        server_descriptions = [96mself[39;49;00m._description.apply_selector([90m[39;49;00m
+            selector,[90m[39;49;00m
+            address,[90m[39;49;00m
+            custom_selector=[96mself[39;49;00m._settings.server_selector,[90m[39;49;00m
+            deprioritized_servers=[server.description [94mfor[39;49;00m server [95min[39;49;00m deprioritized_servers][90m[39;49;00m
+            [94mif[39;49;00m deprioritized_servers[90m[39;49;00m
+            [94melse[39;49;00m [94mNone[39;49;00m,[90m[39;49;00m
+        )[90m[39;49;00m
+    [90m[39;49;00m
+        [94mwhile[39;49;00m [95mnot[39;49;00m server_descriptions:[90m[39;49;00m
+            [90m# No suitable servers.[39;49;00m[90m[39;49;00m
+            [94mif[39;49;00m timeout == [94m0[39;49;00m [95mor[39;49;00m now > end_time:[90m[39;49;00m
+                [94mif[39;49;00m ss [95mis[39;49;00m [95mnot[39;49;00m [94mNone[39;49;00m:[90m[39;49;00m
+                    ss.failed([96mself[39;49;00m._error_message(selector), [96mself[39;49;00m.description)[90m[39;49;00m
+>               [94mraise[39;49;00m ServerSelectionTimeoutError([90m[39;49;00m
+                    [33mf[39;49;00m[33m"[39;49;00m[33m{[39;49;00m[96mself[39;49;00m._error_message(selector)[33m}[39;49;00m[33m, Timeout: [39;49;00m[33m{[39;49;00mtimeout[33m}[39;49;00m[33ms, Topology Description: [39;49;00m[33m{[39;49;00m[96mself[39;49;00m.description[33m!r}[39;49;00m[33m"[39;49;00m[90m[39;49;00m
+                )[90m[39;49;00m
+[1m[31mE               pymongo.errors.ServerSelectionTimeoutError: 127.0.0.1:56856: connection closed (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms), Timeout: 10.0s, Topology Description: <TopologyDescription id: 6af6233d4735f6ad79edc558, topology_type: Single, servers: [<ServerDescription ('127.0.0.1', 56856) server_type: Unknown, rtt: None, error=AutoReconnect('127.0.0.1:56856: connection closed (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms)')>]>[0m
+
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/topology.py[0m:297: ServerSelectionTimeoutError
+[31m[1m_______ ERROR at setup of test_two_orgs_runs_execute_each_in_its_own_org _______[0m
+
+root_client = MongoClient(host=['127.0.0.1:56856'], document_class=dict, tz_aware=True, connect=True, authsource='admin', directconnection=True, serverselectiontimeoutms=10000)
+mongo_uri = 'mongodb://root:9e59b0c4fa9569a04659ce2b8fd02ecf@127.0.0.1:56856/?authSource=admin&directConnection=true'
+tenant_safety_net = <onb_data.safety_net.TenantCommandListener object at 0x10ac24ec0>
+
+    [0m[37m@pytest[39;49;00m.fixture[90m[39;49;00m
+    [94mdef[39;49;00m[90m [39;49;00m[92mscratch[39;49;00m(root_client: Client, mongo_uri: [96mstr[39;49;00m, tenant_safety_net: TenantCommandListener) -> Iterator[Scratch]:[90m[39;49;00m
+    [90m    [39;49;00m[33m"""A fresh database with the bus collections created up front, dropped afterwards."""[39;49;00m[90m[39;49;00m
+        name = [33mf[39;49;00m[33m"[39;49;00m[33mit_run1_[39;49;00m[33m{[39;49;00muuid.uuid4().hex[:[94m12[39;49;00m][33m}[39;49;00m[33m"[39;49;00m[90m[39;49;00m
+        db = root_client[name][90m[39;49;00m
+        collections = ([33m"[39;49;00m[33mevents[39;49;00m[33m"[39;49;00m, [33m"[39;49;00m[33mjobs[39;49;00m[33m"[39;49;00m, [33m"[39;49;00m[33mdead_letters[39;49;00m[33m"[39;49;00m, [33m"[39;49;00m[33monboarding_runs[39;49;00m[33m"[39;49;00m, [33m"[39;49;00m[33mrun_tasks[39;49;00m[33m"[39;49;00m, [33m"[39;49;00m[33mrun_checkpoints[39;49;00m[33m"[39;49;00m,[90m[39;49;00m
+                       [33m"[39;49;00m[33mrun_checkpoint_writes[39;49;00m[33m"[39;49;00m, [33m"[39;49;00m[33maudit_log[39;49;00m[33m"[39;49;00m)  [90m# fmt: skip[39;49;00m[90m[39;49;00m
+        [94mfor[39;49;00m collection [95min[39;49;00m collections:[90m[39;49;00m
+>           db.create_collection(collection)[90m[39;49;00m
+
+[1m[31mapps/orchestrator/tests_int/conftest.py[0m:130: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/_csot.py[0m:126: in csot_wrapper
+    [0m[94mreturn[39;49;00m func([96mself[39;49;00m, *args, **kwargs)[90m[39;49;00m
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/database.py[0m:618: in create_collection
+    [0m[95mand[39;49;00m name [95min[39;49;00m [96mself[39;49;00m._list_collection_names([96mfilter[39;49;00m={[33m"[39;49;00m[33mname[39;49;00m[33m"[39;49;00m: name}, session=s)[90m[39;49;00m
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/database.py[0m:1212: in _list_collection_names
+    [0mresult[[33m"[39;49;00m[33mname[39;49;00m[33m"[39;49;00m] [94mfor[39;49;00m result [95min[39;49;00m [96mself[39;49;00m._list_collections_helper(session=session, **kwargs)[90m[39;49;00m
+                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/database.py[0m:1150: in _list_collections_helper
+    [0m[94mreturn[39;49;00m [96mself[39;49;00m._client._retryable_read([90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py[0m:2116: in _retryable_read
+    [0m[94mreturn[39;49;00m [96mself[39;49;00m._retry_internal([90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/_csot.py[0m:126: in csot_wrapper
+    [0m[94mreturn[39;49;00m func([96mself[39;49;00m, *args, **kwargs)[90m[39;49;00m
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py[0m:2077: in _retry_internal
+    [0m).run()[90m[39;49;00m
+      ^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py[0m:2947: in run
+    [0mres = [96mself[39;49;00m._read() [94mif[39;49;00m [96mself[39;49;00m._is_read [94melse[39;49;00m [96mself[39;49;00m._write()[90m[39;49;00m
+          ^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py[0m:3175: in _read
+    [0m[96mself[39;49;00m._server = [96mself[39;49;00m._get_server()[90m[39;49;00m
+                   ^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py[0m:3120: in _get_server
+    [0m[94mreturn[39;49;00m [96mself[39;49;00m._client._select_server([90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py[0m:1917: in _select_server
+    [0mserver = topology.select_server([90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/topology.py[0m:357: in select_server
+    [0mserver = [96mself[39;49;00m._select_server([90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/topology.py[0m:331: in _select_server
+    [0mservers = [96mself[39;49;00m.select_servers([90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/topology.py[0m:249: in select_servers
+    [0mserver_descriptions = [96mself[39;49;00m._select_servers_loop([90m[39;49;00m
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <Topology <TopologyDescription id: 6af6233d4735f6ad79edc558, topology_type: Single, servers: [<ServerDescription ('127...127.0.0.1:56856: connection closed (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms)')>]>>
+selector = Primary(), timeout = 10.0
+operation = <_Op.LIST_COLLECTIONS: 'listCollections'>, operation_id = -197805050
+address = None, deprioritized_servers = None
+
+    [0m[94mdef[39;49;00m[90m [39;49;00m[92m_select_servers_loop[39;49;00m([90m[39;49;00m
+        [96mself[39;49;00m,[90m[39;49;00m
+        selector: Callable[[Selection], Selection],[90m[39;49;00m
+        timeout: [96mfloat[39;49;00m,[90m[39;49;00m
+        operation: [96mstr[39;49;00m,[90m[39;49;00m
+        operation_id: Optional[[96mint[39;49;00m],[90m[39;49;00m
+        address: Optional[_Address],[90m[39;49;00m
+        deprioritized_servers: Optional[[96mlist[39;49;00m[Server]] = [94mNone[39;49;00m,[90m[39;49;00m
+    ) -> [96mlist[39;49;00m[ServerDescription]:[90m[39;49;00m
+    [90m    [39;49;00m[33m"""select_servers() guts. Hold the lock when calling this."""[39;49;00m[90m[39;49;00m
+        now = time.monotonic()[90m[39;49;00m
+        end_time = now + timeout[90m[39;49;00m
+        logged_waiting = [94mFalse[39;49;00m[90m[39;49;00m
+        [90m# Server selection does not have APM events, gate only on logging[39;49;00m[90m[39;49;00m
+        ss: Optional[_ServerSelectionTelemetry] = [94mNone[39;49;00m[90m[39;49;00m
+        [94mif[39;49;00m _is_debug_enabled(_SERVER_SELECTION_LOGGER):[90m[39;49;00m
+            ss = _ServerSelectionTelemetry([90m[39;49;00m
+                [96mself[39;49;00m._topology_id, selector, operation, operation_id, [96mself[39;49;00m.description[90m[39;49;00m
+            )[90m[39;49;00m
+            ss.started()[90m[39;49;00m
+    [90m[39;49;00m
+        server_descriptions = [96mself[39;49;00m._description.apply_selector([90m[39;49;00m
+            selector,[90m[39;49;00m
+            address,[90m[39;49;00m
+            custom_selector=[96mself[39;49;00m._settings.server_selector,[90m[39;49;00m
+            deprioritized_servers=[server.description [94mfor[39;49;00m server [95min[39;49;00m deprioritized_servers][90m[39;49;00m
+            [94mif[39;49;00m deprioritized_servers[90m[39;49;00m
+            [94melse[39;49;00m [94mNone[39;49;00m,[90m[39;49;00m
+        )[90m[39;49;00m
+    [90m[39;49;00m
+        [94mwhile[39;49;00m [95mnot[39;49;00m server_descriptions:[90m[39;49;00m
+            [90m# No suitable servers.[39;49;00m[90m[39;49;00m
+            [94mif[39;49;00m timeout == [94m0[39;49;00m [95mor[39;49;00m now > end_time:[90m[39;49;00m
+                [94mif[39;49;00m ss [95mis[39;49;00m [95mnot[39;49;00m [94mNone[39;49;00m:[90m[39;49;00m
+                    ss.failed([96mself[39;49;00m._error_message(selector), [96mself[39;49;00m.description)[90m[39;49;00m
+>               [94mraise[39;49;00m ServerSelectionTimeoutError([90m[39;49;00m
+                    [33mf[39;49;00m[33m"[39;49;00m[33m{[39;49;00m[96mself[39;49;00m._error_message(selector)[33m}[39;49;00m[33m, Timeout: [39;49;00m[33m{[39;49;00mtimeout[33m}[39;49;00m[33ms, Topology Description: [39;49;00m[33m{[39;49;00m[96mself[39;49;00m.description[33m!r}[39;49;00m[33m"[39;49;00m[90m[39;49;00m
+                )[90m[39;49;00m
+[1m[31mE               pymongo.errors.ServerSelectionTimeoutError: 127.0.0.1:56856: connection closed (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms), Timeout: 10.0s, Topology Description: <TopologyDescription id: 6af6233d4735f6ad79edc558, topology_type: Single, servers: [<ServerDescription ('127.0.0.1', 56856) server_type: Unknown, rtt: None, error=AutoReconnect('127.0.0.1:56856: connection closed (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms)')>]>[0m
+
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/topology.py[0m:297: ServerSelectionTimeoutError
+=================================== FAILURES ===================================
+[31m[1m_ test_a_worker_killed_with_sigkill_mid_run_restarts_and_the_run_completes_with_no_effect_twice[after] _[0m
+
+scratch = Scratch(name='it_run1_a2f44843f1fc', db=Database(MongoClient(host=['127.0.0.1:56856'], document_class=dict, tz_aware=True, connect=True, authsource='admin', directconnection=True, serverselectiontimeoutms=10000), 'it_run1_a2f44843f1fc'))
+tmp_path = PosixPath('/private/var/folders/0s/4k0smcx56zl9hdj404qnz2s80000gp/T/pytest-of-Adya/pytest-2619/test_a_worker_killed_with_sigk1')
+stage = 'after'
+
+    [0m[37m@pytest[39;49;00m.mark.parametrize([33m"[39;49;00m[33mstage[39;49;00m[33m"[39;49;00m, [[33m"[39;49;00m[33mbefore[39;49;00m[33m"[39;49;00m, [33m"[39;49;00m[33mafter[39;49;00m[33m"[39;49;00m])[90m[39;49;00m
+    [94mdef[39;49;00m[90m [39;49;00m[92mtest_a_worker_killed_with_sigkill_mid_run_restarts_and_the_run_completes_with_no_effect_twice[39;49;00m([90m[39;49;00m
+        scratch: Scratch, tmp_path: Path, stage: [96mstr[39;49;00m[90m[39;49;00m
+    ) -> [94mNone[39;49;00m:[90m[39;49;00m
+        run_id = asyncio.run(_start_run(scratch))[90m[39;49;00m
+        first = _spawn(scratch, tmp_path, stage)[90m[39;49;00m
+        second: subprocess.Popen[[96mbytes[39;49;00m] | [94mNone[39;49;00m = [94mNone[39;49;00m[90m[39;49;00m
+        [94mtry[39;49;00m:[90m[39;49;00m
+            _until([33m"[39;49;00m[33mthe first worker to stall on its task[39;49;00m[33m"[39;49;00m, [94mlambda[39;49;00m: (tmp_path / [33m"[39;49;00m[33mstalled[39;49;00m[33m"[39;49;00m).exists(), timeout=[94m60[39;49;00m)[90m[39;49;00m
+    [90m[39;49;00m
+            [94mdef[39;49;00m[90m [39;49;00m[92msiblings_settled[39;49;00m() -> [96mbool[39;49;00m:[90m[39;49;00m
+    [90m            [39;49;00m[33m"""Every task but the stalled one has finished or not started: nothing else is in flight, so[39;49;00m
+    [33m            which tasks the kill interrupts does not depend on timing."""[39;49;00m[90m[39;49;00m
+                others = scratch.find([33m"[39;49;00m[33mrun_tasks[39;49;00m[33m"[39;49;00m, {[33m"[39;49;00m[33mrun_id[39;49;00m[33m"[39;49;00m: run_id, [33m"[39;49;00m[33mtask_id[39;49;00m[33m"[39;49;00m: {[33m"[39;49;00m[33m$ne[39;49;00m[33m"[39;49;00m: KILLED_TASK}})[90m[39;49;00m
+                [94mreturn[39;49;00m [96mall[39;49;00m(t[[33m"[39;49;00m[33mstatus[39;49;00m[33m"[39;49;00m] [95min[39;49;00m {[33m"[39;49;00m[33mpending[39;49;00m[33m"[39;49;00m, [33m"[39;49;00m[33mdone[39;49;00m[33m"[39;49;00m, [33m"[39;49;00m[33mskipped[39;49;00m[33m"[39;49;00m} [94mfor[39;49;00m t [95min[39;49;00m others)[90m[39;49;00m
+    [90m[39;49;00m
+            _until([33m"[39;49;00m[33mthe stalled task[39;49;00m[33m'[39;49;00m[33ms siblings to finish[39;49;00m[33m"[39;49;00m, siblings_settled, timeout=[94m30[39;49;00m)[90m[39;49;00m
+            mid = {t[[33m"[39;49;00m[33mtask_id[39;49;00m[33m"[39;49;00m]: t [94mfor[39;49;00m t [95min[39;49;00m scratch.find([33m"[39;49;00m[33mrun_tasks[39;49;00m[33m"[39;49;00m, {[33m"[39;49;00m[33mrun_id[39;49;00m[33m"[39;49;00m: run_id})}[90m[39;49;00m
+            [94massert[39;49;00m mid[KILLED_TASK][[33m"[39;49;00m[33mstatus[39;49;00m[33m"[39;49;00m] == [33m"[39;49;00m[33mrunning[39;49;00m[33m"[39;49;00m, [33m"[39;49;00m[33mthe task is running when the worker dies[39;49;00m[33m"[39;49;00m[90m[39;49;00m
+            [94massert[39;49;00m mid[KILLED_TASK][[33m"[39;49;00m[33mlease_token[39;49;00m[33m"[39;49;00m], [33m"[39;49;00m[33mand it holds a lease that nobody will renew[39;49;00m[33m"[39;49;00m[90m[39;49;00m
+            first.send_signal(signal.SIGKILL)[90m[39;49;00m
+            first.wait(timeout=[94m10[39;49;00m)[90m[39;49;00m
+            [94massert[39;49;00m first.returncode == -signal.SIGKILL[90m[39;49;00m
+    [90m[39;49;00m
+            killed_at = time.monotonic()[90m[39;49;00m
+            second = _spawn(scratch, tmp_path, stage)[90m[39;49;00m
+    [90m[39;49;00m
+            [94mdef[39;49;00m[90m [39;49;00m[92mcompleted[39;49;00m() -> [96mbool[39;49;00m:[90m[39;49;00m
+                run = scratch.find_one([33m"[39;49;00m[33monboarding_runs[39;49;00m[33m"[39;49;00m, {[33m"[39;49;00m[33m_id[39;49;00m[33m"[39;49;00m: run_id})[90m[39;49;00m
+                [94mreturn[39;49;00m run [95mis[39;49;00m [95mnot[39;49;00m [94mNone[39;49;00m [95mand[39;49;00m run[[33m"[39;49;00m[33mstatus[39;49;00m[33m"[39;49;00m] [95min[39;49;00m {[33m"[39;49;00m[33mcompleted[39;49;00m[33m"[39;49;00m, [33m"[39;49;00m[33mfailed[39;49;00m[33m"[39;49;00m, [33m"[39;49;00m[33mblocked[39;49;00m[33m"[39;49;00m}[90m[39;49;00m
+    [90m[39;49;00m
+>           _until([33m"[39;49;00m[33mthe restarted worker to finish the run[39;49;00m[33m"[39;49;00m, completed, timeout=[94m90[39;49;00m)[90m[39;49;00m
+
+[1m[31mapps/orchestrator/tests_int/test_kill_and_restart.py[0m:118: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+[1m[31mapps/orchestrator/tests_int/test_kill_and_restart.py[0m:59: in _until
+    [0m[94mif[39;49;00m condition():[90m[39;49;00m
+       ^^^^^^^^^^^[90m[39;49;00m
+[1m[31mapps/orchestrator/tests_int/test_kill_and_restart.py[0m:115: in completed
+    [0mrun = scratch.find_one([33m"[39;49;00m[33monboarding_runs[39;49;00m[33m"[39;49;00m, {[33m"[39;49;00m[33m_id[39;49;00m[33m"[39;49;00m: run_id})[90m[39;49;00m
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31mapps/orchestrator/tests_int/conftest.py[0m:115: in find_one
+    [0m[94mreturn[39;49;00m [96mself[39;49;00m.db[collection].find_one(query, projection)[90m[39;49;00m
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/collection.py[0m:1728: in find_one
+    [0m[94mfor[39;49;00m result [95min[39;49;00m cursor.limit(-[94m1[39;49;00m):[90m[39;49;00m
+                  ^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/cursor.py[0m:404: in __next__
+    [0m[94mreturn[39;49;00m [96mself[39;49;00m.next()[90m[39;49;00m
+           ^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/cursor.py[0m:383: in next
+    [0m[94mif[39;49;00m [96mlen[39;49;00m([96mself[39;49;00m._data) [95mor[39;49;00m [96mself[39;49;00m._refresh():[90m[39;49;00m
+                          ^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/cursor.py[0m:334: in _refresh
+    [0m[96mself[39;49;00m._send_message(q)[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/cursor.py[0m:237: in _send_message
+    [0mresponse = client._run_operation(operation, [96mself[39;49;00m._run_with_conn, address=[96mself[39;49;00m._address)[90m[39;49;00m
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/_csot.py[0m:126: in csot_wrapper
+    [0m[94mreturn[39;49;00m func([96mself[39;49;00m, *args, **kwargs)[90m[39;49;00m
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py[0m:1994: in _run_operation
+    [0m[94mreturn[39;49;00m [96mself[39;49;00m._retryable_read([90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py[0m:2116: in _retryable_read
+    [0m[94mreturn[39;49;00m [96mself[39;49;00m._retry_internal([90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/_csot.py[0m:126: in csot_wrapper
+    [0m[94mreturn[39;49;00m func([96mself[39;49;00m, *args, **kwargs)[90m[39;49;00m
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py[0m:2077: in _retry_internal
+    [0m).run()[90m[39;49;00m
+      ^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py[0m:2958: in run
+    [0m[96mself[39;49;00m._check_last_error()[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py[0m:3113: in _check_last_error
+    [0m[94mraise[39;49;00m [96mself[39;49;00m._last_error[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py[0m:2947: in run
+    [0mres = [96mself[39;49;00m._read() [94mif[39;49;00m [96mself[39;49;00m._is_read [94melse[39;49;00m [96mself[39;49;00m._write()[90m[39;49;00m
+          ^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py[0m:3189: in _read
+    [0m[94mreturn[39;49;00m [96mself[39;49;00m._func([96mself[39;49;00m._session, [96mself[39;49;00m._server, conn, read_pref)  [90m# type: ignore[39;49;00m[90m[39;49;00m
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py[0m:1992: in _cmd
+    [0m[94mreturn[39;49;00m run_with_conn(conn, operation, read_preference)[90m[39;49;00m
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/helpers.py[0m:50: in inner
+    [0m[94mreturn[39;49;00m func(*args, **kwargs)[90m[39;49;00m
+           ^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/cursor_base.py[0m:120: in _run_with_conn
+    [0mdocs, reply, duration = run_cursor_command([90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/command_runner.py[0m:329: in run_cursor_command
+    [0mdocs, reply, duration_s = _run_command([90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/command_runner.py[0m:192: in _run_command
+    [0mreply = conn.receive_message(request_id)[90m[39;49;00m
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/pool.py[0m:458: in receive_message
+    [0m[96mself[39;49;00m._raise_connection_failure(error)[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/pool.py[0m:576: in _raise_connection_failure
+    [0m[94mraise[39;49;00m error[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/pool.py[0m:455: in receive_message
+    [0m[94mreturn[39;49;00m receive_message([96mself[39;49;00m, request_id, [96mself[39;49;00m.max_message_size)[90m[39;49;00m
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/network_layer.py[0m:748: in receive_message
+    [0mlength, _, response_to, op_code = _UNPACK_HEADER(receive_data(conn, [94m16[39;49;00m, deadline))[90m[39;49;00m
+                                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+conn = Connection(<pymongo.network_layer.NetworkingInterface object at 0x10d526570>) CLOSED at 4518471648
+length = 16, deadline = None
+
+    [0m[94mdef[39;49;00m[90m [39;49;00m[92mreceive_data[39;49;00m(conn: Connection, length: [96mint[39;49;00m, deadline: Optional[[96mfloat[39;49;00m]) -> [96mmemoryview[39;49;00m:[90m[39;49;00m
+        buf = [96mbytearray[39;49;00m(length)[90m[39;49;00m
+        mv = [96mmemoryview[39;49;00m(buf)[90m[39;49;00m
+        bytes_read = [94m0[39;49;00m[90m[39;49;00m
+        [90m# To support cancelling a network read, we shorten the socket timeout and[39;49;00m[90m[39;49;00m
+        [90m# check for the cancellation signal after each timeout. Alternatively we[39;49;00m[90m[39;49;00m
+        [90m# could close the socket but that does not reliably cancel recv() calls[39;49;00m[90m[39;49;00m
+        [90m# on all OSes.[39;49;00m[90m[39;49;00m
+        [90m# When the timeout has expired we perform one final non-blocking recv.[39;49;00m[90m[39;49;00m
+        [90m# This helps avoid spurious timeouts when the response is actually already[39;49;00m[90m[39;49;00m
+        [90m# buffered on the client.[39;49;00m[90m[39;49;00m
+        orig_timeout = conn.conn.gettimeout()[90m[39;49;00m
+        [94mtry[39;49;00m:[90m[39;49;00m
+            [94mwhile[39;49;00m bytes_read < length:[90m[39;49;00m
+                [94mtry[39;49;00m:[90m[39;49;00m
+                    [90m# Use the legacy wait_for_read cancellation approach on Windows due to PYTHON-5405.[39;49;00m[90m[39;49;00m
+                    [94mif[39;49;00m _WINDOWS:[90m[39;49;00m
+                        wait_for_read(conn, deadline)[90m[39;49;00m
+                        [94mif[39;49;00m _csot.get_timeout() [95mand[39;49;00m deadline [95mis[39;49;00m [95mnot[39;49;00m [94mNone[39;49;00m:[90m[39;49;00m
+                            conn.set_conn_timeout([96mmax[39;49;00m(deadline - time.monotonic(), [94m0[39;49;00m))[90m[39;49;00m
+                    [94melse[39;49;00m:[90m[39;49;00m
+                        [94mif[39;49;00m deadline [95mis[39;49;00m [95mnot[39;49;00m [94mNone[39;49;00m:[90m[39;49;00m
+                            short_timeout = [96mmin[39;49;00m([96mmax[39;49;00m(deadline - time.monotonic(), [94m0[39;49;00m), _POLL_TIMEOUT)[90m[39;49;00m
+                        [94melse[39;49;00m:[90m[39;49;00m
+                            short_timeout = _POLL_TIMEOUT[90m[39;49;00m
+                        conn.set_conn_timeout(short_timeout)[90m[39;49;00m
+    [90m[39;49;00m
+                    chunk_length = conn.conn.recv_into(mv[bytes_read:])[90m[39;49;00m
+                [94mexcept[39;49;00m BLOCKING_IO_ERRORS:[90m[39;49;00m
+                    [94mif[39;49;00m conn.cancel_context.cancelled:[90m[39;49;00m
+                        [94mraise[39;49;00m _OperationCancelled([33m"[39;49;00m[33moperation cancelled[39;49;00m[33m"[39;49;00m) [94mfrom[39;49;00m[90m [39;49;00m[94mNone[39;49;00m[90m[39;49;00m
+                    [90m# We reached the true deadline.[39;49;00m[90m[39;49;00m
+                    [94mraise[39;49;00m socket.timeout([33m"[39;49;00m[33mtimed out[39;49;00m[33m"[39;49;00m) [94mfrom[39;49;00m[90m [39;49;00m[94mNone[39;49;00m[90m[39;49;00m
+                [94mexcept[39;49;00m socket.timeout:[90m[39;49;00m
+                    [94mif[39;49;00m conn.cancel_context.cancelled:[90m[39;49;00m
+>                       [94mraise[39;49;00m _OperationCancelled([33m"[39;49;00m[33moperation cancelled[39;49;00m[33m"[39;49;00m) [94mfrom[39;49;00m[90m [39;49;00m[94mNone[39;49;00m[90m[39;49;00m
+[1m[31mE                       pymongo.errors._OperationCancelled: operation cancelled[0m
+
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/network_layer.py[0m:339: _OperationCancelled
+[36m[1m=========================== short test summary info ============================[0m
+[31mERROR[0m apps/orchestrator/tests_int/test_kill_and_restart.py::[1mtest_a_worker_killed_with_sigkill_mid_run_restarts_and_the_run_completes_with_no_effect_twice[after][0m - pymongo.errors.ServerSelectionTimeoutError: 127.0.0.1:56856: timed out (con...
+[31mERROR[0m apps/orchestrator/tests_int/test_resume_latency.py::[1mtest_decision_to_resume_is_under_5_seconds_at_p95_over_30_plus_decisions[0m - pymongo.errors._OperationCancelled: operation cancelled
+[31mERROR[0m apps/orchestrator/tests_int/test_runs_against_mongo.py::[1mtest_a_diamond_started_through_the_outbox_runs_b_and_c_in_parallel_and_d_after_both[0m - pymongo.errors.ServerSelectionTimeoutError: 127.0.0.1:56856: timed out (con...
+[31mERROR[0m apps/orchestrator/tests_int/test_runs_against_mongo.py::[1mtest_the_checkpoint_thread_id_is_org_id_colon_run_id_and_every_checkpoint_carries_the_org[0m - pymongo.errors.ServerSelectionTimeoutError: 127.0.0.1:56856: timed out (con...
+[31mERROR[0m apps/orchestrator/tests_int/test_runs_against_mongo.py::[1mtest_a_run_stays_pinned_to_its_version_after_a_newer_version_is_published[0m - pymongo.errors.ServerSelectionTimeoutError: 127.0.0.1:56856: timed out (con...
+[31mERROR[0m apps/orchestrator/tests_int/test_runs_against_mongo.py::[1mtest_a_start_whose_audit_write_fails_leaves_no_run_task_event_or_job[0m - pymongo.errors.ServerSelectionTimeoutError: 127.0.0.1:56856: timed out (con...
+[31mERROR[0m apps/orchestrator/tests_int/test_runs_against_mongo.py::[1mtest_a_start_is_audited_in_the_same_transaction[0m - pymongo.errors.ServerSelectionTimeoutError: 127.0.0.1:56856: timed out (con...
+[31mERROR[0m apps/orchestrator/tests_int/test_runs_against_mongo.py::[1mtest_a_redelivered_start_executes_no_task_twice[0m - pymongo.errors.ServerSelectionTimeoutError: 127.0.0.1:56856: connection clo...
+[31mERROR[0m apps/orchestrator/tests_int/test_runs_against_mongo.py::[1mtest_two_orgs_runs_execute_each_in_its_own_org[0m - pymongo.errors.ServerSelectionTimeoutError: 127.0.0.1:56856: connection clo...
+[31mFAILED[0m apps/orchestrator/tests_int/test_kill_and_restart.py::[1mtest_a_worker_killed_with_sigkill_mid_run_restarts_and_the_run_completes_with_no_effect_twice[after][0m - pymongo.errors._OperationCancelled: operation cancelled
+[31m============== [31m[1m1 failed[0m, [32m17 passed[0m, [31m[1m9 errors[0m[31m in 272.24s (0:04:32)[0m[31m ==============[0m
+
+> nx run api:test-int
+
+[2m> [22muv run --frozen pytest apps/api/tests_int -o cache_dir=.pytest_cache/api-int
+
+[1m============================= test session starts ==============================[0m
+platform darwin -- Python 3.12.13, pytest-9.2.0, pluggy-1.7.0
+cachedir: .pytest_cache/api-int
+rootdir: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-ui-6
+configfile: pyproject.toml
+plugins: hypothesis-6.170.15, langsmith-0.14.17, cov-7.1.0, anyio-4.16.0
+collected 45 items
+
+apps/api/tests_int/test_mongo_audit.py [31mE[0m[31mE[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[31m                        [ 22%][0m
+apps/api/tests_int/test_mongo_documents.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[31m                          [ 31%][0m
+apps/api/tests_int/test_mongo_hires.py [32m.[0m[32m.[0m[32m.[0m[31m                               [ 37%][0m
+apps/api/tests_int/test_mongo_login.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[31m                          [ 55%][0m
+apps/api/tests_int/test_mongo_registry.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[31m                        [ 71%][0m
+apps/api/tests_int/test_mongo_retention.py [32m.[0m[31m                             [ 73%][0m
+apps/api/tests_int/test_mongo_seed.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[31m                               [ 82%][0m
+apps/api/tests_int/test_mongo_templates.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[31m                        [ 95%][0m
+apps/api/tests_int/test_safety_net_guard.py [32m.[0m[32m.[0m[31m                           [100%][0m
+
+==================================== ERRORS ====================================
+[31m[1m_ ERROR at setup of test_records_land_in_mongo_with_org_and_the_spans_trace_id _[0m
+
+root_client = MongoClient(host=['127.0.0.1:58067'], document_class=dict, tz_aware=False, connect=True, authsource='admin', directconnection=True, serverselectiontimeoutms=10000)
+
+    [0m[37m@pytest[39;49;00m.fixture[90m[39;49;00m
+    [94mdef[39;49;00m[90m [39;49;00m[92mscratch[39;49;00m(root_client: Client) -> Iterator[[96mtuple[39;49;00m[[96mstr[39;49;00m, [96mstr[39;49;00m]]:[90m[39;49;00m
+        name = [33mf[39;49;00m[33m"[39;49;00m[33mit_aud1_[39;49;00m[33m{[39;49;00muuid.uuid4().hex[:[94m12[39;49;00m][33m}[39;49;00m[33m"[39;49;00m[90m[39;49;00m
+>       [94myield[39;49;00m _uri(root_client), name[90m[39;49;00m
+              ^^^^^^^^^^^^^^^^^[90m[39;49;00m
+
+[1m[31mapps/api/tests_int/test_mongo_audit.py[0m:51: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+[1m[31mapps/api/tests_int/test_mongo_audit.py[0m:42: in _uri
+    [0mhost, port = root_client.address [95mor[39;49;00m ([33m"[39;49;00m[33m127.0.0.1[39;49;00m[33m"[39;49;00m, [94m27017[39;49;00m)[90m[39;49;00m
+                 ^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py[0m:1731: in address
+    [0m[94mreturn[39;49;00m [96mself[39;49;00m._server_property([33m"[39;49;00m[33maddress[39;49;00m[33m"[39;49;00m)[90m[39;49;00m
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py[0m:1702: in _server_property
+    [0mserver = ([96mself[39;49;00m._get_topology()).select_server(writable_server_selector, _Op.TEST)[90m[39;49;00m
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/topology.py[0m:357: in select_server
+    [0mserver = [96mself[39;49;00m._select_server([90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/topology.py[0m:331: in _select_server
+    [0mservers = [96mself[39;49;00m.select_servers([90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/topology.py[0m:249: in select_servers
+    [0mserver_descriptions = [96mself[39;49;00m._select_servers_loop([90m[39;49;00m
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <Topology <TopologyDescription id: 6af6242d63e0103d1385baf3, topology_type: Single, servers: [<ServerDescription ('127...127.0.0.1:58067: connection closed (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms)')>]>>
+selector = <function writable_server_selector at 0x10c45e200>, timeout = 10.0
+operation = <_Op.TEST: 'testOperation'>, operation_id = None, address = None
+deprioritized_servers = None
+
+    [0m[94mdef[39;49;00m[90m [39;49;00m[92m_select_servers_loop[39;49;00m([90m[39;49;00m
+        [96mself[39;49;00m,[90m[39;49;00m
+        selector: Callable[[Selection], Selection],[90m[39;49;00m
+        timeout: [96mfloat[39;49;00m,[90m[39;49;00m
+        operation: [96mstr[39;49;00m,[90m[39;49;00m
+        operation_id: Optional[[96mint[39;49;00m],[90m[39;49;00m
+        address: Optional[_Address],[90m[39;49;00m
+        deprioritized_servers: Optional[[96mlist[39;49;00m[Server]] = [94mNone[39;49;00m,[90m[39;49;00m
+    ) -> [96mlist[39;49;00m[ServerDescription]:[90m[39;49;00m
+    [90m    [39;49;00m[33m"""select_servers() guts. Hold the lock when calling this."""[39;49;00m[90m[39;49;00m
+        now = time.monotonic()[90m[39;49;00m
+        end_time = now + timeout[90m[39;49;00m
+        logged_waiting = [94mFalse[39;49;00m[90m[39;49;00m
+        [90m# Server selection does not have APM events, gate only on logging[39;49;00m[90m[39;49;00m
+        ss: Optional[_ServerSelectionTelemetry] = [94mNone[39;49;00m[90m[39;49;00m
+        [94mif[39;49;00m _is_debug_enabled(_SERVER_SELECTION_LOGGER):[90m[39;49;00m
+            ss = _ServerSelectionTelemetry([90m[39;49;00m
+                [96mself[39;49;00m._topology_id, selector, operation, operation_id, [96mself[39;49;00m.description[90m[39;49;00m
+            )[90m[39;49;00m
+            ss.started()[90m[39;49;00m
+    [90m[39;49;00m
+        server_descriptions = [96mself[39;49;00m._description.apply_selector([90m[39;49;00m
+            selector,[90m[39;49;00m
+            address,[90m[39;49;00m
+            custom_selector=[96mself[39;49;00m._settings.server_selector,[90m[39;49;00m
+            deprioritized_servers=[server.description [94mfor[39;49;00m server [95min[39;49;00m deprioritized_servers][90m[39;49;00m
+            [94mif[39;49;00m deprioritized_servers[90m[39;49;00m
+            [94melse[39;49;00m [94mNone[39;49;00m,[90m[39;49;00m
+        )[90m[39;49;00m
+    [90m[39;49;00m
+        [94mwhile[39;49;00m [95mnot[39;49;00m server_descriptions:[90m[39;49;00m
+            [90m# No suitable servers.[39;49;00m[90m[39;49;00m
+            [94mif[39;49;00m timeout == [94m0[39;49;00m [95mor[39;49;00m now > end_time:[90m[39;49;00m
+                [94mif[39;49;00m ss [95mis[39;49;00m [95mnot[39;49;00m [94mNone[39;49;00m:[90m[39;49;00m
+                    ss.failed([96mself[39;49;00m._error_message(selector), [96mself[39;49;00m.description)[90m[39;49;00m
+>               [94mraise[39;49;00m ServerSelectionTimeoutError([90m[39;49;00m
+                    [33mf[39;49;00m[33m"[39;49;00m[33m{[39;49;00m[96mself[39;49;00m._error_message(selector)[33m}[39;49;00m[33m, Timeout: [39;49;00m[33m{[39;49;00mtimeout[33m}[39;49;00m[33ms, Topology Description: [39;49;00m[33m{[39;49;00m[96mself[39;49;00m.description[33m!r}[39;49;00m[33m"[39;49;00m[90m[39;49;00m
+                )[90m[39;49;00m
+[1m[31mE               pymongo.errors.ServerSelectionTimeoutError: 127.0.0.1:58067: connection closed (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms), Timeout: 10.0s, Topology Description: <TopologyDescription id: 6af6242d63e0103d1385baf3, topology_type: Single, servers: [<ServerDescription ('127.0.0.1', 58067) server_type: Unknown, rtt: None, error=AutoReconnect('127.0.0.1:58067: connection closed (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms)')>]>[0m
+
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/topology.py[0m:297: ServerSelectionTimeoutError
+[31m[1m__ ERROR at setup of test_hr_admin_reads_only_their_orgs_records_newest_first __[0m
+
+root_client = MongoClient(host=['127.0.0.1:58067'], document_class=dict, tz_aware=False, connect=True, authsource='admin', directconnection=True, serverselectiontimeoutms=10000)
+
+    [0m[37m@pytest[39;49;00m.fixture[90m[39;49;00m
+    [94mdef[39;49;00m[90m [39;49;00m[92mscratch[39;49;00m(root_client: Client) -> Iterator[[96mtuple[39;49;00m[[96mstr[39;49;00m, [96mstr[39;49;00m]]:[90m[39;49;00m
+        name = [33mf[39;49;00m[33m"[39;49;00m[33mit_aud1_[39;49;00m[33m{[39;49;00muuid.uuid4().hex[:[94m12[39;49;00m][33m}[39;49;00m[33m"[39;49;00m[90m[39;49;00m
+>       [94myield[39;49;00m _uri(root_client), name[90m[39;49;00m
+              ^^^^^^^^^^^^^^^^^[90m[39;49;00m
+
+[1m[31mapps/api/tests_int/test_mongo_audit.py[0m:51: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+[1m[31mapps/api/tests_int/test_mongo_audit.py[0m:42: in _uri
+    [0mhost, port = root_client.address [95mor[39;49;00m ([33m"[39;49;00m[33m127.0.0.1[39;49;00m[33m"[39;49;00m, [94m27017[39;49;00m)[90m[39;49;00m
+                 ^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py[0m:1731: in address
+    [0m[94mreturn[39;49;00m [96mself[39;49;00m._server_property([33m"[39;49;00m[33maddress[39;49;00m[33m"[39;49;00m)[90m[39;49;00m
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py[0m:1702: in _server_property
+    [0mserver = ([96mself[39;49;00m._get_topology()).select_server(writable_server_selector, _Op.TEST)[90m[39;49;00m
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/topology.py[0m:357: in select_server
+    [0mserver = [96mself[39;49;00m._select_server([90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/topology.py[0m:331: in _select_server
+    [0mservers = [96mself[39;49;00m.select_servers([90m[39;49;00m
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/topology.py[0m:249: in select_servers
+    [0mserver_descriptions = [96mself[39;49;00m._select_servers_loop([90m[39;49;00m
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <Topology <TopologyDescription id: 6af6242d63e0103d1385baf3, topology_type: Single, servers: [<ServerDescription ('127...127.0.0.1:58067: connection closed (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms)')>]>>
+selector = <function writable_server_selector at 0x10c45e200>, timeout = 10.0
+operation = <_Op.TEST: 'testOperation'>, operation_id = None, address = None
+deprioritized_servers = None
+
+    [0m[94mdef[39;49;00m[90m [39;49;00m[92m_select_servers_loop[39;49;00m([90m[39;49;00m
+        [96mself[39;49;00m,[90m[39;49;00m
+        selector: Callable[[Selection], Selection],[90m[39;49;00m
+        timeout: [96mfloat[39;49;00m,[90m[39;49;00m
+        operation: [96mstr[39;49;00m,[90m[39;49;00m
+        operation_id: Optional[[96mint[39;49;00m],[90m[39;49;00m
+        address: Optional[_Address],[90m[39;49;00m
+        deprioritized_servers: Optional[[96mlist[39;49;00m[Server]] = [94mNone[39;49;00m,[90m[39;49;00m
+    ) -> [96mlist[39;49;00m[ServerDescription]:[90m[39;49;00m
+    [90m    [39;49;00m[33m"""select_servers() guts. Hold the lock when calling this."""[39;49;00m[90m[39;49;00m
+        now = time.monotonic()[90m[39;49;00m
+        end_time = now + timeout[90m[39;49;00m
+        logged_waiting = [94mFalse[39;49;00m[90m[39;49;00m
+        [90m# Server selection does not have APM events, gate only on logging[39;49;00m[90m[39;49;00m
+        ss: Optional[_ServerSelectionTelemetry] = [94mNone[39;49;00m[90m[39;49;00m
+        [94mif[39;49;00m _is_debug_enabled(_SERVER_SELECTION_LOGGER):[90m[39;49;00m
+            ss = _ServerSelectionTelemetry([90m[39;49;00m
+                [96mself[39;49;00m._topology_id, selector, operation, operation_id, [96mself[39;49;00m.description[90m[39;49;00m
+            )[90m[39;49;00m
+            ss.started()[90m[39;49;00m
+    [90m[39;49;00m
+        server_descriptions = [96mself[39;49;00m._description.apply_selector([90m[39;49;00m
+            selector,[90m[39;49;00m
+            address,[90m[39;49;00m
+            custom_selector=[96mself[39;49;00m._settings.server_selector,[90m[39;49;00m
+            deprioritized_servers=[server.description [94mfor[39;49;00m server [95min[39;49;00m deprioritized_servers][90m[39;49;00m
+            [94mif[39;49;00m deprioritized_servers[90m[39;49;00m
+            [94melse[39;49;00m [94mNone[39;49;00m,[90m[39;49;00m
+        )[90m[39;49;00m
+    [90m[39;49;00m
+        [94mwhile[39;49;00m [95mnot[39;49;00m server_descriptions:[90m[39;49;00m
+            [90m# No suitable servers.[39;49;00m[90m[39;49;00m
+            [94mif[39;49;00m timeout == [94m0[39;49;00m [95mor[39;49;00m now > end_time:[90m[39;49;00m
+                [94mif[39;49;00m ss [95mis[39;49;00m [95mnot[39;49;00m [94mNone[39;49;00m:[90m[39;49;00m
+                    ss.failed([96mself[39;49;00m._error_message(selector), [96mself[39;49;00m.description)[90m[39;49;00m
+>               [94mraise[39;49;00m ServerSelectionTimeoutError([90m[39;49;00m
+                    [33mf[39;49;00m[33m"[39;49;00m[33m{[39;49;00m[96mself[39;49;00m._error_message(selector)[33m}[39;49;00m[33m, Timeout: [39;49;00m[33m{[39;49;00mtimeout[33m}[39;49;00m[33ms, Topology Description: [39;49;00m[33m{[39;49;00m[96mself[39;49;00m.description[33m!r}[39;49;00m[33m"[39;49;00m[90m[39;49;00m
+                )[90m[39;49;00m
+[1m[31mE               pymongo.errors.ServerSelectionTimeoutError: 127.0.0.1:58067: connection closed (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms), Timeout: 10.0s, Topology Description: <TopologyDescription id: 6af6242d63e0103d1385baf3, topology_type: Single, servers: [<ServerDescription ('127.0.0.1', 58067) server_type: Unknown, rtt: None, error=AutoReconnect('127.0.0.1:58067: connection closed (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms)')>]>[0m
+
+[1m[31m.venv/lib/python3.12/site-packages/pymongo/synchronous/topology.py[0m:297: ServerSelectionTimeoutError
+[36m[1m=========================== short test summary info ============================[0m
+[31mERROR[0m apps/api/tests_int/test_mongo_audit.py::[1mtest_records_land_in_mongo_with_org_and_the_spans_trace_id[0m - pymongo.errors.ServerSelectionTimeoutError: 127.0.0.1:58067: connection clo...
+[31mERROR[0m apps/api/tests_int/test_mongo_audit.py::[1mtest_hr_admin_reads_only_their_orgs_records_newest_first[0m - pymongo.errors.ServerSelectionTimeoutError: 127.0.0.1:58067: connection clo...
+[31m=================== [32m43 passed[0m, [31m[1m2 errors[0m[31m in 238.99s (0:03:58)[0m[31m ===================[0m
+
+
+
+ NX   Running target test-int for 10 projects failed
+
+Failed tasks:
+
+- py-evals:test-int
+- orchestrator:test-int
+- api:test-int
+
+  Run duration:      5m 28s
+  Cache:             0/7 hit (0%)
+  Critical path:     4m 35s (1 task)
+  Recoverable time:  53.2s (16% of the run)
+
+  Recommendations:
+    - Speed up or split the longest tasks on the critical path:
+        orchestrator:test-int    4m 35s
+make: *** [test-int] Error 1
+make test-int exit 2

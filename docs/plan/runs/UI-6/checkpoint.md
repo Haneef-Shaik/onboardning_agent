@@ -9,7 +9,7 @@ Branch `goal/ui-6-approvals-ui` (from main 5f61a29).
 3. E2E: `apps/web/e2e/approval_seed.py` + `approvals.spec.ts` (3 boxes) — 23/23 e2e green.
 
 ## Next
-ADR 0026, mutation checks, reviews, gates (`make check`, `make test-xt` on the ob-ui-6 stack), handoff, verifier.
+ADR 0026, mutations (17/17), reviews (fixed), gates (make check, test-int, contracts-check) all done; handoff written. Next: goal-verifier, board `in review`.
 
 ## Surprises
 - e2e: the runner reads the hire's `manager_id` from `new_hires` in the runs' database; the e2e hire service has its
