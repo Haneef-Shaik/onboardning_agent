@@ -37,6 +37,7 @@ from onb_agents.registry import AgentRegistry, load_catalog, load_manifests
 from onb_agents.registry.mongo import ORGS, MongoRegistryStore
 from onb_agents.runs import run_bus
 from onb_api import create_app
+from onb_api.approvals import ApprovalService
 from onb_api.auth.mongo_users import MongoUserStore
 from onb_api.auth.passwords import hash_password
 from onb_api.auth.tokens import Principal
@@ -371,6 +372,7 @@ def build_api(store: DataStore) -> FastAPI:
     runs = RunService.build(store, bus, auditor=audit, hires=hires, templates=templates, bus_indexes=bus.ensure_indexes)
     assert runs.control is not None
     chat = ChatService(store=ChatStore(store), control=runs.control, assistant=StubAssistant(_xt_assistant_reply))
+    approvals = ApprovalService.build(store, bus, auditor=audit, bus_indexes=bus.ensure_indexes)  # HIL-1
     return create_app(
         auth=TEST_SETTINGS,
         users=users,
@@ -383,6 +385,7 @@ def build_api(store: DataStore) -> FastAPI:
         notify=notify,
         runs=runs,
         chat=chat,
+        approvals=approvals,
     )
 
 

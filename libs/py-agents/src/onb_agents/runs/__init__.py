@@ -11,6 +11,7 @@ The orchestrator (`apps/orchestrator`) consumes `run.started` and executes the r
 from .events import (
     CLEANUP_RUN,
     FAIL_TASK,
+    RESUME_APPROVAL,
     RESUME_RUN,
     RUN_BLOCKED_KIND,
     RUN_CANCELLED,
@@ -51,6 +52,7 @@ __all__ = [
     "CLEANUP_RUN",
     "FAIL_TASK",
     "HIRE_VARIABLES",
+    "RESUME_APPROVAL",
     "RESUME_RUN",
     "RUNS",
     "RUN_BLOCKED_KIND",

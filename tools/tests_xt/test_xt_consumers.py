@@ -22,9 +22,11 @@ from dataclasses import dataclass
 from typing import Any
 
 import pytest
+from onb_agents.approvals import ApprovalDecider, ApprovalStore
 from onb_agents.runs import (
     CLEANUP_RUN,
     FAIL_TASK,
+    RESUME_APPROVAL,
     RESUME_RUN,
     RUN_CANCELLED,
     RUN_RESUMED,
@@ -32,11 +34,31 @@ from onb_agents.runs import (
     SINK_REJECTED,
     START_RUN,
 )
-from onb_contracts.notify import CHANGE_REQUEST_DECIDED, IN_APP_CONSUMER, NOTIFY_SUBSCRIPTIONS, RUN_BLOCKED
-from onb_data import DataStore, current_tenant, tenant_scope
+from onb_contracts.notify import (
+    APPROVAL_DECIDED,
+    APPROVAL_NOTIFY_CONSUMER,
+    APPROVAL_REQUESTED,
+    CHANGE_REQUEST_DECIDED,
+    DECISION_RECEIVED,
+    IN_APP_CONSUMER,
+    NOTIFY_SUBSCRIPTIONS,
+    RECORD_DECISION_CONSUMER,
+    RUN_BLOCKED,
+    Decision,
+)
+from onb_data import AuditLog, DataStore, current_tenant, tenant_scope
 from onb_eventbus import Handler, JobContext, MongoEventBus
+from onb_mcp_mocks.notify.approvals import approval_notify_handler
 from onb_mcp_mocks.notify.in_app import in_app_handler
-from onb_orchestrator.consumer import cleanup_run_handler, fail_task_handler, start_run_handler
+from onb_mcp_mocks.notify.outbox import TelegramMockChannel
+from onb_mcp_mocks.telegram import TelegramMockTransport
+from onb_orchestrator.consumer import (
+    cleanup_run_handler,
+    fail_task_handler,
+    record_decision_handler,
+    resume_approval_handler,
+    start_run_handler,
+)
 from onb_orchestrator.executor import StubExecutor
 
 from .conftest import Unscoped, World
@@ -66,6 +88,24 @@ def _fail_task(store: DataStore) -> Handler:
     return fail_task_handler(store)
 
 
+def _resume_run(store: DataStore) -> Handler:
+    """HIL-1: the orchestrator's real `approval.decided` consumer."""
+    return resume_approval_handler(store, StubExecutor())
+
+
+def _record_decision(store: DataStore) -> Handler:
+    """HIL-1: the orchestrator's real `decision.received` consumer (a Telegram press on an approval)."""
+    return record_decision_handler(store)
+
+
+def _approval_notify(store: DataStore) -> Handler:
+    """HIL-1: mcp-notify's real `approval.requested` consumer."""
+    return approval_notify_handler(store, TelegramMockChannel(store, TelegramMockTransport()))
+
+
+# The approval each org's events name: org A's is seeded by seed_v1, org B's by `world.EXTRA_DOCUMENTS`.
+XT_APPROVALS = {ORG_A: "appr_acme_001", ORG_B: "appr_globex_xt"}
+
 # One row per platform consumer.
 CONSUMER_CASES: Mapping[str, ConsumerCase] = {
     # NOTIF-1: a blocked run tells the org's HR users in-app; `test_the_in_app_consumer_*` covers its
@@ -92,6 +132,28 @@ CONSUMER_CASES: Mapping[str, ConsumerCase] = {
     # checkpoints; both read the org's seeded run (`XT_RUNS`) in the job's org only.
     RESUME_RUN: ConsumerCase(RUN_RESUMED, lambda org: {"run_id": XT_RUNS[org][0]}, _start_run),
     CLEANUP_RUN: ConsumerCase(RUN_CANCELLED, lambda org: {"run_id": XT_RUNS[org][0]}, cleanup_run_handler),
+    # HIL-1: an approval was decided, a Telegram button was pressed, an approval was requested: each handler
+    # reads the approval of its job's org (org A's is pending, so none acts) and writes nothing of org B's.
+    RESUME_APPROVAL: ConsumerCase(
+        APPROVAL_DECIDED, lambda org: {"approval_id": XT_APPROVALS[org], "run_id": XT_RUNS[org][0]}, _resume_run
+    ),
+    RECORD_DECISION_CONSUMER: ConsumerCase(
+        DECISION_RECEIVED,
+        lambda org: {
+            "ref_type": "approval",
+            "ref_id": XT_APPROVALS[org],
+            "decision": "approve",
+            "channel": "telegram",
+            "outbox_id": f"out_xt_{org}",
+            "callback_query_id": f"cq_xt_{org}",
+        },
+        _record_decision,
+    ),
+    APPROVAL_NOTIFY_CONSUMER: ConsumerCase(
+        APPROVAL_REQUESTED,
+        lambda org: {"approval_id": XT_APPROVALS[org], "run_id": XT_RUNS[org][0], "task_id": "manager_approval"},
+        _approval_notify,
+    ),
 }
 
 
@@ -228,6 +290,37 @@ def _drain_start_run(xt: World, org: str, run_id: str, key: str) -> None:
     asyncio.run(go())
 
 
+def _decide_and_resume(xt: World, org: str, run_id: str) -> None:
+    """HIL-1: the run paused at its approval task. Decide the approval as its approver (the real write: the
+    decision, its audit record and `approval.decided`, in one transaction) and let the real `resume_run`
+    consumer resume the checkpointed graph."""
+
+    async def go() -> None:
+        store = xt.store()
+        try:
+            bus = MongoEventBus(store, subscriptions={APPROVAL_DECIDED: [RESUME_APPROVAL]})
+            await bus.ensure_indexes()
+            approvals = ApprovalStore(store)
+            with tenant_scope(org):
+                [approval] = await approvals.for_task(run_id, "manager_approval")
+                decider = ApprovalDecider(approvals, bus, auditor=AuditLog(store))
+                await decider.decide(
+                    approval["_id"],
+                    decision=Decision.APPROVE,
+                    comment=None,
+                    channel="web",
+                    user_id=approval["approver_id"] or "u_xt_hr",
+                    role="HR",
+                )
+            worker = bus.worker({RESUME_APPROVAL: resume_approval_handler(store, StubExecutor())})
+            while await worker.run_once() is not None:
+                pass
+        finally:
+            await store.close()
+
+    asyncio.run(go())
+
+
 def test_an_org_a_job_naming_org_bs_run_changes_nothing_and_starts_nothing(xt_world: World, unscoped: Unscoped) -> None:
     """A confused deputy: org A's job carries org B's run id. The consumer reads in org A only, so it
     finds no run, writes no checkpoint for that thread, and org B's run stays as it was."""
@@ -248,6 +341,11 @@ def test_the_orchestrator_completes_an_org_a_run_entirely_in_org_a(xt_world: Wor
     a_run = XT_RUNS[ORG_A][0]
     before = xt_world.org_b_snapshot(unscoped)
     _drain_start_run(xt_world, ORG_A, a_run, "xt-own-run")
+    with unscoped("root read-back: the seed template's approval task paused the run (HIL-1)"):
+        paused = xt_world.root_db["onboarding_runs"].find_one({"_id": a_run})
+    assert paused is not None
+    assert paused["status"] == "running"
+    _decide_and_resume(xt_world, ORG_A, a_run)
     assert xt_world.org_b_snapshot(unscoped) == before
     with unscoped("root read-back of org A's executed run, its tasks and checkpoints"):
         db = xt_world.root_db

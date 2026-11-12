@@ -134,11 +134,15 @@ class Agents:
 
     retired: frozenset[str] = frozenset()
     missing: frozenset[str] = frozenset()
+    requires_approval: Mapping[str, tuple[str, ...]] = field(default_factory=dict)
+    """Manifest `requires_approval` rules to give an agent for a test (HIL-1)."""
 
     async def get_agent(self, name: str) -> RegisteredAgent | None:
         if name in self.missing or name not in MANIFESTS:
             return None
         manifest = MANIFESTS[name]
+        if name in self.requires_approval:
+            manifest = manifest.model_copy(update={"requires_approval": self.requires_approval[name]})
         return RegisteredAgent(name, 1, manifest.sha256(), name not in self.retired, manifest, NOW)
 
 
@@ -297,6 +301,23 @@ def find_tool() -> Any:
 
     return StructuredTool.from_function(
         coroutine=find, name="mongo__find", description="Find documents", args_schema=FindArgs
+    )
+
+
+def denying_tool(name: str, text: str) -> Any:
+    """A bound hub tool that the hub refuses: the call fails with the hub's own `denied (<reason>): ...` text,
+    as `langchain-mcp-adapters` surfaces a refused call (HIL-1)."""
+    from langchain_core.tools import StructuredTool, ToolException
+    from pydantic import BaseModel, ConfigDict
+
+    class AnyArgs(BaseModel):
+        model_config = ConfigDict(extra="allow")
+
+    async def refuse(**_: Any) -> str:
+        raise ToolException(text)
+
+    return StructuredTool.from_function(
+        coroutine=refuse, name=name, description="A tool the hub refuses", args_schema=AnyArgs, handle_tool_error=True
     )
 
 

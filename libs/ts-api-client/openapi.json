@@ -379,6 +379,348 @@
         "title": "AlternativeIdType",
         "type": "string"
       },
+      "ApprovalDecision": {
+        "additionalProperties": false,
+        "description": "What was decided, by whom and where (FR-H3).",
+        "properties": {
+          "channel": {
+            "enum": [
+              "web",
+              "telegram"
+            ],
+            "title": "Channel",
+            "type": "string"
+          },
+          "comment": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comment"
+          },
+          "decided_at": {
+            "format": "date-time",
+            "title": "Decided At",
+            "type": "string"
+          },
+          "decided_by": {
+            "title": "Decided By",
+            "type": "string"
+          },
+          "decision": {
+            "$ref": "#/components/schemas/Decision"
+          }
+        },
+        "required": [
+          "decision",
+          "comment",
+          "channel",
+          "decided_by",
+          "decided_at"
+        ],
+        "title": "ApprovalDecision",
+        "type": "object"
+      },
+      "ApprovalDecisionEnvelope": {
+        "additionalProperties": false,
+        "description": "The approval after this caller's decision was recorded.",
+        "properties": {
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ApprovalRecord"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "error": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ErrorBody"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta",
+            "default": {}
+          },
+          "success": {
+            "title": "Success",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "success",
+          "data",
+          "error",
+          "meta"
+        ],
+        "title": "ApprovalDecisionEnvelope",
+        "type": "object"
+      },
+      "ApprovalDecisionRequest": {
+        "additionalProperties": false,
+        "description": "`POST /approvals/{id}/decision`: approve or reject, with an optional comment.",
+        "properties": {
+          "comment": {
+            "anyOf": [
+              {
+                "maxLength": 1000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comment"
+          },
+          "decision": {
+            "$ref": "#/components/schemas/Decision"
+          }
+        },
+        "required": [
+          "decision"
+        ],
+        "title": "ApprovalDecisionRequest",
+        "type": "object"
+      },
+      "ApprovalListEnvelope": {
+        "additionalProperties": false,
+        "description": "A page of approvals, newest first.",
+        "properties": {
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ApprovalRecord"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ErrorBody"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta",
+            "default": {}
+          },
+          "success": {
+            "title": "Success",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "success",
+          "data",
+          "error",
+          "meta"
+        ],
+        "title": "ApprovalListEnvelope",
+        "type": "object"
+      },
+      "ApprovalPacket": {
+        "additionalProperties": false,
+        "properties": {
+          "cited_policies": {
+            "items": {
+              "pattern": "^[A-Za-z0-9_-]{1,128}$",
+              "type": "string"
+            },
+            "title": "Cited Policies",
+            "type": "array"
+          },
+          "recommendation": {
+            "enum": [
+              "approve",
+              "reject",
+              "needs_human"
+            ],
+            "title": "Recommendation",
+            "type": "string"
+          },
+          "risk_flags": {
+            "items": {
+              "pattern": "^[A-Za-z0-9_-]{1,128}$",
+              "type": "string"
+            },
+            "title": "Risk Flags",
+            "type": "array"
+          },
+          "summary": {
+            "maxLength": 8000,
+            "minLength": 1,
+            "title": "Summary",
+            "type": "string"
+          }
+        },
+        "required": [
+          "summary",
+          "recommendation"
+        ],
+        "title": "ApprovalPacket",
+        "type": "object"
+      },
+      "ApprovalRecord": {
+        "additionalProperties": false,
+        "description": "An approval as the inbox shows it: the AI-prepared packet (masked), the request, the decision.",
+        "properties": {
+          "approver_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approver Id"
+          },
+          "approver_role": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approver Role"
+          },
+          "decision": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ApprovalDecision"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "hire_id": {
+            "title": "Hire Id",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "items": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "kind": {
+            "enum": [
+              "task",
+              "tool_call",
+              "needs_human"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "packet": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ApprovalPacket"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "requested_at": {
+            "format": "date-time",
+            "title": "Requested At",
+            "type": "string"
+          },
+          "rule": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rule"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "sla_hours": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sla Hours"
+          },
+          "status": {
+            "enum": [
+              "pending",
+              "approved",
+              "rejected",
+              "cancelled"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "task_id": {
+            "title": "Task Id",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "run_id",
+          "task_id",
+          "hire_id",
+          "kind",
+          "rule",
+          "status",
+          "approver_id",
+          "approver_role",
+          "title",
+          "items",
+          "packet",
+          "requested_at",
+          "sla_hours",
+          "decision"
+        ],
+        "title": "ApprovalRecord",
+        "type": "object"
+      },
       "Approver": {
         "additionalProperties": false,
         "description": "Who decides an approval task: a `user_ref` variable, a platform role, or one user id.",
@@ -4145,6 +4487,159 @@
         "summary": "Get Agent",
         "tags": [
           "agents"
+        ]
+      }
+    },
+    "/approvals": {
+      "get": {
+        "operationId": "listApprovals",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "mine",
+            "required": false,
+            "schema": {
+              "default": true,
+              "title": "Mine",
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "pending",
+                    "approved",
+                    "rejected",
+                    "cancelled"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApprovalListEnvelope"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error, in the envelope"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Approvals",
+        "tags": [
+          "approvals"
+        ]
+      }
+    },
+    "/approvals/{approval_id}/decision": {
+      "post": {
+        "operationId": "decideApproval",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "approval_id",
+            "required": true,
+            "schema": {
+              "maxLength": 70,
+              "pattern": "^appr_[A-Za-z0-9_]{1,64}$",
+              "title": "Approval Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApprovalDecisionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApprovalDecisionEnvelope"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error, in the envelope"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Decide Approval",
+        "tags": [
+          "approvals"
         ]
       }
     },

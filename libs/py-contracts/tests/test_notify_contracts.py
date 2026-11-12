@@ -117,4 +117,6 @@ def test_the_in_app_consumer_is_subscribed_to_its_events() -> None:
         "change_request.decided": [IN_APP_CONSUMER],
         "run.blocked": [IN_APP_CONSUMER],
         "task.sink_rejected": ["orchestrator.fail_task"],  # RUN-3: the orchestrator fails the task
+        "decision.received": ["orchestrator.record_decision"],  # HIL-1: a Telegram press decides an approval
+        "approval.requested": ["notify.approval"],  # HIL-1: the approver is told
     }

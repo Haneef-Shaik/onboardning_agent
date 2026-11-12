@@ -9,9 +9,9 @@ from __future__ import annotations
 import asyncio
 from collections.abc import Collection, Mapping
 from dataclasses import dataclass, field
-from typing import Protocol
+from typing import Literal, Protocol
 
-__all__ = ["StubExecutor", "StubTaskError", "TaskExecutor", "TaskWork"]
+__all__ = ["ApprovalRequestedError", "StubExecutor", "StubTaskError", "TaskExecutor", "TaskWork"]
 
 
 @dataclass(frozen=True, slots=True)
@@ -30,6 +30,22 @@ class TaskWork:
 
 class TaskExecutor(Protocol):
     async def execute(self, work: TaskWork) -> None: ...
+
+
+class ApprovalRequestedError(Exception):
+    """The task's work needs a human before it can go on (HIL-1). Raised by an executor, never a failure:
+    the runner opens an approval, parks the task in `waiting_approval` and the run pauses.
+
+    `needs_human`: the agent asked for a human. `tool_call`: the hub refused a call under the manifest's
+    `requires_approval` rule `rule`; an approve runs the task again with that rule approved (FR-H5).
+    """
+
+    def __init__(self, kind: Literal["needs_human", "tool_call"], rule: str | None = None) -> None:
+        if (kind == "tool_call") != bool(rule):
+            raise ValueError("a tool_call approval names its rule; a needs_human one has none")
+        super().__init__(kind)
+        self.kind = kind
+        self.rule = rule
 
 
 class StubTaskError(RuntimeError):

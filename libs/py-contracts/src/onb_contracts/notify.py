@@ -29,6 +29,9 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 from onb_contracts.envelope import Envelope
 
 __all__ = [
+    "APPROVAL_DECIDED",
+    "APPROVAL_NOTIFY_CONSUMER",
+    "APPROVAL_REQUESTED",
     "CALLBACK_DATA_PATTERN",
     "CALLBACK_PREFIX",
     "CHANGE_REQUEST_DECIDED",
@@ -43,6 +46,8 @@ __all__ = [
     "NOTIFY_SUBSCRIPTIONS",
     "OUTBOX_COLLECTION",
     "PTK_PATTERN",
+    "RECORD_DECISION_CONSUMER",
+    "RESUME_APPROVAL_CONSUMER",
     "RUN_BLOCKED",
     "SINK_REJECTED",
     "SINK_REJECTED_CONSUMER",
@@ -102,6 +107,18 @@ RUN_BLOCKED: Final = "run.blocked"
 """Published by RUN-2: `{run_id, task_id}`; the org's HR and HR_ADMIN users are told in-app."""
 
 IN_APP_CONSUMER: Final = "notify.in_app"
+APPROVAL_REQUESTED: Final = "approval.requested"
+"""Published by the orchestrator in the transaction that moves a task to `waiting_approval` (HIL-1):
+`{approval_id, run_id, task_id}`. The approver is told in-app and on the Telegram mock (`notify.approval`)."""
+APPROVAL_DECIDED: Final = "approval.decided"
+"""Published with the decision write itself (HIL-1): `{approval_id, run_id, task_id, decision, channel}`.
+`orchestrator.resume_approval` resumes the run from the stored decision, never from this payload."""
+APPROVAL_NOTIFY_CONSUMER: Final = "notify.approval"
+RESUME_APPROVAL_CONSUMER: Final = "orchestrator.resume_approval"
+RECORD_DECISION_CONSUMER: Final = "orchestrator.record_decision"
+"""The orchestrator's consumer of `decision.received` (HIL-1): a Telegram press on an approval's buttons is
+recorded like the web decision. Subscribed here because the webhook that publishes the event builds its bus with
+this map."""
 SINK_REJECTED_CONSUMER: Final = "orchestrator.fail_task"
 """The orchestrator's consumer of `task.sink_rejected` (RUN-3): it fails the task. It is subscribed here,
 not only in the run bus, because the sink that publishes the event builds its bus with this map."""
@@ -109,6 +126,8 @@ NOTIFY_SUBSCRIPTIONS: Final[dict[str, list[str]]] = {
     CHANGE_REQUEST_DECIDED: [IN_APP_CONSUMER],
     RUN_BLOCKED: [IN_APP_CONSUMER],
     SINK_REJECTED: [SINK_REJECTED_CONSUMER],
+    DECISION_RECEIVED: [RECORD_DECISION_CONSUMER],
+    APPROVAL_REQUESTED: [APPROVAL_NOTIFY_CONSUMER],  # HIL-1: the notifier lives in mcp-mocks
 }
 """The notification consumers, by event type: every publisher of these events builds its bus with them."""
 

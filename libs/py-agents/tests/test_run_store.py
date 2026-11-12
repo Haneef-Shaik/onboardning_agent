@@ -350,21 +350,46 @@ def test_the_traceparent_of_the_request_is_stored_on_the_run() -> None:
 
 
 def test_the_run_bus_subscribes_the_orchestrator_to_run_started() -> None:
-    # The exact map, every consumer named: RUN-1's start, RUN-2's resume, cleanup and HR notification, and
-    # RUN-3's `orchestrator.fail_task` for `task.sink_rejected` (NOTIF-1).
+    # The exact map, every consumer named: RUN-1's start, RUN-2's resume, cleanup and HR notification,
+    # RUN-3's `orchestrator.fail_task` for `task.sink_rejected` (NOTIF-1) and HIL-1's approval events.
     assert SUBSCRIPTIONS == {
         RUN_STARTED: (START_RUN,),
         "run.resumed": ("orchestrator.resume_run",),
         "run.cancelled": ("orchestrator.cleanup_run",),
         "run.blocked": ("notify.in_app",),
         "task.sink_rejected": ("orchestrator.fail_task",),
+        "approval.requested": ("notify.approval",),
+        "approval.decided": ("orchestrator.resume_approval",),
+        "decision.received": ("orchestrator.record_decision",),
     }
     assert started_key("run_x") == "run:run_x:started"
     bus = run_bus(memory_store(MemoryDatabase()))
     assert bus.consumers() == (
+        "notify.approval",
         "notify.in_app",
         "orchestrator.cleanup_run",
         "orchestrator.fail_task",
+        "orchestrator.record_decision",
+        "orchestrator.resume_approval",
         "orchestrator.resume_run",
         START_RUN,
     )
+
+
+def test_the_resume_lease_is_taken_by_one_holder_until_released_or_expired() -> None:
+    from datetime import timedelta
+
+    store = _store()
+
+    async def go() -> list[bool]:
+        with tenant_scope("org_a"):
+            await _insert(store)
+            ttl = timedelta(seconds=60)
+            first = await store.acquire_resume("run_1", now=NOW, ttl=ttl)
+            second = await store.acquire_resume("run_1", now=NOW + timedelta(seconds=1), ttl=ttl)
+            await store.release_resume("run_1")
+            third = await store.acquire_resume("run_1", now=NOW + timedelta(seconds=2), ttl=ttl)
+            expired = await store.acquire_resume("run_1", now=NOW + timedelta(seconds=200), ttl=ttl)
+        return [first, second, third, expired]
+
+    assert run(go()) == [True, False, True, True]

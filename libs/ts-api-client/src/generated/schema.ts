@@ -38,6 +38,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/approvals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Approvals */
+        get: operations["listApprovals"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/approvals/{approval_id}/decision": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Decide Approval */
+        post: operations["decideApproval"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/audit": {
         parameters: {
             query?: never;
@@ -702,6 +736,118 @@ export interface components {
          * @enum {string}
          */
         AlternativeIdType: "passport" | "voter_id" | "driving_licence";
+        /**
+         * ApprovalDecision
+         * @description What was decided, by whom and where (FR-H3).
+         */
+        ApprovalDecision: {
+            /**
+             * Channel
+             * @enum {string}
+             */
+            channel: "web" | "telegram";
+            /** Comment */
+            comment: string | null;
+            /**
+             * Decided At
+             * Format: date-time
+             */
+            decided_at: string;
+            /** Decided By */
+            decided_by: string;
+            decision: components["schemas"]["Decision"];
+        };
+        /**
+         * ApprovalDecisionEnvelope
+         * @description The approval after this caller's decision was recorded.
+         */
+        ApprovalDecisionEnvelope: {
+            data: components["schemas"]["ApprovalRecord"] | null;
+            error: components["schemas"]["ErrorBody"] | null;
+            /** @default {} */
+            meta: components["schemas"]["Meta"];
+            /** Success */
+            success: boolean;
+        };
+        /**
+         * ApprovalDecisionRequest
+         * @description `POST /approvals/{id}/decision`: approve or reject, with an optional comment.
+         */
+        ApprovalDecisionRequest: {
+            /** Comment */
+            comment?: string | null;
+            decision: components["schemas"]["Decision"];
+        };
+        /**
+         * ApprovalListEnvelope
+         * @description A page of approvals, newest first.
+         */
+        ApprovalListEnvelope: {
+            /** Data */
+            data: components["schemas"]["ApprovalRecord"][] | null;
+            error: components["schemas"]["ErrorBody"] | null;
+            /** @default {} */
+            meta: components["schemas"]["Meta"];
+            /** Success */
+            success: boolean;
+        };
+        /** ApprovalPacket */
+        ApprovalPacket: {
+            /** Cited Policies */
+            cited_policies?: string[];
+            /**
+             * Recommendation
+             * @enum {string}
+             */
+            recommendation: "approve" | "reject" | "needs_human";
+            /** Risk Flags */
+            risk_flags?: string[];
+            /** Summary */
+            summary: string;
+        };
+        /**
+         * ApprovalRecord
+         * @description An approval as the inbox shows it: the AI-prepared packet (masked), the request, the decision.
+         */
+        ApprovalRecord: {
+            /** Approver Id */
+            approver_id: string | null;
+            /** Approver Role */
+            approver_role: string | null;
+            decision: components["schemas"]["ApprovalDecision"] | null;
+            /** Hire Id */
+            hire_id: string;
+            /** Id */
+            id: string;
+            /** Items */
+            items: string[];
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "task" | "tool_call" | "needs_human";
+            packet: components["schemas"]["ApprovalPacket"] | null;
+            /**
+             * Requested At
+             * Format: date-time
+             */
+            requested_at: string;
+            /** Rule */
+            rule: string | null;
+            /** Run Id */
+            run_id: string;
+            /** Sla Hours */
+            sla_hours: number | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "approved" | "rejected" | "cancelled";
+            /** Task Id */
+            task_id: string;
+            /** Title */
+            title: string;
+        };
         /**
          * Approver
          * @description Who decides an approval task: a `user_ref` variable, a platform role, or one user id.
@@ -2056,6 +2202,75 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AgentEnvelope"];
+                };
+            };
+            /** @description Error, in the envelope */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    listApprovals: {
+        parameters: {
+            query?: {
+                mine?: boolean;
+                status?: ("pending" | "approved" | "rejected" | "cancelled") | null;
+                page?: number;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApprovalListEnvelope"];
+                };
+            };
+            /** @description Error, in the envelope */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    decideApproval: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                approval_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApprovalDecisionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApprovalDecisionEnvelope"];
                 };
             };
             /** @description Error, in the envelope */

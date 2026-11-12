@@ -25,6 +25,7 @@ from onb_llm import load_llm_config
 from onb_telemetry import init_telemetry
 
 from onb_api.app import create_app
+from onb_api.approvals import ApprovalService
 from onb_api.auth.mongo_users import MongoUserStore
 from onb_api.auth.settings import AuthSettings, require_env
 from onb_api.chat.setup import build_chat
@@ -61,6 +62,7 @@ notify = MockChannels(
 bus = run_bus(store)
 runs = RunService.build(store, bus, auditor=audit_log, hires=hires, templates=templates, bus_indexes=bus.ensure_indexes)
 chat = build_chat(os.environ, store=store, runs=runs, registry=registry, audit_log=audit_log, llm_config=llm_config)
+approvals = ApprovalService.build(store, bus, auditor=audit_log)  # `bus` is the run bus: approval.decided (HIL-1)
 app = create_app(
     auth=auth,
     users=users,
@@ -73,5 +75,6 @@ app = create_app(
     llm=llm_config,
     notify=notify,
     runs=runs,
+    approvals=approvals,
     chat=chat,
 )

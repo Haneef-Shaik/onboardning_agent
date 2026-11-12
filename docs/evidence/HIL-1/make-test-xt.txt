@@ -1,0 +1,20 @@
+make test-xt (stack ob-hil-1), 2026-11-12, branch goal/hil-1-approvals-hil
+
+Run 1: 274 passed, 1 error in 490.07s. The error was a setup error of
+  test_naming_org_b_in_the_request_changes_nothing[POST /hires/{hire_id}/documents-HR]:
+  pymongo AsyncConnection CLOSED (the known Mongo "connection closed at setup under load" flake).
+Run 2 (re-run, nothing changed): exit 0.
+
+cross-tenant surface: 30 API routes, 9 MCP tools, 6 event consumers
+  route    GET    /approvals
+  route    POST   /approvals/{approval_id}/decision
+  consumer notify.approval
+  consumer orchestrator.record_decision
+  consumer orchestrator.resume_run
+(and the existing routes/tools/consumers)
+
+New cases: ROUTE_CASES rows for both routes (tools/tests_xt/test_xt_api.py, HIL-1 section: org B's approval
+answers like a missing one, an org-B manager cannot decide org A's, the decision lands in org A only with its
+event, job and audit record, the second decision is 409); CONSUMER_CASES rows for the three consumers
+(tools/tests_xt/test_xt_consumers.py). The RUN-1 case test_the_orchestrator_completes_an_org_a_run_entirely_in_org_a
+now decides the seed template's approval and resumes the run (the approval task pauses it).

@@ -99,6 +99,10 @@ ROLE_MATRIX: dict[tuple[str, str], dict[Role, int]] = {
     ("POST", "/runs/{run_id}/chat"): ALL_200,
     ("GET", "/runs/{run_id}/chat"): ALL_200,
     ("POST", "/runs/{run_id}/chat/confirm"): {Role.HR_ADMIN: 404, Role.HR: 404, Role.MANAGER: 403},
+    # HIL-1 (PRD FR-H2, FR-H3, §10 Approvals): every role reads its own inbox; only the approval's approver decides,
+    # anyone else gets 404, as for an approval that does not exist (the sample one is the manager's).
+    ("GET", "/approvals"): ALL_200,
+    ("POST", "/approvals/{approval_id}/decision"): {Role.HR_ADMIN: 404, Role.HR: 404, Role.MANAGER: 200},
 }
 
 CONFIG = Path(__file__).resolve().parents[3] / "config"
@@ -106,6 +110,7 @@ SEED_TEMPLATE: dict[str, Any] = yaml.safe_load((CONFIG.parent / "templates" / "e
 SAMPLE_DRAFT = "tdr_" + "a" * 32  # seeded unpublished
 PUBLISHED_DRAFT = "tdr_" + "b" * 32  # seeded and published as engineer-india v1
 SAMPLE_EVAL_RUN = "evr_20261102T090000Z_0000aaa1"
+SAMPLE_APPROVAL = "appr_sample"  # pending in org_acme, the manager's to decide
 
 RUN_BLOCKED = "run_" + "b" * 24  # blocked on a failed `collect_docs`
 RUN_RUNNING = "run_" + "c" * 24
@@ -126,6 +131,7 @@ SAMPLE_PATHS = {
     "/templates/{key}/versions/{version}/archive": "/templates/engineer-india/versions/1/archive",
     "/hires/{hire_id}/documents": "/hires/h_acme_001/documents",
     "/evals/runs/{run_id}": f"/evals/runs/{SAMPLE_EVAL_RUN}",
+    "/approvals/{approval_id}/decision": f"/approvals/{SAMPLE_APPROVAL}/decision",
     # RUN-2: each control has a run in the state it needs (seeded by `_sample_runs`), all h_acme_001's.
     "/runs/{run_id}": f"/runs/{RUN_BLOCKED}",
     "/runs/{run_id}/stream": f"/runs/{RUN_DONE}/stream",
@@ -151,6 +157,7 @@ SAMPLE_BODIES: dict[tuple[str, str], dict[str, Any]] = {
     ("POST", "/runs/{run_id}/tasks/{task_id}/complete"): {"reason": "Done by hand, sample"},
     ("POST", "/runs/{run_id}/chat"): {"message": "Why is this run stuck?"},
     ("POST", "/runs/{run_id}/chat/confirm"): {"proposal_id": "prop_" + "0" * 24},
+    ("POST", "/approvals/{approval_id}/decision"): {"decision": "approve"},
 }
 
 
@@ -214,6 +221,35 @@ def _sample_eval_run(memory_db: MemoryDatabase) -> None:
     started = datetime(2026, 11, 2, 9, 0, tzinfo=UTC)
     report = eval_report(SAMPLE_EVAL_RUN, started, started)
     asyncio.run(store_eval_run(memory_store(memory_db), "org_acme", report))
+
+
+@pytest.fixture(autouse=True)
+def _sample_approval(memory_db: MemoryDatabase) -> None:
+    """One pending approval of org_acme's manager, at the sample path."""
+    document: dict[str, Any] = {
+        "_id": SAMPLE_APPROVAL,
+        "run_id": "run_x",
+        "task_id": "manager_approval",
+        "hire_id": "h_acme_001",
+        "kind": "task",
+        "rule": None,
+        "status": "pending",
+        "approver_id": "u_acme_mgr_ravi",
+        "approver_role": None,
+        "title": "Approve",
+        "request": {"items": []},
+        "packet": None,
+        "packet_failure": None,
+        "requested_at": datetime(2026, 11, 12, tzinfo=UTC),
+        "sla_hours": 48,
+        "decision": None,
+    }
+
+    async def seed() -> None:
+        with tenant_scope("org_acme"):
+            await memory_store(memory_db).tenant("approvals").insert_one(document)
+
+    asyncio.run(seed())
 
 
 def _routes(app: FastAPI) -> list[APIRoute]:

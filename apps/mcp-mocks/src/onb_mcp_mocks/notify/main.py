@@ -1,5 +1,5 @@
 """Entry point: `python -m onb_mcp_mocks.notify.main` serves `notify_send` at `/mcp` (port 8210) and runs
-the `notify.in_app` consumer on the EVT-1 bus in the same process.
+the `notify.in_app` and `notify.approval` (HIL-1) consumers on the EVT-1 bus in the same process.
 
 Startup makes the indexes the sink relies on, before the first call: PII-4's grant indexes (the
 unique `{org_id, jti}` gives concurrent replays exactly one winner), the outbox and in-app indexes,
@@ -15,7 +15,7 @@ from dataclasses import dataclass
 
 import uvicorn
 from mcp.server.fastmcp import FastMCP
-from onb_contracts.notify import IN_APP_CONSUMER, NOTIFY_SUBSCRIPTIONS
+from onb_contracts.notify import APPROVAL_NOTIFY_CONSUMER, IN_APP_CONSUMER, NOTIFY_SUBSCRIPTIONS
 from onb_crypto import (
     ORG_KEYS_COLLECTION,
     GrantAudit,
@@ -30,6 +30,7 @@ from onb_eventbus import MongoEventBus
 from onb_telemetry import init_telemetry
 
 from ..telegram import TelegramMockTransport
+from .approvals import approval_notify_handler, ensure_approval_notify_indexes
 from .events import BusEvents
 from .in_app import ensure_in_app_indexes, in_app_handler
 from .outbox import TelegramMockChannel, ensure_outbox_indexes
@@ -46,6 +47,7 @@ class NotifyService:
     store: DataStore
     bus: MongoEventBus
     server: FastMCP
+    telegram: TelegramMockChannel
 
 
 def build_service(settings: NotifySettings, store: DataStore | None = None) -> NotifyService:
@@ -58,16 +60,17 @@ def build_service(settings: NotifySettings, store: DataStore | None = None) -> N
     def resolver(audit: GrantAudit) -> SinkResolver:
         return SinkResolver.create(keyring, store, settings.verifier, policy, audit)
 
+    telegram = TelegramMockChannel(store, TelegramMockTransport())
     sink = NotifySink(
         store,
         resolver=resolver,
         verifier=settings.verifier,
-        telegram=TelegramMockChannel(store, TelegramMockTransport()),
+        telegram=telegram,
         events=BusEvents(bus),
         auditor=AuditLog(store),
     )
     server = build_notify_server(sink, settings.context_key, host=settings.host, port=settings.port)
-    return NotifyService(store=store, bus=bus, server=server)
+    return NotifyService(store=store, bus=bus, server=server, telegram=telegram)
 
 
 async def ensure_indexes(service: NotifyService) -> None:
@@ -75,6 +78,7 @@ async def ensure_indexes(service: NotifyService) -> None:
     await ensure_outbox_indexes(service.store)
     await ensure_in_app_indexes(service.store)
     await ensure_send_indexes(service.store)
+    await ensure_approval_notify_indexes(service.store)
     await service.bus.ensure_indexes()
     await AuditLog(service.store).ensure_indexes()
 
@@ -82,7 +86,12 @@ async def ensure_indexes(service: NotifyService) -> None:
 async def serve(service: NotifyService, settings: NotifySettings) -> None:  # pragma: no cover - process loop
     await ensure_indexes(service)
     stop = asyncio.Event()
-    worker = service.bus.worker({IN_APP_CONSUMER: in_app_handler(service.store)})
+    worker = service.bus.worker(
+        {
+            IN_APP_CONSUMER: in_app_handler(service.store),
+            APPROVAL_NOTIFY_CONSUMER: approval_notify_handler(service.store, service.telegram),
+        }
+    )
     config = uvicorn.Config(service.server.streamable_http_app(), host=settings.host, port=settings.port)
     worker_task = asyncio.create_task(worker.run(stop))
     try:

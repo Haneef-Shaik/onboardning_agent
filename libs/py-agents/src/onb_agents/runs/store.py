@@ -9,7 +9,7 @@ are compare-and-set on the current status, so two writers never both move one ta
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any, Final
 
 from onb_data import DataStore
@@ -122,7 +122,7 @@ class RunStore:
         changes: dict[str, Any] = {"status": target.value}
         if target in _STAMPS:
             changes[_STAMPS[target]] = at
-        if target is TaskState.RUNNING:
+        if target is TaskState.RUNNING and current["status"] != TaskState.WAITING_APPROVAL.value:
             changes["attempts"] = int(current.get("attempts", 0)) + 1
         else:
             changes.update({"lease_token": None, "lease_until": None})
@@ -282,6 +282,18 @@ class RunStore:
                 continue
             cancelled.append(task["task_id"])
         return cancelled
+
+    async def acquire_resume(self, run_id: str, *, now: datetime, ttl: timedelta) -> bool:
+        """Take the run's resume lease: one resume of its paused graph at a time (HIL-1). The lease expires
+        after `ttl`, so a worker that died holding it never blocks the run for good."""
+        outcome = await self._runs.update_one(
+            {"_id": run_id, "$or": [{"resume_until": None}, {"resume_until": {"$lt": now}}]},
+            {"$set": {"resume_until": now + ttl}},
+        )
+        return outcome.matched == 1
+
+    async def release_resume(self, run_id: str) -> None:
+        await self._runs.update_one({"_id": run_id}, {"$set": {"resume_until": None}})
 
     async def move_run(
         self,

@@ -90,6 +90,11 @@ EXTRA_DOCUMENTS: dict[str, tuple[dict[str, Any], ...]] = {
             "task_id": "manager_approval",
             "approver_id": "u_globex_mgr1",
             "status": "pending",
+            "hire_id": "h_globex_001",
+            "kind": "task",
+            "title": "Globex manager approves the laptop",
+            "requested_at": "2026-11-07T10:05:00+05:30",
+            "request": {"items": ["Globex-only laptop"]},
         },
     ),
 }

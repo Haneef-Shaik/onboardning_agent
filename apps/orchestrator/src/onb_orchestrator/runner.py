@@ -30,12 +30,21 @@ Each task runs in a span continued from the traceparent stored on the run (F-4).
 only, never a message (messages can hold personal data):
 - `TaskFailedError`: the task's work failed (a task found `failed`/`cancelled` by a delivery that may not retry).
 - `TaskExhaustedError`: the task failed at its last attempt; `task_id` says which.
-- `TaskBlockedError`: the task cannot run now (it waits for an approval, or a dependency is not
-  finished although the graph reached it). Deterministic: retrying does not help.
+- `TaskBlockedError`: the task cannot run now (a dependency is not finished although the graph
+  reached it). Deterministic: retrying does not help.
+- `TaskAwaitsApprovalError`: the task waits for an approval (HIL-1: an approval task, a tool call that
+  needs one, an agent that needs a human). Not an error of the run: the graph node pauses with
+  `interrupt()` and `settle` finishes the task once the approval is decided.
 - `TaskInProgressError`: another delivery holds the task. Transient.
 - `RunHaltedError` / `DrainRequestedError`: control flow, not failures.
 - `TaskStepError`: what a graph node raises for any other error, by type, marked `transient` for a
-  database error, a lost compare-and-set race or a task in progress, and not otherwise.
+  database error, a lost compare-and-set race, a task in progress or an approval not decided yet, and not
+  otherwise.
+
+**Approvals (HIL-1, ADR 0020).** An `approval` task, an agent that answers `needs_human` and a tool call the
+hub refused under a `requires_approval` rule open an approval and park the task in `waiting_approval` (the
+lease is released with the move). A rejection fails the task and the run (a person said no: nothing to retry).
+An approved tool call runs the task again under a new lease, in the same attempt.
 """
 
 from __future__ import annotations
@@ -49,6 +58,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
+from onb_agents.approvals import ApprovalSpec, ApprovalStore, resolve_approver
 from onb_agents.runs import (
     RunState,
     RunStore,
@@ -56,29 +66,37 @@ from onb_agents.runs import (
     TransitionConflictError,
     dependencies_met,
     lease_expired,
+    run_bus,
+    stored_dag,
 )
+from onb_contracts.approvals import APPROVAL_REQUESTED, ApprovalKind
 from onb_data import DataStore, current_tenant
+from onb_eventbus import EventBus
 from onb_telemetry import continue_from, span_attributes
 from opentelemetry import trace
 from pymongo.errors import PyMongoError
 
-from .executor import TaskExecutor, TaskWork
+from .executor import ApprovalRequestedError, TaskExecutor, TaskWork
 from .policy import RunPolicy
 
 __all__ = [
+    "MAX_APPROVALS_PER_TASK",
     "DrainRequestedError",
     "RunExecutor",
     "RunHaltedError",
     "Sleep",
+    "TaskAwaitsApprovalError",
     "TaskBlockedError",
     "TaskExhaustedError",
     "TaskFailedError",
     "TaskInProgressError",
+    "TaskNotSettledError",
     "TaskStepError",
     "step_error",
 ]
 
 LEASE_EXPIRED = "LeaseExpired"
+MAX_APPROVALS_PER_TASK = 2
 Sleep = Callable[[float], Awaitable[None]]
 
 
@@ -116,6 +134,18 @@ class TaskBlockedError(RuntimeError):
     """The task cannot run now; retrying the job does not change that."""
 
 
+class TaskAwaitsApprovalError(Exception):
+    """The task is `waiting_approval` on `approval_id`: the graph node pauses with `interrupt()`."""
+
+    def __init__(self, approval_id: str) -> None:
+        super().__init__("the task waits for an approval")
+        self.approval_id = approval_id
+
+
+class TaskNotSettledError(Exception):
+    """The graph resumed but the task's approval is not decided (yet). Transient: a later retry finds it."""
+
+
 class TaskInProgressError(Exception):
     """Another delivery holds the task's lease and executes it; this one must not."""
 
@@ -137,7 +167,7 @@ class TaskStepError(Exception):
         self.transient = transient
 
 
-_TRANSIENT = (PyMongoError, TransitionConflictError, TaskInProgressError)
+_TRANSIENT = (PyMongoError, TransitionConflictError, TaskInProgressError, TaskNotSettledError)
 
 
 def step_error(error: Exception) -> TaskStepError:
@@ -152,6 +182,14 @@ class _Failure:
 
     error: str
     retryable: bool = True
+
+
+@dataclass(frozen=True, slots=True)
+class _Asked:
+    """The attempt did not fail: its work needs a human before the task can go on."""
+
+    kind: ApprovalKind
+    rule: str | None = None
 
 
 def _failure_of(error: Exception) -> _Failure:
@@ -188,9 +226,12 @@ class RunExecutor:
         drain: asyncio.Event | None = None,
         sleep: Sleep | None = None,
         new_token: Callable[[], str] = _new_token,
+        bus: EventBus | None = None,
     ) -> None:
         self.store = store
         self.runs = RunStore(store)
+        self.approvals = ApprovalStore(store)
+        self._bus: EventBus = bus if bus is not None else run_bus(store)
         self._executor = executor
         self.clock = clock
         self.policy = policy or RunPolicy()
@@ -211,7 +252,7 @@ class RunExecutor:
         if status is TaskState.CANCELLED:
             raise RunHaltedError("the task was cancelled")
         if status is TaskState.WAITING_APPROVAL:
-            raise TaskBlockedError("the task waits for an approval; only the approval resumes it")
+            raise TaskAwaitsApprovalError(str(task["approval_id"]))
         if status is TaskState.RUNNING:
             running = await self._take_over(run_id, task)
         else:
@@ -287,6 +328,10 @@ class RunExecutor:
         task = running
         while True:
             failure = await self._execute(run_id, task, traceparent)
+            if isinstance(failure, _Asked) or (failure is None and task["type"] == "approval"):
+                kind: ApprovalKind = "task" if failure is None else failure.kind
+                await self._wait_for_approval(run_id, task, kind, None if failure is None else failure.rule)
+                return  # the approval was already decided: the task is settled
             if failure is None:
                 try:
                     await self.runs.move_task(run_id, task["task_id"], TaskState.DONE, at=self.clock(), expected=task)
@@ -347,9 +392,12 @@ class RunExecutor:
         else:
             await asyncio.sleep(seconds)
 
-    async def _execute(self, run_id: str, task: Mapping[str, Any], traceparent: str | None) -> _Failure | None:
-        """Run the task's work under its lease. Returns the error type when it failed, `None` on success."""
+    async def _execute(self, run_id: str, task: Mapping[str, Any], traceparent: str | None) -> _Failure | _Asked | None:
+        """Run the task's work under its lease. Returns the error type when it failed, what it asks of a human
+        when it needs one (HIL-1), `None` on success."""
         task_id, token = task["task_id"], task["lease_token"]
+        if task["type"] == "approval":  # open it first: the Approvals Agent reads the approval it summarises
+            await self._open_approval(run_id, task, "task", None)
         attributes = span_attributes(
             org_id=current_tenant().org_id, run_id=run_id, task_id=task_id, agent_name=task["agent"]
         )
@@ -363,7 +411,7 @@ class RunExecutor:
             idempotency_key=f"{run_id}:{task_id}",
         )
         lost = asyncio.Event()
-        failure: _Failure | None = None
+        failure: _Failure | _Asked | None = None
         with _task_span(traceparent, attributes):
             # Started inside the span: the executor runs in a copy of this context, so its own spans (the
             # agent, its LLM and tool calls) are children of the task's span (run → task → agent → LLM/tool).
@@ -383,6 +431,8 @@ class RunExecutor:
                 # the bus retry the job (the agent executor re-raises these on purpose, RUN-3).
                 await asyncio.shield(self._release(run_id, task_id, token, int(task["attempts"]) - 1))
                 raise
+            except ApprovalRequestedError as asked:
+                failure = _Asked(asked.kind, asked.rule)
             except Exception as error:  # any other executor error is this attempt's failure: retry, then block
                 failure = _failure_of(error)
             finally:
@@ -411,3 +461,150 @@ class RunExecutor:
     async def _release(self, run_id: str, task_id: str, token: str, attempts: int) -> None:
         with contextlib.suppress(PyMongoError):
             await self.runs.release_lease(run_id, task_id, token, attempts=attempts)
+
+    # --- approvals (HIL-1, ADR 0020) ---------------------------------------------------------------------
+
+    async def _open_approval(
+        self, run_id: str, task: Mapping[str, Any], kind: ApprovalKind, rule: str | None
+    ) -> dict[str, Any]:
+        """The approval this task waits on for this reason: opened once (a redelivery finds it)."""
+        run = await self.runs.get(run_id)
+        if run is None:
+            raise LookupError("no such run")
+        dag = stored_dag(run)
+        template_task = next(t for t in dag["tasks"] if t["id"] == task["task_id"])
+        hire = await self.store.tenant("new_hires").find_one({"_id": run["hire_id"]}) or {}
+        approver_id, approver_role = resolve_approver(template_task.get("approver"), hire)
+        items = [
+            str(t["title"]) for t in dag["tasks"] if task["task_id"] in t["depends_on"] and t["status"] != "skipped"
+        ]
+        spec = ApprovalSpec(
+            run_id=run_id,
+            task_id=task["task_id"],
+            hire_id=str(run["hire_id"]),
+            kind=kind,
+            rule=rule,
+            approver_id=approver_id,
+            approver_role=approver_role,
+            title=str(task["title"]),
+            items=items,
+            sla_hours=task.get("sla_hours"),
+        )
+        return await self.approvals.create(spec, now=self.clock())
+
+    async def _check_approval_limit(
+        self, run_id: str, task: Mapping[str, Any], kind: ApprovalKind, rule: str | None
+    ) -> None:
+        """At most `MAX_APPROVALS_PER_TASK` approvals per task: LangGraph replays a node's earlier resume values,
+        so a longer chain inside one node cannot be resumed reliably (ADR 0020). A task that needs more fails
+        visibly instead of stalling the run."""
+        existing = await self.approvals.for_task(run_id, task["task_id"])
+        known = {a["kind"] + "\x1f" + str(a.get("rule") or "") for a in existing}
+        if f"{kind}\x1f{rule or ''}" not in known and len(existing) >= MAX_APPROVALS_PER_TASK:
+            await self._fail_for_approval(run_id, task, "approval_limit", str(len(existing)))
+
+    async def _wait_for_approval(
+        self, run_id: str, task: Mapping[str, Any], kind: ApprovalKind, rule: str | None
+    ) -> None:
+        """Park the running task in `waiting_approval` (leaving `running` releases its lease) and tell the
+        approver, in one transaction; then raise `TaskAwaitsApprovalError` so the graph node pauses. An
+        approval that is already decided (the task asked for the same thing again) settles the task instead."""
+        await self._check_approval_limit(run_id, task, kind, rule)
+        approval = await self._open_approval(run_id, task, kind, rule)
+        if approval["status"] != "pending":
+            await self._after_decision(run_id, task, approval, again=True, traceparent=None)
+            return
+        task_id = task["task_id"]
+
+        async def park() -> None:
+            await self.runs.move_task(
+                run_id,
+                task_id,
+                TaskState.WAITING_APPROVAL,
+                at=self.clock(),
+                expected=task,
+                fields={"approval_id": approval["_id"]},
+            )
+
+        payload = {"approval_id": approval["_id"], "run_id": run_id, "task_id": task_id}
+        await self._bus.publish(
+            APPROVAL_REQUESTED,
+            payload,
+            idempotency_key=f"approval:{approval['_id']}:requested",
+            run_id=run_id,
+            change=park,
+        )
+        raise TaskAwaitsApprovalError(str(approval["_id"]))
+
+    async def is_decided(self, approval_id: str) -> bool:
+        """True when the approval is no longer pending: its waiting task can be settled without a resume."""
+        approval = await self.approvals.get(approval_id)
+        return approval is not None and approval["status"] != "pending"
+
+    async def settle(self, run_id: str, task_id: str, *, traceparent: str | None) -> None:
+        """The graph resumed a task that waited: apply its approval's decision."""
+        task = await self.runs.task(run_id, task_id)
+        if task is None:
+            raise LookupError("no such task in this run")
+        if TaskState(task["status"]) in (TaskState.DONE, TaskState.SKIPPED):
+            return
+        if TaskState(task["status"]) is not TaskState.WAITING_APPROVAL:
+            raise TaskBlockedError("the task does not wait for an approval")
+        approval = await self.approvals.get(str(task["approval_id"]))
+        if approval is None:
+            raise LookupError("no such approval")
+        if approval["status"] == "pending":
+            raise TaskNotSettledError("the approval is not decided")
+        await self._after_decision(run_id, task, approval, again=False, traceparent=traceparent)
+
+    async def _after_decision(
+        self,
+        run_id: str,
+        task: Mapping[str, Any],
+        approval: Mapping[str, Any],
+        *,
+        again: bool,
+        traceparent: str | None,
+    ) -> None:
+        """Finish the task from its decided approval. Approved lets it go on (a tool call runs the task
+        again under a new lease, in the same attempt, now with its rule approved); anything else fails it.
+        `again` is True when the task asked for an approval that was already decided: a refused call that was
+        approved already is `approval_ineffective`, never another wait."""
+        task_id = task["task_id"]
+        if approval["status"] != "approved":
+            decided = approval.get("decision") or {}
+            await self._fail_for_approval(
+                run_id, task, "approval_rejected", str(decided.get("decision", approval["status"]))
+            )
+        if approval["kind"] == "tool_call":
+            if again:
+                await self._fail_for_approval(run_id, task, "approval_ineffective", str(approval.get("rule")))
+            running = await self.runs.move_task(
+                run_id,
+                task_id,
+                TaskState.RUNNING,
+                at=self.clock(),
+                expected=task,
+                fields={**self._lease(), "error": None, "retry_at": None, "failure": None},
+            )
+            await self._attempts(run_id, running, traceparent)
+            return
+        try:
+            await self.runs.move_task(run_id, task_id, TaskState.DONE, at=self.clock(), expected=task)
+        except TransitionConflictError:
+            current = await self.runs.task(run_id, task_id)
+            if current is None or current["status"] != TaskState.DONE.value:
+                raise
+
+    async def _fail_for_approval(self, run_id: str, task: Mapping[str, Any], kind: str, reason: str) -> None:
+        """The task failed because a person said no (or the approval could not work): it is not retried, and
+        the run fails (`TaskFailedError`, which the driver turns into a failed run)."""
+        await self.runs.move_task(
+            run_id,
+            task["task_id"],
+            TaskState.FAILED,
+            at=self.clock(),
+            expected=task,
+            fields={"failure": {"kind": kind, "reason": reason}, "error": kind, "retry_at": None},
+        )
+        raise TaskFailedError(kind)

@@ -22,6 +22,7 @@ LEGAL = [
     (TaskState.RUNNING, TaskState.DONE),
     (TaskState.RUNNING, TaskState.FAILED),
     (TaskState.RUNNING, TaskState.CANCELLED),
+    (TaskState.WAITING_APPROVAL, TaskState.RUNNING),  # HIL-1: an approved tool call runs the task again
     (TaskState.WAITING_APPROVAL, TaskState.DONE),
     (TaskState.WAITING_APPROVAL, TaskState.FAILED),
     (TaskState.WAITING_APPROVAL, TaskState.CANCELLED),

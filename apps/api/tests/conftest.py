@@ -27,6 +27,7 @@ from onb_agents.registry import AgentRegistry, load_catalog, load_manifests
 from onb_agents.runs.testing import OutboxStandIn
 from onb_agents.testing import InMemoryRegistryStore
 from onb_api import create_app
+from onb_api.approvals import ApprovalService
 from onb_api.chat import ChatService
 from onb_api.chat.store import ChatStore
 from onb_api.chat.testing import StubAssistant
@@ -52,6 +53,7 @@ from onb_telemetry.testing import reset_telemetry_globals
 
 __all__ = [
     "app",
+    "approvals",
     "assistant",
     "audit_log",
     "chat",
@@ -206,6 +208,13 @@ def chat(memory_db: MemoryDatabase, runs: RunService, assistant: StubAssistant) 
 
 
 @pytest.fixture
+def approvals(memory_db: MemoryDatabase, run_outbox: OutboxStandIn, audit_log: InMemoryAuditLog) -> ApprovalService:
+    """HIL-1: the approval service over the hires' database, publishing `approval.decided` to the run outbox
+    stand-in and auditing to `audit_log`."""
+    return ApprovalService.build(memory_store(memory_db), run_outbox, auditor=audit_log)
+
+
+@pytest.fixture
 def app(
     users: InMemoryUserStore,
     registry: AgentRegistry,
@@ -217,6 +226,7 @@ def app(
     notify: MockChannels,
     runs: RunService,
     chat: ChatService,
+    approvals: ApprovalService,
 ) -> FastAPI:
     reset_telemetry_globals()
     return create_app(
@@ -231,6 +241,7 @@ def app(
         notify=notify,
         runs=runs,
         chat=chat,
+        approvals=approvals,
     )
 
 

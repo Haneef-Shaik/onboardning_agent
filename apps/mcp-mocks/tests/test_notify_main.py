@@ -72,6 +72,12 @@ def test_the_service_makes_the_grant_outbox_in_app_and_bus_indexes_at_startup() 
 
 def test_the_service_serves_notify_send_and_subscribes_the_in_app_consumer() -> None:
     service = build_service(load_notify_settings(env()), memory_store(MemoryDatabase()))
-    assert service.bus.consumers() == ("notify.in_app", "orchestrator.fail_task")  # RUN-3 subscribes fail_task
+    # RUN-3 subscribes fail_task; HIL-1 the approvals notifier and the decision recorder (the webhook's bus)
+    assert service.bus.consumers() == (
+        "notify.approval",
+        "notify.in_app",
+        "orchestrator.fail_task",
+        "orchestrator.record_decision",
+    )
     tools = asyncio.run(service.server.list_tools())
     assert [t.name for t in tools] == ["notify_send"]

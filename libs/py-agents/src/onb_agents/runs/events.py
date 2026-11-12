@@ -12,13 +12,25 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Final
 
-from onb_contracts.notify import IN_APP_CONSUMER, RUN_BLOCKED, SINK_REJECTED, SINK_REJECTED_CONSUMER
+from onb_contracts.notify import (
+    APPROVAL_DECIDED,
+    APPROVAL_NOTIFY_CONSUMER,
+    APPROVAL_REQUESTED,
+    DECISION_RECEIVED,
+    IN_APP_CONSUMER,
+    RECORD_DECISION_CONSUMER,
+    RESUME_APPROVAL_CONSUMER,
+    RUN_BLOCKED,
+    SINK_REJECTED,
+    SINK_REJECTED_CONSUMER,
+)
 from onb_data import DataStore
 from onb_eventbus import MongoEventBus, QueueSettings
 
 __all__ = [
     "CLEANUP_RUN",
     "FAIL_TASK",
+    "RESUME_APPROVAL",
     "RESUME_RUN",
     "RUN_BLOCKED_KIND",
     "RUN_CANCELLED",
@@ -48,6 +60,9 @@ RUN_BLOCKED_KIND: Final = "blocked"
 RUN_CANCELLED: Final = "run.cancelled"
 """Published when HR cancels a run (RUN-2): `{run_id}`. The orchestrator deletes the run's checkpoints."""
 CLEANUP_RUN: Final = "orchestrator.cleanup_run"
+RESUME_APPROVAL: Final = RESUME_APPROVAL_CONSUMER
+"""`orchestrator.resume_approval`: resumes the paused node of the task whose approval was decided
+(`approval.decided`, HIL-1). Not `RESUME_RUN`: that one drives a run HR resumed (`run.resumed`, RUN-2)."""
 SUBSCRIPTIONS: Final[Mapping[str, tuple[str, ...]]] = {
     RUN_STARTED: (START_RUN,),
     RUN_RESUMED: (RESUME_RUN,),
@@ -56,6 +71,9 @@ SUBSCRIPTIONS: Final[Mapping[str, tuple[str, ...]]] = {
     RUN_BLOCKED: (IN_APP_CONSUMER,),
     # RUN-3: a sink's refusal fails the task it was for.
     SINK_REJECTED: (FAIL_TASK,),
+    APPROVAL_REQUESTED: (APPROVAL_NOTIFY_CONSUMER,),  # HIL-1: the approver is told (mcp-mocks)
+    APPROVAL_DECIDED: (RESUME_APPROVAL,),
+    DECISION_RECEIVED: (RECORD_DECISION_CONSUMER,),  # HIL-1: the worker's bus must know every consumer it runs
 }
 
 

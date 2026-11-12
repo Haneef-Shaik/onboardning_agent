@@ -23,6 +23,12 @@ How a run ends or stops:
 - a transient error (the database, a lost compare-and-set race, a task another delivery holds) is
   raised, so the bus retries the job (and dead-letters it after its last attempt).
 
+A run with a task waiting for an approval (HIL-1) is neither finished nor failed: its graph is paused
+at `interrupt()` and the run stays `running` (nothing completes it). `orchestrator.resume_approval`
+(`approval.decided`) resumes it from the stored decision, and `orchestrator.record_decision`
+(`decision.received`, a Telegram press) records a decision made there exactly as the web route does. A
+run that fails or is cancelled cancels the approvals still pending.
+
 A run already finished by an overlapping delivery is not an error. Logs carry ids and error types only.
 """
 
@@ -31,10 +37,18 @@ from __future__ import annotations
 import asyncio
 import logging
 import re
-from collections.abc import Callable, Mapping
-from datetime import UTC, datetime
+from collections.abc import Awaitable, Callable, Mapping
+from datetime import UTC, datetime, timedelta
 from typing import Any, Final
 
+from langgraph.types import Command
+from onb_agents.approvals import (
+    AlreadyDecidedError,
+    ApprovalDecider,
+    ApprovalNotFoundError,
+    ApprovalStore,
+    NotApproverError,
+)
 from onb_agents.runs import (
     RUN_BLOCKED_KIND,
     IllegalTransitionError,
@@ -45,15 +59,16 @@ from onb_agents.runs import (
     control_key,
     thread_id,
 )
-from onb_contracts.notify import RUN_BLOCKED
-from onb_data import DataStore, current_tenant
+from onb_contracts.approvals import APPROVAL_REF_TYPE
+from onb_contracts.notify import OUTBOX_COLLECTION, RUN_BLOCKED, Decision
+from onb_data import AuditLog, Auditor, DataStore, current_tenant
 from onb_eventbus import EventBus, Handler, JobContext, ReleaseJob
 from onb_telemetry import continue_from, span_attributes
 from pymongo.errors import PyMongoError
 
 from .checkpointer import TenantCheckpointSaver
 from .executor import TaskExecutor
-from .graph import RunGraphState, build_run_graph
+from .graph import RunGraph, RunGraphState, build_run_graph
 from .policy import RunPolicy
 from .runner import (
     DrainRequestedError,
@@ -64,7 +79,13 @@ from .runner import (
     TaskStepError,
 )
 
-__all__ = ["cleanup_run_handler", "fail_task_handler", "start_run_handler"]
+__all__ = [
+    "cleanup_run_handler",
+    "fail_task_handler",
+    "record_decision_handler",
+    "resume_approval_handler",
+    "start_run_handler",
+]
 
 _log = logging.getLogger("onb_orchestrator")
 _MAX_RUN_ID: Final = 128
@@ -85,6 +106,11 @@ def _run_id(payload: Mapping[str, Any]) -> str:
     return run_id
 
 
+async def _paused(built: RunGraph) -> bool:
+    """A graph that stopped with nodes still to run is waiting at an `interrupt()` (an approval)."""
+    return bool((await built.graph.aget_state(built.config)).next)
+
+
 class _Driver:
     """One handler's collaborators: the runner (and through it the store), the bus and the saver."""
 
@@ -93,16 +119,52 @@ class _Driver:
         self.bus = bus
         self.saver = TenantCheckpointSaver(runner.store)
 
-    async def drive(self, run: Mapping[str, Any]) -> None:
+    async def drive(self, run: Mapping[str, Any]) -> bool:
+        """Run the graph from its start or its checkpoint. True when it paused for an approval."""
         run_id = str(run["_id"])
         built = build_run_graph(run, self.runner, self.saver)
         if run["status"] == RunState.STARTED.value:
             await self.runner.runs.move_run(
                 run_id, RunState.RUNNING, at=self.runner.clock(), expected_status=RunState.STARTED
             )  # not over a pause that arrived since the run was read
+        await self._settle_decided(built)
         state = await built.graph.aget_state(built.config)
         start: RunGraphState | None = None if state.next or state.values else {"finished": []}
         await built.graph.ainvoke(start, built.config)
+        return await _paused(built)
+
+    async def _settle_decided(self, built: RunGraph) -> None:
+        """A task waiting at an interrupt whose approval was decided while nobody was driving the run (it was
+        paused or blocked, or the decision beat the pause's checkpoint) is resumed first, so driving the graph
+        on never pauses it again for a decision that was already made."""
+        while True:
+            state = await built.graph.aget_state(built.config)
+            decided = [
+                i
+                for t in state.tasks
+                for i in t.interrupts
+                if isinstance(i.value, dict) and await self.runner.is_decided(str(i.value.get("approval_id")))
+            ]
+            if not decided:
+                return
+            approval_id = str(decided[0].value["approval_id"])
+            await built.graph.ainvoke(Command(resume={decided[0].id: {"approval_id": approval_id}}), built.config)
+
+    async def resume(self, run: Mapping[str, Any], approval_id: str) -> bool:
+        """Resume the paused node of this approval from the checkpoint. True when the graph paused again."""
+        built = build_run_graph(run, self.runner, self.saver)
+        state = await built.graph.aget_state(built.config)
+        waiting = [
+            i
+            for t in state.tasks
+            for i in t.interrupts
+            if isinstance(i.value, dict) and i.value.get("approval_id") == approval_id
+        ]
+        if not waiting:
+            raise TaskStepError("InterruptNotCheckpointed", transient=True)  # the start job is still pausing
+        # The resume value names the approval only: the node settles from the stored decision.
+        await built.graph.ainvoke(Command(resume={waiting[0].id: {"approval_id": approval_id}}), built.config)
+        return await _paused(built)
 
     async def is_moot(self, run_id: str) -> bool:
         """True when the run is no longer ours to drive: HR paused, blocked or cancelled it, or it finished.
@@ -139,6 +201,7 @@ class _Driver:
         runner = self.runner
         if target is RunState.FAILED:
             await runner.runs.cancel_unfinished(run_id, at=runner.clock())
+            await runner.approvals.cancel_pending(run_id, at=runner.clock())  # nothing left to decide (HIL-1)
         try:
             await runner.runs.move_run(run_id, target, at=runner.clock())
         except (IllegalTransitionError, TransitionConflictError):
@@ -179,56 +242,79 @@ def start_run_handler(
 ) -> Handler:
     """The handler for `run.started` and `run.resumed`. `bus` is the platform's run bus (built here when
     not given); `drain` is set when the worker is shutting down."""
-    from onb_agents.runs import run_bus
-
-    runner = RunExecutor(store, executor, clock, policy=policy, drain=drain, sleep=sleep)
-    driver = _Driver(runner, bus if bus is not None else run_bus(store))
+    driver = _driver(store, executor, clock, bus, policy, drain, sleep)
 
     async def handle(job: JobContext) -> None:
         run_id = _run_id(job.payload)
-        run = await runner.runs.get(run_id)
+        run = await driver.runner.runs.get(run_id)
         if run is None:
             _log.info("run event for a run this org does not have; nothing to do", extra={"job_id": job.job_id})
             return
         if run.get("status") not in _DRIVEN:
             return
-        attributes = span_attributes(org_id=current_tenant().org_id, run_id=run_id)
-        try:
-            # The run's span: every task span is its child (PRD §7.7), and it continues the request's trace.
-            with continue_from(run.get("traceparent"), "orchestrator.run", attributes=attributes):
-                await driver.drive(run)
-        except DrainRequestedError:
-            raise ReleaseJob from None
-        except RunHaltedError:
-            if not await driver.is_moot(run_id):
-                # A task was cancelled under a run that is still running (a failure that cancelled the
-                # tasks but not the run): nothing can drive it, so end it instead of leaving it running.
-                await driver.fail(run_id, "TaskCancelled")
-            return
-        except TaskExhaustedError as error:
-            await driver.block(run_id, error.task_id)
-            return
-        except PyMongoError:
-            raise  # transient: the bus retries the job
-        except (TaskStepError, TransitionConflictError) as error:
-            if await driver.is_moot(run_id):
-                return  # HR changed the run under it: the compare-and-set that lost is not an error
-            if isinstance(error, TaskStepError) and not error.transient:
-                await driver.fail(run_id, error.type_name)
-                return
-            raise  # transient: the bus retries the job
-        except Exception as error:
-            if await driver.is_moot(run_id):
-                return
-            await driver.fail(run_id, type(error).__name__)
-            return
-        try:
-            await driver.complete(run_id)
-        except (IllegalTransitionError, TransitionConflictError):
-            if not await driver.is_moot(run_id):  # HR paused or blocked it while its last task finished
-                raise
+        await _drive_guarded(driver, run, lambda: driver.drive(run))
 
     return handle
+
+
+def _driver(
+    store: DataStore,
+    executor: TaskExecutor,
+    clock: Callable[[], datetime],
+    bus: EventBus | None,
+    policy: RunPolicy | None,
+    drain: asyncio.Event | None,
+    sleep: Sleep | None,
+) -> _Driver:
+    from onb_agents.runs import run_bus
+
+    the_bus = bus if bus is not None else run_bus(store)
+    runner = RunExecutor(store, executor, clock, policy=policy, drain=drain, sleep=sleep, bus=the_bus)
+    return _Driver(runner, the_bus)
+
+
+async def _drive_guarded(driver: _Driver, run: Mapping[str, Any], action: Callable[[], Awaitable[bool]]) -> None:
+    """Run `action` (a drive or an approval resume) in the run's span and end or stop the run by how it went
+    (module docstring). A run that paused for an approval is left `running`."""
+    run_id = str(run["_id"])
+    attributes = span_attributes(org_id=current_tenant().org_id, run_id=run_id)
+    paused = False
+    try:
+        # The run's span: every task span is its child (PRD §7.7), and it continues the request's trace.
+        with continue_from(run.get("traceparent"), "orchestrator.run", attributes=attributes):
+            paused = await action()
+    except DrainRequestedError:
+        raise ReleaseJob from None
+    except RunHaltedError:
+        if not await driver.is_moot(run_id):
+            # A task was cancelled under a run that is still running (a failure that cancelled the
+            # tasks but not the run): nothing can drive it, so end it instead of leaving it running.
+            await driver.fail(run_id, "TaskCancelled")
+        return
+    except TaskExhaustedError as error:
+        await driver.block(run_id, error.task_id)
+        return
+    except PyMongoError:
+        raise  # transient: the bus retries the job
+    except (TaskStepError, TransitionConflictError) as error:
+        if await driver.is_moot(run_id):
+            return  # HR changed the run under it: the compare-and-set that lost is not an error
+        if isinstance(error, TaskStepError) and not error.transient:
+            await driver.fail(run_id, error.type_name)
+            return
+        raise  # transient: the bus retries the job
+    except Exception as error:
+        if await driver.is_moot(run_id):
+            return
+        await driver.fail(run_id, type(error).__name__)
+        return
+    if paused:
+        return  # waiting for an approval: the decision resumes it
+    try:
+        await driver.complete(run_id)
+    except (IllegalTransitionError, TransitionConflictError):
+        if not await driver.is_moot(run_id):  # HR paused or blocked it while its last task finished
+            raise
 
 
 # --- orchestrator.fail_task: a sink refused a task's grant (NOTIF-1, ADR 0013) -------------------------
@@ -293,16 +379,144 @@ def fail_task_handler(store: DataStore, clock: Callable[[], datetime] = _utc_now
 
 
 def cleanup_run_handler(store: DataStore) -> Handler:
-    """The handler for `run.cancelled`: delete the checkpoints of a run that is cancelled. A run that is
-    anything else is left alone (the event names a run, it does not make it cancelled)."""
+    """The handler for `run.cancelled`: cancel the run's pending approvals and delete the checkpoints of a
+    run that is cancelled. A run that is anything else is left alone (the event names a run, it does not
+    make it cancelled)."""
     runs = RunStore(store)
     saver = TenantCheckpointSaver(store)
+    approvals = ApprovalStore(store)
 
     async def handle(job: JobContext) -> None:
         run_id = _run_id(job.payload)
         run = await runs.get(run_id)
         if run is None or run.get("status") != RunState.CANCELLED.value:
             return
+        # The approvals still pending go with the run (HIL-1): their buttons and inbox rows have nothing left to decide.
+        await approvals.cancel_pending(run_id, at=_utc_now())
         await saver.adelete_thread(thread_id(current_tenant().org_id, run_id))
 
     return handle
+
+
+# --- orchestrator.resume_approval: an approval was decided (HIL-1, ADR 0020) ----------------------------
+
+_RESUME_LOCK_TTL: Final = timedelta(seconds=120)
+_APPROVAL_ID: Final = re.compile(r"appr_[A-Za-z0-9_]{1,64}")
+
+
+def _approval_id(payload: Mapping[str, Any]) -> str:
+    value = payload.get("approval_id")
+    if not isinstance(value, str) or not _APPROVAL_ID.fullmatch(value):
+        raise ValueError("an approval.decided payload needs an approval_id")
+    return value
+
+
+def resume_approval_handler(
+    store: DataStore,
+    executor: TaskExecutor,
+    clock: Callable[[], datetime] = _utc_now,
+    *,
+    bus: EventBus | None = None,
+    policy: RunPolicy | None = None,
+    drain: asyncio.Event | None = None,
+    sleep: Sleep | None = None,
+) -> Handler:
+    """The `orchestrator.resume_approval` consumer: an approval was decided, so its run goes on.
+
+    The decision is read from the stored approval, never from the event. Redelivery is harmless (a task
+    already settled has no interrupt to resume); a decision that lands before the start job has
+    checkpointed its pause, or while another approval of the run is being resumed (a per-run lease), is
+    retried by the bus. A run that is not `running` (HR paused, blocked or cancelled it) is left alone: the
+    decision is stored, and when HR resumes the run its driver settles the task from it. Another org's
+    approval is nothing to do."""
+    driver = _driver(store, executor, clock, bus, policy, drain, sleep)
+    runner = driver.runner
+
+    async def handle(job: JobContext) -> None:
+        approval_id = _approval_id(job.payload)
+        approval = await runner.approvals.get(approval_id)
+        if approval is None or approval["status"] == "pending":
+            return
+        run_id = str(approval["run_id"])
+        run = await runner.runs.get(run_id)
+        if run is None or run.get("status") != RunState.RUNNING.value:
+            return
+        task = await runner.runs.task(run_id, str(approval["task_id"]))
+        if task is None:
+            return
+        if (
+            task["status"] == TaskState.RUNNING.value
+            and task.get("approval_id") == approval_id
+            and approval["status"] == "approved"
+        ):  # an approved tool call's re-run started and was cut short: fail visibly, never ack as done
+            raise TaskStepError("ResumeInterrupted", transient=True)
+        if task["status"] != TaskState.WAITING_APPROVAL.value or task.get("approval_id") != approval_id:
+            return  # already settled (redelivery), or not this approval's turn
+        if not await runner.runs.acquire_resume(run_id, now=clock(), ttl=_RESUME_LOCK_TTL):
+            raise TaskStepError("RunResuming", transient=True)
+        try:
+            await _drive_guarded(driver, run, lambda: driver.resume(run, approval_id))
+        finally:
+            await runner.runs.release_resume(run_id)
+
+    return handle
+
+
+# --- orchestrator.record_decision: a Telegram press on an approval's buttons (NOTIF-1, HIL-1) -----------
+
+
+def record_decision_handler(
+    store: DataStore,
+    bus: EventBus | None = None,
+    clock: Callable[[], datetime] = _utc_now,
+    auditor: Auditor | None = None,
+) -> Handler:
+    """The `orchestrator.record_decision` consumer of `decision.received`.
+
+    The press is attributed to the user the buttons were sent to: the outbox message named by the event
+    carries `audience_user_id`, and its `ref` must be this approval (a press cannot decide an approval its
+    button was not on). That user must be the approval's approver, and the first decision wins. A press on
+    anything else, on a decided or cancelled approval, or by someone who is not the approver, changes
+    nothing (it is logged by code and acknowledged: a retry would not change the answer)."""
+    from onb_agents.runs import run_bus
+
+    decider = ApprovalDecider(
+        ApprovalStore(store),
+        bus if bus is not None else run_bus(store),
+        clock=clock,
+        auditor=auditor if auditor is not None else AuditLog(store),
+    )
+
+    async def handle(job: JobContext) -> None:
+        payload = job.payload
+        if payload.get("ref_type") != APPROVAL_REF_TYPE:
+            return
+        approval_id, outbox_id = payload.get("ref_id"), payload.get("outbox_id")
+        decision = _decision(payload.get("decision"))
+        if not isinstance(approval_id, str) or not isinstance(outbox_id, str) or decision is None:
+            _log.warning("decision.received for an approval with a malformed payload")
+            return
+        message = await store.tenant(OUTBOX_COLLECTION).find_one({"_id": outbox_id})
+        ref = (message or {}).get("ref") or {}
+        user_id = (message or {}).get("audience_user_id")
+        if message is None or ref.get("type") != APPROVAL_REF_TYPE or ref.get("id") != approval_id or not user_id:
+            _log.warning("decision.received for a message that is not that approval's")
+            return
+        user = await store.tenant("users").find_one({"_id": user_id}, projection={"role": 1})
+        try:
+            await decider.decide(
+                approval_id,
+                decision=decision,
+                comment=None,
+                channel="telegram",
+                user_id=str(user_id),
+                role=str(user["role"]) if user and user.get("role") else None,
+            )
+        except (AlreadyDecidedError, NotApproverError, ApprovalNotFoundError) as error:
+            _log.info("telegram decision not recorded: %s", type(error).__name__)
+
+    return handle
+
+
+def _decision(value: object) -> Decision | None:
+    return Decision(value) if value in {d.value for d in Decision} else None

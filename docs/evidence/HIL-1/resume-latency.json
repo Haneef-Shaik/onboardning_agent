@@ -1,0 +1,76 @@
+{
+  "goal": "HIL-1",
+  "measure": "decision (web decide call / Telegram press publish) to the next task started, seconds",
+  "stack": "compose mongo replica set; orchestrator worker in-process (`prepare`, poll 1 s), stub executor",
+  "hardware": {
+    "host": "macOS-27.2.1-arm64-arm-64bit",
+    "machine": "arm64",
+    "cpu": "Apple M5",
+    "cpu_count": 10,
+    "ram_gib": 16.0,
+    "docker_cpus": "10",
+    "docker_ram_gib": 7.7,
+    "docker_server": "29.8.2"
+  },
+  "decisions": 36,
+  "p50_s": 1.03,
+  "p95_s": 1.087,
+  "max_s": 1.17,
+  "limit_p95_s": 5.0,
+  "by_channel": {
+    "web": {
+      "decisions": 18,
+      "p50_s": 1.025,
+      "p95_s": 1.051,
+      "max_s": 1.077
+    },
+    "telegram": {
+      "decisions": 18,
+      "p50_s": 1.037,
+      "p95_s": 1.102,
+      "max_s": 1.17
+    }
+  },
+  "samples_s": {
+    "web": [
+      1.023,
+      1.051,
+      1.022,
+      1.03,
+      1.02,
+      1.026,
+      1.021,
+      1.035,
+      0.026,
+      1.027,
+      1.014,
+      1.045,
+      1.021,
+      1.025,
+      1.032,
+      1.077,
+      1.032,
+      0.017
+    ],
+    "telegram": [
+      1.17,
+      1.028,
+      1.019,
+      1.03,
+      1.102,
+      1.03,
+      1.036,
+      1.041,
+      1.017,
+      1.033,
+      1.087,
+      1.055,
+      1.045,
+      1.029,
+      1.037,
+      1.067,
+      1.024,
+      1.04
+    ]
+  }
+}

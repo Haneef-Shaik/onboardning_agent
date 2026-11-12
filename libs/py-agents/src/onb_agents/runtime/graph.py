@@ -198,4 +198,7 @@ def build_agent_graph(
     graph.add_conditional_edges(AGENT, _after_agent, {TOOLS: TOOLS, FINISH: FINISH})
     graph.add_conditional_edges(TOOLS, _after_tools, {TOOLS: TOOLS, AGENT: AGENT})
     graph.add_edge(FINISH, END)
-    return graph.compile()
+    # One agent task is one atomic unit: it must never load or write the checkpoint of the run graph it runs
+    # inside (it would inherit it), or an approved task that runs again would resume the first attempt's
+    # stale state (HIL-1). `False` switches inherited checkpointing off.
+    return graph.compile(checkpointer=False)

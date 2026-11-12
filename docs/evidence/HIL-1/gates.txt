@@ -1,0 +1,14 @@
+HIL-1 gates, 2026-11-12, stack ob-hil-1, branch goal/hil-1-approvals-hil
+
+make check              exit 0 (plan, env, tooling, lint, typecheck, unit tests with coverage, test-xt).
+                        Earlier attempts: one mypy failure in tools/tests_xt and two in py-agents (typing, fixed);
+                        one run ended with 4 setup errors "pymongo connection closed" (the known load flake);
+                        the re-run exited 0.
+make test-int           exit 0: "NX Successfully ran target test-int for 10 projects"
+                        (orchestrator:test-int includes tests_int/test_approvals_against_mongo.py (9) and
+                         tests_int/test_resume_latency.py (1)).
+make test-xt            exit 0: cross-tenant surface: 30 API routes, 9 MCP tools, 6 event consumers
+make contracts-check    contracts-check: openapi.json and the TS client are up to date
+make evals-selftest     selftest evr_20261112T162850Z_05954c5d: 27 cases x 3, all cases passed: True, gates: PASS,
+                        controls caught 8/8; result: PASS
+mutations               48 of 48 killed, source diff after all mutations: 0 files differ (mutation-checks.txt)

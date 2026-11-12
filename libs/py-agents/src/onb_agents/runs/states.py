@@ -1,6 +1,7 @@
 """Task and run states and the only moves between them (PRD FR-R2, FR-R3).
 
     pending → ready → running → (waiting_approval) → done | failed
+    waiting_approval → running                (an approved tool call: the task runs again, HIL-1)
     pending → skipped                       (compiled out: its `when` was false)
     pending | ready | running | waiting_approval → cancelled
 
@@ -78,7 +79,7 @@ _TASK_MOVES: Final[Mapping[TaskState, frozenset[TaskState]]] = {
     TaskState.PENDING: frozenset({TaskState.READY, TaskState.SKIPPED, TaskState.CANCELLED}),
     TaskState.READY: frozenset({TaskState.RUNNING, TaskState.CANCELLED}),
     TaskState.RUNNING: frozenset({TaskState.WAITING_APPROVAL, TaskState.DONE, TaskState.FAILED, TaskState.CANCELLED}),
-    TaskState.WAITING_APPROVAL: frozenset({TaskState.DONE, TaskState.FAILED, TaskState.CANCELLED}),
+    TaskState.WAITING_APPROVAL: frozenset({TaskState.RUNNING, TaskState.DONE, TaskState.FAILED, TaskState.CANCELLED}),
     TaskState.DONE: frozenset(),
     TaskState.FAILED: frozenset({TaskState.READY, TaskState.DONE}),
     TaskState.SKIPPED: frozenset(),

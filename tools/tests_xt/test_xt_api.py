@@ -24,6 +24,7 @@ from typing import Any, Protocol
 
 import pytest
 from fastapi.testclient import TestClient
+from onb_agents.approvals import ApprovalSpec, ApprovalStore
 from onb_api.auth.tokens import read_token
 from onb_api.documents.bucket import DocumentNotFoundError
 from onb_api.documents.meta import META_COLLECTION
@@ -1135,6 +1136,105 @@ def _webhook_check(client: TestClient, xt: World) -> None:
     assert len(_decisions_in(xt, ORG_A)) == 1
 
 
+# --- HIL-1: GET /approvals, POST /approvals/{id}/decision ----------------------------------------------------------
+# Org A's manager is the approver of org A's seeded approvals (seed_v1) and org B's of `appr_globex_xt`. Org B's
+# approval answers exactly like one nobody has, for every verb; an org-B manager cannot decide org A's; a
+# decision lands in org A only (the approval, its `approval.decided` event and job, its audit record) and
+# the second decision is 409. The decision route's request opens a fresh approval each call (a decision
+# changes the approval, and the generic checks send each request more than once).
+
+A_APPROVALS = frozenset({"appr_acme_001", "appr_acme_003", "appr_acme_004"})
+B_APPROVAL = "appr_globex_xt"
+B_MANAGER = ("u_globex_mgr1", ORG_B, Role.MANAGER)
+_fresh_approvals = itertools.count(1)
+
+
+def _open_approval(xt: World, org: str = ORG_A, approver: str = ACTORS[Role.MANAGER]) -> str:
+    """A pending approval of `org` for `approver`, new on every call (its task id is unique)."""
+    task = f"xt_task_{next(_fresh_approvals)}"
+    spec = ApprovalSpec("run_xt", task, "h_xt", "task", None, approver, None, f"Approve {task}", ["Laptop"], 48)
+
+    async def main() -> str:
+        store = xt.store()
+        try:
+            with tenant_scope(org):
+                created = await ApprovalStore(store).create(spec, now=datetime(2026, 11, 12, tzinfo=UTC))
+            return str(created["_id"])
+        finally:
+            await store.close()
+
+    return asyncio.run(main())
+
+
+def _approvals_request(_: World, role: Role) -> Request:
+    return {"method": "GET", "url": "/approvals", "headers": bearer(_token(role))}
+
+
+def _approvals_check(client: TestClient, xt: World) -> None:
+    def listed(who: tuple[str, str, Role], query: str = "") -> set[str]:
+        response = client.get(f"/approvals{query}", headers=bearer(token_for(*who)))
+        assert response.status_code == 200, response.text
+        return {r["id"] for r in response.json()["data"]}
+
+    manager_a = (ACTORS[Role.MANAGER], ORG_A, Role.MANAGER)
+    hr_a = (ACTORS[Role.HR], ORG_A, Role.HR)
+    admin_a = (ACTORS[Role.HR_ADMIN], ORG_A, Role.HR_ADMIN)
+    assert listed(manager_a) == A_APPROVALS
+    assert listed(hr_a, "?mine=false") == A_APPROVALS  # HR reads the org's: org A's
+    assert listed(admin_a, "?mine=false") == A_APPROVALS
+    assert listed(hr_a) == set()  # none is addressed to HR
+    assert listed(B_MANAGER) == {B_APPROVAL}  # and org B's manager sees only org B's
+    # Paging past org A's approvals finds nothing, not org B's.
+    assert client.get("/approvals?page=2&limit=3", headers=bearer(token_for(*manager_a))).json()["data"] == []
+    assert listed(manager_a, "?status=approved") == set()
+
+
+def _decide_request(xt: World, role: Role) -> Request:
+    return {
+        "method": "POST",
+        "url": f"/approvals/{_open_approval(xt)}/decision",
+        "headers": bearer(_token(role)),
+        "json": {"decision": "approve", "comment": "xt"},
+    }
+
+
+def _decide_check(client: TestClient, xt: World, unscoped: Unscoped) -> None:
+    manager = bearer(_token(Role.MANAGER))
+    body = {"decision": "approve"}
+    mine = _open_approval(xt)
+
+    def post(approval_id: str, headers: dict[str, str]) -> Response:
+        return client.post(f"/approvals/{approval_id}/decision", json=body, headers=headers)
+
+    def call() -> None:
+        foreign = post(B_APPROVAL, manager)
+        missing = post("appr_nobody_xt", manager)
+        assert foreign.status_code == 404, foreign.json()
+        assert_indistinguishable(seen(foreign), seen(missing), "POST /approvals/{id}/decision, org B's approval")
+        # Org B's own manager cannot decide org A's approval, and gets what a missing one gets.
+        crossed = post(mine, bearer(token_for(*B_MANAGER)))
+        assert crossed.status_code == 404, crossed.json()
+        assert_indistinguishable(seen(crossed), seen(missing), "POST /approvals/{id}/decision, org A's by org B")
+        assert post(mine, manager).status_code == 200
+        again = post(mine, manager)
+        assert again.status_code == 409, again.json()
+
+    _unchanged_for_b(xt, unscoped, call)
+    with unscoped("root read-back of the approval org A decided, its event, job and audit record"):
+        db = xt.root_db
+        stored = db["approvals"].find_one({"_id": mine})
+        events = list(db["events"].find({"type": "approval.decided", "payload.approval_id": mine}))
+        jobs = list(db["jobs"].find({"event_id": {"$in": [e["_id"] for e in events]}}))
+        audited = list(db["audit_log"].find({"action": "approval.decide", "target": f"approval:{mine}"}))
+        b_stored = db["approvals"].find_one({"_id": B_APPROVAL})
+    assert stored is not None
+    assert (stored["org_id"], stored["status"], stored["decision"]["channel"]) == (ORG_A, "approved", "web")
+    assert {e["org_id"] for e in events} == {j["org_id"] for j in jobs} == {a["org_id"] for a in audited} == {ORG_A}
+    assert len(events) == len(jobs) == len(audited) == 1  # the 404s and the 409 wrote nothing
+    assert b_stored is not None
+    assert b_stored["status"] == "pending"
+
+
 ALL_200: Mapping[Role, int] = dict.fromkeys(ACTORS, 200)
 ADMIN_ONLY: Mapping[Role, int] = {Role.HR_ADMIN: 200, Role.HR: 403, Role.MANAGER: 403}
 HR_ONLY: Mapping[Role, int] = {Role.HR_ADMIN: 200, Role.HR: 200, Role.MANAGER: 403}
@@ -1211,6 +1311,13 @@ ROUTE_CASES: Mapping[tuple[str, str], RouteCase] = {
     ("POST", "/runs/{run_id}/chat"): RouteCase(_chat_request, _chat_check, ALL_404),
     ("GET", "/runs/{run_id}/chat"): RouteCase(_history_request, _reads_only(_history_check), ALL_404),
     ("POST", "/runs/{run_id}/chat/confirm"): RouteCase(_confirm_request, _confirm_check, CONFIRM_404),
+    ("GET", "/approvals"): RouteCase(_approvals_request, _reads_only(_approvals_check), ALL_200),
+    ("POST", "/approvals/{approval_id}/decision"): RouteCase(
+        _decide_request,
+        _decide_check,
+        {Role.HR_ADMIN: 404, Role.HR: 404, Role.MANAGER: 200},
+        volatile=frozenset({"id", "task_id", "title", "requested_at", "decision"}),
+    ),
 }
 
 _ROUTE_IDS = [f"{method} {path}" for method, path in ROUTE_CASES]

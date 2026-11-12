@@ -18,6 +18,14 @@
    and, when the agent failed, `failure = {kind, reason}` (codes and counts only). A failed outcome raises
    `AgentTaskFailedError`, so the runner marks the task `failed` and the run fails visibly.
 
+Approvals (HIL-1, ADR 0020). For an `approval` task the agent is the Approvals Agent: its input names the
+approval the runner opened, its masked packet is stored on that approval (never on the task), and a packet
+it cannot produce (a failure, a refusal, `needs_human`) is recorded as a code while the human is asked
+anyway. For any other task, an `approval_required` refusal from the hub under one of the manifest's
+`requires_approval` rules, or a `needs_human` answer, raises `ApprovalRequestedError`: the runner opens an
+approval and the task waits. The scopes `approved:<rule>` of a task's token come only from the stored,
+approved `tool_call` approvals of that task.
+
 A task never sees a hire's PII: the agent's input is built by `agent_input` (ADR 0021): the action, the
 template's `inputs`, the hire's id, two opaque references and the hire's non-PII variables. Raw PII is
 resolved only at a sink.
@@ -32,6 +40,7 @@ from dataclasses import replace
 from datetime import timedelta
 from typing import Any, Final, Protocol
 
+from onb_agents.approvals import ApprovalStore
 from onb_agents.registry import AgentManifest, RegisteredAgent
 from onb_agents.runs import RunStore, TaskState, stored_dag
 from onb_agents.runtime import AgentRunner, AgentRunResult, AgentTask, ModelChoice, ToolSource
@@ -42,7 +51,7 @@ from onb_llm import LLMRuntime, LLMSelection
 from pymongo.errors import PyMongoError
 
 from .agent_input import agent_input
-from .executor import TaskWork
+from .executor import ApprovalRequestedError, TaskWork
 
 __all__ = [
     "AgentLookup",
@@ -139,6 +148,7 @@ class AgentTaskExecutor:
             raise ValueError("run_max_tokens must be a positive number of tokens")
         self._store = store
         self._runs = RunStore(store)
+        self._approvals = ApprovalStore(store)
         self._agents = agents
         self._models = models
         self._tools = tools
@@ -156,13 +166,13 @@ class AgentTaskExecutor:
         try:
             template_task = _template_task(run, work.task_id)
             registered = await self._registered(work.agent)
+            approval_id = await self._own_approval(work) if work.type == "approval" else None
             task = AgentTask(
                 org_id=current_tenant().org_id,
                 run_id=work.run_id,
                 task_id=work.task_id,
-                input=await agent_input(
-                    self._store, current_tenant().org_id, work.run_id, template_task, str(run["hire_id"])
-                ),
+                input=await self._input(work, template_task, str(run["hire_id"]), approval_id),
+                approvals=await self._approvals.approved_rules(work.run_id, work.task_id),
             )
             choice = await self._model(registered.manifest, task)
             budget = await self._run_budget(work.run_id)
@@ -185,7 +195,41 @@ class AgentTaskExecutor:
             failed = AgentTaskFailedError("error", type(error).__name__)
             await self._record_failure(work, failed)
             raise failed from None
+        if approval_id is not None:
+            await self._store_packet(work, approval_id, result)
+            return
         await self._finish(work, result)
+        asked = _approval_asked(registered.manifest, result, task.approvals)
+        if asked is not None:
+            raise asked
+
+    async def _input(
+        self, work: TaskWork, template_task: Mapping[str, Any], hire_id: str, approval_id: str | None
+    ) -> dict[str, Any]:
+        """What the agent is asked (AGT-1's `agent_input`) and, for the Approvals Agent, the approval to summarise."""
+        asked = await agent_input(self._store, current_tenant().org_id, work.run_id, template_task, hire_id)
+        return {**asked, "approval_id": approval_id} if approval_id is not None else dict(asked)
+
+    async def _own_approval(self, work: TaskWork) -> str:
+        """The approval the runner opened for this approval task (it opens it before the agent runs)."""
+        for approval in await self._approvals.for_task(work.run_id, work.task_id):
+            if approval["kind"] == "task":
+                return str(approval["_id"])
+        raise AgentTaskFailedError("no_approval", work.task_id)
+
+    async def _store_packet(self, work: TaskWork, approval_id: str, result: AgentRunResult) -> None:
+        """Keep the agent's packet on its approval, or the code for why there is none. The task itself is not
+        failed by a missing packet: the approver is asked either way."""
+        output = result.output or {}
+        packet = output.get("packet") if result.failure is None and output.get("status") == "ok" else None
+        if isinstance(packet, Mapping):
+            await self._approvals.set_packet(approval_id, packet)
+        else:
+            code = result.failure.kind if result.failure else (result.refusal or str(output.get("status", "no_packet")))
+            await self._approvals.set_packet(approval_id, None, failure=code)
+        await self._runs.record_outcome(
+            work.run_id, work.task_id, result=_stored(result), failure=None, only_if=TaskState.RUNNING
+        )
 
     async def _record_failure(self, work: TaskWork, error: AgentTaskFailedError) -> None:
         await self._runs.record_outcome(
@@ -277,6 +321,29 @@ def _template_task(run: Mapping[str, Any], task_id: str) -> Mapping[str, Any]:
             found: Mapping[str, Any] = task
             return found
     raise LookupError("the run's DAG has no such task")
+
+
+APPROVAL_REQUIRED: Final = "approval_required"
+
+
+def _approval_asked(
+    manifest: AgentManifest, result: AgentRunResult, approved: tuple[str, ...]
+) -> ApprovalRequestedError | None:
+    """What approval this finished attempt asks for, if any (FR-H5): the manifest rule behind a call the hub
+    refused with `approval_required` (a denial the manifest has no rule for opens nothing), else a
+    `needs_human` answer."""
+    for step in result.trajectory:
+        if step.kind != "tool" or step.outcome != "denied" or step.reason != APPROVAL_REQUIRED:
+            continue
+        _, _, tool = (step.name or "").partition("__")
+        collection = step.args.get("collection")
+        candidates = {tool} | ({f"{tool}:{collection}"} if isinstance(collection, str) else set())
+        for rule in manifest.requires_approval:
+            if rule in candidates:  # the hub's own matching (policy `_check_approval`)
+                return ApprovalRequestedError("tool_call", rule)
+    if (result.output or {}).get("status") == "needs_human":
+        return ApprovalRequestedError("needs_human")
+    return None
 
 
 def _stored(result: AgentRunResult) -> dict[str, Any]:

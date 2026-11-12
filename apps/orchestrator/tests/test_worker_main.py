@@ -47,7 +47,15 @@ def test_the_secret_is_never_in_the_settings_repr() -> None:
 def test_prepare_makes_every_index_and_runs_the_start_resume_cleanup_and_fail_task_consumers() -> None:
     db = MemoryDatabase()
     worker = asyncio.run(prepare(memory_store(db), stub_delay=0.0))
-    assert worker.consumers == (START_RUN, RESUME_RUN, CLEANUP_RUN, "orchestrator.fail_task")
+    # RUN-2 adds resume + cleanup, RUN-3 fail_task; HIL-1 adds resume_approval and record_decision
+    assert worker.consumers == (
+        START_RUN,
+        RESUME_RUN,
+        CLEANUP_RUN,
+        "orchestrator.fail_task",
+        "orchestrator.resume_approval",
+        "orchestrator.record_decision",
+    )
     indexed = {name for name, coll in db.collections.items() if coll.indexes}
     assert {"onboarding_runs", "run_tasks", "run_checkpoints", "run_checkpoint_writes", "events", "jobs"} <= indexed
 

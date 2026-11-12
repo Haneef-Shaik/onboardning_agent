@@ -31,13 +31,21 @@ from collections.abc import Mapping
 from dataclasses import dataclass, field
 from typing import Final
 
-from onb_agents.runs import CLEANUP_RUN, FAIL_TASK, RESUME_RUN, START_RUN, RunStore, run_bus
+from onb_agents.approvals import ApprovalStore
+from onb_agents.runs import CLEANUP_RUN, FAIL_TASK, RESUME_APPROVAL, RESUME_RUN, START_RUN, RunStore, run_bus
+from onb_contracts.notify import RECORD_DECISION_CONSUMER
 from onb_data import DataStore, connect
 from onb_eventbus import QueueSettings, Worker
 
 from .agents_setup import AgentSettings, ConfigError, build_agent_executor
 from .checkpointer import TenantCheckpointSaver
-from .consumer import cleanup_run_handler, fail_task_handler, start_run_handler
+from .consumer import (
+    cleanup_run_handler,
+    fail_task_handler,
+    record_decision_handler,
+    resume_approval_handler,
+    start_run_handler,
+)
 from .executor import StubExecutor, TaskExecutor
 from .policy import RunPolicy
 
@@ -143,7 +151,8 @@ async def prepare(
     """Make every index the orchestrator reads by, and a worker for its consumers: `orchestrator.start_run`
     and `orchestrator.resume_run` (the run's tasks go to `executor`, the stub when none is given),
     `orchestrator.cleanup_run` (a cancelled run's checkpoints) and `orchestrator.fail_task` (a sink refused a
-    task's grant, NOTIF-1).
+    task's grant, NOTIF-1), `orchestrator.resume_approval` (an approval was decided) and
+    `orchestrator.record_decision` (a Telegram press on an approval's buttons, HIL-1).
 
     The bus's job lease follows the policy's lease, so a killed worker's job and its task become claimable
     together."""
@@ -152,16 +161,20 @@ async def prepare(
     bus = run_bus(store, queue)
     await bus.ensure_indexes()
     await RunStore(store).ensure_indexes()
+    await ApprovalStore(store).ensure_indexes()
     await TenantCheckpointSaver(store).ensure_indexes()
     drain = asyncio.Event()
-    run_handler = start_run_handler(
-        store, executor or StubExecutor(delay=stub_delay), bus=bus, policy=policy, drain=drain
-    )
+    tasks = executor or StubExecutor(delay=stub_delay)
+    run_handler = start_run_handler(store, tasks, bus=bus, policy=policy, drain=drain)
     handlers = {
         START_RUN: run_handler,
         RESUME_RUN: run_handler,
         CLEANUP_RUN: cleanup_run_handler(store),
         FAIL_TASK: fail_task_handler(store),
+        RESUME_APPROVAL: resume_approval_handler(  # HIL-1: an approval was decided
+            store, tasks, bus=bus, policy=policy, drain=drain
+        ),
+        RECORD_DECISION_CONSUMER: record_decision_handler(store, bus),  # HIL-1: a Telegram press
     }
     return RunWorker(worker=bus.worker(handlers), consumers=tuple(handlers), drain=drain, drain_seconds=drain_seconds)
 

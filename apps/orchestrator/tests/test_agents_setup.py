@@ -95,12 +95,15 @@ def test_build_agent_executor_makes_an_agent_task_executor_on_the_fake_connector
     assert isinstance(executor, AgentTaskExecutor)
 
 
-def test_prepare_subscribes_the_start_run_and_fail_task_consumers() -> None:
+ALL = (START_RUN, RESUME_RUN, CLEANUP_RUN, FAIL_TASK, "orchestrator.resume_approval", "orchestrator.record_decision")
+
+
+def test_prepare_subscribes_the_start_run_fail_task_and_approval_consumers() -> None:
     worker = asyncio.run(prepare(memory_store(MemoryDatabase()), stub_delay=0.0))
-    assert worker.consumers == (START_RUN, RESUME_RUN, CLEANUP_RUN, FAIL_TASK)  # RUN-2 adds resume + cleanup
+    assert worker.consumers == ALL
 
 
 def test_prepare_uses_the_executor_it_is_given() -> None:
     given = StubExecutor()
     worker = asyncio.run(prepare(memory_store(MemoryDatabase()), stub_delay=0.0, executor=given))
-    assert worker.consumers == (START_RUN, RESUME_RUN, CLEANUP_RUN, FAIL_TASK)
+    assert worker.consumers == ALL
