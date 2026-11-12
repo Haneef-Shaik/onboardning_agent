@@ -199,16 +199,19 @@ def flatten(source: str, location: str, value: Any) -> Iterator[Item]:
 
 
 def flatten_json_lines(source: str, location: str, lines: Iterable[str]) -> Iterator[Item]:
-    """Log lines: the line itself, plus its fields when it is JSON."""
+    """Log lines: a JSON line field by field (keys and values: all it holds), any other line as it is."""
     for number, line in enumerate(lines, start=1):
-        yield Item(source, f"{location}:{number}", line)
         stripped = line.strip()
+        parsed: Any = None
         if stripped.startswith("{"):
             try:
                 parsed = json.loads(stripped)
             except ValueError:
-                continue
+                parsed = None
+        if isinstance(parsed, dict):
             yield from flatten(source, f"{location}:{number}", parsed)
+        else:
+            yield Item(source, f"{location}:{number}", line)
 
 
 def scan(items: Iterable[Item], fixture: Mapping[str, str], allow: Sequence[Allow] = ()) -> ScanResult:

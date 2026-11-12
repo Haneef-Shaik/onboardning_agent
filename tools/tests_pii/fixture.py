@@ -39,7 +39,7 @@ def _aadhaar() -> str:
     return body + verhoeff_check_digit(body)
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, repr=False)
 class PiiFixture:
     """One synthetic hire's sensitive values, and a second mobile for the `PUT` that supersedes the first."""
 
@@ -52,6 +52,9 @@ class PiiFixture:
     ifsc: str
     account_holder_name: str
     document_text: str
+
+    def __repr__(self) -> str:
+        return "PiiFixture(<synthetic values withheld>)"
 
     @classmethod
     def generate(cls) -> PiiFixture:

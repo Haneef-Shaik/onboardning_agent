@@ -165,3 +165,12 @@ def test_the_report_names_locations_never_values() -> None:
 def test_a_blank_fixture_value_is_refused() -> None:
     with pytest.raises(ValueError, match="blank"):
         scan_mod.raw_patterns({"mobile": " "})
+
+
+def test_a_json_log_line_is_scanned_field_by_field_and_a_plain_line_whole() -> None:
+    lines = [json.dumps({"msg": "boot", "limit": 7012345678}), f"plain {F['pan']}"]
+    items = list(scan_mod.flatten_json_lines("container_logs", "caddy", lines))
+    assert {i.location for i in items} == {"caddy:1.<key>", "caddy:1.msg", "caddy:1.limit", "caddy:2"}
+    rule = scan_mod.Allow("container_logs", r"caddy:\d+\.limit", "MOBILE", "a byte count")
+    result = scan_mod.scan(items, FIXTURE, (rule,))
+    assert [(h.label, h.location) for h in result.hits] == [("pan", "caddy:2"), ("PAN", "caddy:2")]

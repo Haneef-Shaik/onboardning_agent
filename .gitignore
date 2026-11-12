@@ -48,3 +48,6 @@ mongo-keyfile*
 
 # vitest json reporter output
 .vitest/
+
+# Generated make test-pii reports (SEC-1)
+reports/

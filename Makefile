@@ -12,7 +12,7 @@ export NX_TUI := false
 COMPOSE := docker compose
 ENV_FILE := .env
 
-.PHONY: bootstrap check plan-check env-check tooling-test contracts contracts-check lint typecheck test test-int test-xt evals-selftest seed fmt up down logs llm-health
+.PHONY: bootstrap check plan-check env-check tooling-test contracts contracts-check lint typecheck test test-int test-xt test-pii evals-selftest seed fmt up down logs llm-health
 
 ## Install the pinned toolchains: one uv virtualenv at the root, and node_modules.
 bootstrap:
@@ -71,6 +71,15 @@ test-xt: up
 	set -a && . ./$(ENV_FILE) && set +a && \
 	uv run --frozen pytest tools/tests_xt -q -o cache_dir=.pytest_cache/tests-xt && \
 	$(NX) run-many -t test-xt --output-style=static
+
+## PII leak scan and tamper report (SEC-1, PRD §12 PII and PII integrity): a full seed-template run with
+## synthetic fixture PII on the compose stack, then every collection but the vault, the logs, the Jaeger
+## traces, mock_outbox, the events and the LLM inputs are scanned for each raw value and every detector hit
+## (tools/tests_pii); then every vault, grant, token and document tamper case runs into one report.
+## Reports go to reports/test-pii/ (or $$PII_SCAN_REPORT_DIR).
+test-pii: up
+	set -a && . ./$(ENV_FILE) && set +a && \
+	uv run --frozen pytest tools/tests_pii -q -s -o cache_dir=.pytest_cache/tests-pii
 
 ## Eval harness self-test (PRD §8.2, MASTER-PLAN §7): every dataset case against its scripted output on
 ## the `fake` connector (no model calls), k=3, each repetition in a fresh database on the compose Mongo,
