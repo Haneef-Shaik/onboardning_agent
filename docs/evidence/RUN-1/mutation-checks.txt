@@ -19,7 +19,8 @@ M3 KILLED: a skipped dependency blocks its dependents (box 2)
 
 M4 KILLED: the runner no longer re-checks dependencies before readying a task (box 2)
   file: apps/orchestrator/src/onb_orchestrator/runner.py
-  failing tests (1):
+  failing tests (2):
+    apps/orchestrator/tests/test_run_failures.py::test_a_node_error_reaches_the_checkpoint_as_its_type_only
     apps/orchestrator/tests/test_run_graph.py::test_a_task_whose_dependency_is_not_finished_is_refused
 
 M5 KILLED: pending → running is allowed (box 2)
@@ -51,16 +52,16 @@ M8 KILLED: a skipped task is executed (box 2)
 
 M9 KILLED: the checkpoint thread is the bare run id (box 3)
   file: apps/orchestrator/src/onb_orchestrator/graph.py
-  failing tests (11):
+  failing tests (15):
+    apps/orchestrator/tests/test_run_failures.py::test_a_database_error_is_retried_and_the_run_is_left_to_the_retry
+    apps/orchestrator/tests/test_run_failures.py::test_a_failed_task_cancels_its_cut_off_sibling_and_every_task_after_it
+    apps/orchestrator/tests/test_run_failures.py::test_a_node_error_reaches_the_checkpoint_as_its_type_only
+    apps/orchestrator/tests/test_run_failures.py::test_a_task_another_delivery_is_running_is_not_executed_again
+    apps/orchestrator/tests/test_run_failures.py::test_overlapping_deliveries_never_run_a_task_twice_and_a_finished_run_is_not_an_error
     apps/orchestrator/tests/test_run_graph.py::test_a_failing_task_fails_the_run_and_its_dependents_never_start
     apps/orchestrator/tests/test_run_graph.py::test_a_graph_built_for_a_run_is_configured_with_its_thread
     apps/orchestrator/tests/test_run_graph.py::test_a_join_waits_for_every_branch_even_a_longer_one
-    apps/orchestrator/tests/test_run_graph.py::test_a_redelivered_job_resumes_a_run_that_stopped_part_way
-    apps/orchestrator/tests/test_run_graph.py::test_a_run_stays_pinned_to_its_version_after_a_newer_version_is_published
-    apps/orchestrator/tests/test_run_graph.py::test_a_skipped_dependency_does_not_block_its_dependent
-    apps/orchestrator/tests/test_run_graph.py::test_in_a_diamond_b_and_c_run_in_parallel_and_d_starts_only_after_both
-    apps/orchestrator/tests/test_run_graph.py::test_running_the_handler_again_executes_nothing_twice
-    ... and 3 more
+    ... and 7 more
 
 M10 KILLED: the checkpointer accepts another org's thread (box 3)
   file: apps/orchestrator/src/onb_orchestrator/checkpointer.py
@@ -92,7 +93,7 @@ M14 KILLED: a stored DAG is executed without checking its hash (box 4)
     libs/py-agents/tests/test_run_records.py::test_the_stored_dag_is_returned_only_when_its_hash_still_matches
 
 M15 KILLED: the consumer drives runs in states it does not own
-  file: apps/orchestrator/src/onb_orchestrator/runner.py
+  file: apps/orchestrator/src/onb_orchestrator/consumer.py
   failing tests (3):
     apps/orchestrator/tests/test_run_graph.py::test_a_run_in_a_state_this_orchestrator_does_not_drive_is_left_alone[blocked]
     apps/orchestrator/tests/test_run_graph.py::test_a_run_in_a_state_this_orchestrator_does_not_drive_is_left_alone[in_progress]
@@ -104,6 +105,39 @@ M16 KILLED: a manager may start a run (box 5 route guard)
     apps/api/tests/test_role_matrix.py::test_role_matrix[POST
     apps/api/tests/test_runs_route.py::test_a_manager_may_not_start_a_run
 
+M17 KILLED: a failed run leaves its unfinished tasks (a cut-off sibling stays running) (review HIGH)
+  file: apps/orchestrator/src/onb_orchestrator/consumer.py
+  failing tests (3):
+    apps/orchestrator/tests/test_run_failures.py::test_a_blocked_task_fails_the_run_instead_of_retrying_forever
+    apps/orchestrator/tests/test_run_failures.py::test_a_failed_task_cancels_its_cut_off_sibling_and_every_task_after_it
+    apps/orchestrator/tests/test_run_graph.py::test_a_failing_task_fails_the_run_and_its_dependents_never_start
+
+M18 KILLED: a task another delivery is running is executed again (review)
+  file: apps/orchestrator/src/onb_orchestrator/runner.py
+  failing tests (2):
+    apps/orchestrator/tests/test_run_failures.py::test_a_task_another_delivery_is_running_is_not_executed_again
+    apps/orchestrator/tests/test_run_failures.py::test_overlapping_deliveries_never_run_a_task_twice_and_a_finished_run_is_not_an_error
+
+M19 KILLED: a deterministic error is retried instead of failing the run (review MEDIUM)
+  file: apps/orchestrator/src/onb_orchestrator/consumer.py
+  failing tests (3):
+    apps/orchestrator/tests/test_run_failures.py::test_a_failed_task_cancels_its_cut_off_sibling_and_every_task_after_it
+    apps/orchestrator/tests/test_run_graph.py::test_a_failing_task_fails_the_run_and_its_dependents_never_start
+    apps/orchestrator/tests/test_run_graph.py::test_a_run_whose_stored_dag_was_changed_is_not_executed
+
+M20 KILLED: checkpoints load with the permissive msgpack hook (security MEDIUM)
+  file: apps/orchestrator/src/onb_orchestrator/checkpointer.py
+  failing tests (1):
+    apps/orchestrator/tests/test_checkpointer.py::test_a_planted_type_in_a_checkpoint_blob_is_never_built
+
+M21 KILLED: a node error reaches the checkpoint with its message (review LOW)
+  file: apps/orchestrator/src/onb_orchestrator/graph.py
+  failing tests (4):
+    apps/orchestrator/tests/test_run_failures.py::test_a_database_error_is_retried_and_the_run_is_left_to_the_retry
+    apps/orchestrator/tests/test_run_failures.py::test_a_node_error_reaches_the_checkpoint_as_its_type_only
+    apps/orchestrator/tests/test_run_failures.py::test_a_task_another_delivery_is_running_is_not_executed_again
+    apps/orchestrator/tests/test_run_failures.py::test_overlapping_deliveries_never_run_a_task_twice_and_a_finished_run_is_not_an_error
+
 source diff after all mutations: 0 files differ []
-mutations: 16, killed: 16, survivors: none
+mutations: 21, killed: 21, survivors: none
 exit=0
