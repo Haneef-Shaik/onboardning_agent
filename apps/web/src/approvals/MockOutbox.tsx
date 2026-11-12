@@ -68,7 +68,7 @@ function OutboxMessage({ client, me, message }: { client: ApiClient; me: Me; mes
         ))}
       {press.isSuccess && (
         <p role="status" className="mt-2 text-sm text-green-800">
-          Sent to the Telegram webhook. The decision reaches the run in a moment.
+          Sent to the Telegram webhook. The inbox shows whether it decided the approval.
         </p>
       )}
       {press.isError &&

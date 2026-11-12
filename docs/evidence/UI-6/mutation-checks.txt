@@ -11,21 +11,25 @@ M5 KILLED · relay: the webhook request runs in an empty context · apps/api/src
 M6 KILLED · relay: a non-2xx webhook answer is an error · apps/api/src/onb_api/notify/relay.py
     FAILED apps/api/tests/test_outbox_press.py::test_a_webhook_that_refuses_the_relay_is_503_and_publishes_nothing; FAILED apps/api/tests/test_outbox_press.py::test_a_relay_that_answers_an_error_raises
 M7 KILLED · press: the browser-facing route never sends the webhook secret · apps/api/src/onb_api/notify/routes.py
-    FAILED apps/api/tests/test_outbox_press.py::test_pressing_approve_on_my_message_calls_the_telegram_webhook_and_publishes_the_decision; FAILED apps/api/tests/test_outbox_press.py::test_reject_publishes_reject - As...; FAILED apps/api/tests/test_outbox_press.py::test_a_pending_approval_is_pressed
+    FAILED apps/api/tests/test_outbox_press.py::test_pressing_approve_on_my_message_calls_the_telegram_webhook_and_publishes_the_decision; FAILED apps/api/tests/test_outbox_press.py::test_reject_publishes_reject - As...; FAILED apps/api/tests/test_outbox_press.py::test_a_pending_approval_is_pressed; FAILED apps/api/tests/test_outbox_press.py::test_pressing_the_same_button_again_publishes_once
+M8 KILLED · press: one callback query per (message, button), so repeats publish once (security review) · apps/api/src/onb_api/notify/service.py
+    FAILED apps/api/tests/test_outbox_press.py::test_pressing_the_same_button_again_publishes_once
+M9 KILLED · relay: a route that raises is a RelayError (503), not a 500 (code/security review) · apps/api/src/onb_api/notify/relay.py
+    FAILED apps/api/tests/test_outbox_press.py::test_a_relayed_route_that_raises_is_a_relay_error
 W1 KILLED · UI: buttons only on messages addressed to the signed-in user · apps/web/src/approvals/MockOutbox.tsx
-    × shows the buttons only on messages addressed to the signed-in user 6ms; FAIL  src/approvals/ApprovalsSection.test.tsx > Mock Telegram outbox (FR-N2) > shows the buttons only on messages addressed to the signed-in user
+    × shows the buttons only on messages addressed to the signed-in user 11ms; FAIL  src/approvals/ApprovalsSection.test.tsx > Mock Telegram outbox (FR-N2) > shows the buttons only on messages addressed to the signed-in user
 W2 KILLED · UI: a 409 decision shows "already decided" · apps/web/src/approvals/ApprovalsInbox.tsx
-    × a second decision shows "already decided" 14ms; FAIL  src/approvals/ApprovalsSection.test.tsx > Approvals inbox (FR-H2, U5) > a second decision shows "already decided"
+    × a second decision shows "already decided" 16ms; FAIL  src/approvals/ApprovalsSection.test.tsx > Approvals inbox (FR-H2, U5) > a second decision shows "already decided"
 W3 KILLED · UI: a press sends the pressed button's id · apps/web/src/approvals/MockOutbox.tsx
-    × presses Reject with the reject button's id 1018ms; FAIL  src/approvals/ApprovalsSection.test.tsx > Mock Telegram outbox (FR-N2) > presses Reject with the reject button's id
+    × presses Reject with the reject button's id 1024ms; FAIL  src/approvals/ApprovalsSection.test.tsx > Mock Telegram outbox (FR-N2) > presses Reject with the reject button's id
 W4 KILLED · UI: the inbox lists the caller's own approvals · apps/web/src/approvals/approvals-api.ts
-    × asks for the caller's own approvals 10ms; FAIL  src/approvals/ApprovalsSection.test.tsx > Approvals inbox (FR-H2, U5) > asks for the caller's own approvals
+    × asks for the caller's own approvals 7ms; FAIL  src/approvals/ApprovalsSection.test.tsx > Approvals inbox (FR-H2, U5) > asks for the caller's own approvals
 W5 KILLED · UI: a 409 press shows "already decided" · apps/web/src/approvals/MockOutbox.tsx
-    × a press on a decided approval shows "already decided" 20ms; FAIL  src/approvals/ApprovalsSection.test.tsx > Mock Telegram outbox (FR-N2) > a press on a decided approval shows "already decided"
+    × a press on a decided approval shows "already decided" 16ms; FAIL  src/approvals/ApprovalsSection.test.tsx > Mock Telegram outbox (FR-N2) > a press on a decided approval shows "already decided"
 E1 KILLED · e2e box 2: the outbox press reaches the webhook (handler called directly instead) · apps/api/src/onb_api/notify/routes.py
-    ✘  2 [chromium] › apps/web/e2e/approvals.spec.ts:83:1 › the mock outbox's Approve button calls POST /webhooks/telegram and resumes the run (1.3s)
+    ✘  3 [chromium] › apps/web/e2e/approvals.spec.ts:89:1 › the mock outbox's Approve button calls POST /webhooks/telegram and resumes the run (1.3s)
 E2 KILLED · e2e box 1: a web decision is recorded (the decision call is dropped) · apps/web/src/approvals/ApprovalsInbox.tsx
-    ✘  1 [chromium] › apps/web/e2e/approvals.spec.ts:64:1 › approving from the inbox resumes the run (6.0s); ✘  2 [chromium] › apps/web/e2e/approvals.spec.ts:110:1 › a second decision shows "already decided" (6.4s)
+    ✘  1 [chromium] › apps/web/e2e/approvals.spec.ts:70:1 › approving from the inbox resumes the run (7.3s); ✘  2 [chromium] › apps/web/e2e/approvals.spec.ts:119:1 › a second decision shows "already decided" (7.7s)
 E3 KILLED · e2e box 3: the outbox press on a decided approval says "already decided" · apps/api/src/onb_api/notify/service.py
-    ✘  1 [chromium] › apps/web/e2e/approvals.spec.ts:110:1 › a second decision shows "already decided" (7.1s)
+    ✘  3 [chromium] › apps/web/e2e/approvals.spec.ts:119:1 › a second decision shows "already decided" (7.9s)
 source diff after all mutations: 0 files differ

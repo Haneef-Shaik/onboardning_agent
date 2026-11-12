@@ -185,17 +185,45 @@ def test_a_pending_approval_is_pressed(
     assert len(decisions.published) == 1
 
 
-def test_each_press_is_its_own_callback_query(
+def test_pressing_the_same_button_again_publishes_once(
     client: TestClient, notify_db: MemoryDatabase, decisions: RecordedDecisions
 ) -> None:
-    """Like two taps in Telegram: two callback queries. The first decision still wins downstream (HIL-1)."""
+    """One callback query per (message, button): repeats are deduplicated by the bus key, so a message publishes at
+    most one event per button however often it is pressed (security review: unbounded presses)."""
+    buttons = seed_message(notify_db, A)
+    outbox_id = message_id(notify_db)
+    for _ in range(5):
+        assert press(client, outbox_id, buttons["approve"]).status_code == 200
+    assert len(decisions.published) == 1
+    assert decisions.duplicates == 4
+
+
+def test_the_other_button_is_its_own_press(
+    client: TestClient, notify_db: MemoryDatabase, decisions: RecordedDecisions
+) -> None:
+    """Approve, then Reject: two callback queries; the first decision still wins downstream (HIL-1)."""
     buttons = seed_message(notify_db, A)
     outbox_id = message_id(notify_db)
     press(client, outbox_id, buttons["approve"])
     press(client, outbox_id, buttons["reject"])
-    keys = [key for _, key, _ in decisions.published]
-    assert len(keys) == 2
-    assert len(set(keys)) == 2
+    assert [p["decision"] for _, _, p in decisions.published] == ["approve", "reject"]
+
+
+def test_a_stored_message_number_that_is_not_a_number_still_presses(
+    client: TestClient, notify_db: MemoryDatabase, decisions: RecordedDecisions
+) -> None:
+    buttons = seed_message(notify_db, A)
+    notify_db["mock_outbox"].documents[0]["message_id"] = "not-a-number"
+    assert press(client, message_id(notify_db), buttons["approve"]).status_code == 200
+    assert len(decisions.published) == 1
+
+
+def test_a_relayed_route_that_raises_is_a_relay_error() -> None:
+    async def app(scope: Any, receive: Any, send: Any) -> None:
+        raise RuntimeError("the bus is down")
+
+    with pytest.raises(RelayError, match="RuntimeError"):
+        asyncio.run(post_json(app, "/webhooks/telegram", {}, headers={}))
 
 
 def test_the_press_needs_a_token(client: TestClient, notify_db: MemoryDatabase) -> None:

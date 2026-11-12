@@ -133,8 +133,10 @@ class PumpDecisions:
 
     def __init__(self, bus: PumpBus) -> None:
         self._bus = bus
+        self.outbox_ids: list[str] = []  # the messages whose press reached the webhook handler, for the tests
 
     async def publish(self, payload: Mapping[str, Any], *, key: str) -> bool:
+        self.outbox_ids.append(str(payload.get("outbox_id")))
         result = await self._bus.publish(DECISION_RECEIVED, payload, idempotency_key=key)
         return not result.duplicate
 
@@ -143,13 +145,16 @@ class PumpDecisions:
 class ApprovalWorld:
     approvals: ApprovalService
     notify: MockChannels
+    decisions: PumpDecisions
     start: Callable[[], Awaitable[dict[str, Any]]]
 
 
 async def approval_world(
-    store: DataStore, runs: RunService, hires: HireService, hire_id: str, webhook_secret: str
+    store: DataStore | None, runs: RunService, hires: HireService, hire_id: str, webhook_secret: str
 ) -> ApprovalWorld:
     """The approval and notify services over the run store's database, wired to the real consumers."""
+    if store is None:
+        raise ValueError("the run driver must expose its database (RunDriver.data)")
     bus = PumpBus()
     executor = StubApprovalsAgent(store=store)
     bus.route(
@@ -174,7 +179,8 @@ async def approval_world(
                 await store.tenant("users").insert_one({"_id": user_id, "role": role.value})
 
     approvals = ApprovalService.build(store, bus, auditor=InMemoryAuditLog())
-    notify = MockChannels(store, webhook_secret=webhook_secret, decisions=PumpDecisions(bus))
+    decisions = PumpDecisions(bus)
+    notify = MockChannels(store, webhook_secret=webhook_secret, decisions=decisions)
     run_store = RunStore(store)
 
     async def start() -> dict[str, Any]:
@@ -192,7 +198,7 @@ async def approval_world(
             "run_status": run.get("status"),
         }
 
-    return ApprovalWorld(approvals=approvals, notify=notify, start=start)
+    return ApprovalWorld(approvals=approvals, notify=notify, decisions=decisions, start=start)
 
 
 def approval_router(world: ApprovalWorld) -> APIRouter:
@@ -201,6 +207,11 @@ def approval_router(world: ApprovalWorld) -> APIRouter:
     @router.post("/approval-runs")
     async def start() -> dict[str, Any]:
         return await world.start()
+
+    @router.get("/webhook-decisions")
+    async def webhook_decisions() -> dict[str, list[str]]:
+        """The outbox messages whose press the webhook handler turned into `decision.received`."""
+        return {"outbox_ids": list(world.decisions.outbox_ids)}
 
     return router
 

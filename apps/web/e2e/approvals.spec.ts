@@ -7,7 +7,7 @@
  * and an outbox press through the real webhook → `decision.received` → `orchestrator.record_decision` path
  * (`e2e/approval_seed.py`). The browser never holds the webhook secret.
  */
-import { expect, test, type APIRequestContext, type Browser, type Page } from "@playwright/test";
+import { expect, test, type APIRequestContext, type Browser, type BrowserContext, type Page } from "@playwright/test";
 import { openSection, signInAs } from "./helpers";
 
 const API = `http://127.0.0.1:${process.env.E2E_API_PORT ?? "18731"}`;
@@ -29,6 +29,11 @@ async function startRun(request: APIRequestContext): Promise<{ runId: string; ap
 
 async function webhookCalls(request: APIRequestContext): Promise<number> {
   return ((await (await request.get(`${API}/e2e/webhook-calls`)).json()) as { telegram: number }).telegram;
+}
+
+/** The outbox messages whose press the webhook handler turned into `decision.received` (server-side record). */
+async function webhookDecisions(request: APIRequestContext): Promise<string[]> {
+  return ((await (await request.get(`${API}/e2e/webhook-decisions`)).json()) as { outbox_ids: string[] }).outbox_ids;
 }
 
 async function openRun(page: Page, runId: string) {
@@ -55,10 +60,11 @@ async function expectResumed(page: Page, runId: string) {
   await expect(page.getByTestId("run-status")).toHaveAttribute("data-status", "completed");
 }
 
-async function managerPage(browser: Browser): Promise<Page> {
-  const page = await (await browser.newContext()).newPage();
+async function managerContext(browser: Browser): Promise<{ context: BrowserContext; page: Page }> {
+  const context = await browser.newContext();
+  const page = await context.newPage();
   await signInAs(page, "MANAGER");
-  return page;
+  return { context, page };
 }
 
 test("approving from the inbox resumes the run", async ({ page, request }) => {
@@ -90,13 +96,16 @@ test("the mock outbox's Approve button calls POST /webhooks/telegram and resumes
   await openOutbox(page);
   const message = outboxMessage(page, runId);
   await expect(message).toContainText("Approval needed: Manager approves equipment & access");
+  const outboxId = ((await message.getAttribute("data-testid")) ?? "").replace(/^outbox-/, "");
+  expect(await webhookDecisions(request)).not.toContain(outboxId);
   const pressed = page.waitForRequest((sent) => sent.method() === "POST" && sent.url().includes("/press"));
   await message.getByRole("button", { name: "Approve" }).click();
   expect(new URL((await pressed).url()).pathname).toMatch(/^\/api\/mock-outbox\/[^/]+\/press$/);
   await expect(message.getByRole("status")).toContainText("Sent to the Telegram webhook");
 
-  // The API called the webhook (counted at the server), the browser never did, and no secret was sent by it.
+  // The API called the webhook for this message (recorded at the server), the browser never did.
   expect(await webhookCalls(request)).toBeGreaterThan(before);
+  expect(await webhookDecisions(request)).toContain(outboxId);
   expect(browserCalls.filter((call) => call.includes("/webhooks/"))).toEqual([]);
 
   // The decision arrived through Telegram's path: recorded with channel "telegram", and the run went on.
@@ -118,10 +127,15 @@ test('a second decision shows "already decided"', async ({ page, browser, reques
   await page.route("**/api/approvals?*", (route) => route.abort());
 
   // The first decision, from another session.
-  const other = await managerPage(browser);
-  await openSection(other, "Approvals");
-  await other.getByTestId(`approval-${approvalId}`).getByRole("button", { name: "Reject" }).click();
-  await expect(other.getByTestId(`approval-${approvalId}`).getByRole("status")).toContainText("Decision recorded");
+  const other = await managerContext(browser);
+  try {
+    await openSection(other.page, "Approvals");
+    const card = other.page.getByTestId(`approval-${approvalId}`);
+    await card.getByRole("button", { name: "Reject" }).click();
+    await expect(card.getByRole("status")).toContainText("Decision recorded");
+  } finally {
+    await other.context.close();
+  }
 
   // A second decision from the stale inbox.
   await staleCard.getByRole("button", { name: "Approve" }).click();

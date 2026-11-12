@@ -17,6 +17,7 @@ caller learns nothing about which ids exist.
 
 from __future__ import annotations
 
+import hashlib
 import hmac
 import logging
 import re
@@ -142,19 +143,28 @@ def _readable(doc: Mapping[str, Any]) -> MockOutboxMessage | None:
         return None
 
 
-_MOCK_PRESSER: Final = {"id": 0, "is_bot": False, "first_name": "Mock outbox"}
+def _query_id(outbox_id: str, callback_data: str) -> str:
+    """The callback query id of a press: fixed per (message, button), so pressing the same button again is the same
+    query and the bus publishes it once (`telegram:callback:<id>`), like Telegram's retries of one tap. A message
+    can thus publish at most one event per button, however often it is pressed."""
+    digest = hashlib.sha256(f"mock-outbox\x1f{outbox_id}\x1f{callback_data}".encode()).digest()
+    return str(int.from_bytes(digest[:8], "big") >> 1)
 
 
-def _callback_update(callback_data: str, message_id: int) -> dict[str, Any]:
-    """A Bot API `Update` with a `callback_query`, as Telegram sends for one tap: a fresh query id per tap. The
-    presser carries no Telegram identity (the webhook never uses one: ADR 0013, ADR 0020 §5)."""
+def _message_number(value: object) -> int:
+    return value if isinstance(value, int) and not isinstance(value, bool) and value >= 0 else 0
+
+
+def _callback_update(outbox_id: str, callback_data: str, message_number: int) -> dict[str, Any]:
+    """A Bot API `Update` with a `callback_query`, as Telegram sends for a tap. The presser carries no Telegram
+    identity (the webhook never uses one: ADR 0013, ADR 0020 §5)."""
     return {
         "update_id": secrets.randbelow(2**31),
         "callback_query": {
-            "id": str(secrets.randbits(63)),
-            "from": _MOCK_PRESSER,
+            "id": _query_id(outbox_id, callback_data),
+            "from": {"id": 0, "is_bot": False, "first_name": "Mock outbox"},
             "chat_instance": "mock-outbox",
-            "message": {"message_id": message_id, "date": 0, "chat": {"id": 0, "type": "private"}},
+            "message": {"message_id": message_number, "date": 0, "chat": {"id": 0, "type": "private"}},
             "data": callback_data,
         },
     }
@@ -200,7 +210,7 @@ class MockChannels:
             )
             if approval is not None and approval.get("status") != "pending":
                 raise AlreadyDecidedPressError(str(ref.get("id")))
-        return _callback_update(callback_data, int(message.get("message_id", 0)))
+        return _callback_update(message_id, callback_data, _message_number(message.get("message_id")))
 
     def webhook_headers(self) -> dict[str, str]:
         """The header Telegram sends with every webhook call. Server-side only: never in a response."""

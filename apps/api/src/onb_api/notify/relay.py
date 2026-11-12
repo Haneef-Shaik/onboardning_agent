@@ -83,7 +83,12 @@ async def post_json(
         "state": {},
     }
     task = asyncio.get_running_loop().create_task(_call(app, scope, body), context=contextvars.Context())
-    status = await task
+    try:
+        status = await task
+    except RelayError:
+        raise
+    except Exception as error:  # the route crashed past the app's own error handling: report it as a failed call
+        raise RelayError(f"{path} raised {type(error).__name__}") from error
     if not 200 <= status < 300:
         raise RelayError(f"{path} answered {status}")
     return status

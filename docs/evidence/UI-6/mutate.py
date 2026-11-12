@@ -97,6 +97,22 @@ MUTATIONS = [
         PRESS_TESTS,
     ),
     Mutation(
+        "M8",
+        "press: one callback query per (message, button), so repeats publish once (security review)",
+        SERVICE,
+        '"id": _query_id(outbox_id, callback_data),',
+        '"id": str(secrets.randbits(63)),',
+        PRESS_TESTS,
+    ),
+    Mutation(
+        "M9",
+        "relay: a route that raises is a RelayError (503), not a 500 (code/security review)",
+        RELAY,
+        "    except Exception as error:  # the route crashed",
+        "    except ZeroDivisionError as error:  # the route crashed",
+        PRESS_TESTS,
+    ),
+    Mutation(
         "W1",
         "UI: buttons only on messages addressed to the signed-in user",
         OUTBOX,
