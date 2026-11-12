@@ -89,7 +89,9 @@ def test_the_provisioning_agent_reaches_only_the_two_mock_tools_and_reads_run_ta
     assert set(manifest.mcp) == {MONGO_SERVER, "mocks"}
     assert set(manifest.mcp["mocks"].tools) == {"create_bitbucket_account", "provision_laptop"}
     grant = manifest.mcp[MONGO_SERVER].collections
-    assert grant is not None and grant.read == ("run_tasks",) and grant.write == ()
+    assert grant is not None
+    assert grant.read == ("run_tasks",)
+    assert grant.write == ()
 
 
 def test_the_db_agent_never_writes_the_hire_record() -> None:
