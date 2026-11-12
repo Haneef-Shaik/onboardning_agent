@@ -5,6 +5,9 @@ from __future__ import annotations
 
 import asyncio
 import json
+import secrets
+import string
+import time
 import uuid
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
@@ -91,9 +94,29 @@ class Trail:
         return dict(self.span.attributes or {})
 
 
+SPAN_WAIT_SECONDS = 5.0
+
+
+def new_marker() -> str:
+    """A fresh 12-letter test marker. Letters only: an all-digit hex marker (about 1 in 280) reads
+    as a number to the hub's PII guard and gets refused, which made these tests flaky."""
+    return "".join(secrets.choice(string.ascii_lowercase) for _ in range(12))
+
+
+def _one_hub_span(stack: Stack, run_id: str) -> ReadableSpan:
+    """The hub can answer before its span ends and is exported; wait briefly for exactly one."""
+    deadline = time.monotonic() + SPAN_WAIT_SECONDS
+    spans = hub_spans(stack, run_id)
+    while not spans and time.monotonic() < deadline:
+        time.sleep(0.05)
+        spans = hub_spans(stack, run_id)
+    [span] = spans
+    return span
+
+
 def trail(stack: Stack, run_id: str, org: str) -> Trail:
     """The one hub span of `run_id`, and the audit records written under its trace in `org`."""
-    [span] = hub_spans(stack, run_id)
+    span = _one_hub_span(stack, run_id)
     trace_id = format(span.context.trace_id, "032x")
 
     async def read() -> tuple[AuditEntry, ...]:

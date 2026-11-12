@@ -24,7 +24,7 @@ from typing import Any
 import pytest
 from mcp.types import CallToolResult
 
-from .client import agent_claims, call, list_tools, new_run, text
+from .client import agent_claims, call, list_tools, new_marker, new_run, text
 from .conftest import Stack
 
 A, B = "org_acme", "org_globex"
@@ -166,7 +166,7 @@ HUB_TOOL_CASES: dict[str, Callable[[Stack, World], None]] = {
 
 @pytest.fixture
 def world(root_db: Any) -> World:
-    marker = secrets.token_hex(6)
+    marker = new_marker()
     root_db["run_tasks"].insert_many(
         [{"org_id": A, "marker": marker, "side": "a"} for _ in range(2)]
         + [{"org_id": B, "marker": marker, "side": "b"} for _ in range(3)]

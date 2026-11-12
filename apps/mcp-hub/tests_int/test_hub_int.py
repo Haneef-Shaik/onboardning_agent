@@ -8,7 +8,6 @@ from __future__ import annotations
 import copy
 import hashlib
 import json
-import secrets
 import time
 from collections.abc import Callable
 from contextlib import AbstractContextManager
@@ -17,7 +16,7 @@ from typing import Any
 from onb_agents.tokens import hub_client_config, issue_agent_token
 from onb_data import ActorType, AuditOutcome
 
-from .client import agent_claims, call, everything, list_tools, new_run, text, trail
+from .client import agent_claims, call, everything, list_tools, new_marker, new_run, text, trail
 from .conftest import Stack
 
 Unscoped = Callable[[str], AbstractContextManager[None]]
@@ -108,7 +107,7 @@ def test_int_a_vault_name_in_a_pipeline_is_hard_denied_for_a_registered_agent(st
 def test_int_an_allowed_call_is_scoped_to_the_token_org_even_when_its_args_name_another_org(
     stack: Stack, root_db: Any
 ) -> None:
-    marker = secrets.token_hex(6)
+    marker = new_marker()
     root_db["run_tasks"].insert_many(
         [
             {"org_id": "org_acme", "marker": marker, "owner": "org_globex", "status": "open"},
@@ -138,7 +137,7 @@ def test_int_an_allowed_call_is_scoped_to_the_token_org_even_when_its_args_name_
 
 
 def test_int_an_update_naming_another_orgs_document_matches_nothing(stack: Stack, root_db: Any, unscoped: Any) -> None:
-    marker = secrets.token_hex(6)
+    marker = new_marker()
     root_db["run_tasks"].insert_one({"org_id": "org_globex", "marker": marker, "status": "open"})
     claims = agent_claims("db_agent", "org_acme", new_run(), DB_SCOPES)
     args = {"collection": "run_tasks", "filter": {"marker": marker}, "update": {"$set": {"status": "hijacked"}}}
@@ -163,7 +162,7 @@ def test_int_an_org_id_in_the_arguments_is_denied(stack: Stack) -> None:
 def test_int_a_raw_mobile_stored_in_a_tenant_document_is_redacted_before_it_reaches_the_agent(
     stack: Stack, root_db: Any
 ) -> None:
-    marker = secrets.token_hex(6)
+    marker = new_marker()
     mobile = "9876543210"  # synthetic: a leaked raw value that should only ever be in the vault
     root_db["run_tasks"].insert_one({"org_id": "org_acme", "marker": marker, "note": f"call {mobile} re laptop"})
     run_id = new_run()
@@ -182,7 +181,7 @@ def test_int_a_raw_mobile_stored_in_a_tenant_document_is_redacted_before_it_reac
 
 
 def test_int_downstream_credentials_never_appear_in_responses_or_agent_side_config(stack: Stack, root_db: Any) -> None:
-    marker = secrets.token_hex(6)
+    marker = new_marker()
     root_db["run_tasks"].insert_one({"org_id": "org_acme", "marker": marker, "note": "plain"})
     claims = agent_claims("db_agent", "org_acme", new_run(), DB_SCOPES)
     token = issue_agent_token(claims, stack.token_key)
@@ -201,7 +200,7 @@ def test_int_downstream_credentials_never_appear_in_responses_or_agent_side_conf
 
 
 def test_int_a_stored_credential_is_withheld_whole(stack: Stack, root_db: Any) -> None:
-    marker = secrets.token_hex(6)
+    marker = new_marker()
     root_db["run_tasks"].insert_one({"org_id": "org_acme", "marker": marker, "note": f"key {stack.context_key}"})
     run_id = new_run()
     claims = agent_claims("db_agent", "org_acme", run_id, DB_SCOPES)
