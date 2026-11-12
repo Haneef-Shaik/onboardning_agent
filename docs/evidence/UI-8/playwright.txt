@@ -4,15 +4,15 @@
 
 Running 9 tests using 5 workers
 
-  ✓  5 [chromium] › apps/web/e2e/smoke.spec.ts:49:3 › HR_ADMIN signs in and sees the HR_ADMIN nav (1.9s)
-  ✓  2 [chromium] › apps/web/e2e/admin.spec.ts:85:1 › an agent's page shows its connector, model, allowed tools and recent denials from the audit log (2.0s)
-  ✓  1 [chromium] › apps/web/e2e/admin.spec.ts:121:3 › u_acme_mgr_ravi@example.com is refused every admin view and every admin route (2.0s)
-  ✓  3 [chromium] › apps/web/e2e/admin.spec.ts:121:3 › u_acme_hr1@example.com is refused every admin view and every admin route (2.0s)
-  ✓  8 [chromium] › apps/web/e2e/smoke.spec.ts:79:1 › a wrong password shows the login error and does not sign in (802ms)
-  ✓  6 [chromium] › apps/web/e2e/smoke.spec.ts:49:3 › HR signs in and sees the HR nav (934ms)
-  ✓  4 [chromium] › apps/web/e2e/admin.spec.ts:44:1 › HR_ADMIN opens each admin view and sees seeded data (2.9s)
-  ✓  7 [chromium] › apps/web/e2e/smoke.spec.ts:49:3 › MANAGER signs in and sees the MANAGER nav (971ms)
-  ✓  9 [chromium] › apps/web/e2e/smoke.spec.ts:86:1 › a reload signs the user out: the token is in memory only (1.1s)
+  ✓  4 [chromium] › apps/web/e2e/smoke.spec.ts:49:3 › HR_ADMIN signs in and sees the HR_ADMIN nav (1.5s)
+  ✓  1 [chromium] › apps/web/e2e/admin.spec.ts:121:3 › u_acme_mgr_ravi@example.com is refused every admin view and every admin route (1.5s)
+  ✓  2 [chromium] › apps/web/e2e/admin.spec.ts:121:3 › u_acme_hr1@example.com is refused every admin view and every admin route (1.5s)
+  ✓  3 [chromium] › apps/web/e2e/admin.spec.ts:85:1 › an agent's page shows its connector, model, allowed tools and recent denials from the audit log (1.5s)
+  ✓  7 [chromium] › apps/web/e2e/smoke.spec.ts:49:3 › MANAGER signs in and sees the MANAGER nav (793ms)
+  ✓  5 [chromium] › apps/web/e2e/admin.spec.ts:44:1 › HR_ADMIN opens each admin view and sees seeded data (2.3s)
+  ✓  8 [chromium] › apps/web/e2e/smoke.spec.ts:79:1 › a wrong password shows the login error and does not sign in (814ms)
+  ✓  6 [chromium] › apps/web/e2e/smoke.spec.ts:49:3 › HR signs in and sees the HR nav (963ms)
+  ✓  9 [chromium] › apps/web/e2e/smoke.spec.ts:86:1 › a reload signs the user out: the token is in memory only (952ms)
 
-  9 passed (6.6s)
+  9 passed (4.5s)
 exit 0

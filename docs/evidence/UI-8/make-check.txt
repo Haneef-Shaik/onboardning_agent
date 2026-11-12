@@ -12,7 +12,7 @@ uv run --frozen pytest tools/tests scripts/plan/test_plan.py -q
 ........................................................................ [ 41%]
 ........................................................................ [ 82%]
 ..............................                                                [100%]
-174 passed, 67 subtests passed in 4.01s
+174 passed, 67 subtests passed in 4.07s
 node_modules/.bin/nx run-many -t lint --output-style=static
 
  NX   Running target lint for 17 projects:
@@ -82,6 +82,15 @@ All checks passed!
 
 27 files already formatted
 
+> nx run py-contracts:lint  [existing outputs match the cache, left as is]
+
+> uv run --frozen ruff check libs/py-contracts
+
+All checks passed!
+> uv run --frozen ruff format --check libs/py-contracts
+
+24 files already formatted
+
 > nx run mcp-mongo:lint  [existing outputs match the cache, left as is]
 
 > uv run --frozen ruff check apps/mcp-mongo
@@ -99,6 +108,11 @@ All checks passed!
 > uv run --frozen ruff format --check libs/py-agents
 
 49 files already formatted
+
+> nx run ts-api-client:lint  [existing outputs match the cache, left as is]
+
+> eslint --max-warnings=0 libs/ts-api-client
+
 
 > nx run ts-ui:lint  [existing outputs match the cache, left as is]
 
@@ -137,6 +151,15 @@ All checks passed!
 
 56 files already formatted
 
+> nx run api:lint  [existing outputs match the cache, left as is]
+
+> uv run --frozen ruff check apps/api
+
+All checks passed!
+> uv run --frozen ruff format --check apps/api
+
+80 files already formatted
+
 > nx run py-eventbus:lint  [existing outputs match the cache, left as is]
 
 > uv run --frozen ruff check libs/py-eventbus
@@ -155,39 +178,16 @@ All checks passed!
 
 2 files already formatted
 
-> nx run api:lint
-
-> uv run --frozen ruff check apps/api
-
-All checks passed!
-> uv run --frozen ruff format --check apps/api
-
-70 files already formatted
-
-> nx run py-contracts:lint
-
-> uv run --frozen ruff check libs/py-contracts
-
-All checks passed!
-> uv run --frozen ruff format --check libs/py-contracts
-
-22 files already formatted
-
-> nx run ts-api-client:lint
-
-> eslint --max-warnings=0 libs/ts-api-client
-
-
 
 
  NX   Successfully ran target lint for 17 projects
 
-Nx read the output from the cache instead of running the command for 14 out of 17 tasks.
+Nx read the output from the cache instead of running the command for 17 out of 17 tasks.
 
-  Run duration:      665ms
-  Cache:             14/17 hit (82%)
-  Critical path:     646ms (1 task)
-  Recoverable time:  1ms (0% of the run)
+  Run duration:      14ms
+  Cache:             17/17 hit (100%)
+  Critical path:     <1ms (1 task)
+  Recoverable time:  <1ms
 node_modules/.bin/nx run-many -t typecheck --output-style=static
 
  NX   Running target typecheck for 17 projects:
@@ -242,11 +242,23 @@ Success: no issues found in 27 source files(B
 
 Success: no issues found in 45 source files(B
 
+> nx run py-contracts:typecheck  [existing outputs match the cache, left as is]
+
+> uv run --frozen mypy --cache-dir .mypy_cache/py-contracts libs/py-contracts/src libs/py-contracts/tests
+
+Success: no issues found in 24 source files(B
+
 > nx run mcp-mongo:typecheck  [existing outputs match the cache, left as is]
 
 > uv run --frozen mypy --cache-dir .mypy_cache/mcp-mongo apps/mcp-mongo/src apps/mcp-mongo/tests apps/mcp-mongo/tests_int
 
 Success: no issues found in 34 source files(B
+
+> nx run py-agents:typecheck  [existing outputs match the cache, left as is]
+
+> uv run --frozen mypy --cache-dir .mypy_cache/py-agents libs/py-agents/src libs/py-agents/tests
+
+Success: no issues found in 49 source files(B
 
 > nx run mcp-mocks:typecheck  [existing outputs match the cache, left as is]
 
@@ -259,11 +271,42 @@ Success: no issues found in 19 source files(B
 > tsc -p libs/ts-ui/tsconfig.json
 
 
+> nx run ts-api-client:typecheck  [existing outputs match the cache, left as is]
+
+> tsc -p libs/ts-api-client/tsconfig.json
+
+
 > nx run py-eventbus:typecheck  [existing outputs match the cache, left as is]
 
 > uv run --frozen mypy --cache-dir .mypy_cache/py-eventbus libs/py-eventbus/src libs/py-eventbus/tests libs/py-eventbus/tests_int
 
 Success: no issues found in 19 source files(B
+
+> nx run api:typecheck  [existing outputs match the cache, left as is]
+
+> uv run --frozen mypy --cache-dir .mypy_cache/api apps/api/src apps/api/tests
+
+Success: no issues found in 75 source files(B
+> uv run --frozen mypy --cache-dir .mypy_cache/api-int apps/api/src apps/api/tests_int
+
+Success: no issues found in 58 source files(B
+
+> nx run mcp-hub:typecheck  [existing outputs match the cache, left as is]
+
+> uv run --frozen mypy --cache-dir .mypy_cache/mcp-hub apps/mcp-hub/src apps/mcp-hub/tests apps/mcp-hub/tests_int
+
+Success: no issues found in 31 source files(B
+
+> nx run py-evals:typecheck  [existing outputs match the cache, left as is]
+
+> uv run --frozen mypy --cache-dir .mypy_cache/py-evals libs/py-evals/src libs/py-evals/tests libs/py-evals/tests_int
+
+Success: no issues found in 56 source files(B
+
+> nx run web:typecheck  [existing outputs match the cache, left as is]
+
+> tsc -p apps/web/tsconfig.json && tsc -p apps/web/tsconfig.node.json
+
 
 > nx run orchestrator:typecheck  [existing outputs match the cache, left as is]
 
@@ -271,59 +314,16 @@ Success: no issues found in 19 source files(B
 
 Success: no issues found in 2 source files(B
 
-> nx run py-contracts:typecheck
-
-> uv run --frozen mypy --cache-dir .mypy_cache/py-contracts libs/py-contracts/src libs/py-contracts/tests
-
-Success: no issues found in 22 source files(B
-
-> nx run ts-api-client:typecheck
-
-> tsc -p libs/ts-api-client/tsconfig.json
-
-
-> nx run py-agents:typecheck
-
-> uv run --frozen mypy --cache-dir .mypy_cache/py-agents libs/py-agents/src libs/py-agents/tests
-
-Success: no issues found in 49 source files(B
-
-> nx run mcp-hub:typecheck
-
-> uv run --frozen mypy --cache-dir .mypy_cache/mcp-hub apps/mcp-hub/src apps/mcp-hub/tests apps/mcp-hub/tests_int
-
-Success: no issues found in 31 source files(B
-
-> nx run py-evals:typecheck
-
-> uv run --frozen mypy --cache-dir .mypy_cache/py-evals libs/py-evals/src libs/py-evals/tests libs/py-evals/tests_int
-
-Success: no issues found in 56 source files(B
-
-> nx run api:typecheck
-
-> uv run --frozen mypy --cache-dir .mypy_cache/api apps/api/src apps/api/tests
-
-Success: no issues found in 66 source files(B
-> uv run --frozen mypy --cache-dir .mypy_cache/api-int apps/api/src apps/api/tests_int
-
-Success: no issues found in 50 source files(B
-
-> nx run web:typecheck
-
-> tsc -p apps/web/tsconfig.json && tsc -p apps/web/tsconfig.node.json
-
-
 
 
  NX   Successfully ran target typecheck for 17 projects
 
-Nx read the output from the cache instead of running the command for 10 out of 17 tasks.
+Nx read the output from the cache instead of running the command for 17 out of 17 tasks.
 
-  Run duration:      3.0s
-  Cache:             10/17 hit (59%)
-  Critical path:     1.7s (1 task)
-  Recoverable time:  1.3s (44% of the run)
+  Run duration:      15ms
+  Cache:             17/17 hit (100%)
+  Critical path:     1ms (1 task)
+  Recoverable time:  <1ms
 node_modules/.bin/nx run-many -t test --output-style=static
 
  NX   Running target test for 17 projects:
@@ -608,143 +608,7 @@ TOTAL                                             1414     39    97%
 Required test coverage of 80% reached. Total coverage: 97.24%
 ============================= 424 passed in 2.15s ==============================
 
-> nx run mcp-mongo:test  [existing outputs match the cache, left as is]
-
-> uv run --frozen pytest apps/mcp-mongo/tests -o cache_dir=.pytest_cache/mcp-mongo
-
-============================= test session starts ==============================
-platform darwin -- Python 3.12.13, pytest-9.2.0, pluggy-1.7.0
-cachedir: .pytest_cache/mcp-mongo
-rootdir: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-ui-8
-configfile: pyproject.toml
-plugins: hypothesis-6.170.15, langsmith-0.14.17, cov-7.1.0, anyio-4.16.0
-collected 523 items
-
-apps/mcp-mongo/tests/test_call_context.py .............................. [  5%]
-......                                                                   [  6%]
-apps/mcp-mongo/tests/test_contracts.py ................................. [ 13%]
-...........                                                              [ 15%]
-apps/mcp-mongo/tests/test_db_users.py ...............................    [ 21%]
-apps/mcp-mongo/tests/test_main.py ...............                        [ 24%]
-apps/mcp-mongo/tests/test_onb_mcp_mongo.py .                             [ 24%]
-apps/mcp-mongo/tests/test_policy.py ..................................   [ 30%]
-apps/mcp-mongo/tests/test_server.py .................................... [ 37%]
-.................                                                        [ 40%]
-apps/mcp-mongo/tests/test_server_validator.py .......................... [ 45%]
-.............................................................            [ 57%]
-apps/mcp-mongo/tests/test_spans.py .................                     [ 60%]
-apps/mcp-mongo/tests/test_store_routing.py .........                     [ 62%]
-apps/mcp-mongo/tests/test_tool_surface.py ...................            [ 66%]
-apps/mcp-mongo/tests/test_validator.py ................................. [ 72%]
-........................................................................ [ 86%]
-...............................................................          [ 98%]
-apps/mcp-mongo/tests/test_validator_properties.py .........              [100%]
-
-============================= 523 passed in 10.98s =============================
-
-> nx run mcp-mocks:test  [existing outputs match the cache, left as is]
-
-> uv run --frozen pytest apps/mcp-mocks/tests -o cache_dir=.pytest_cache/mcp-mocks
-
-============================= test session starts ==============================
-platform darwin -- Python 3.12.13, pytest-9.2.0, pluggy-1.7.0
-cachedir: .pytest_cache/mcp-mocks
-rootdir: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-ui-8
-configfile: pyproject.toml
-plugins: hypothesis-6.170.15, langsmith-0.14.17, cov-7.1.0, anyio-4.16.0
-collected 85 items
-
-apps/mcp-mocks/tests/test_contracts.py ......................            [ 25%]
-apps/mcp-mocks/tests/test_main.py ........                               [ 35%]
-apps/mcp-mocks/tests/test_no_external_calls.py ..                        [ 37%]
-apps/mcp-mocks/tests/test_onb_mcp_mocks.py .                             [ 38%]
-apps/mcp-mocks/tests/test_review_fixes.py .........                      [ 49%]
-apps/mcp-mocks/tests/test_server.py .............                        [ 64%]
-apps/mcp-mocks/tests/test_telegram.py .................                  [ 84%]
-apps/mcp-mocks/tests/test_tools.py .............                         [100%]
-
-============================== 85 passed in 0.55s ==============================
-
-> nx run ts-ui:test  [existing outputs match the cache, left as is]
-
-> vitest run --config libs/ts-ui/vitest.config.ts
-
-
- RUN  v5.1.0 /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-ui-8/libs/ts-ui
-
-
- Test Files  2 passed (2)
-      Tests  11 passed (11)
-   Start at  12:22:30
-   Duration  742ms (environment 69%, setup 15%, tests 6%, import 5%, transform 5%)
-
-
-> nx run py-eventbus:test  [existing outputs match the cache, left as is]
-
-> uv run --frozen pytest libs/py-eventbus/tests -o cache_dir=.pytest_cache/py-eventbus --cov=onb_eventbus --cov-report=term-missing --cov-fail-under=80
-
-============================= test session starts ==============================
-platform darwin -- Python 3.12.13, pytest-9.2.0, pluggy-1.7.0
-cachedir: .pytest_cache/py-eventbus
-rootdir: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-ui-8
-configfile: pyproject.toml
-plugins: hypothesis-6.170.15, langsmith-0.14.17, cov-7.1.0, anyio-4.16.0
-collected 77 items
-
-libs/py-eventbus/tests/test_publish.py ...................               [ 24%]
-libs/py-eventbus/tests/test_settings_and_interface.py .................. [ 48%]
-..........                                                               [ 61%]
-libs/py-eventbus/tests/test_tracing.py .....                             [ 67%]
-libs/py-eventbus/tests/test_worker.py .........................          [100%]
-
-================================ tests coverage ================================
-______________ coverage: platform darwin, python 3.12.13-final-0 _______________
-
-Name                                             Stmts   Miss  Cover   Missing
-------------------------------------------------------------------------------
-libs/py-eventbus/src/onb_eventbus/__init__.py        7      0   100%
-libs/py-eventbus/src/onb_eventbus/bus.py           105      8    92%   40, 45, 140-146, 193
-libs/py-eventbus/src/onb_eventbus/documents.py      36      0   100%
-libs/py-eventbus/src/onb_eventbus/interface.py      20      0   100%
-libs/py-eventbus/src/onb_eventbus/models.py         47      0   100%
-libs/py-eventbus/src/onb_eventbus/settings.py       34      0   100%
-libs/py-eventbus/src/onb_eventbus/worker.py        160      7    96%   62, 67, 200, 206, 258, 262-263
-------------------------------------------------------------------------------
-TOTAL                                              409     15    96%
-Required test coverage of 80% reached. Total coverage: 96.33%
-============================== 77 passed in 0.75s ==============================
-
-> nx run orchestrator:test  [existing outputs match the cache, left as is]
-
-> uv run --frozen pytest apps/orchestrator/tests -o cache_dir=.pytest_cache/orchestrator
-
-============================= test session starts ==============================
-platform darwin -- Python 3.12.13, pytest-9.2.0, pluggy-1.7.0
-cachedir: .pytest_cache/orchestrator
-rootdir: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-ui-8
-configfile: pyproject.toml
-plugins: hypothesis-6.170.15, langsmith-0.14.17, cov-7.1.0, anyio-4.16.0
-collected 1 item
-
-apps/orchestrator/tests/test_onb_orchestrator.py .                       [100%]
-
-============================== 1 passed in 0.06s ===============================
-
-> nx run ts-api-client:test
-
-> vitest run --config libs/ts-api-client/vitest.config.ts
-
-
- RUN  v5.1.0 /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-ui-8/libs/ts-api-client
-
-
- Test Files  2 passed (2)
-      Tests  6 passed (6)
-   Start at  12:42:58
-   Duration  93ms (tests 40%, import 27%, transform 24%, worker 8%)
-
-
-> nx run py-contracts:test
+> nx run py-contracts:test  [existing outputs match the cache, left as is]
 
 > uv run --frozen pytest libs/py-contracts/tests -o cache_dir=.pytest_cache/py-contracts --cov=onb_contracts --cov-report=term-missing --cov-fail-under=80
 
@@ -754,19 +618,20 @@ cachedir: .pytest_cache/py-contracts
 rootdir: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-ui-8
 configfile: pyproject.toml
 plugins: hypothesis-6.170.15, langsmith-0.14.17, cov-7.1.0, anyio-4.16.0
-collected 324 items
+collected 333 items
 
 libs/py-contracts/tests/test_agent_contracts.py .......                  [  2%]
 libs/py-contracts/tests/test_agent_output_contracts.py ................. [  7%]
-........................................................................ [ 29%]
-..........................                                               [ 37%]
-libs/py-contracts/tests/test_audit_contracts.py .....                    [ 39%]
-libs/py-contracts/tests/test_auth_contracts.py ..........                [ 42%]
-libs/py-contracts/tests/test_envelope.py ............................... [ 51%]
-....                                                                     [ 53%]
-libs/py-contracts/tests/test_hires_contracts.py .....................    [ 59%]
-libs/py-contracts/tests/test_onb_contracts.py .                          [ 59%]
-libs/py-contracts/tests/test_request_inputs.py ......................... [ 67%]
+........................................................................ [ 28%]
+..........................                                               [ 36%]
+libs/py-contracts/tests/test_audit_contracts.py .....                    [ 38%]
+libs/py-contracts/tests/test_auth_contracts.py ..........                [ 41%]
+libs/py-contracts/tests/test_document_contracts.py .........             [ 43%]
+libs/py-contracts/tests/test_envelope.py ............................... [ 53%]
+....                                                                     [ 54%]
+libs/py-contracts/tests/test_hires_contracts.py .....................    [ 60%]
+libs/py-contracts/tests/test_onb_contracts.py .                          [ 60%]
+libs/py-contracts/tests/test_request_inputs.py ......................... [ 68%]
 ........................                                                 [ 75%]
 libs/py-contracts/tests/test_template_contracts.py ..................... [ 81%]
 ............................................................             [100%]
@@ -781,6 +646,7 @@ libs/py-contracts/src/onb_contracts/agent_outputs.py          146      0   100%
 libs/py-contracts/src/onb_contracts/agents.py                  50      0   100%
 libs/py-contracts/src/onb_contracts/audit.py                   37      0   100%
 libs/py-contracts/src/onb_contracts/auth.py                    30      0   100%
+libs/py-contracts/src/onb_contracts/documents.py               24      0   100%
 libs/py-contracts/src/onb_contracts/envelope.py                44      0   100%
 libs/py-contracts/src/onb_contracts/errors.py                  24      0   100%
 libs/py-contracts/src/onb_contracts/evals.py                   54     54     0%   9-109
@@ -790,85 +656,11 @@ libs/py-contracts/src/onb_contracts/inputs.py                  90      0   100%
 libs/py-contracts/src/onb_contracts/template_lifecycle.py      74     74     0%   17-162
 libs/py-contracts/src/onb_contracts/templates.py              159      0   100%
 -----------------------------------------------------------------------------------------
-TOTAL                                                         832    128    85%
-Required test coverage of 80% reached. Total coverage: 84.62%
-============================= 324 passed in 0.55s ==============================
+TOTAL                                                         856    128    85%
+Required test coverage of 80% reached. Total coverage: 85.05%
+============================= 333 passed in 0.40s ==============================
 
-> nx run py-evals:test
-
-> uv run --frozen pytest libs/py-evals/tests -o cache_dir=.pytest_cache/py-evals --cov=onb_evals --cov-report=term-missing --cov-fail-under=80
-
-============================= test session starts ==============================
-platform darwin -- Python 3.12.13, pytest-9.2.0, pluggy-1.7.0
-cachedir: .pytest_cache/py-evals
-rootdir: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-ui-8
-configfile: pyproject.toml
-plugins: hypothesis-6.170.15, langsmith-0.14.17, cov-7.1.0, anyio-4.16.0
-collected 255 items
-
-libs/py-evals/tests/test_cases.py ...................                    [  7%]
-libs/py-evals/tests/test_check_catalog.py .............................. [ 19%]
-................................                                         [ 31%]
-libs/py-evals/tests/test_check_rules.py ................................ [ 44%]
-.......................                                                  [ 53%]
-libs/py-evals/tests/test_cli.py ............                             [ 58%]
-libs/py-evals/tests/test_fixture.py ...........                          [ 62%]
-libs/py-evals/tests/test_harness_boundary.py ...                         [ 63%]
-libs/py-evals/tests/test_hub_audit.py ......                             [ 65%]
-libs/py-evals/tests/test_metrics_gates.py ................               [ 72%]
-libs/py-evals/tests/test_onb_evals.py .                                  [ 72%]
-libs/py-evals/tests/test_paths.py ..............                         [ 78%]
-libs/py-evals/tests/test_reporting.py ........                           [ 81%]
-libs/py-evals/tests/test_review_fixes.py ........                        [ 84%]
-libs/py-evals/tests/test_runner.py ............                          [ 89%]
-libs/py-evals/tests/test_session.py .........                            [ 92%]
-libs/py-evals/tests/test_template_contract.py ..                         [ 93%]
-libs/py-evals/tests/test_toolbox.py .................                    [100%]
-
-================================ tests coverage ================================
-______________ coverage: platform darwin, python 3.12.13-final-0 _______________
-
-Name                                               Stmts   Miss  Cover   Missing
---------------------------------------------------------------------------------
-libs/py-evals/src/onb_evals/__init__.py                2      0   100%
-libs/py-evals/src/onb_evals/__main__.py                2      2     0%   3-5
-libs/py-evals/src/onb_evals/adapters.py               35      0   100%
-libs/py-evals/src/onb_evals/capture.py                48      0   100%
-libs/py-evals/src/onb_evals/cases.py                  94      3    97%   116, 119-120
-libs/py-evals/src/onb_evals/checks/__init__.py         3      0   100%
-libs/py-evals/src/onb_evals/checks/base.py            47      3    94%   46, 50, 77
-libs/py-evals/src/onb_evals/checks/outcome.py         98      2    98%   61, 65
-libs/py-evals/src/onb_evals/checks/params.py         122      0   100%
-libs/py-evals/src/onb_evals/checks/safety.py          56      0   100%
-libs/py-evals/src/onb_evals/checks/template.py       161      1    99%   104
-libs/py-evals/src/onb_evals/checks/trajectory.py      51      0   100%
-libs/py-evals/src/onb_evals/cli.py                    94     13    86%   81, 91-95, 99-103, 119, 164-166
-libs/py-evals/src/onb_evals/context.py                29      0   100%
-libs/py-evals/src/onb_evals/contracts.py               6      0   100%
-libs/py-evals/src/onb_evals/databases.py              36      3    92%   31-32, 44
-libs/py-evals/src/onb_evals/facts.py                  10      0   100%
-libs/py-evals/src/onb_evals/fixture.py                64      0   100%
-libs/py-evals/src/onb_evals/gates.py                  70      0   100%
-libs/py-evals/src/onb_evals/llm_capture.py            36      0   100%
-libs/py-evals/src/onb_evals/metrics.py                68      1    99%   50
-libs/py-evals/src/onb_evals/paths.py                  35      0   100%
-libs/py-evals/src/onb_evals/report.py                 72      2    97%   156, 167
-libs/py-evals/src/onb_evals/results.py                14      0   100%
-libs/py-evals/src/onb_evals/runner.py                107      1    99%   161
-libs/py-evals/src/onb_evals/scripted.py               64      2    97%   51, 88
-libs/py-evals/src/onb_evals/session.py               133      1    99%   101
-libs/py-evals/src/onb_evals/spans.py                  56      2    96%   37, 71
-libs/py-evals/src/onb_evals/template_graph.py         84      4    95%   43, 108-110
-libs/py-evals/src/onb_evals/tokens.py                 30      0   100%
-libs/py-evals/src/onb_evals/toolbox.py               145      2    99%   158, 178
-libs/py-evals/src/onb_evals/values.py                 20      0   100%
-libs/py-evals/src/onb_evals/vault_seed.py             57      0   100%
---------------------------------------------------------------------------------
-TOTAL                                               1949     42    98%
-Required test coverage of 80% reached. Total coverage: 97.85%
-============================= 255 passed in 8.19s ==============================
-
-> nx run py-agents:test
+> nx run py-agents:test  [existing outputs match the cache, left as is]
 
 > uv run --frozen pytest libs/py-agents/tests -o cache_dir=.pytest_cache/py-agents --cov=onb_agents --cov-report=term-missing --cov-fail-under=80
 
@@ -942,9 +734,212 @@ libs/py-agents/src/onb_agents/tokens.py                   94      3    97%   88,
 ------------------------------------------------------------------------------------
 TOTAL                                                   2083     31    99%
 Required test coverage of 80% reached. Total coverage: 98.51%
-============================= 553 passed in 11.12s =============================
+============================= 553 passed in 10.74s =============================
 
-> nx run web:test
+> nx run mcp-mongo:test  [existing outputs match the cache, left as is]
+
+> uv run --frozen pytest apps/mcp-mongo/tests -o cache_dir=.pytest_cache/mcp-mongo
+
+============================= test session starts ==============================
+platform darwin -- Python 3.12.13, pytest-9.2.0, pluggy-1.7.0
+cachedir: .pytest_cache/mcp-mongo
+rootdir: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-ui-8
+configfile: pyproject.toml
+plugins: hypothesis-6.170.15, langsmith-0.14.17, cov-7.1.0, anyio-4.16.0
+collected 523 items
+
+apps/mcp-mongo/tests/test_call_context.py .............................. [  5%]
+......                                                                   [  6%]
+apps/mcp-mongo/tests/test_contracts.py ................................. [ 13%]
+...........                                                              [ 15%]
+apps/mcp-mongo/tests/test_db_users.py ...............................    [ 21%]
+apps/mcp-mongo/tests/test_main.py ...............                        [ 24%]
+apps/mcp-mongo/tests/test_onb_mcp_mongo.py .                             [ 24%]
+apps/mcp-mongo/tests/test_policy.py ..................................   [ 30%]
+apps/mcp-mongo/tests/test_server.py .................................... [ 37%]
+.................                                                        [ 40%]
+apps/mcp-mongo/tests/test_server_validator.py .......................... [ 45%]
+.............................................................            [ 57%]
+apps/mcp-mongo/tests/test_spans.py .................                     [ 60%]
+apps/mcp-mongo/tests/test_store_routing.py .........                     [ 62%]
+apps/mcp-mongo/tests/test_tool_surface.py ...................            [ 66%]
+apps/mcp-mongo/tests/test_validator.py ................................. [ 72%]
+........................................................................ [ 86%]
+...............................................................          [ 98%]
+apps/mcp-mongo/tests/test_validator_properties.py .........              [100%]
+
+============================= 523 passed in 10.98s =============================
+
+> nx run mcp-mocks:test  [existing outputs match the cache, left as is]
+
+> uv run --frozen pytest apps/mcp-mocks/tests -o cache_dir=.pytest_cache/mcp-mocks
+
+============================= test session starts ==============================
+platform darwin -- Python 3.12.13, pytest-9.2.0, pluggy-1.7.0
+cachedir: .pytest_cache/mcp-mocks
+rootdir: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-ui-8
+configfile: pyproject.toml
+plugins: hypothesis-6.170.15, langsmith-0.14.17, cov-7.1.0, anyio-4.16.0
+collected 85 items
+
+apps/mcp-mocks/tests/test_contracts.py ......................            [ 25%]
+apps/mcp-mocks/tests/test_main.py ........                               [ 35%]
+apps/mcp-mocks/tests/test_no_external_calls.py ..                        [ 37%]
+apps/mcp-mocks/tests/test_onb_mcp_mocks.py .                             [ 38%]
+apps/mcp-mocks/tests/test_review_fixes.py .........                      [ 49%]
+apps/mcp-mocks/tests/test_server.py .............                        [ 64%]
+apps/mcp-mocks/tests/test_telegram.py .................                  [ 84%]
+apps/mcp-mocks/tests/test_tools.py .............                         [100%]
+
+============================== 85 passed in 0.55s ==============================
+
+> nx run ts-ui:test  [existing outputs match the cache, left as is]
+
+> vitest run --config libs/ts-ui/vitest.config.ts
+
+
+ RUN  v5.1.0 /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-ui-8/libs/ts-ui
+
+
+ Test Files  2 passed (2)
+      Tests  11 passed (11)
+   Start at  12:22:30
+   Duration  742ms (environment 69%, setup 15%, tests 6%, import 5%, transform 5%)
+
+
+> nx run ts-api-client:test  [existing outputs match the cache, left as is]
+
+> vitest run --config libs/ts-api-client/vitest.config.ts
+
+
+ RUN  v5.1.0 /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-ui-8/libs/ts-api-client
+
+
+ Test Files  2 passed (2)
+      Tests  6 passed (6)
+   Start at  15:05:13
+   Duration  86ms (tests 38%, import 29%, transform 22%, worker 11%)
+
+
+> nx run api:test  [existing outputs match the cache, left as is]
+
+> uv run --frozen pytest apps/api/tests -o cache_dir=.pytest_cache/api
+
+============================= test session starts ==============================
+platform darwin -- Python 3.12.13, pytest-9.2.0, pluggy-1.7.0
+cachedir: .pytest_cache/api
+rootdir: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-ui-8
+configfile: pyproject.toml
+plugins: hypothesis-6.170.15, langsmith-0.14.17, cov-7.1.0, anyio-4.16.0
+collected 569 items
+
+apps/api/tests/test_agents_route.py .......................              [  4%]
+apps/api/tests/test_audit_route.py ..................................... [ 10%]
+......                                                                   [ 11%]
+apps/api/tests/test_auth_settings.py ........................            [ 15%]
+apps/api/tests/test_body_limit.py .......                                [ 17%]
+apps/api/tests/test_data_errors.py ...                                   [ 17%]
+apps/api/tests/test_document_bucket.py ................................. [ 23%]
+.............                                                            [ 25%]
+apps/api/tests/test_documents.py ....................................... [ 32%]
+..................                                                       [ 35%]
+apps/api/tests/test_errors.py ..............                             [ 38%]
+apps/api/tests/test_evals_route.py .......................               [ 42%]
+apps/api/tests/test_hires.py ........................................... [ 49%]
+.................                                                        [ 52%]
+apps/api/tests/test_hires_failures.py .....                              [ 53%]
+apps/api/tests/test_login.py ........................                    [ 57%]
+apps/api/tests/test_manager_scope.py .........                           [ 59%]
+apps/api/tests/test_onb_api.py .                                         [ 59%]
+apps/api/tests/test_openapi_export.py ......                             [ 60%]
+apps/api/tests/test_org_from_token.py ...............                    [ 63%]
+apps/api/tests/test_passwords.py ........                                [ 64%]
+apps/api/tests/test_role_matrix.py ..................................... [ 71%]
+......................................................................   [ 83%]
+apps/api/tests/test_routes.py ......                                     [ 84%]
+apps/api/tests/test_telemetry.py ....                                    [ 85%]
+apps/api/tests/test_template_lifecycle.py .........                      [ 86%]
+apps/api/tests/test_templates_route.py .......................           [ 90%]
+apps/api/tests/test_tokens.py .................................          [ 96%]
+apps/api/tests/test_validation_details.py ...................            [100%]
+
+============================= 569 passed in 15.15s =============================
+
+> nx run py-evals:test  [existing outputs match the cache, left as is]
+
+> uv run --frozen pytest libs/py-evals/tests -o cache_dir=.pytest_cache/py-evals --cov=onb_evals --cov-report=term-missing --cov-fail-under=80
+
+============================= test session starts ==============================
+platform darwin -- Python 3.12.13, pytest-9.2.0, pluggy-1.7.0
+cachedir: .pytest_cache/py-evals
+rootdir: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-ui-8
+configfile: pyproject.toml
+plugins: hypothesis-6.170.15, langsmith-0.14.17, cov-7.1.0, anyio-4.16.0
+collected 255 items
+
+libs/py-evals/tests/test_cases.py ...................                    [  7%]
+libs/py-evals/tests/test_check_catalog.py .............................. [ 19%]
+................................                                         [ 31%]
+libs/py-evals/tests/test_check_rules.py ................................ [ 44%]
+.......................                                                  [ 53%]
+libs/py-evals/tests/test_cli.py ............                             [ 58%]
+libs/py-evals/tests/test_fixture.py ...........                          [ 62%]
+libs/py-evals/tests/test_harness_boundary.py ...                         [ 63%]
+libs/py-evals/tests/test_hub_audit.py ......                             [ 65%]
+libs/py-evals/tests/test_metrics_gates.py ................               [ 72%]
+libs/py-evals/tests/test_onb_evals.py .                                  [ 72%]
+libs/py-evals/tests/test_paths.py ..............                         [ 78%]
+libs/py-evals/tests/test_reporting.py ........                           [ 81%]
+libs/py-evals/tests/test_review_fixes.py ........                        [ 84%]
+libs/py-evals/tests/test_runner.py ............                          [ 89%]
+libs/py-evals/tests/test_session.py .........                            [ 92%]
+libs/py-evals/tests/test_template_contract.py ..                         [ 93%]
+libs/py-evals/tests/test_toolbox.py .................                    [100%]
+
+================================ tests coverage ================================
+______________ coverage: platform darwin, python 3.12.13-final-0 _______________
+
+Name                                               Stmts   Miss  Cover   Missing
+--------------------------------------------------------------------------------
+libs/py-evals/src/onb_evals/__init__.py                2      0   100%
+libs/py-evals/src/onb_evals/__main__.py                2      2     0%   3-5
+libs/py-evals/src/onb_evals/adapters.py               35      0   100%
+libs/py-evals/src/onb_evals/capture.py                48      0   100%
+libs/py-evals/src/onb_evals/cases.py                  94      3    97%   116, 119-120
+libs/py-evals/src/onb_evals/checks/__init__.py         3      0   100%
+libs/py-evals/src/onb_evals/checks/base.py            47      3    94%   46, 50, 77
+libs/py-evals/src/onb_evals/checks/outcome.py         98      2    98%   61, 65
+libs/py-evals/src/onb_evals/checks/params.py         122      0   100%
+libs/py-evals/src/onb_evals/checks/safety.py          56      0   100%
+libs/py-evals/src/onb_evals/checks/template.py       161      1    99%   104
+libs/py-evals/src/onb_evals/checks/trajectory.py      51      0   100%
+libs/py-evals/src/onb_evals/cli.py                    94     13    86%   81, 91-95, 99-103, 119, 164-166
+libs/py-evals/src/onb_evals/context.py                29      0   100%
+libs/py-evals/src/onb_evals/contracts.py               6      0   100%
+libs/py-evals/src/onb_evals/databases.py              36      3    92%   31-32, 44
+libs/py-evals/src/onb_evals/facts.py                  10      0   100%
+libs/py-evals/src/onb_evals/fixture.py                64      0   100%
+libs/py-evals/src/onb_evals/gates.py                  70      0   100%
+libs/py-evals/src/onb_evals/llm_capture.py            36      0   100%
+libs/py-evals/src/onb_evals/metrics.py                68      1    99%   50
+libs/py-evals/src/onb_evals/paths.py                  35      0   100%
+libs/py-evals/src/onb_evals/report.py                 72      2    97%   156, 167
+libs/py-evals/src/onb_evals/results.py                14      0   100%
+libs/py-evals/src/onb_evals/runner.py                107      1    99%   161
+libs/py-evals/src/onb_evals/scripted.py               64      2    97%   51, 88
+libs/py-evals/src/onb_evals/session.py               133      1    99%   101
+libs/py-evals/src/onb_evals/spans.py                  56      2    96%   37, 71
+libs/py-evals/src/onb_evals/template_graph.py         84      4    95%   43, 108-110
+libs/py-evals/src/onb_evals/tokens.py                 30      0   100%
+libs/py-evals/src/onb_evals/toolbox.py               145      2    99%   158, 178
+libs/py-evals/src/onb_evals/values.py                 20      0   100%
+libs/py-evals/src/onb_evals/vault_seed.py             57      0   100%
+--------------------------------------------------------------------------------
+TOTAL                                               1949     42    98%
+Required test coverage of 80% reached. Total coverage: 97.85%
+============================= 255 passed in 7.83s ==============================
+
+> nx run web:test  [existing outputs match the cache, left as is]
 
 > vitest run --config apps/web/vitest.config.ts
 
@@ -957,11 +952,11 @@ Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
 
  Test Files  6 passed (6)
       Tests  70 passed (70)
-   Start at  12:43:08
-   Duration  3.56s (tests 49%, environment 35%, setup 7%, transform 4%, import 4%)
+   Start at  15:05:23
+   Duration  3.65s (environment 46%, tests 40%, setup 8%, import 3%, transform 2%)
 
 
-> nx run mcp-hub:test
+> nx run mcp-hub:test  [existing outputs match the cache, left as is]
 
 > uv run --frozen pytest apps/mcp-hub/tests -o cache_dir=.pytest_cache/mcp-hub
 
@@ -983,58 +978,69 @@ apps/mcp-hub/tests/test_review_fixes.py ..............                   [ 80%]
 apps/mcp-hub/tests/test_scan.py ............                             [ 89%]
 apps/mcp-hub/tests/test_server.py ...............                        [100%]
 
-============================= 138 passed in 1.00s ==============================
+============================= 138 passed in 0.83s ==============================
 
-> nx run api:test
+> nx run py-eventbus:test  [existing outputs match the cache, left as is]
 
-> uv run --frozen pytest apps/api/tests -o cache_dir=.pytest_cache/api
+> uv run --frozen pytest libs/py-eventbus/tests -o cache_dir=.pytest_cache/py-eventbus --cov=onb_eventbus --cov-report=term-missing --cov-fail-under=80
 
 ============================= test session starts ==============================
 platform darwin -- Python 3.12.13, pytest-9.2.0, pluggy-1.7.0
-cachedir: .pytest_cache/api
+cachedir: .pytest_cache/py-eventbus
 rootdir: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-ui-8
 configfile: pyproject.toml
 plugins: hypothesis-6.170.15, langsmith-0.14.17, cov-7.1.0, anyio-4.16.0
-collected 462 items
+collected 77 items
 
-apps/api/tests/test_agents_route.py .......................              [  4%]
-apps/api/tests/test_audit_route.py ..................................... [ 12%]
-......                                                                   [ 14%]
-apps/api/tests/test_auth_settings.py ........................            [ 19%]
-apps/api/tests/test_body_limit.py .......                                [ 20%]
-apps/api/tests/test_data_errors.py ...                                   [ 21%]
-apps/api/tests/test_errors.py ..............                             [ 24%]
-apps/api/tests/test_evals_route.py .......................               [ 29%]
-apps/api/tests/test_hires.py ........................................... [ 38%]
-.................                                                        [ 42%]
-apps/api/tests/test_hires_failures.py .....                              [ 43%]
-apps/api/tests/test_login.py ........................                    [ 48%]
-apps/api/tests/test_manager_scope.py .........                           [ 50%]
-apps/api/tests/test_onb_api.py .                                         [ 51%]
-apps/api/tests/test_openapi_export.py ......                             [ 52%]
-apps/api/tests/test_org_from_token.py ...............                    [ 55%]
-apps/api/tests/test_passwords.py ........                                [ 57%]
-apps/api/tests/test_role_matrix.py ..................................... [ 65%]
-..................................................................       [ 79%]
-apps/api/tests/test_routes.py ......                                     [ 80%]
-apps/api/tests/test_telemetry.py ....                                    [ 81%]
-apps/api/tests/test_template_lifecycle.py .........                      [ 83%]
-apps/api/tests/test_templates_route.py .......................           [ 88%]
-apps/api/tests/test_tokens.py .................................          [ 95%]
-apps/api/tests/test_validation_details.py ...................            [100%]
+libs/py-eventbus/tests/test_publish.py ...................               [ 24%]
+libs/py-eventbus/tests/test_settings_and_interface.py .................. [ 48%]
+..........                                                               [ 61%]
+libs/py-eventbus/tests/test_tracing.py .....                             [ 67%]
+libs/py-eventbus/tests/test_worker.py .........................          [100%]
 
-============================= 462 passed in 15.02s =============================
+================================ tests coverage ================================
+______________ coverage: platform darwin, python 3.12.13-final-0 _______________
+
+Name                                             Stmts   Miss  Cover   Missing
+------------------------------------------------------------------------------
+libs/py-eventbus/src/onb_eventbus/__init__.py        7      0   100%
+libs/py-eventbus/src/onb_eventbus/bus.py           105      8    92%   40, 45, 140-146, 193
+libs/py-eventbus/src/onb_eventbus/documents.py      36      0   100%
+libs/py-eventbus/src/onb_eventbus/interface.py      20      0   100%
+libs/py-eventbus/src/onb_eventbus/models.py         47      0   100%
+libs/py-eventbus/src/onb_eventbus/settings.py       34      0   100%
+libs/py-eventbus/src/onb_eventbus/worker.py        160      7    96%   62, 67, 200, 206, 258, 262-263
+------------------------------------------------------------------------------
+TOTAL                                              409     15    96%
+Required test coverage of 80% reached. Total coverage: 96.33%
+============================== 77 passed in 0.75s ==============================
+
+> nx run orchestrator:test  [existing outputs match the cache, left as is]
+
+> uv run --frozen pytest apps/orchestrator/tests -o cache_dir=.pytest_cache/orchestrator
+
+============================= test session starts ==============================
+platform darwin -- Python 3.12.13, pytest-9.2.0, pluggy-1.7.0
+cachedir: .pytest_cache/orchestrator
+rootdir: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-ui-8
+configfile: pyproject.toml
+plugins: hypothesis-6.170.15, langsmith-0.14.17, cov-7.1.0, anyio-4.16.0
+collected 1 item
+
+apps/orchestrator/tests/test_onb_orchestrator.py .                       [100%]
+
+============================== 1 passed in 0.06s ===============================
 
 
 
  NX   Successfully ran target test for 17 projects
 
-Nx read the output from the cache instead of running the command for 10 out of 17 tasks.
+Nx read the output from the cache instead of running the command for 17 out of 17 tasks.
 
-  Run duration:      16.6s
-  Cache:             10/17 hit (59%)
-  Critical path:     16.2s (1 task)
-  Recoverable time:  331ms (2% of the run)
+  Run duration:      13ms
+  Cache:             17/17 hit (100%)
+  Critical path:     <1ms (1 task)
+  Recoverable time:  <1ms
 infra/mongo/gen-keyfile.sh
 gen-keyfile: keeping existing infra/mongo/keyfile
 docker compose up -d --wait --build
@@ -1048,21 +1054,21 @@ docker compose up -d --wait --build
 #2 DONE 0.0s
 
 #3 [internal] load metadata for docker.io/otel/opentelemetry-collector-contrib:0.165.0@sha256:e40d61f10c9a617cca1ffd1be4d7e2b3a4b0f0001798ff07e58cabe82e618cea
-#3 DONE 0.0s
+#3 DONE 0.1s
 
 #4 [internal] load metadata for docker.io/library/alpine:3.24.4@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf
-#4 DONE 0.0s
+#4 DONE 0.1s
 
 #5 [internal] load .dockerignore
 #5 transferring context: 2B done
 #5 DONE 0.0s
 
-#6 [stage-1 1/3] FROM docker.io/library/alpine:3.24.4@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf
-#6 resolve docker.io/library/alpine:3.24.4@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf done
+#6 [upstream 1/1] FROM docker.io/otel/opentelemetry-collector-contrib:0.165.0@sha256:e40d61f10c9a617cca1ffd1be4d7e2b3a4b0f0001798ff07e58cabe82e618cea
+#6 resolve docker.io/otel/opentelemetry-collector-contrib:0.165.0@sha256:e40d61f10c9a617cca1ffd1be4d7e2b3a4b0f0001798ff07e58cabe82e618cea done
 #6 DONE 0.0s
 
-#7 [upstream 1/1] FROM docker.io/otel/opentelemetry-collector-contrib:0.165.0@sha256:e40d61f10c9a617cca1ffd1be4d7e2b3a4b0f0001798ff07e58cabe82e618cea
-#7 resolve docker.io/otel/opentelemetry-collector-contrib:0.165.0@sha256:e40d61f10c9a617cca1ffd1be4d7e2b3a4b0f0001798ff07e58cabe82e618cea done
+#7 [stage-1 1/3] FROM docker.io/library/alpine:3.24.4@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf
+#7 resolve docker.io/library/alpine:3.24.4@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf 0.0s done
 #7 DONE 0.0s
 
 #8 [stage-1 2/3] RUN adduser -D -H -u 10001 otel
@@ -1075,58 +1081,42 @@ docker compose up -d --wait --build
 #10 exporting layers done
 #10 exporting manifest sha256:14af97b5e302fea5ff472166b01ca46840a20f5c9f120da3dbd61f9939a54d33 done
 #10 exporting config sha256:dc4a421b1f5c4a3185546db69ed8ed403964aef463fdb176d876358273acd7b3 done
-#10 exporting attestation manifest sha256:308024c36689c8261ba6c62811876f81c5394acb883f9d04fb2dde1289804c18 done
-#10 exporting manifest list sha256:b5f757741a32eabe3b38b51a62ca2c87895ba4ac663964707465d86c41ca6398 done
+#10 exporting attestation manifest sha256:7347e083aba70e5b3f2d6077536f78ca59cfd22f7f857a3f885987aa1409c997 done
+#10 exporting manifest list sha256:73d2448639789f5fc3d6ac0fefd9e6bf7236d5dc6a69bd7c79a9f1adb547c440 done
 #10 naming to docker.io/onb/otel-collector:0.165.0 done
 #10 unpacking to docker.io/onb/otel-collector:0.165.0 done
-#10 DONE 0.0s
+#10 DONE 0.1s
 
 #11 resolving provenance for metadata file
-#11 DONE 0.0s
+#11 DONE 0.1s
  Image onb/otel-collector:0.165.0 Built 
- Network ob-ui-8_backend Creating 
- Network ob-ui-8_edge Creating 
- Network ob-ui-8_backend Creating 
- Network ob-ui-8_edge Creating 
- Network ob-ui-8_edge Created 
- Network ob-ui-8_edge Created 
- Network ob-ui-8_backend Created 
- Network ob-ui-8_backend Created 
- Container ob-ui-8-jaeger-1 Creating 
- Container ob-ui-8-mongo-1 Creating 
- Container ob-ui-8-jaeger-1 Created 
- Container ob-ui-8-otel-collector-1 Creating 
- Container ob-ui-8-caddy-1 Creating 
- Container ob-ui-8-mongo-1 Created 
- Container ob-ui-8-otel-collector-1 Created 
- Container ob-ui-8-caddy-1 Created 
- Container ob-ui-8-mongo-1 Starting 
- Container ob-ui-8-jaeger-1 Starting 
- Container ob-ui-8-mongo-1 Started 
- Container ob-ui-8-jaeger-1 Started 
+ Container ob-ui-8-caddy-1 Running 
+ Container ob-ui-8-mongo-1 Running 
+ Container ob-ui-8-jaeger-1 Running 
+ Container ob-ui-8-otel-collector-1 Recreate 
+ Container ob-ui-8-otel-collector-1 Recreated 
  Container ob-ui-8-jaeger-1 Waiting 
  Container ob-ui-8-jaeger-1 Waiting 
+ Container ob-ui-8-jaeger-1 Healthy 
  Container ob-ui-8-jaeger-1 Healthy 
  Container ob-ui-8-otel-collector-1 Starting 
- Container ob-ui-8-jaeger-1 Healthy 
- Container ob-ui-8-caddy-1 Starting 
  Container ob-ui-8-otel-collector-1 Started 
- Container ob-ui-8-caddy-1 Started 
- Container ob-ui-8-caddy-1 Waiting 
- Container ob-ui-8-mongo-1 Waiting 
  Container ob-ui-8-otel-collector-1 Waiting 
  Container ob-ui-8-jaeger-1 Waiting 
+ Container ob-ui-8-caddy-1 Waiting 
+ Container ob-ui-8-mongo-1 Waiting 
+ Container ob-ui-8-caddy-1 Healthy 
  Container ob-ui-8-jaeger-1 Healthy 
  Container ob-ui-8-mongo-1 Healthy 
  Container ob-ui-8-otel-collector-1 Healthy 
- Container ob-ui-8-caddy-1 Healthy 
 set -a && . ./.env && set +a && \
 	uv run --frozen pytest tools/tests_xt -q -o cache_dir=.pytest_cache/tests-xt && \
 	node_modules/.bin/nx run-many -t test-xt --output-style=static
-........................................................................ [ 33%]
-........................................................................ [ 67%]
-.....................................................................    [100%]
-cross-tenant surface: 23 API routes, 8 MCP tools, 0 event consumers
+........................................................................ [ 32%]
+........................................................................ [ 65%]
+........................................................................ [ 98%]
+....                                                                     [100%]
+cross-tenant surface: 24 API routes, 8 MCP tools, 0 event consumers
   route    GET    /agents
   route    GET    /agents/{name}
   route    GET    /audit
@@ -1143,6 +1133,7 @@ cross-tenant surface: 23 API routes, 8 MCP tools, 0 event consumers
   route    GET    /templates/{key}/versions/{version}
   route    POST   /auth/login
   route    POST   /hires
+  route    POST   /hires/{hire_id}/documents
   route    POST   /hires/{hire_id}/pii/{field}/reveal
   route    POST   /templates/drafts
   route    POST   /templates/drafts/{draft_id}/publish
@@ -1158,7 +1149,7 @@ cross-tenant surface: 23 API routes, 8 MCP tools, 0 event consumers
   tool     mcp-mongo.insert_one
   tool     mcp-mongo.list_collections
   tool     mcp-mongo.update_one
-213 passed in 228.58s (0:03:48)
+220 passed in 312.50s (0:05:12)
 
  NX   Running target test-xt for project mcp-hub:
 
@@ -1183,16 +1174,16 @@ make test-xt: hub tools covered: mocks__create_bitbucket_account, mocks__provisi
 ..........
 apps/mcp-hub/tests_int/test_safety_net_guard.py ..
 
-============================== 12 passed in 8.29s ==============================
+============================== 12 passed in 5.91s ==============================
 
 
 
  NX   Successfully ran target test-xt for project mcp-hub
 
 
-  Run duration:      10.3s
+  Run duration:      7.4s
   Cache:             0/1 hit (0%)
-  Critical path:     10.3s (1 task)
+  Critical path:     7.4s (1 task)
   Recoverable time:  <1ms
 make check: all passed
 exit 0
