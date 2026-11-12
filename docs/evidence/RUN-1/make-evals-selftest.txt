@@ -1,0 +1,79 @@
+infra/mongo/gen-keyfile.sh
+gen-keyfile: keeping existing infra/mongo/keyfile
+docker compose up -d --wait --build
+ Image onb/otel-collector:0.165.0 Building 
+#1 [internal] load local bake definitions
+#1 reading from stdin 647B done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 578B done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/alpine:3.24.4@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf
+#3 DONE 0.0s
+
+#4 [internal] load metadata for docker.io/otel/opentelemetry-collector-contrib:0.165.0@sha256:e40d61f10c9a617cca1ffd1be4d7e2b3a4b0f0001798ff07e58cabe82e618cea
+#4 DONE 0.0s
+
+#5 [internal] load .dockerignore
+#5 transferring context: 2B done
+#5 DONE 0.0s
+
+#6 [upstream 1/1] FROM docker.io/otel/opentelemetry-collector-contrib:0.165.0@sha256:e40d61f10c9a617cca1ffd1be4d7e2b3a4b0f0001798ff07e58cabe82e618cea
+#6 resolve docker.io/otel/opentelemetry-collector-contrib:0.165.0@sha256:e40d61f10c9a617cca1ffd1be4d7e2b3a4b0f0001798ff07e58cabe82e618cea
+#6 resolve docker.io/otel/opentelemetry-collector-contrib:0.165.0@sha256:e40d61f10c9a617cca1ffd1be4d7e2b3a4b0f0001798ff07e58cabe82e618cea 0.0s done
+#6 DONE 0.0s
+
+#7 [stage-1 1/3] FROM docker.io/library/alpine:3.24.4@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf
+#7 resolve docker.io/library/alpine:3.24.4@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf 0.0s done
+#7 DONE 0.0s
+
+#8 [stage-1 2/3] RUN adduser -D -H -u 10001 otel
+#8 CACHED
+
+#9 [stage-1 3/3] COPY --from=upstream /otelcol-contrib /otelcol-contrib
+#9 CACHED
+
+#10 exporting to image
+#10 exporting layers done
+#10 exporting manifest sha256:dca50eab0e27e57934f87d2564d4b61ac26a43cc8cacdaf683224ca73a4634cf 0.0s done
+#10 exporting config sha256:a2f3b9372f597bec59d692c27769526847380e98c52516dc9206711ad257125e done
+#10 exporting attestation manifest sha256:0c4e61ea53fbe864a39b8f483cfe34ff52c7eb27107913dcb05b11b7a57e3dbf
+#10 exporting attestation manifest sha256:0c4e61ea53fbe864a39b8f483cfe34ff52c7eb27107913dcb05b11b7a57e3dbf 0.0s done
+#10 exporting manifest list sha256:efc5c16c6446d642d1399852f6a6812544a5fced4de20f44aaed37cfd198c5ba 0.0s done
+#10 naming to docker.io/onb/otel-collector:0.165.0 done
+#10 unpacking to docker.io/onb/otel-collector:0.165.0 done
+#10 DONE 0.1s
+
+#11 resolving provenance for metadata file
+#11 DONE 0.2s
+ Image onb/otel-collector:0.165.0 Built 
+ Container ob-run-1-otel-collector-1 Running 
+ Container ob-run-1-jaeger-1 Running 
+ Container ob-run-1-caddy-1 Running 
+ Container ob-run-1-mongo-1 Running 
+ Container ob-run-1-jaeger-1 Waiting 
+ Container ob-run-1-jaeger-1 Waiting 
+ Container ob-run-1-jaeger-1 Healthy 
+ Container ob-run-1-jaeger-1 Healthy 
+ Container ob-run-1-mongo-1 Waiting 
+ Container ob-run-1-otel-collector-1 Waiting 
+ Container ob-run-1-jaeger-1 Waiting 
+ Container ob-run-1-caddy-1 Waiting 
+ Container ob-run-1-jaeger-1 Healthy 
+ Container ob-run-1-otel-collector-1 Healthy 
+ Container ob-run-1-mongo-1 Healthy 
+ Container ob-run-1-caddy-1 Healthy 
+set -a && . ./.env && set +a && \
+	LLM_CONNECTOR=fake OTEL_TRACES_EXPORTER="${OTEL_TRACES_EXPORTER:-none}" \
+	uv run --frozen pytest libs/py-evals/tests_int/test_selftest.py -q -s -o cache_dir=.pytest_cache/py-evals-selftest
+selftest evr_20261112T095418Z_1361a8b0: 27 cases x 3, all cases passed: True, gates: PASS, controls caught 8/8
+report: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-run-1/evals/reports/20261112T095418Z-all-fake_eval-scripted.json
+report: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-run-1/evals/reports/20261112T095418Z-all-fake_eval-scripted.md
+eval_runs: evr_20261112T095418Z_1361a8b0
+result: PASS
+
+.
+1 passed in 45.05s
+exit=0
