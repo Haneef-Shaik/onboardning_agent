@@ -46,6 +46,11 @@ _TOKEN: Final = re.compile(r"[A-Za-z0-9_]+")
 # `ptk_` vault token, or a UUID. A detector hit wholly inside one is an id, not a value.
 _HEX_ID: Final = re.compile(r"(?:[a-z]+_)*([0-9a-f]{16,})")
 _PTK: Final = re.compile(r"ptk_[0-9A-Za-z]{20,}")
+# A redaction marker glued to letters, digits or `_` replaced digits inside an id (over-redaction, OBS-1/RUN-3).
+_GLUED_MARKER: Final = re.compile(
+    r"(?<=[A-Za-z0-9_])\[(?:AADHAAR|PAN|IFSC|MOBILE|EMAIL|BANK_ACCOUNT)\]"
+    r"|\[(?:AADHAAR|PAN|IFSC|MOBILE|EMAIL|BANK_ACCOUNT)\](?=[A-Za-z0-9_])"
+)
 _UUID: Final = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", re.IGNORECASE)
 
 
@@ -99,6 +104,7 @@ class ScanResult:
     items_by_source: Mapping[str, int]
     raw_labels: tuple[str, ...]
     allow_rules: tuple[Allow, ...] = field(default=())
+    glued_markers: Mapping[str, int] = field(default_factory=dict)
 
     @property
     def clean(self) -> bool:
@@ -114,6 +120,7 @@ class ScanResult:
             "items_scanned_by_source": dict(sorted(self.items_by_source.items())),
             "items_scanned": sum(self.items_by_source.values()),
             "detector_hits_inside_opaque_ids": self.ids_excused,
+            "markers_glued_into_ids_by_source": dict(sorted(self.glued_markers.items())),
             "detector_hits_allowed": [
                 {"source": source, "type": label, "count": count, "reason": reason}
                 for (reason, source, label), count in sorted(allowed.items())
@@ -221,8 +228,10 @@ def scan(items: Iterable[Item], fixture: Mapping[str, str], allow: Sequence[Allo
     allowed: list[tuple[Hit, Allow]] = []
     ids_excused = 0
     counts: Counter[str] = Counter()
+    glued: Counter[str] = Counter()
     for item in items:
         counts[item.source] += 1
+        glued[item.source] += len(_GLUED_MARKER.findall(item.text))
         for label, pattern in patterns.items():
             if pattern.search(item.text):
                 hits.append(Hit("raw", item.source, item.location, label))
@@ -243,4 +252,5 @@ def scan(items: Iterable[Item], fixture: Mapping[str, str], allow: Sequence[Allo
         items_by_source=dict(counts),
         raw_labels=tuple(patterns),
         allow_rules=tuple(allow),
+        glued_markers={source: n for source, n in glued.items() if n},
     )

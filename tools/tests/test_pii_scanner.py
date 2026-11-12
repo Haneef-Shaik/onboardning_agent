@@ -174,3 +174,10 @@ def test_a_json_log_line_is_scanned_field_by_field_and_a_plain_line_whole() -> N
     rule = scan_mod.Allow("container_logs", r"caddy:\d+\.limit", "MOBILE", "a byte count")
     result = scan_mod.scan(items, FIXTURE, (rule,))
     assert [(h.label, h.location) for h in result.hits] == [("pan", "caddy:2"), ("PAN", "caddy:2")]
+
+
+def test_markers_glued_into_ids_are_counted_as_over_redaction() -> None:
+    items = [_item("run_6f1e[MOBILE]abc", source="jaeger"), _item("sent to [MOBILE] today", source="jaeger")]
+    result = _scan(*items)
+    assert result.clean
+    assert result.report()["markers_glued_into_ids_by_source"] == {"jaeger": 1}

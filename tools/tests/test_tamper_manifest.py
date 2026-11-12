@@ -80,3 +80,21 @@ def test_the_report_counts_only_passed_cases_as_rejected() -> None:
     body = tamper.report(manifest, outcomes)
     assert (body["cases"], body["rejected"], body["rejected_percent"]) == (3, 1, 33.33)
     assert body["categories"]["vault"]["rejected"] == "1/3"
+
+
+def test_only_a_passed_case_reads_as_rejected_in_the_junit_results(tmp_path: Path) -> None:
+    junit = tmp_path / "junit.xml"
+    junit.write_text(
+        '<testsuites><testsuite name="pytest">'
+        '<testcase file="a/tests/test_x.py" name="test_ok"/>'
+        '<testcase file="a/tests/test_x.py" name="test_failed"><failure message="x"/></testcase>'
+        '<testcase file="a/tests/test_x.py" name="test_skipped"><skipped message="x"/></testcase>'
+        '<testcase file="a/tests/test_x.py" name="test_error[p1]"><error message="x"/></testcase>'
+        "</testsuite></testsuites>"
+    )
+    assert tamper._junit_outcomes(junit) == {
+        "a/tests/test_x.py::test_ok": (True, "rejected"),
+        "a/tests/test_x.py::test_failed": (False, "failure"),
+        "a/tests/test_x.py::test_skipped": (False, "skipped"),
+        "a/tests/test_x.py::test_error[p1]": (False, "error"),
+    }

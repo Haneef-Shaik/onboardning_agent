@@ -59,6 +59,9 @@ def _markdown(body: dict[str, Any]) -> str:
         "Detector hits wholly inside opaque ids (hex, `ptk_`, UUID), not counted: "
         f"{body['detector_hits_inside_opaque_ids']}.",
         "",
+        "Redaction markers glued into ids (over-redaction by the OBS-1 scrubber, not a leak): "
+        f"{body['markers_glued_into_ids_by_source'] or 'none'}.",
+        "",
         "## Allowed detector hits",
         "",
         "| Source | Type | Count | Reason |",
