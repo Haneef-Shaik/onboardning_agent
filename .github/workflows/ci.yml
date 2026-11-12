@@ -1,0 +1,106 @@
+# CI gate (goal F-3; host and why: docs/adr/0001-ci-host.md).
+# Every push runs `make check`, then the integration tests. Branch protection on `main` requires the
+# "check" and "integration" checks, so a red run blocks merging. Guarded by
+# tools/tests/test_ci_workflow.py: keep the two in step.
+name: ci
+
+on:
+  push:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+env:
+  FORCE_COLOR: "1"
+
+jobs:
+  check:
+    name: check
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: "0.11.6"
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .nx/cache
+          key: nx-${{ github.job }}-${{ runner.os }}-${{ hashFiles('uv.lock', 'package-lock.json') }}-${{ github.sha }}
+          restore-keys: |
+            nx-${{ github.job }}-${{ runner.os }}-${{ hashFiles('uv.lock', 'package-lock.json') }}-
+      - run: make bootstrap
+      - run: make check
+
+  integration:
+    name: integration
+    needs: check
+    # Hosted Ubuntu runners ship a Docker daemon, which testcontainers uses to start Mongo.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: "0.11.6"
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .nx/cache
+          key: nx-${{ github.job }}-${{ runner.os }}-${{ hashFiles('uv.lock', 'package-lock.json') }}-${{ github.sha }}
+          restore-keys: |
+            nx-${{ github.job }}-${{ runner.os }}-${{ hashFiles('uv.lock', 'package-lock.json') }}-
+      - run: make bootstrap
+      - run: make test-int
+
+  # SEC-1: the PII leak scan and tamper report (PRD §12 PII, PII integrity). A full seed-template run with
+  # synthetic fixture PII on the compose stack, then the scan and the tamper cases (`make test-pii`). The
+  # runner's `.env` is generated per job (tools/ci_env.py): fresh random secrets, the fake LLM connector.
+  pii:
+    name: pii
+    needs: check
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: "0.11.6"
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: make bootstrap
+      - run: uv run --frozen python tools/ci_env.py > .env
+      - run: make test-pii
+      - name: Show the reports
+        if: always()
+        run: cat reports/test-pii/pii-scan-report.md reports/test-pii/tamper-report.md || true
+      - name: Stop the stack
+        if: always()
+        run: make down
