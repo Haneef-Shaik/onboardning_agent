@@ -7,7 +7,7 @@ docker compose up -d --wait --build
 #1 DONE 0.0s
 
 #2 [internal] load build definition from Dockerfile
-#2 transferring dockerfile: 578B 0.0s done
+#2 transferring dockerfile: 578B done
 #2 DONE 0.0s
 
 #3 [internal] load metadata for docker.io/otel/opentelemetry-collector-contrib:0.165.0@sha256:e40d61f10c9a617cca1ffd1be4d7e2b3a4b0f0001798ff07e58cabe82e618cea
@@ -21,11 +21,11 @@ docker compose up -d --wait --build
 #5 DONE 0.0s
 
 #6 [upstream 1/1] FROM docker.io/otel/opentelemetry-collector-contrib:0.165.0@sha256:e40d61f10c9a617cca1ffd1be4d7e2b3a4b0f0001798ff07e58cabe82e618cea
-#6 resolve docker.io/otel/opentelemetry-collector-contrib:0.165.0@sha256:e40d61f10c9a617cca1ffd1be4d7e2b3a4b0f0001798ff07e58cabe82e618cea 0.0s done
+#6 resolve docker.io/otel/opentelemetry-collector-contrib:0.165.0@sha256:e40d61f10c9a617cca1ffd1be4d7e2b3a4b0f0001798ff07e58cabe82e618cea done
 #6 DONE 0.0s
 
 #7 [stage-1 1/3] FROM docker.io/library/alpine:3.24.4@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf
-#7 resolve docker.io/library/alpine:3.24.4@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf 0.0s done
+#7 resolve docker.io/library/alpine:3.24.4@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf done
 #7 DONE 0.0s
 
 #8 [stage-1 2/3] RUN adduser -D -H -u 10001 otel
@@ -38,8 +38,9 @@ docker compose up -d --wait --build
 #10 exporting layers done
 #10 exporting manifest sha256:48b749a28421bf87d287dc899b069af09121b8e504444bc0c592219f8745dc2e done
 #10 exporting config sha256:99141a211180a0ae4c253759503f4f848511e04b9be404e1b2675b359732a299 done
-#10 exporting attestation manifest sha256:91aee2d9b0148851ef6eece8a901c6439b02b0974d8dd88c24099d7a5d2de55e done
-#10 exporting manifest list sha256:4c4616586fc0b92e6547ee86d788500453543cbea5d0356a09ec4f44d101132a done
+#10 exporting attestation manifest sha256:0713834d968d7ecea8af6de025b6a97de876706fae567f5ba2a5def5c2a526b1
+#10 exporting attestation manifest sha256:0713834d968d7ecea8af6de025b6a97de876706fae567f5ba2a5def5c2a526b1 done
+#10 exporting manifest list sha256:039eeae4de440a46a0d77376d32c005727953f24b2059a9501f41e56a25b244b done
 #10 naming to docker.io/onb/otel-collector:0.165.0 done
 #10 unpacking to docker.io/onb/otel-collector:0.165.0 done
 #10 DONE 0.0s
@@ -47,43 +48,56 @@ docker compose up -d --wait --build
 #11 resolving provenance for metadata file
 #11 DONE 0.0s
  Image onb/otel-collector:0.165.0 Built 
- Container ob-notif-1-mongo-1 Running 
- Container ob-notif-1-otel-collector-1 Running 
  Container ob-notif-1-jaeger-1 Running 
  Container ob-notif-1-caddy-1 Running 
+ Container ob-notif-1-mongo-1 Running 
+ Container ob-notif-1-otel-collector-1 Running 
  Container ob-notif-1-jaeger-1 Waiting 
  Container ob-notif-1-jaeger-1 Waiting 
  Container ob-notif-1-jaeger-1 Healthy 
  Container ob-notif-1-jaeger-1 Healthy 
- Container ob-notif-1-mongo-1 Waiting 
  Container ob-notif-1-otel-collector-1 Waiting 
  Container ob-notif-1-jaeger-1 Waiting 
  Container ob-notif-1-caddy-1 Waiting 
- Container ob-notif-1-otel-collector-1 Healthy 
+ Container ob-notif-1-mongo-1 Waiting 
  Container ob-notif-1-jaeger-1 Healthy 
+ Container ob-notif-1-otel-collector-1 Healthy 
  Container ob-notif-1-caddy-1 Healthy 
  Container ob-notif-1-mongo-1 Healthy 
 set -a && . ./.env && set +a && \
 	uv run --frozen pytest tools/tests_xt -q -o cache_dir=.pytest_cache/tests-xt && \
 	node_modules/.bin/nx run-many -t test-xt --output-style=static
-........................................................................ [ 47%]
-........................................................................ [ 94%]
-........                                                                 [100%]
-cross-tenant surface: 14 API routes, 9 MCP tools, 1 event consumers
+........................................................................ [ 30%]
+........................................................................ [ 60%]
+........................................................................ [ 90%]
+.......................                                                  [100%]
+cross-tenant surface: 26 API routes, 9 MCP tools, 1 event consumers
   route    GET    /agents
   route    GET    /agents/{name}
   route    GET    /audit
+  route    GET    /evals/runs
+  route    GET    /evals/runs/{run_id}
   route    GET    /health
   route    GET    /hires
   route    GET    /hires/{hire_id}
   route    GET    /me
   route    GET    /mock-outbox
   route    GET    /pii-access-log
+  route    GET    /templates
+  route    GET    /templates/drafts
+  route    GET    /templates/drafts/{draft_id}
+  route    GET    /templates/{key}/versions/{version}
   route    POST   /auth/login
   route    POST   /hires
+  route    POST   /hires/{hire_id}/documents
   route    POST   /hires/{hire_id}/pii/{field}/reveal
+  route    POST   /templates/drafts
+  route    POST   /templates/drafts/{draft_id}/publish
+  route    POST   /templates/drafts/{draft_id}/validate
+  route    POST   /templates/{key}/versions/{version}/archive
   route    POST   /webhooks/telegram
   route    PUT    /hires/{hire_id}/pii/{field}
+  route    PUT    /templates/drafts/{draft_id}
   tool     mcp-mocks.create_bitbucket_account
   tool     mcp-mocks.provision_laptop
   tool     mcp-mongo.aggregate
@@ -94,7 +108,7 @@ cross-tenant surface: 14 API routes, 9 MCP tools, 1 event consumers
   tool     mcp-mongo.update_one
   tool     mcp-notify.notify_send
   consumer notify.in_app
-152 passed in 109.64s (0:01:49)
+239 passed in 212.48s (0:03:32)
 
  NX   Running target test-xt for project mcp-hub:
 
@@ -119,15 +133,15 @@ make test-xt: hub tools covered: mocks__create_bitbucket_account, mocks__provisi
 [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m
 apps/mcp-hub/tests_int/test_safety_net_guard.py [32m.[0m[32m.[0m
 
-[32m============================== [32m[1m13 passed[0m[32m in 7.42s[0m[32m ==============================[0m
+[32m============================== [32m[1m13 passed[0m[32m in 5.92s[0m[32m ==============================[0m
 
 
 
  NX   Successfully ran target test-xt for project mcp-hub
 
 
-  Run duration:      9.1s
+  Run duration:      7.5s
   Cache:             0/1 hit (0%)
-  Critical path:     9.1s (1 task)
+  Critical path:     7.5s (1 task)
   Recoverable time:  <1ms
 exit 0

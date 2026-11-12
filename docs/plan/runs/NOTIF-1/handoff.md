@@ -1,4 +1,4 @@
-# Handoff — NOTIF-1 · Notify in-app and through the Telegram mock, resolving PII only at the sink        attempt 1 · goal/notif-1-notifications-sink · see `git log -1`
+# Handoff — NOTIF-1 · Notify in-app and through the Telegram mock, resolving PII only at the sink        attempt 2 · goal/notif-1-notifications-sink · see `git log -1`
 
 **Outcome claimed.** `notify_send` (server `notify`, hub `notify__notify_send`) sends through two
 adapters:
@@ -16,13 +16,29 @@ publishes `task.sink_rejected`, which fails the task.
 the secret-token header, accepts an `Update` with `callback_query`, and publishes `decision.received`.
 Decisions: `docs/adr/0013-notify-sink-and-telegram-callbacks.md`.
 
+## Attempt 2: rebased onto main (HIRE-2, SEED-1, UI-8)
+Attempt 1 passed the verifier. Main then moved, and I rebased by hand (as the orchestrator authorised).
+The 16 commits are replayed unchanged, and these conflicts were resolved by keeping both sides:
+
+- **`apps/api/src/onb_api/app.py`:** `create_app` keeps main's `templates`, `documents`, `evals` and `llm`. `notify` is a new parameter at the end of each list: parameters, lifespan `ensure_indexes`, `app.state`, routers.
+- **`apps/api/src/onb_api/main.py`:** keeps main's `CONFIG_DIR`, LLM resolution, `TemplateLifecycle`, `DocumentService` and `EvalRunStore`. It adds `MockChannels` (needs `TELEGRAM_WEBHOOK_SECRET`) and passes `notify=` to the one `create_app` call.
+- **`apps/api/tests/conftest.py`, `test_auth_settings.py`, `test_role_matrix.py`:** the new `notify` fixtures sit beside main's fixtures. The webhook route stays in `PUBLIC_ROUTES`, which main's new body-field test also honours. My two startup tests now pass `CONFIG_ENV`, because main requires `CONFIG_DIR` first.
+- **`tools/tests_xt/`:** main reworked `RouteCase.check` to take `unscoped`, so my two checks are wrapped in main's `_reads_only`. `build_api` builds main's full app plus `notify`. My route-case block is grafted into main's file.
+- **`libs/ts-api-client/*`:** generated; `make contracts` regenerated both files on the rebased tree.
+- **SEED-1's `.env.example` vars:** no conflict. They feed `make seed` only, and no gate needs them.
+
+I re-ran every gate on the rebased tree (below). Nothing about the design or the claims changed.
+
+Main's `BodyLimitMiddleware` (UI-8/TPL-2) caps bodies on `/templates` only, so the webhook's body-size
+LOW below is still open. Extending that middleware's `_LIMITED_PREFIX` check to `/webhooks` would close it.
+
 ## Done when
 | Box | Met | Evidence |
 |-----|-----|----------|
 | `mock_outbox` holds only the masked mobile, never the raw value (DB scan test) | yes | **Unit:** `apps/mcp-mocks/tests/test_notify_sink.py::test_box1_mock_outbox_holds_only_the_masked_mobile_never_the_raw_value`. It runs the real vault, grants, resolver and tenant scoping over the in-memory driver. It scans every document of every collection, in every org, except `pii_vault` and `org_keys`, for the raw mobile and its hidden middle digits, and finds none. The stored recipient is `{token, masked: "98XXXXXX34"}`, with one masked `pii_access_log` entry.<br>**Live:** `apps/mcp-mocks/tests_int/test_notify_against_mongo.py::test_box1_…_db_scan`. It runs the production `build_service` wiring on the compose replica set, called over MCP with a hub-signed context. The root scan of every collection is clean. The outbox write and `notification.sent` commit together.<br>**Command:** `bash docs/evidence/NOTIF-1/box-tests.sh` → `docs/evidence/NOTIF-1/box-tests.txt`. Box 1 `2 passed`; `exit=0`.<br>**Mutation N1:** storing the raw mobile instead of the mask is caught by both box-1 tests. |
 | A rejected grant stores nothing, fails the task, and writes a guardrail event and an audit record (test) | yes | **Unit:** `test_notify_sink.py::test_box2_a_rejected_grant_stores_nothing_fails_the_task_and_writes_a_guardrail_event_and_an_audit_record`, with 7 cases: no grant, forged signature, wrong sink, another hire's token, another org's token, another org's grant, an email token used as recipient. Each case asserts:<br>• nothing sent (transport count 0);<br>• `mock_outbox`, `pii_access_log` and `notifications` empty;<br>• no raw value anywhere;<br>• the task fails: exactly one `task.sink_rejected` `{run_id, agent, sink, reason}`;<br>• audit records `pii.grant.resolve`/denied/reason and `guardrail.sink.grant`/denied/reason, in the caller's org only;<br>• a `guardrail.outcome` span event (`guardrail.check=sink.grant`).<br>**Live:** `tests_int/…::test_box2_…`, 4 cases (another hire's token, another org's token, another org's grant, no grant), on the real bus and `AuditLog`.<br>**Server:** `test_notify_server.py::test_a_rejected_grant_is_a_refusal_naming_the_reason_never_an_internal_error`. The tool answers `grant_rejected (<reason>): nothing was sent`.<br>**Command:** `box-tests.sh`, Box 2 `12 passed`.<br>**Mutations:** N2 (no guardrail), N3 (no task failure event), N4 (no audit record) and N5 (refusal swallowed) are each caught. |
 | The webhook rejects a wrong secret token, and accepts a payload matching Telegram's documented `callback_query` (fixture test) | yes | **Fixture:** `apps/api/tests/fixtures/telegram_callback_query_update.json`, a Bot API `Update` with `callback_query` `{id, from, message{message_id, from, chat, date, text, reply_markup.inline_keyboard}, chat_instance, data}`.<br>**Tests:**<br>• `apps/api/tests/test_notify_routes.py::test_box3_the_webhook_rejects_a_wrong_secret_token[missing, empty, another-secret, one-character-short]`: 401 `UNAUTHENTICATED`, nothing published;<br>• `::test_box3_a_wrong_secret_is_refused_before_the_body_is_validated`;<br>• `::test_box3_the_webhook_accepts_telegrams_documented_callback_query_and_emits_a_decision_event`: 200 `{ok: true}`, and `decision.received` published in the button's org with the decision of the stored button, keyed `telegram:callback:<callback_query.id>`.<br>**Command:** `box-tests.sh`, Box 3 `6 passed`.<br>**Mutation N11:** the secret check removed fails all 4 wrong-secret tests. |
-| `make test-xt` covers every new route | yes | **Command:** `make test-xt` → `docs/evidence/NOTIF-1/make-test-xt.txt`, also part of `make check` in `make-check.txt`. Cross-tenant surface: 14 API routes (including `GET /mock-outbox` and `POST /webhooks/telegram`), 9 MCP tools (including `mcp-notify.notify_send`), 1 event consumer (`notify.in_app`). tools/tests_xt `152 passed`; hub test-xt `13 passed`, `hub tools covered: … notify__notify_send`.<br>**Rows added:**<br>• `ROUTE_CASES`: org-A sees only its outbox; a manager sees only messages addressed to them; an org-B button press decides in org B only and answers like an unknown button; a wrong secret is 401;<br>• `TOOL_CASES` (`mcp-notify.notify_send`): another org's token answers like an absent token, another org's grant is `wrong_org`, an in-app message to an org-B user answers like one to nobody;<br>• `CONSUMER_CASES` (`notify.in_app`);<br>• `HUB_TOOL_CASES`;<br>• `ROLE_MATRIX`: `GET /mock-outbox` is ALL_200, and the webhook is a public route. |
+| `make test-xt` covers every new route | yes | **Command:** `make test-xt` → `docs/evidence/NOTIF-1/make-test-xt.txt`, also part of `make check` in `make-check.txt`. Cross-tenant surface: 26 API routes (including `GET /mock-outbox` and `POST /webhooks/telegram`), 9 MCP tools (including `mcp-notify.notify_send`), 1 event consumer (`notify.in_app`). tools/tests_xt `239 passed` in the rebased run (main's routes included), `hub tools covered: … notify__notify_send`.<br>**Rows added:**<br>• `ROUTE_CASES`: org-A sees only its outbox; a manager sees only messages addressed to them; an org-B button press decides in org B only and answers like an unknown button; a wrong secret is 401;<br>• `TOOL_CASES` (`mcp-notify.notify_send`): another org's token answers like an absent token, another org's grant is `wrong_org`, an in-app message to an org-B user answers like one to nobody;<br>• `CONSUMER_CASES` (`notify.in_app`);<br>• `HUB_TOOL_CASES`;<br>• `ROLE_MATRIX`: `GET /mock-outbox` is ALL_200, and the webhook is a public route. |
 
 ## Claims the next goals may rely on
 | Claim | Proved by |
@@ -50,9 +66,9 @@ Decisions: `docs/adr/0013-notify-sink-and-telegram-callbacks.md`.
 |------|---------|--------|
 | Check | `make check` | `make check: all passed`, including test-xt (`docs/evidence/NOTIF-1/make-check.txt`) |
 | Integration | `make test-int` | `Successfully ran target test-int for 9 projects`, exit 0 (`make-test-int.txt`); mcp-mocks tests_int `11 passed` |
-| Cross-tenant | `make test-xt` | tools/tests_xt `152 passed`; hub test-xt `13 passed` (`make-test-xt.txt`) |
-| Contracts | `make contracts`, then `make contracts-check` | `openapi.json and the TS client are up to date` (both files committed) |
-| Evals | `make evals-selftest` | `27 cases x 3, all cases passed: True, gates: PASS, controls caught 8/8` (`make-evals-selftest.txt`). The first run failed on a Mongo `AutoReconnect` before any case was graded; the rerun passed. |
+| Cross-tenant | `make test-xt` | `cross-tenant surface: 26 API routes, 9 MCP tools, 1 event consumers`; `239 passed`; `hub tools covered: … notify__notify_send` (`make-test-xt.txt`; the first run hit an environmental Mongo `connection closed` and was rerun) |
+| Contracts | `make contracts`, then `make contracts-check` | `openapi.json and the TS client are up to date` (regenerated on the rebased tree, both files committed) |
+| Evals | `make evals-selftest` | `27 cases x 3, all cases passed: True, gates: PASS, controls caught 8/8` (`make-evals-selftest.txt`, rebased tree) |
 | Mutations | `uv run --frozen python docs/evidence/NOTIF-1/mutate.py` | `20/20 killed`, `0 files differ` (`mutation-checks.txt`) |
 
 ## Inherited and used

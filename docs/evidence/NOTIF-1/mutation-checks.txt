@@ -1,7 +1,7 @@
 == N1 (box 1: the outbox keeps the raw mobile instead of its mask) -> KILLED
    FAILED apps/mcp-mocks/tests/test_notify_server.py::test_a_telegram_send_with_context_and_grant_is_sent_and_stored_masked
    FAILED apps/mcp-mocks/tests/test_notify_sink.py::test_box1_mock_outbox_holds_only_the_masked_mobile_never_the_raw_value
-   2 failed, 143 passed in 1.61s
+   2 failed, 143 passed in 0.81s
 == N2 (box 2: no guardrail decision for a refused grant) -> KILLED
    FAILED apps/mcp-mocks/tests/test_notify_server.py::test_a_rejected_grant_is_a_refusal_naming_the_reason_never_an_internal_error
    FAILED apps/mcp-mocks/tests/test_notify_sink.py::test_box2_a_rejected_grant_stores_nothing_fails_the_task_and_writes_a_guardrail_event_and_an_audit_record[no-grant]
@@ -10,7 +10,7 @@
    FAILED apps/mcp-mocks/tests/test_notify_sink.py::test_box2_a_rejected_grant_stores_nothing_fails_the_task_and_writes_a_guardrail_event_and_an_audit_record[another-hires-token]
    FAILED apps/mcp-mocks/tests/test_notify_sink.py::test_box2_a_rejected_grant_stores_nothing_fails_the_task_and_writes_a_guardrail_event_and_an_audit_record[another-orgs-token]
    ...
-   10 failed, 135 passed in 0.99s
+   10 failed, 135 passed in 0.83s
 == N3 (box 2: the task is not failed (no task.sink_rejected event)) -> KILLED
    FAILED apps/mcp-mocks/tests/test_notify_sink.py::test_box2_a_rejected_grant_stores_nothing_fails_the_task_and_writes_a_guardrail_event_and_an_audit_record[no-grant]
    FAILED apps/mcp-mocks/tests/test_notify_sink.py::test_box2_a_rejected_grant_stores_nothing_fails_the_task_and_writes_a_guardrail_event_and_an_audit_record[forged-signature]
@@ -19,7 +19,7 @@
    FAILED apps/mcp-mocks/tests/test_notify_sink.py::test_box2_a_rejected_grant_stores_nothing_fails_the_task_and_writes_a_guardrail_event_and_an_audit_record[another-orgs-token]
    FAILED apps/mcp-mocks/tests/test_notify_sink.py::test_box2_a_rejected_grant_stores_nothing_fails_the_task_and_writes_a_guardrail_event_and_an_audit_record[another-orgs-grant]
    ...
-   11 failed, 134 passed in 0.98s
+   11 failed, 134 passed in 0.82s
 == N4 (box 2: no grant audit record) -> KILLED
    FAILED apps/mcp-mocks/tests/test_notify_sink.py::test_box2_a_rejected_grant_stores_nothing_fails_the_task_and_writes_a_guardrail_event_and_an_audit_record[no-grant]
    FAILED apps/mcp-mocks/tests/test_notify_sink.py::test_box2_a_rejected_grant_stores_nothing_fails_the_task_and_writes_a_guardrail_event_and_an_audit_record[forged-signature]
@@ -28,7 +28,7 @@
    FAILED apps/mcp-mocks/tests/test_notify_sink.py::test_box2_a_rejected_grant_stores_nothing_fails_the_task_and_writes_a_guardrail_event_and_an_audit_record[another-orgs-token]
    FAILED apps/mcp-mocks/tests/test_notify_sink.py::test_box2_a_rejected_grant_stores_nothing_fails_the_task_and_writes_a_guardrail_event_and_an_audit_record[another-orgs-grant]
    ...
-   8 failed, 137 passed in 0.97s
+   8 failed, 137 passed in 0.84s
 == N5 (box 2: a refused grant still sends (the refusal is swallowed and the send goes on unresolved)) -> KILLED
    FAILED apps/mcp-mocks/tests/test_notify_server.py::test_a_rejected_grant_is_a_refusal_naming_the_reason_never_an_internal_error
    FAILED apps/mcp-mocks/tests/test_notify_server.py::test_no_grant_header_is_a_rejected_grant
@@ -37,59 +37,59 @@
    FAILED apps/mcp-mocks/tests/test_notify_sink.py::test_box2_a_rejected_grant_stores_nothing_fails_the_task_and_writes_a_guardrail_event_and_an_audit_record[wrong-sink]
    FAILED apps/mcp-mocks/tests/test_notify_sink.py::test_box2_a_rejected_grant_stores_nothing_fails_the_task_and_writes_a_guardrail_event_and_an_audit_record[another-hires-token]
    ...
-   12 failed, 133 passed in 1.02s
+   12 failed, 133 passed in 0.82s
 == N6 (replay: a used grant with other arguments counts as a replay of the first send) -> KILLED
    FAILED apps/mcp-mocks/tests/test_notify_sink.py::test_the_same_grant_with_other_arguments_is_a_rejected_replay
-   1 failed, 144 passed in 1.06s
+   1 failed, 144 passed in 0.78s
 == N7 (jti sweep: deletes live rows too) -> KILLED
    FAILED apps/mcp-mocks/tests/test_notify_sink.py::test_a_send_sweeps_this_orgs_expired_jti_rows_and_keeps_live_ones
-   1 failed, 144 passed in 1.46s
+   1 failed, 144 passed in 1.11s
 == N8 (body: a vault token in a telegram body is not refused) -> KILLED
    FAILED apps/mcp-mocks/tests/test_notify_sink.py::test_a_body_carrying_a_token_is_refused_before_any_grant_is_used
-   1 failed, 144 passed in 0.94s
+   1 failed, 144 passed in 0.85s
 == N9 (server: the call context may name another tool) -> KILLED
    FAILED apps/mcp-mocks/tests/test_notify_server.py::test_a_context_naming_another_tool_is_refused
-   1 failed, 144 passed in 1.05s
+   1 failed, 144 passed in 0.81s
 == N10 (in-app: a redelivered job notifies again (no dedupe key)) -> KILLED
    FAILED apps/mcp-mocks/tests/test_notify_in_app.py::test_a_redelivered_job_stores_nothing_new
-   1 failed, 144 passed in 0.95s
+   1 failed, 144 passed in 0.80s
 == N11 (box 3: the webhook secret is not checked) -> KILLED
    FAILED apps/api/tests/test_notify_routes.py::test_box3_the_webhook_rejects_a_wrong_secret_token[missing]
    FAILED apps/api/tests/test_notify_routes.py::test_box3_the_webhook_rejects_a_wrong_secret_token[empty]
    FAILED apps/api/tests/test_notify_routes.py::test_box3_the_webhook_rejects_a_wrong_secret_token[another-secret]
    FAILED apps/api/tests/test_notify_routes.py::test_box3_the_webhook_rejects_a_wrong_secret_token[one-character-short]
    FAILED apps/api/tests/test_notify_routes.py::test_box3_a_wrong_secret_is_refused_before_the_body_is_validated
-   5 failed, 17 passed in 0.69s
+   5 failed, 17 passed in 0.60s
 == N12 (webhook: a press decides in a fixed org instead of the button's) -> KILLED
    FAILED apps/api/tests/test_notify_routes.py::test_a_press_on_an_org_b_button_decides_in_org_b_only
    FAILED apps/api/tests/test_notify_routes.py::test_the_webhook_needs_no_user_token_and_ignores_one
-   2 failed, 20 passed in 0.51s
+   2 failed, 20 passed in 0.56s
 == N13 (webhook: the decision is taken from the request (always approve), not the stored button) -> KILLED
    FAILED apps/api/tests/test_notify_routes.py::test_the_decision_comes_from_the_stored_button_not_the_request
-   1 failed, 21 passed in 0.47s
+   1 failed, 21 passed in 0.56s
 == N14 (outbox: a MANAGER sees the whole org's outbox) -> KILLED
    FAILED apps/api/tests/test_notify_routes.py::test_a_manager_sees_only_messages_addressed_to_them
-   1 failed, 21 passed in 0.78s
+   1 failed, 21 passed in 0.59s
 == N15 (hub gateway: the grant is handed to every server) -> KILLED
    FAILED apps/mcp-hub/tests/test_notify.py::test_the_gateway_hands_the_grant_to_the_notify_call_only
-   1 failed, 12 passed in 0.55s
+   1 failed, 12 passed in 0.49s
 == N16 (hub downstream: the grant header goes to every server) -> KILLED
    FAILED apps/mcp-hub/tests/test_notify.py::test_the_grant_header_never_reaches_another_server[mongo__find]
    FAILED apps/mcp-hub/tests/test_notify.py::test_the_grant_header_never_reaches_another_server[mocks__provision_laptop]
-   2 failed, 11 passed in 0.52s
+   2 failed, 11 passed in 0.51s
 == N17 (hub gateway: a response echoing the grant is not withheld) -> KILLED
    FAILED apps/mcp-hub/tests/test_notify.py::test_a_response_echoing_the_grant_is_withheld_from_the_agent
-   1 failed, 12 passed in 0.52s
+   1 failed, 12 passed in 0.46s
 == N18 (failure after resolution: not recorded, so a retry is resolved again (and replayed) instead of send_failed) -> KILLED
    FAILED apps/mcp-mocks/tests/test_notify_sink.py::test_a_failure_after_resolution_is_reported_once_and_a_retry_is_refused_send_failed
-   1 failed, 144 passed in 6.16s
+   1 failed, 144 passed in 5.84s
 == N19 (the grant's run is not compared with the call context's) -> KILLED
    FAILED apps/mcp-mocks/tests/test_notify_sink.py::test_a_grant_for_another_run_is_refused_and_recorded_like_any_refusal
-   1 failed, 144 passed in 1.07s
+   1 failed, 144 passed in 0.79s
 == N20 (another org's verified grant has its run and task written into the caller's org) -> KILLED
    FAILED apps/mcp-mocks/tests/test_notify_sink.py::test_the_caller_org_comes_from_the_context_not_the_grant
    FAILED apps/mcp-mocks/tests/test_notify_sink.py::test_another_orgs_grant_writes_none_of_its_run_or_task_into_the_callers_org
-   2 failed, 143 passed in 1.04s
+   2 failed, 143 passed in 0.81s
 source diff after all mutations: 0 files differ
 20/20 killed; survivors: none
 exit=0
