@@ -1,0 +1,92 @@
+ Image onb/otel-collector:0.165.0 Building 
+ Image onb/otel-collector:0.165.0 Built 
+ Network ob-ui-5_backend Creating 
+ Network ob-ui-5_edge Creating 
+ Network ob-ui-5_backend Creating 
+ Network ob-ui-5_edge Creating 
+ Network ob-ui-5_backend Created 
+ Network ob-ui-5_backend Created 
+ Container ob-ui-5-jaeger-1 Creating 
+ Container ob-ui-5-mongo-1 Creating 
+ Network ob-ui-5_edge Created 
+ Network ob-ui-5_edge Created 
+ Container ob-ui-5-jaeger-1 Created 
+ Container ob-ui-5-otel-collector-1 Creating 
+ Container ob-ui-5-caddy-1 Creating 
+ Container ob-ui-5-otel-collector-1 Created 
+ Container ob-ui-5-mongo-1 Created 
+ Container ob-ui-5-caddy-1 Created 
+ Container ob-ui-5-mongo-1 Starting 
+ Container ob-ui-5-jaeger-1 Starting 
+ Container ob-ui-5-mongo-1 Started 
+ Container ob-ui-5-jaeger-1 Started 
+ Container ob-ui-5-jaeger-1 Waiting 
+ Container ob-ui-5-jaeger-1 Waiting 
+ Container ob-ui-5-jaeger-1 Healthy 
+ Container ob-ui-5-otel-collector-1 Starting 
+ Container ob-ui-5-jaeger-1 Healthy 
+ Container ob-ui-5-caddy-1 Starting 
+ Container ob-ui-5-otel-collector-1 Started 
+ Container ob-ui-5-caddy-1 Started 
+ Container ob-ui-5-jaeger-1 Waiting 
+ Container ob-ui-5-caddy-1 Waiting 
+ Container ob-ui-5-mongo-1 Waiting 
+ Container ob-ui-5-otel-collector-1 Waiting 
+ Container ob-ui-5-jaeger-1 Healthy 
+ Container ob-ui-5-otel-collector-1 Healthy 
+ Container ob-ui-5-mongo-1 Healthy 
+ Container ob-ui-5-caddy-1 Healthy 
+make: *** [test-xt] Error 1
+python3 scripts/plan/plan.py check
+plan ok: 67 goals, 34 ledger rows
+python3 scripts/check_env_example.py
+check_env_example: all 9 compose variables are documented in .env.example
+uv run --frozen ruff check tools scripts/check_env_example.py scripts/contracts.py
+All checks passed!
+uv run --frozen ruff format --check tools scripts/check_env_example.py scripts/contracts.py
+20 files already formatted
+uv run --frozen mypy tools scripts/check_env_example.py scripts/contracts.py
+Success: no issues found in 20 source files
+uv run --frozen pytest tools/tests scripts/plan/test_plan.py -q
+........................................................................ [ 40%]
+........................................................................ [ 80%]
+...................................                                           [100%]
+179 passed, 67 subtests passed in 11.92s
+node_modules/.bin/nx run-many -t lint --output-style=static
+ NX   Running target lint for 17 projects:
+- py-guardrails
+- ts-api-client
+- orchestrator
+- py-contracts
+- py-telemetry
+- py-eventbus
+- mcp-mocks
+- mcp-mongo
+- py-agents
+- py-crypto
+- py-evals
+- mcp-hub
+- py-data
+- py-llm
+- ts-ui
+- api
+- web
+> nx run py-data:lint  [existing outputs match the cache, left as is]
+[2m> [22muv run --frozen ruff check libs/py-data
+[1;32mAll checks passed![0m
+[2m> [22muv run --frozen ruff format --check libs/py-data
+33 files already formatted
+> nx run py-guardrails:lint  [existing outputs match the cache, left as is]
+[2m> [22muv run --frozen ruff check libs/py-guardrails
+[1;32mAll checks passed![0m
+[2m> [22muv run --frozen ruff format --check libs/py-guardrails
+28 files already formatted
+> nx run py-telemetry:lint  [existing outputs match the cache, left as is]
+[2m> [22muv run --frozen ruff check libs/py-telemetry
+[1;32mAll checks passed![0m
+[2m> [22muv run --frozen ruff format --check libs/py-telemetry
+23 files already formatted
+> nx run py-crypto:lint  [existing outputs match the cache, left as is]
+... (1248 lines truncated)
+[full output: ~/Library/Application Support/rtk/tee/1794505316_make_check.log]
+exit 2

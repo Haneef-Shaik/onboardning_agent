@@ -1,0 +1,7 @@
+Attempt-2 cross-tenant evidence (final code, dd053ce + docs). All errors are Mongo setup flake (ServerSelectionTimeoutError / OSError "connection closed", host load average ~14 from parallel sessions); no assertion failed in any run.
+
+1. make check (make-check-rerun.txt): lint, typecheck, unit tests all pass; test-xt step: 314 passed, 2 errors (setup).
+2. uv run --frozen --env-file .env pytest tools/tests_xt (test-xt-rerun-2.txt): 314 passed, 2 errors (setup; different tests than run 1).
+3. pytest tools/tests_xt/test_xt_api.py: 249 passed, 3 errors (setup; different tests again).
+4. pytest tools/tests_xt -k "runs or run_id or templates" (every route case touching the runs read path): 144 passed, 0 errors.
+Attempt-1 code, same suite, direct: 316 passed, 0 errors (test-xt-rerun.txt).
