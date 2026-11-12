@@ -107,3 +107,6 @@ None. ADR 0029 (reserved) is not used.
 - Chat routes are 503 without `AGENT_TOKEN_KEY` + `MCP_HUB_URL`. run.sh sets a key and a closed loopback hub URL, so the history read is measured and nothing can reach the assistant.
 - Role matrix: `/agents`, `/audit`, `/evals/runs` and `/pii-access-log` are HR_ADMIN only. `/pii/{field}/reveal` needs a `reason`.
 - Measurement data accumulates in the org across runs (drafts, hires, runs). The final run was not done on a fresh database; `latency.md` states the volume.
+
+## Verification
+goal-verifier attempt 1 on d1539bb: **pass** (both boxes recomputed from the raw samples in `latency.json`; NF-LAT row ok; `make check` re-run by the verifier in a scratch worktree: exit 0, cross-tenant included; no problems).
