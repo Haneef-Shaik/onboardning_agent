@@ -88,6 +88,8 @@ def test_references_differ_by_org_run_and_kind() -> None:
 
 def test_the_reference_parts_cannot_be_shifted_into_each_other() -> None:
     assert opaque_ref("org_a", "task", "ab", "c") != opaque_ref("org_a", "task", "a", "bc")
+    # Even a part that contains the separator cannot be split into two others.
+    assert opaque_ref("org_a", "task", "a\x00b", "c") != opaque_ref("org_a", "task", "a", "b\x00c")
 
 
 def test_the_agent_gets_the_hires_non_pii_variables(tmp_path: Path) -> None:

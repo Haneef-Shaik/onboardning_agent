@@ -1,0 +1,114 @@
+infra/mongo/gen-keyfile.sh
+gen-keyfile: keeping existing infra/mongo/keyfile
+docker compose up -d --wait --build
+ Image onb/otel-collector:0.165.0 Building 
+#1 [internal] load local bake definitions
+#1 reading from stdin 647B done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 578B done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/otel/opentelemetry-collector-contrib:0.165.0@sha256:e40d61f10c9a617cca1ffd1be4d7e2b3a4b0f0001798ff07e58cabe82e618cea
+#3 DONE 0.1s
+
+#4 [internal] load metadata for docker.io/library/alpine:3.24.4@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf
+#4 DONE 0.1s
+
+#5 [internal] load .dockerignore
+#5 transferring context: 2B done
+#5 DONE 0.0s
+
+#6 [upstream 1/1] FROM docker.io/otel/opentelemetry-collector-contrib:0.165.0@sha256:e40d61f10c9a617cca1ffd1be4d7e2b3a4b0f0001798ff07e58cabe82e618cea
+#6 resolve docker.io/otel/opentelemetry-collector-contrib:0.165.0@sha256:e40d61f10c9a617cca1ffd1be4d7e2b3a4b0f0001798ff07e58cabe82e618cea 0.0s done
+#6 DONE 0.0s
+
+#7 [stage-1 1/3] FROM docker.io/library/alpine:3.24.4@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf
+#7 resolve docker.io/library/alpine:3.24.4@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf 0.0s done
+#7 DONE 0.1s
+
+#8 [stage-1 2/3] RUN adduser -D -H -u 10001 otel
+#8 CACHED
+
+#9 [stage-1 3/3] COPY --from=upstream /otelcol-contrib /otelcol-contrib
+#9 CACHED
+
+#10 exporting to image
+#10 exporting layers done
+#10 exporting manifest sha256:3439b606b64f1120532a28c1c5ea504edf1df3ef497f5fa2b0d2a8d065651b06 0.0s done
+#10 exporting config sha256:e9b683b292be3a3217e7e824bedc592cb202c6ad80bc22c5159ded501ce81cd6
+#10 exporting config sha256:e9b683b292be3a3217e7e824bedc592cb202c6ad80bc22c5159ded501ce81cd6 0.0s done
+#10 exporting attestation manifest sha256:79c37566ef988ad04f977036ce830d42ed73ebd18452ebfca1b5d1516f3f5755 0.0s done
+#10 exporting manifest list sha256:e08b710d0baab95683ab070b2692b9e611ccd4a83c96aca1d64570fd91aaf945 0.0s done
+#10 naming to docker.io/onb/otel-collector:0.165.0 done
+#10 unpacking to docker.io/onb/otel-collector:0.165.0 done
+#10 DONE 0.2s
+
+#11 resolving provenance for metadata file
+#11 DONE 0.1s
+ Image onb/otel-collector:0.165.0 Built 
+ Network ob-agt-1_edge Creating 
+ Volume ob-agt-1_mongo_config Creating 
+ Network ob-agt-1_backend Creating 
+ Volume ob-agt-1_caddy_config Creating 
+ Volume ob-agt-1_caddy_config Creating 
+ Volume ob-agt-1_mongo_data Creating 
+ Volume ob-agt-1_mongo_data Creating 
+ Volume ob-agt-1_mongo_config Creating 
+ Volume ob-agt-1_caddy_data Creating 
+ Network ob-agt-1_backend Creating 
+ Volume ob-agt-1_caddy_data Creating 
+ Network ob-agt-1_edge Creating 
+ Volume ob-agt-1_caddy_config Created 
+ Volume ob-agt-1_caddy_config Created 
+ Volume ob-agt-1_mongo_config Created 
+ Volume ob-agt-1_mongo_config Created 
+ Volume ob-agt-1_mongo_data Created 
+ Volume ob-agt-1_mongo_data Created 
+ Volume ob-agt-1_caddy_data Created 
+ Volume ob-agt-1_caddy_data Created 
+ Network ob-agt-1_backend Created 
+ Network ob-agt-1_backend Created 
+ Container ob-agt-1-jaeger-1 Creating 
+ Container ob-agt-1-mongo-1 Creating 
+ Network ob-agt-1_edge Created 
+ Network ob-agt-1_edge Created 
+ Container ob-agt-1-jaeger-1 Created 
+ Container ob-agt-1-otel-collector-1 Creating 
+ Container ob-agt-1-caddy-1 Creating 
+ Container ob-agt-1-mongo-1 Created 
+ Container ob-agt-1-otel-collector-1 Created 
+ Container ob-agt-1-caddy-1 Created 
+ Container ob-agt-1-jaeger-1 Starting 
+ Container ob-agt-1-mongo-1 Starting 
+ Container ob-agt-1-jaeger-1 Started 
+ Container ob-agt-1-jaeger-1 Waiting 
+ Container ob-agt-1-jaeger-1 Waiting 
+ Container ob-agt-1-mongo-1 Started 
+ Container ob-agt-1-jaeger-1 Healthy 
+ Container ob-agt-1-otel-collector-1 Starting 
+ Container ob-agt-1-jaeger-1 Healthy 
+ Container ob-agt-1-caddy-1 Starting 
+ Container ob-agt-1-otel-collector-1 Started 
+ Container ob-agt-1-caddy-1 Started 
+ Container ob-agt-1-mongo-1 Waiting 
+ Container ob-agt-1-otel-collector-1 Waiting 
+ Container ob-agt-1-jaeger-1 Waiting 
+ Container ob-agt-1-caddy-1 Waiting 
+ Container ob-agt-1-jaeger-1 Healthy 
+ Container ob-agt-1-otel-collector-1 Healthy 
+ Container ob-agt-1-caddy-1 Healthy 
+ Container ob-agt-1-mongo-1 Healthy 
+set -a && . ./.env && set +a && \
+	LLM_CONNECTOR=fake OTEL_TRACES_EXPORTER="${OTEL_TRACES_EXPORTER:-none}" \
+	uv run --frozen pytest libs/py-evals/tests_int/test_selftest.py -q -s -o cache_dir=.pytest_cache/py-evals-selftest
+selftest evr_20261112T145702Z_bf9e157c: 27 cases x 3, all cases passed: True, gates: PASS, controls caught 8/8
+report: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-agt-1/evals/reports/20261112T145702Z-all-fake_eval-scripted.json
+report: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-agt-1/evals/reports/20261112T145702Z-all-fake_eval-scripted.md
+eval_runs: evr_20261112T145702Z_bf9e157c
+result: PASS
+
+.
+1 passed in 51.16s
+exit=0
