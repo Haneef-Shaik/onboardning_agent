@@ -65,3 +65,6 @@ None.
 ## Traps hit
 - First `make check` failed at stack start: Caddy unhealthy with a placeholder basic-auth hash; fixed with a real bcrypt.
 - The output compressor filtered the first `make-check.txt`; re-captured with `rtk proxy`.
+
+## Verifier
+Attempt 1 (HEAD 1188ade): both boxes met, gates pass (check, test-int, test-xt 337, contracts, Playwright 20/20), verifier broke each guard itself and the spec failed. Verdict `fail` on one point only: ledger row U6@MS-5, UI-7 being its last prover, is still `open`; it cannot honestly be `pass` until CHAT-1 real-connector eval (ra-001..ra-007, OW-1) is done. UI-7 is therefore ON HOLD, not retried. Attempt 2, once CHAT-1 is done: rebase on main, run the U6 proof on compose (Playwright via Caddy, `E2E_BASE_URL=https://localhost:19401`, raw output in docs/evidence/UI-7/), set U6 to `pass · date · compose · evidence` here, `plan.py check`. No code change expected.
