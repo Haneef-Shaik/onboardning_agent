@@ -1,0 +1,14 @@
+chat() skips the manager-scope run lookup -> KILLED by test_a_manager_asking_about_a_run_outside_their_reports_is_refused_before_the_assistant_runs, test_another_orgs_run_is_404_for_every_chat_route
+history() skips the run lookup -> KILLED by test_a_manager_asking_about_a_run_outside_their_reports_is_refused_before_the_assistant_runs, test_another_orgs_run_is_404_for_every_chat_route
+confirm() skips the claim (retry without a pending proposal) -> KILLED by test_a_proposed_retry_changes_nothing_until_the_confirm_call, test_an_expired_proposal_is_refused_and_changes_nothing, test_a_confirmed_retry_the_run_no_longer_allows_is_409_and_cannot_be_replayed
+confirm() ignores who the proposal was offered to -> KILLED by test_a_proposal_runs_once_and_only_for_the_user_it_was_offered_to
+confirm() ignores the run the proposal belongs to -> KILLED by test_a_proposal_cannot_be_confirmed_through_another_runs_chat_path
+claim() ignores expiry -> KILLED by test_an_expired_proposal_is_refused_and_changes_nothing
+claim() ignores status (a proposal runs twice) -> KILLED by test_a_proposal_is_claimed_once_whatever_the_run_allows
+question is stored raw -> KILLED by test_stored_messages_and_what_the_assistant_sees_hold_markers_not_raw_values
+answer is stored raw -> KILLED by test_stored_messages_and_what_the_assistant_sees_hold_markers_not_raw_values
+proposal offered for any task state -> KILLED by test_a_proposal_for_a_task_that_is_not_failed_is_not_offered[welcome_message]
+proposal offered to a manager -> KILLED by test_a_manager_may_ask_about_a_report_but_is_offered_no_retry
+proposal for another run accepted -> KILLED by test_a_proposal_naming_another_run_or_action_is_not_offered
+citations not filtered -> KILLED by test_chat_answers_over_sse_cites_a_real_task_and_keeps_the_conversation
+confirm route open to managers -> KILLED by test_confirming_is_for_hr_and_hr_admin_only

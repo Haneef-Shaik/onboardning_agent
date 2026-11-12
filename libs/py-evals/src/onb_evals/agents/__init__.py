@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
-from onb_evals.adapters import register_adapter
+from onb_evals.adapters import is_registered, register_adapter
 from onb_evals.agents.run_assistant import RunAssistantAdapter
 
 __all__ = ["register_builtin_adapters"]
 
 
 def register_builtin_adapters() -> None:
-    register_adapter("run_assistant", RunAssistantAdapter)
+    """Idempotent: an agent that already has an adapter keeps it."""
+    if not is_registered("run_assistant"):
+        register_adapter("run_assistant", RunAssistantAdapter)

@@ -17,7 +17,7 @@ from onb_llm import LLMRuntime, LLMSelection
 from onb_evals.runner import AgentAdapter
 from onb_evals.tokens import TokenMap
 
-__all__ = ["AdapterNotFoundError", "RuntimeLLM", "adapter_for", "parse_llm", "register_adapter"]
+__all__ = ["AdapterNotFoundError", "RuntimeLLM", "adapter_for", "is_registered", "parse_llm", "register_adapter"]
 
 _ADAPTERS: Final[dict[str, Callable[[], AgentAdapter]]] = {}
 
@@ -30,6 +30,10 @@ def register_adapter(agent: str, factory: Callable[[], AgentAdapter]) -> None:
     if agent in _ADAPTERS:
         raise ValueError(f"an adapter for {agent!r} is already registered")
     _ADAPTERS[agent] = factory
+
+
+def is_registered(agent: str) -> bool:
+    return agent in _ADAPTERS
 
 
 def adapter_for(agent: str) -> AgentAdapter:

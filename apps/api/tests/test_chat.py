@@ -255,7 +255,7 @@ def test_a_confirmed_retry_the_run_no_longer_allows_is_409_and_cannot_be_replaye
     assert history[1]["proposal"]["status"] == "failed"
 
 
-@pytest.mark.parametrize("proposal_task", ["send_welcome", "no_such_task"])
+@pytest.mark.parametrize("proposal_task", ["welcome_message", "no_such_task"])
 def test_a_proposal_for_a_task_that_is_not_failed_is_not_offered(
     client: TestClient, assistant: StubAssistant, blocked_run: str, proposal_task: str
 ) -> None:
@@ -351,3 +351,32 @@ def test_stored_messages_and_what_the_assistant_sees_hold_markers_not_raw_values
     assert RAW_PAN not in stored
     assert RAW_EMAIL not in stored
     assert memory_db["messages"].documents  # the check above is not vacuous
+
+
+def test_a_proposal_cannot_be_confirmed_through_another_runs_chat_path(
+    client: TestClient, assistant: StubAssistant, memory_db: MemoryDatabase, blocked_run: str
+) -> None:
+    other = _start(client, "h_acme_003")  # Ravi's other report
+    _block(memory_db, other)
+    assistant.reply = _propose_retry(blocked_run)
+    proposal_id = _reply_message(_ask(client, blocked_run, "Retry it"))["proposal"]["proposal_id"]
+    response = client.post(f"/runs/{other}/chat/confirm", json={"proposal_id": proposal_id}, headers=_auth(HR))
+    assert response.status_code == 404
+    assert _task_status(memory_db, blocked_run) == "failed"
+    assert _task_status(memory_db, other) == "failed"
+
+
+def test_a_proposal_is_claimed_once_whatever_the_run_allows(memory_db: MemoryDatabase) -> None:
+    from onb_api.chat.store import ChatStore
+
+    store = ChatStore(memory_store(memory_db))
+
+    async def work() -> tuple[bool, bool]:
+        with tenant_scope("org_acme"):
+            conversation = await store.conversation("run_x", "u_acme_hr1", at=NOW)
+            proposal = await store.add_proposal(
+                conversation, type="retry_task", task_id=FAILED, at=NOW, expires_at=NOW + timedelta(minutes=5)
+            )
+            return await store.claim(proposal["_id"], at=NOW), await store.claim(proposal["_id"], at=NOW)
+
+    assert run(work()) == (True, False)
