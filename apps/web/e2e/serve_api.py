@@ -5,6 +5,7 @@ with the synthetic users of `onb_api.testing.SEED_USERS`. No Mongo: the Mongo-ba
 by their own integration tests, and the compose golden path is E2E-1's.
 
 UI-8: the admin routes' services, seeded in memory through the real services (`admin_seed.py`).
+UI-5: runs are seeded by `run_seed.py` and a test router (`/e2e/...`, 127.0.0.1 only) plays the orchestrator.
 UI-4: that seed also builds the real document service next to the hire service (vault, masking, audited
 reveal, encrypted scans, one master key per run), which the hires screens use.
 
@@ -26,6 +27,7 @@ from onb_api.auth.settings import AuthSettings, require_env
 from onb_api.auth.users import NewUser
 from onb_api.testing import SEED_USERS, InMemoryUserStore, email_of
 from onb_data import tenant_scope
+from run_seed import driver_router
 
 HOST = "127.0.0.1"
 BCRYPT_ROUNDS = 4  # test speed; the production default stays 12
@@ -47,7 +49,10 @@ def main() -> int:
     settings = AuthSettings(jwt_secret=require_env(os.environ, "E2E_JWT_SECRET"), bcrypt_rounds=BCRYPT_ROUNDS)
     users = asyncio.run(seeded(password))
     admin = asyncio.run(admin_services(users))  # includes the hire and document services (UI-4)
-    uvicorn.run(create_app(auth=settings, users=users, **admin), host=HOST, port=port, log_level="warning")
+    driver = admin.pop("run_driver")  # UI-5: the test's stand-in for the orchestrator
+    app = create_app(auth=settings, users=users, **admin)
+    app.include_router(driver_router(driver))
+    uvicorn.run(app, host=HOST, port=port, log_level="warning")
     return 0
 
 
