@@ -1,1 +1,17 @@
-============================= 12 passed in 19.94s ==============================
+apps/orchestrator/tests_int/test_agents_against_mongo.py::test_each_task_runs_its_agent_with_its_model_recorded_and_a_grant_only_where_declared PASSED [  6%]
+apps/orchestrator/tests_int/test_agents_against_mongo.py::test_only_the_task_declaring_pii_access_gets_a_grant_for_its_fields_and_sink PASSED [ 12%]
+apps/orchestrator/tests_int/test_agents_against_mongo.py::test_an_exhausted_run_token_budget_fails_the_task_and_the_run PASSED [ 18%]
+apps/orchestrator/tests_int/test_agents_against_mongo.py::test_a_sinks_rejection_published_on_the_bus_fails_the_running_task PASSED [ 25%]
+apps/orchestrator/tests_int/test_block_and_resume_against_mongo.py::test_a_blocked_run_queues_the_hr_notification_with_the_block_and_resumes_through_the_bus PASSED [ 31%]
+apps/orchestrator/tests_int/test_kill_and_restart.py::test_a_worker_killed_with_sigkill_mid_run_restarts_and_the_run_completes_with_no_effect_twice[before] PASSED [ 37%]
+apps/orchestrator/tests_int/test_kill_and_restart.py::test_a_worker_killed_with_sigkill_mid_run_restarts_and_the_run_completes_with_no_effect_twice[after] PASSED [ 43%]
+apps/orchestrator/tests_int/test_runs_against_mongo.py::test_a_diamond_started_through_the_outbox_runs_b_and_c_in_parallel_and_d_after_both PASSED [ 50%]
+apps/orchestrator/tests_int/test_runs_against_mongo.py::test_the_checkpoint_thread_id_is_org_id_colon_run_id_and_every_checkpoint_carries_the_org PASSED [ 56%]
+apps/orchestrator/tests_int/test_runs_against_mongo.py::test_a_run_stays_pinned_to_its_version_after_a_newer_version_is_published PASSED [ 62%]
+apps/orchestrator/tests_int/test_runs_against_mongo.py::test_a_start_whose_audit_write_fails_leaves_no_run_task_event_or_job PASSED [ 68%]
+apps/orchestrator/tests_int/test_runs_against_mongo.py::test_a_start_is_audited_in_the_same_transaction PASSED [ 75%]
+apps/orchestrator/tests_int/test_runs_against_mongo.py::test_a_redelivered_start_executes_no_task_twice PASSED [ 81%]
+apps/orchestrator/tests_int/test_runs_against_mongo.py::test_two_orgs_runs_execute_each_in_its_own_org PASSED [ 87%]
+apps/orchestrator/tests_int/test_safety_net_guard.py::test_every_orchestrator_integration_test_runs_under_the_safety_net_guard PASSED [ 93%]
+apps/orchestrator/tests_int/test_safety_net_guard.py::test_the_listener_is_registered_globally PASSED [100%]
+============================= 16 passed in 11.79s ==============================
