@@ -1,0 +1,36 @@
+
+ NX   Running target test-xt for project mcp-hub:
+
+- mcp-hub
+
+
+
+> nx run mcp-hub:test-xt
+
+[2m> [22muv run --frozen pytest apps/mcp-hub/tests_int/test_hub_xt.py apps/mcp-hub/tests_int/test_safety_net_guard.py -s -o cache_dir=.pytest_cache/mcp-hub-xt
+
+[1m============================= test session starts ==============================[0m
+platform darwin -- Python 3.12.13, pytest-9.2.0, pluggy-1.7.0
+cachedir: .pytest_cache/mcp-hub-xt
+rootdir: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-hil-2
+configfile: pyproject.toml
+plugins: hypothesis-6.170.15, langsmith-0.14.17, cov-7.1.0, anyio-4.16.0
+collected 13 items
+
+apps/mcp-hub/tests_int/test_hub_xt.py 
+make test-xt: hub tools covered: mocks__create_bitbucket_account, mocks__provision_laptop, mongo__aggregate, mongo__count, mongo__find, mongo__insert_one, mongo__list_collections, mongo__update_one, notify__notify_send
+[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m
+apps/mcp-hub/tests_int/test_safety_net_guard.py [32m.[0m[32m.[0m
+
+[32m============================= [32m[1m13 passed[0m[32m in 11.42s[0m[32m ==============================[0m
+
+
+
+ NX   Successfully ran target test-xt for project mcp-hub
+
+
+  Run duration:      14.9s
+  Cache:             0/1 hit (0%)
+  Critical path:     14.8s (1 task)
+  Recoverable time:  <1ms
+exit 0

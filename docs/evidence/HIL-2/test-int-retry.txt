@@ -1,0 +1,74 @@
+
+ NX   Running target test-int for 3 projects:
+
+- mcp-mongo
+- mcp-mocks
+- py-eventbus
+
+
+
+> nx run py-eventbus:test-int
+
+[2m> [22muv run --frozen pytest libs/py-eventbus/tests_int -o cache_dir=.pytest_cache/py-eventbus-int
+
+[1m============================= test session starts ==============================[0m
+platform darwin -- Python 3.12.13, pytest-9.2.0, pluggy-1.7.0
+cachedir: .pytest_cache/py-eventbus-int
+rootdir: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-hil-2
+configfile: pyproject.toml
+plugins: hypothesis-6.170.15, langsmith-0.14.17, cov-7.1.0, anyio-4.16.0
+collected 19 items
+
+libs/py-eventbus/tests_int/test_bus_against_mongo.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m   [ 89%][0m
+libs/py-eventbus/tests_int/test_safety_net_guard.py [32m.[0m[32m.[0m[32m                   [100%][0m
+
+[32m============================= [32m[1m19 passed[0m[32m in 15.16s[0m[32m ==============================[0m
+
+> nx run mcp-mongo:test-int
+
+[2m> [22muv run --frozen pytest apps/mcp-mongo/tests_int -o cache_dir=.pytest_cache/mcp-mongo-int
+
+[1m============================= test session starts ==============================[0m
+platform darwin -- Python 3.12.13, pytest-9.2.0, pluggy-1.7.0
+cachedir: .pytest_cache/mcp-mongo-int
+rootdir: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-hil-2
+configfile: pyproject.toml
+plugins: hypothesis-6.170.15, langsmith-0.14.17, cov-7.1.0, anyio-4.16.0
+collected 79 items
+
+apps/mcp-mongo/tests_int/test_db_users_int.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m [ 32%]
+[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                                        [ 74%][0m
+apps/mcp-mongo/tests_int/test_mcp_mongo_int.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m        [ 97%][0m
+apps/mcp-mongo/tests_int/test_safety_net_guard.py [32m.[0m[32m.[0m[32m                     [100%][0m
+
+[32m============================== [32m[1m79 passed[0m[32m in 8.86s[0m[32m ==============================[0m
+
+> nx run mcp-mocks:test-int
+
+[2m> [22muv run --frozen pytest apps/mcp-mocks/tests_int -o cache_dir=.pytest_cache/mcp-mocks-int
+
+[1m============================= test session starts ==============================[0m
+platform darwin -- Python 3.12.13, pytest-9.2.0, pluggy-1.7.0
+cachedir: .pytest_cache/mcp-mocks-int
+rootdir: /Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-hil-2
+configfile: pyproject.toml
+plugins: hypothesis-6.170.15, langsmith-0.14.17, cov-7.1.0, anyio-4.16.0
+collected 11 items
+
+apps/mcp-mocks/tests_int/test_notify_against_mongo.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m          [ 81%][0m
+apps/mcp-mocks/tests_int/test_safety_net_guard.py [32m.[0m[32m.[0m[32m                     [100%][0m
+
+[32m============================== [32m[1m11 passed[0m[32m in 7.06s[0m[32m ==============================[0m
+
+
+
+ NX   Successfully ran target test-int for 3 projects
+
+
+  Run duration:      38.8s
+  Cache:             0/3 hit (0%)
+  Critical path:     16.4s (1 task)
+  Recoverable time:  22.4s (58% of the run)
+
+  Recommendation: Increase parallelism to recover up to 22.4s → https://nx.dev/docs/concepts/ci-concepts/parallelization-distribution?utm_source=nx-cli&utm_medium=cli&utm_campaign=performance-report&utm_content=parallelization.
+exit 0

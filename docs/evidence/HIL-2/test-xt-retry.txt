@@ -1,0 +1,73 @@
+..................................                                       [100%]
+cross-tenant surface: 41 API routes, 9 MCP tools, 9 event consumers
+  route    GET    /agents
+  route    GET    /agents/{name}
+  route    GET    /approvals
+  route    GET    /audit
+  route    GET    /evals/runs
+  route    GET    /evals/runs/{run_id}
+  route    GET    /health
+  route    GET    /hires
+  route    GET    /hires/{hire_id}
+  route    GET    /hires/{hire_id}/documents
+  route    GET    /me
+  route    GET    /mock-outbox
+  route    GET    /pii-access-log
+  route    GET    /runs
+  route    GET    /runs/{run_id}
+  route    GET    /runs/{run_id}/chat
+  route    GET    /runs/{run_id}/stream
+  route    GET    /templates
+  route    GET    /templates/drafts
+  route    GET    /templates/drafts/{draft_id}
+  route    GET    /templates/{key}/versions/{version}
+  route    POST   /approvals/{approval_id}/decision
+  route    POST   /auth/login
+  route    POST   /hires
+  route    POST   /hires/{hire_id}/documents
+  route    POST   /hires/{hire_id}/pii/{field}/reveal
+  route    POST   /runs
+  route    POST   /runs/{run_id}/cancel
+  route    POST   /runs/{run_id}/chat
+  route    POST   /runs/{run_id}/chat/confirm
+  route    POST   /runs/{run_id}/pause
+  route    POST   /runs/{run_id}/resume
+  route    POST   /runs/{run_id}/tasks/{task_id}/complete
+  route    POST   /runs/{run_id}/tasks/{task_id}/retry
+  route    POST   /templates/drafts
+  route    POST   /templates/drafts/{draft_id}/publish
+  route    POST   /templates/drafts/{draft_id}/validate
+  route    POST   /templates/{key}/versions/{version}/archive
+  route    POST   /webhooks/telegram
+  route    PUT    /hires/{hire_id}/pii/{field}
+  route    PUT    /templates/drafts/{draft_id}
+  tool     mcp-mocks.create_bitbucket_account
+  tool     mcp-mocks.provision_laptop
+  tool     mcp-mongo.aggregate
+  tool     mcp-mongo.count
+  tool     mcp-mongo.find
+  tool     mcp-mongo.insert_one
+  tool     mcp-mongo.list_collections
+  tool     mcp-mongo.update_one
+  tool     mcp-notify.notify_send
+  consumer notify.approval
+  consumer notify.approval_sla
+  consumer notify.in_app
+  consumer orchestrator.cleanup_run
+  consumer orchestrator.fail_task
+  consumer orchestrator.record_decision
+  consumer orchestrator.resume_approval
+  consumer orchestrator.resume_run
+  consumer orchestrator.start_run
+34 passed in 43.60s
+$
+  uv run --frozen pytest -q -p no:cacheprovider tools/tests_xt/test_xt_consumers.py
+  + 7 re-run ids:
+  tools/tests_xt/test_xt_api.py::test_naming_org_b_in_the_request_changes_nothing[GET /agents/{name}-HR]
+  tools/tests_xt/test_xt_api.py::test_the_routes_own_cross_tenant_checks[GET /runs/{run_id}/stream]
+  tools/tests_xt/test_xt_api.py::test_the_routes_own_cross_tenant_checks[POST /runs/{run_id}/cancel]
+  tools/tests_xt/test_xt_api.py::test_the_routes_own_cross_tenant_checks[POST /runs/{run_id}/pause]
+  tools/tests_xt/test_xt_api.py::test_the_routes_own_cross_tenant_checks[POST /runs/{run_id}/resume]
+  tools/tests_xt/test_xt_api.py::test_the_routes_own_cross_tenant_checks[POST /runs/{run_id}/tasks/{task_id}/complete]
+  tools/tests_xt/test_xt_api.py::test_the_routes_own_cross_tenant_checks[POST /runs/{run_id}/tasks/{task_id}/retry]
+exit 0

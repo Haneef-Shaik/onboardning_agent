@@ -18,21 +18,27 @@
 2. **A periodic sweep in the orchestrator worker.** `onb_orchestrator.approval_sla.ApprovalSlaJob` runs beside the
    bus worker (`serve`) every `check_interval_seconds` and stops with it. It lists orgs from `orgs` and sets the
    tenant scope per org (the PII-5 pattern, ADR 0023); every read and write goes through `TenantRepository`. Per
-   org it reads pending, not yet escalated approvals, oldest first, up to 500 per pass.
+   org it reads **every** pending, not yet escalated approval, oldest first, in pages of 500, all pages before
+   any stamp (so a backlog that is not yet due never hides a newer approval that is). When the worker is asked
+   to stop, the sweep starts no new pass; a pass still running gets `ORCHESTRATOR_DRAIN_SECONDS`, then is
+   cancelled (nothing is lost: an uncommitted stage is simply owed to the next pass).
 3. **Each stage is stamped and published together, once.** For each stage `due_stages` owes (reminder before
    escalation), the sweep publishes `approval.overdue {approval_id, run_id, task_id, stage, escalate_to}` under the
    fixed key `approval:<id>:<stage>`, with the stamp (`reminded_at` / `escalated_at`) as the publish's `change`:
    one outbox transaction. The stamp is a compare-and-set that applies only while the approval is `pending` and
    the stage unstamped; when it fails (a decision landed, another worker stamped first) the transaction rolls back
    and nothing is sent. So the record, not the worker's memory, stops a repeat after a restart; the fixed key is a
-   second stop; a crash before the commit leaves neither stamp nor event, and the next pass sends it.
+   second stop (should a stamp ever be missing while its event exists, the sweep re-stamps it, sends nothing and
+   goes on to the next stage); a crash before the commit leaves neither stamp nor event, and the next pass sends it.
 4. **The notifier (`notify.approval_sla`, mcp-notify) delivers.** A reminder goes to the approval's approver (or
    its role's users) in-app (`approval.reminder`) and on the Telegram mock with the same Approve/Reject buttons as
    the first message. An escalation goes to every `escalate_to` user in-app (`approval.escalated`) and on the
    Telegram mock **without buttons**: HR is told whom the approval waits on; only the approver decides (HIL-1's
-   rule is unchanged). Each part is deduplicated on its own (in-app by event and user; the message by approval,
-   user and `sla_stage`), so a redelivery tells nobody twice and a half-done job finishes. Nothing is sent for an
-   approval decided or cancelled meanwhile.
+   rule is unchanged). Each part is deduplicated on its own (in-app by approval, stage and user; the message by
+   approval, user and `sla_stage`), so a redelivery or a republish tells nobody twice and a half-done job finishes.
+   Nothing is sent for an approval decided or cancelled meanwhile, nor for a stage the approval carries no stamp
+   for: the bus is a trust boundary, and a forged or early `approval.overdue` changes nothing. HIL-1's
+   first-message dedupe ignores these SLA messages (`sla_stage` absent), so a reminder never stands in for it.
 5. **Escalation does not reassign or decide.** The approval stays `pending` with its approver; HR can follow up
    or, through RUN-2's controls, complete the task by hand.
 
