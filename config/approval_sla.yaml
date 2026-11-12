@@ -1,0 +1,12 @@
+# Approval SLA (PRD FR-H4; HIL-2, ADR 0027). Read by the orchestrator worker at startup
+# (APPROVAL_SLA_CONFIG names another file). A bad or unknown setting stops startup.
+#
+# An approval's SLA is its template task's `sla_hours`, or `default_sla_hours` when it has none
+# (tool-call and needs_human approvals). The thresholds are multiples of that SLA, counted from
+# when the approval was requested; each stage happens once per approval.
+
+default_sla_hours: 24        # SLA of an approval opened without one
+remind_after_sla: 1.0        # remind the approver once the approval is this many SLAs old (1.0 = overdue)
+escalate_after_sla: 2.0      # escalate to `escalate_to_role` at this many SLAs (must be above remind_after_sla)
+escalate_to_role: HR         # HR or HR_ADMIN: every user of that role is told
+check_interval_seconds: 60   # how often the worker looks for overdue approvals
