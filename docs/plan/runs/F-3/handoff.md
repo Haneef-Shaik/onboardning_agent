@@ -1,83 +1,166 @@
-# Handoff — F-3 · Gate every change in CI        attempt 1 · goal/f-3-ci-gate · see `git log -1` (code at 736bd73)
+# Handoff — F-3 · Gate every change in CI        attempt 2 · goal/f-3-ci-gate · rebased on main 912ad50 · code at c077695
 
-**Outcome claimed.** The CI gate is **ready but has not run**. `.github/workflows/ci.yml` runs
-`make bootstrap && make check`, then `make bootstrap && make test-int`, on every push and every PR
-into `main`. ADR `0001-ci-host.md` chooses GitHub Actions and gives the branch-protection rule that
-makes a red run block merging. **The repository has no git remote**, and this session must not push
-(orchestrator rule, MASTER-PLAN §9.6). The card's scope covers this case: "the goal stops at
-'workflow ready' if no remote exists yet and says so". So boxes 2 and 3 are **not met**. They need
-hosted run links, which only exist after Haneef creates the remote and pushes.
+**Outcome claimed.** `.github/workflows/ci.yml` runs every Makefile gate in CI, on every push and
+every PR into `main`:
+- `check`: `make check`, which includes `test-xt`, then `make contracts-check`.
+- `integration`: `make test-int` (testcontainers plus the compose stack), then `make evals-selftest`.
+- `pii`: SEC-1's `make test-pii`.
+
+Each job writes a runner `.env` with `tools/ci_env.py` before it brings the stack up. The ADR names
+`check`, `integration` and `pii` as the required checks that block merging into `main`.
+
+A local rehearsal of the exact job commands is green, and a testcontainers Mongo was seen starting.
+**Boxes 2 and 3 still need hosted run links.** `origin` exists now, but this session must not push
+or change GitHub settings, so those runs are Haneef's steps (below).
+
+## What changed since attempt 1
+- **Rebased onto local main 912ad50** (authorised). Main already had `ci.yml`: SEC-1 copied F-3's
+  workflow and added the `pii` job. The conflict was resolved to main's version, and
+  `pyproject.toml`/`uv.lock` to main's too. `pyyaml` is declared again in the dev group, because
+  main kept only `types-pyyaml`.
+- **The workflow on main was broken for a fresh runner.** Main's `make check` runs `test-xt`, and
+  `make test-int` brings the compose stack up. Both depend on `.env` (`$(ENV_FILE)` exits 1 with
+  "No .env"). Only `pii` generated one. Now `check` and `integration` run
+  `uv run --frozen python tools/ci_env.py > .env` right after bootstrap.
+- **The current gates run in CI:** `contracts-check` (in `check`) and `evals-selftest` (in
+  `integration`). `test-xt` runs inside `make check`, and `test-pii` in `pii` (kept unchanged).
+- **Timeouts** are `check` 30, `integration` 40 and `pii` 30 minutes. Locally `make check` took
+  623 s, of which `test-xt` was 521 s.
+- **Guards** cover all three jobs (38 pass, with SEC-1's `test_ci_pii.py`). New ones:
+  - `test_every_makefile_gate_runs_in_ci_exactly_once`
+  - `test_the_runner_env_is_written_after_bootstrap_and_before_any_gate[*]`
+  - `test_make_check_includes_the_cross_tenant_suite`
+  - `test_no_job_or_gate_step_can_be_skipped_or_allowed_to_fail[*]`: only non-gate report and
+    clean-up steps may use `if: always()`, and nothing may use `continue-on-error`.
+- **The ADR is revised**: three jobs, the runner `.env`, the remote, the protection payload with
+  `pii`, the plan caveat and the run times.
 
 ## Done when
 | Box | Met | Evidence |
 |-----|-----|----------|
-| `docs/adr/0001-ci-host.md` records the host and why (closes DEC-5) | yes | `docs/adr/0001-ci-host.md`: Status accepted, closes DEC-5, GitHub Actions; Decision, Why, Alternatives considered, Consequences. Guarded by `test_adr_records_github_actions_as_the_ci_host_and_closes_dec_5` and `test_adr_names_the_required_status_checks_as_the_job_names`, run with `uv run --frozen pytest tools/tests/test_ci_workflow.py -q`, result `22 passed`. |
-| A CI run with a deliberately failing test is red, and the fixed run is green (both run links in the handoff) | **no: no remote** | There are no run links, because there is no remote to run on. Local stand-in only: `docs/evidence/F-3/local-red-green.txt` runs the check job's command at HEAD 736bd73. With `tools/tests/test_zz_deliberate_failure.py` it gives `FAILED …::test_deliberate_failure`, `make: *** [tooling-test] Error 1`, exit=2. With that file removed it gives `make check: all passed`, exit=0. `actionlint` 1.7.12 is clean (`docs/evidence/F-3/actionlint.txt`, exit=0). |
-| The integration job starts a testcontainers Mongo and passes (run link) | **no: no remote, and no `test-int` target yet** | The integration job runs `make test-int` on `ubuntu-24.04`, which has a Docker daemon. On main today `make test-int` gives `NX   No tasks were run`, exit 0, because F-2 (running in parallel) adds the testcontainers targets. The local Docker daemon isn't running either. |
+| `docs/adr/0001-ci-host.md` records the host and why (closes DEC-5) | yes | The ADR: GitHub Actions; Decision (jobs table, runner `.env`, triggers, caches, hardening, required checks), Why, Alternatives, Consequences. `uv run --frozen pytest tools/tests/test_ci_workflow.py tools/tests/test_ci_pii.py -q` gives `38 passed`. |
+| A CI run with a deliberately failing test is red, and the fixed run is green (both run links in the handoff) | **no: needs Haneef to push** | There are no hosted runs yet (`origin/main` 4493565 has no workflow). Local stand-ins: `docs/evidence/F-3/local-red-green.txt` (attempt 1: red exit=2, then green exit=0), and `docs/evidence/F-3/attempt2-local-ci.txt` at c077695, where every `check` and `integration` command exits 0. The demo is step 3 below. |
+| The integration job starts a testcontainers Mongo and passes (run link) | **no: needs Haneef to push** | No run link yet. Local proof, `docs/evidence/F-3/attempt2-testcontainers.txt`: during `nx run mcp-mongo:test-int` (`79 passed`, exit=0), Docker started `testcontainers/ryuk:0.8.1` and `mongo:8.0.34@sha256:b992…` with label `org.testcontainers=true`. The full `make test-int` gives `Successfully ran target test-int for 10 projects`, exit=0. |
+
+## What Haneef must do (in order)
+This session pushed nothing, opened no PR and changed no GitHub setting.
+
+1. **Integrate F-3 before pushing `main` again.** Local `main` (912ad50) has a `ci.yml` whose
+   `check` and `integration` jobs stop at "No .env" on a runner. If `main` is pushed before this
+   branch lands, the first runs on `main` are red for that reason, not because of a real failure.
+2. **Push the branch.** CI runs on every push:
+   `git push -u origin goal/f-3-ci-gate`
+   Wait for `check`, `integration` and `pii` to go green (expect about 15–25 minutes in total).
+   That run is the **green run link** for box 2 and the **integration run link** for box 3. In
+   its `integration` log, `make test-int` shows `mcp-mongo` / `mcp-hub` testcontainers starting
+   `mongo:8.0.34`.
+3. **Red/green demo** (box 2), on a throwaway branch so the goal branch stays clean:
+   ```bash
+   git switch -c ci-demo/red goal/f-3-ci-gate
+   printf 'def test_deliberate_failure() -> None:\n    assert 1 + 1 == 3, "F-3: deliberately failing test"\n' \
+     > tools/tests/test_zz_deliberate_failure.py
+   git add tools/tests/test_zz_deliberate_failure.py
+   git commit -m "test(F-3): deliberately failing test (CI demo)"
+   git push -u origin ci-demo/red     # expect: check red at tooling-test; integration and pii skipped → RED run link
+   git revert --no-edit HEAD
+   git push                           # expect: check, integration, pii all green → FIXED run link
+   git switch goal/f-3-ci-gate
+   git push origin --delete ci-demo/red && git branch -D ci-demo/red   # clean up the demo branch
+   ```
+4. **Branch protection.** Do this after step 2, once GitHub has seen the three check names:
+   ```bash
+   gh api -X PUT "repos/Haneef-Shaik/onboardning_agent/branches/main/protection" --input - <<'JSON'
+   {
+     "required_status_checks": { "strict": true, "contexts": ["check", "integration", "pii"] },
+     "enforce_admins": true,
+     "required_pull_request_reviews": null,
+     "restrictions": null
+   }
+   JSON
+   ```
+   - Branch protection on a **private** repository needs GitHub Pro/Team. On a free private
+     repository the call returns 403: make the repository public or change the plan.
+   - With `enforce_admins`, a push to `main` is accepted only once that commit's checks are green.
+     The local flow (push branch → green → `git merge --ff-only` → push `main`) still works,
+     because the commit is the same.
+   - To check: `gh api repos/Haneef-Shaik/onboardning_agent/branches/main/protection --jq '.required_status_checks.contexts'`
+     should print `["check","integration","pii"]`.
+5. **Record and re-verify.** Paste the three links (red, fixed and green, and the integration run)
+   into this handoff's Done-when rows, set the box rows to yes, and re-run `goal-verifier` (attempt 3).
 
 ## Claims the next goals may rely on
 | Claim | Proved by |
 |-------|-----------|
-| CI = two jobs, `check` (`make bootstrap`, `make check`) then `integration` (`needs: check`; `make bootstrap`, `make test-int`). To add a gate to CI, add it to the Makefile target that job runs, or add a `run:` line and update `tools/tests/test_ci_workflow.py`. | `test_check_job_bootstraps_then_runs_make_check`, `test_integration_job_runs_after_check_and_runs_make_test_int` |
-| Branch protection must require the status checks `check` and `integration`, which equal the job display names. The ready `gh api` command is in the ADR. | `test_adr_names_the_required_status_checks_as_the_job_names`, `test_workflow_has_exactly_the_check_and_integration_jobs` |
-| Actions are SHA-pinned, the token is `contents: read`, there are no secrets, no `if:` and no `continue-on-error`. | `test_every_action_is_pinned_to_a_commit_sha[*]`, `test_workflow_token_is_read_only`, `test_no_job_or_step_can_be_skipped_or_allowed_to_fail[*]` |
-| `pyyaml` and `types-pyyaml` are in the root `dev` dependency group. | `pyproject.toml`, `uv.lock` |
+| CI = `check` (`make check` incl. `test-xt`, `make contracts-check`) → `integration` (`make test-int`, `make evals-selftest`) and `pii` (`make test-pii`) in parallel. | `test_check_job_…`, `test_integration_job_runs_after_check_with_the_stack_gates`, `test_ci_pii.py` |
+| A new Makefile gate isn't covered until it runs in a job: `test_every_makefile_gate_runs_in_ci_exactly_once` lists them (`CI_GATES`). Add the step and the name together. | that test; mutations M16, M17, M21 |
+| Every job that needs the stack writes `.env` with `tools/ci_env.py` after bootstrap, before any gate. Add a new required variable to `.env.example`, and `ci_env.py` fills it. | `test_the_runner_env_is_written_after_bootstrap_and_before_any_gate[*]`, SEC-1's `test_the_runner_env_fills_every_variable_with_fresh_values` |
+| Required checks are `check`, `integration` and `pii`, equal to the job names. A rename needs the ADR payload and the GitHub rule changed together. | `test_adr_names_the_required_status_checks_as_the_job_names` |
 
 ## Acceptance evidence
 | Ledger row | Environment, date | Result | Evidence | Row written here? |
 |------------|-------------------|--------|----------|-------------------|
-| DEC-5 @ MS-0 | dev machine (decision record), 2026-11-10 | pass | `docs/adr/0001-ci-host.md` | yes (F-3 is the last prover); `python3 scripts/plan/plan.py check` gives `plan ok: 67 goals, 34 ledger rows` |
+| DEC-5 @ MS-0 | dev machine (decision record), 2026-11-10 | pass | `docs/adr/0001-ci-host.md` | yes, in attempt 1. Kept after the rebase; `plan.py check` is ok inside `make check` |
 
-## Gates
+## Gates (at c077695, local main 912ad50 + F-3)
 | Gate | Command | Result |
 |------|---------|--------|
-| Check | `make check` at 736bd73 | exit=0; `135 passed, 67 subtests passed`; `make check: all passed` |
-| Integration | `make test-int` | exit 0, `No tasks were run` (F-2 creates the targets) |
+| Check | `make check` (runner-style `.env`, compose `ob-f-3`) | exit=0, 623 s; tooling `255 passed, 67 subtests passed`; lint/typecheck/test 17 projects; `test-xt` `362 passed` + `mcp-hub` test-xt; `make check: all passed` |
+| Contracts | `make contracts-check` | exit=0 |
+| Integration | `make test-int` | exit=0; `12 passed` (stack checks), `Successfully ran target test-int for 10 projects` |
+| Eval self-test | `make evals-selftest` | exit=0; `1 passed` |
+| PII | `make test-pii` | not re-run here; SEC-1's job is unchanged |
 | Workflow lint | `uvx --from actionlint-py actionlint .github/workflows/ci.yml` | exit=0 |
+
+The full transcript is in `docs/evidence/F-3/attempt2-local-ci.txt`. The stack was torn down
+(`make down` exit=0), and `.env` was removed afterwards.
 
 ## Inherited and used
 | From | Claim | Held? |
 |------|-------|-------|
-| F-1 | `make check` = plan check → tooling tests (ruff/mypy/pytest on `tools/`) → nx lint/typecheck/test | yes: the new guard runs inside `tooling-test`, and the deliberate failure turned `make check` red |
-| F-1 | `make test-int` runs `nx run-many -t test-int` and exits 0 with no tasks | yes |
-| F-1 | Nx cache lives in `.nx/cache` | yes (`nx.json`), and the CI cache path matches it |
+| SEC-1 | `tools/ci_env.py` prints a complete runner `.env` with fresh secrets and the fake connector | yes: used for the local rehearsal (project and ports overridden), all gates green |
+| F-2 / T-3 / C-1 / EVAL-1 | `test-int`, `test-xt`, `contracts-check`, `evals-selftest` Makefile targets | yes: all exit 0 locally |
 
 ## Mutation checks
-Full output: `docs/evidence/F-3/mutation-checks.txt`. Script: `docs/evidence/F-3/mutate.py`, which restores each file (`restored: True` for all). All 14 were caught:
-M1 push limited to main → `test_workflow_runs_on_every_push_and_on_pull_requests_to_main` FAILED ·
-M2 `needs: check` removed → `test_integration_job_runs_after_check_and_runs_make_test_int` FAILED ·
-M3 checkout pinned to `@v7` → `test_every_action_is_pinned_to_a_commit_sha[check]` FAILED ·
-M4 job key renamed → 9 failed · M5 `make check` dropped → `test_check_job_bootstraps_then_runs_make_check` FAILED ·
-M6 `contents: write` → `test_workflow_token_is_read_only` FAILED · M7 `make test-int` dropped → integration test FAILED ·
-M8 ADR payload drops `integration` → `test_adr_names_the_required_status_checks_as_the_job_names` FAILED (the first version of this guard **survived** M8, so it was rewritten to parse the payload) ·
-M9 display name changed → `test_workflow_has_exactly_the_check_and_integration_jobs` FAILED ·
-M10 `enforce_admins: false` → ADR test FAILED · M11 `continue-on-error` → `test_no_job_or_step_can_be_skipped_or_allowed_to_fail[check]` FAILED ·
-M12 `if: false` → `…[integration]` FAILED · M13 cancel on main → `test_superseded_runs_on_the_same_ref_are_cancelled` FAILED ·
-M14 restore key not a prefix → `test_nx_cache_is_restored_and_keyed_on_lockfiles[check]` FAILED.
+Full output: `docs/evidence/F-3/mutation-checks.txt` (script `docs/evidence/F-3/mutate.py`; each
+file is restored, `restored: True`). All 22 were caught (pytest exit=1):
+- M1–M14 as in attempt 1. Payload M8 is now `[check, pii]`.
+- M15: `check` no longer writes `.env` → `test_check_job_…` and `test_the_runner_env_…[check]` fail.
+- M16: `contracts-check` dropped → `test_every_makefile_gate_runs_in_ci_exactly_once` fails.
+- M17: `evals-selftest` dropped → the same test fails.
+- M18: `.env` written after `test-int` → `test_the_runner_env_…[integration]` fails.
+- M19: `if: always()` on `make test-int` → `test_no_job_or_gate_step_…[integration]` fails.
+- M20: ADR payload drops `pii` → the ADR test fails.
+- M21: `make check` loses `test-xt` → `test_make_check_includes_the_cross_tenant_suite` fails.
+- M22: `pii` job renamed away → `test_workflow_has_exactly_the_check_integration_and_pii_jobs` fails.
+
+The RED run for the attempt-2 guards (6 failed before the workflow change) is in
+`docs/evidence/F-3/attempt2-red.txt`.
 
 ## Review findings left open
-A sonnet reviewer ran on `git diff main...HEAD` and found no critical or high issues. I fixed the medium findings on cancelling runs on main and the vacuous `integration` job (noted in the ADR), and the low findings on the restore-key prefix, skippable steps and the irrelevant `gh` rationale. Left open:
-- medium · `ci.yml:8-10`: same-repo PRs run twice (push + pull_request). Accepted and recorded in the ADR, because the card says "every push".
-- low · `test_ci_workflow.py`: the uv version test accepts any 0.11.x in range, not only the pinned 0.11.6. Harmless.
-- low · ADR: branch protection uses the legacy `contexts` field. It still works.
-- unverified: whether the action SHAs match their tag comments. They were taken from `git ls-remote --tags` of each upstream repo (peeled commit). The first hosted run will confirm them.
+From attempt 1 (sonnet review, no critical or high findings):
+- medium: same-repo PRs run twice (push + pull_request). Accepted in the ADR.
+- low: the uv version test accepts any 0.11.x in range.
+- low: legacy `contexts` field in the protection payload.
+- unverified until the first hosted run: the action SHAs match their tag comments.
 
 ## Left undone, and why
-- **Boxes 2 and 3** need a GitHub remote and a push, which are Haneef's call. After that:
-  (1) create the repo and push `main`; (2) run the ADR's `gh api … /branches/main/protection` command;
-  (3) push a branch with a deliberately failing test, get a red `check` run (link), fix it, get a green run (link);
-  (4) once F-2 is merged, the `integration` run link shows the testcontainers Mongo starting.
-  Then re-verify F-3, or record it in MS-0's "CI is green on main" check, which allows "no remote yet".
-- **Board rebuild.** CLAUDE.md says to run `plan.py build --board` and republish after editing ACCEPTANCE.md. I didn't, because `docs/plan/board.html` is shared across parallel branches. The orchestrator should rebuild it after integrating.
+- **Boxes 2 and 3**: hosted runs need a push, which is Haneef's call (steps above).
+- **`docs/plan/board.html` rebuild**: left to the orchestrator, because the file is shared.
+- **ADR number clash**: `0001-ci-host.md` sits next to F-1's `0001-nx-uv-monorepo-layout.md`. I kept
+  the card's path; renumbering is Haneef's call.
 
 ## Found for other goals
-- **F-2 / MS-0:** `integration` is green with nothing to test until a project has a `test-int` target. MS-0 should check `nx show projects --with-target test-int` is non-empty. If F-2's `test-int` needs `make up` (compose) and a `.env`, the integration job needs those steps: add them in F-2 and update `test_integration_job_runs_after_check_and_runs_make_test_int`.
-- **T-3, C-1, EVAL-1:** add `make test-xt`, `make contracts-check` and `make evals-selftest` to CI (PRD §7.9, §8.2), either through a Makefile target the jobs already call or by changing the guard test.
+- **Orchestrator:** don't push local `main` (912ad50) before F-3 is integrated (step 1).
+- **Cost:** each job brings up its own compose stack, and `check` alone takes about 10 minutes
+  because of `test-xt`. If minutes become a concern, move `test-xt` out of `make check` into its
+  own job. That is a Makefile/PRD §7.9 decision, not F-3's.
 
 ## Decisions forced (ADRs written)
-- `docs/adr/0001-ci-host.md`: GitHub Actions. **The number clashes** with F-1's `0001-nx-uv-monorepo-layout.md`. I kept the card's path because the card and ledger name it. Renumbering is Haneef's call.
+- `docs/adr/0001-ci-host.md` revised 2026-11-13: three required checks, runner `.env`, every gate in CI.
 
 ## Traps hit
-- PyYAML reads the bare key `on:` as boolean `True`, so the test handles both forms.
-- The Nx cache key contains `hashFiles('uv.lock', 'package-lock.json')`, which has a space, so restore keys must be split by line, not by whitespace.
-- The rtk hook compresses `make` output, so use `rtk proxy make …` to see real result lines.
+- Main's `ci.yml` came from SEC-1 copying this branch's workflow, so the rebase hit an add/add
+  conflict, and main's guard test file wasn't there.
+- `make check` on main needs a `.env` and Docker, because it runs `test-xt`. A fresh runner fails
+  at `$(ENV_FILE)` unless `.env` is generated first.
+- The rtk hook compresses `make` and `git` output; use `rtk proxy …` for real result lines.

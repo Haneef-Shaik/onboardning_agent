@@ -1,0 +1,30 @@
+# Local rehearsal of CI jobs check + integration · 2026-11-12T21:55:52Z · HEAD c077695
+# Docker 29.8.2 · macOS · .env from tools/ci_env.py with COMPOSE_PROJECT_NAME=ob-f-3, CADDY ports 18093/18453
+## job: check
+$ make check
+exit=0 (623s)
+$ make contracts-check
+exit=0 (1s)
+## job: integration
+$ make test-int
+exit=0 (87s)
+$ make evals-selftest
+exit=0 (29s)
+## teardown
+$ make down
+exit=0 (3s)
+## result lines
+255 passed, 67 subtests passed in 6.60s
+ NX   Successfully ran target lint for 17 projects
+ NX   Successfully ran target typecheck for 17 projects
+ NX   Successfully ran target test for 17 projects
+ Container ob-f-3-jaeger-1 Started 
+ Container ob-f-3-mongo-1 Started 
+ Container ob-f-3-otel-collector-1 Started 
+ Container ob-f-3-caddy-1 Started 
+362 passed in 521.14s (0:08:41)
+ NX   Successfully ran target test-xt for project mcp-hub
+make check: all passed
+12 passed in 2.57s
+ NX   Successfully ran target test-int for 10 projects
+1 passed in 26.33s

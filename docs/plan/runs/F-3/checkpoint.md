@@ -20,3 +20,8 @@ goal-verifier (attempt 1), then the board set to `in review` (orchestrator hold)
 
 ## Verifier
 - Attempt 1 (2026-11-10): **fail**. Box 1 met; boxes 2 and 3 unmet (no remote, so no hosted run links); DEC-5, gates and rules ok. Retry guidance: no code changes; owner action (create remote, push, protect main, record red/green and integration run links after F-2), then re-verify. Goal set to `on hold`.
+
+## Attempt 2 (2026-11-13)
+- Rebased onto local main 912ad50. CI now writes the runner .env in check/integration and runs contracts-check and evals-selftest; SEC-1 pii job kept. 38 guard tests, 22 mutations caught.
+- Local rehearsal of all check+integration commands is green at c077695, and a testcontainers Mongo was seen starting.
+- Next: Haneef pushes the branch, does the red/green demo and sets branch protection (handoff steps 1-5), then goal-verifier attempt 3.

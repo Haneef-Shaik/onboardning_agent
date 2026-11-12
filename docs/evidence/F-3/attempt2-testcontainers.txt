@@ -1,0 +1,13 @@
+# testcontainers proof · 2026-11-12T22:08:42Z · HEAD c077695 · Docker 29.8.2
+$ make up && set -a && . ./.env && set +a && node_modules/.bin/nx run mcp-mongo:test-int --output-style=static
+[32m============================== [32m[1m79 passed[0m[32m in 6.22s[0m[32m ==============================[0m
+ NX   Successfully ran target test-int for project mcp-mongo
+exit=0
+## docker container starts during the run (testcontainers=true marks testcontainers' own containers)
+1794521324 start image=mongo:8.0.34@sha256:b9924c330a8bbc5800fe9c69f04a84e221eca7b28fd049a0354147d9908fa142 name=ob-f-3-mongo-1 testcontainers=
+1794521324 start image=jaegertracing/jaeger:2.23.0@sha256:3823829974ccfc2485d2e48b165579091f32295022ae80ca49704e2f4834116e name=ob-f-3-jaeger-1 testcontainers=
+1794521326 start image=onb/otel-collector:0.165.0 name=ob-f-3-otel-collector-1 testcontainers=
+1794521327 start image=caddy:2.11.9-alpine@sha256:0bbb055bda6793c999bde78b1b5ce3e89f829fb031af2cf50056ea1246559fee name=ob-f-3-caddy-1 testcontainers=
+1794521418 start image=testcontainers/ryuk:0.8.1 name=testcontainers-ryuk-78d97a9a-eaee-4434-8141-237570fc6f1f testcontainers=true
+1794521418 start image=mongo:8.0.34@sha256:b9924c330a8bbc5800fe9c69f04a84e221eca7b28fd049a0354147d9908fa142 name=adoring_shirley testcontainers=true
+## teardown: make down exit=0
