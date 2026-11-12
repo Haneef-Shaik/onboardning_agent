@@ -17,7 +17,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from onb_contracts.envelope import Envelope
 from onb_contracts.inputs import RequestModel
-from onb_contracts.runs import RunRecord, TASK_ID_PATTERN
+from onb_contracts.runs import TASK_ID_PATTERN, RunRecord
 
 __all__ = [
     "MAX_CHAT_MESSAGE_LENGTH",
@@ -25,8 +25,8 @@ __all__ = [
     "ChatConfirmRequest",
     "ChatEnvelope",
     "ChatMessageRecord",
-    "ChatRequest",
     "ChatReply",
+    "ChatRequest",
     "Citation",
     "ConfirmEnvelope",
     "ProposalRecord",

@@ -35,6 +35,13 @@ def register_adapter(agent: str, factory: Callable[[], AgentAdapter]) -> None:
 def adapter_for(agent: str) -> AgentAdapter:
     factory = _ADAPTERS.get(agent)
     if factory is None:
+        # The agents' own goals register their adapters here (CHAT-1: `run_assistant`); a missing one is below.
+        from onb_evals.agents import register_builtin_adapters
+
+        if agent not in _ADAPTERS:
+            register_builtin_adapters()
+        factory = _ADAPTERS.get(agent)
+    if factory is None:
         raise AdapterNotFoundError(
             f"no eval adapter is registered for agent {agent!r}; the agent's goal registers one with "
             "onb_evals.adapters.register_adapter (the self-test runs every agent: `make evals-selftest`)"

@@ -19,6 +19,7 @@ import asyncio
 import itertools
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
+from datetime import UTC, datetime, timedelta
 from typing import Any, Protocol
 
 import pytest
@@ -839,6 +840,120 @@ def _read_scan(xt: World, org_id: str, hire_id: str, document_id: str) -> bytes 
     return asyncio.run(main())
 
 
+# --- CHAT-1: the Run Assistant chat -------------------------------------------------------------------------
+# Org B's run answers every chat route exactly like a run nobody has, and a proposal of org B's is a proposal
+# nobody made. Each route's ordinary request names org B's run (the generic checks then hold every role to a
+# 404, or 403 for a manager on a confirm); the route's own check runs org A's real chat and shows every row it
+# wrote is org A's, that an org-B proposal confirms nothing in either org, and that org A's confirmed retry
+# touches only org A.
+
+CHAT_BODY = {"message": "Why is this run stuck?"}
+UNKNOWN_PROPOSAL = "prop_" + "0" * 24
+B_PROPOSAL = "prop_" + "b" * 24
+CONFIRM_404: Mapping[Role, int] = {Role.HR_ADMIN: 404, Role.HR: 404, Role.MANAGER: 403}
+
+
+def _chat_request(_: World, role: Role) -> Request:
+    return {"method": "POST", "url": f"/runs/{B_RUN}/chat", "headers": bearer(_token(role)), "json": CHAT_BODY}
+
+
+def _chat_rows(xt: World, unscoped: Unscoped, run_id: str) -> list[dict[str, Any]]:
+    with unscoped(f"root read-back of the chat messages stored for {run_id}"):
+        return list(xt.root_db["messages"].find({"run_id": run_id}))
+
+
+def _chat_check(client: TestClient, xt: World, unscoped: Unscoped) -> None:
+    hr = bearer(_token(Role.HR))
+    _unchanged_for_b(xt, unscoped, lambda: _like_missing_run(client, "POST", "/chat", hr, json=CHAT_BODY))
+    as_b = client.post(f"/runs/{B_RUN}/chat", json=CHAT_BODY, headers=B_ADMIN_HEADERS)
+    assert as_b.status_code == 200, as_b.text
+    as_a = client.post(f"/runs/{A_RUN}/chat", json=CHAT_BODY, headers=hr)
+    assert as_a.status_code == 200, as_a.text
+    assert_no_leak(as_a.text, "POST /runs/{id}/chat")
+    for run_id, org in ((A_RUN, ORG_A), (B_RUN, ORG_B)):
+        rows = _chat_rows(xt, unscoped, run_id)
+        assert rows
+        assert {row["org_id"] for row in rows} == {org}
+
+
+def _history_request(_: World, role: Role) -> Request:
+    return {"method": "GET", "url": f"/runs/{B_RUN}/chat", "headers": bearer(_token(role))}
+
+
+def _history_check(client: TestClient, xt: World) -> None:
+    for role in ACTORS:
+        _like_missing_run(client, "GET", "/chat", bearer(_token(role)))
+    hr = bearer(_token(Role.HR))
+    assert client.post(f"/runs/{A_RUN}/chat", json=CHAT_BODY, headers=hr).status_code == 200
+    assert client.post(f"/runs/{B_RUN}/chat", json=CHAT_BODY, headers=B_ADMIN_HEADERS).status_code == 200
+    own = client.get(f"/runs/{A_RUN}/chat", headers=hr)
+    assert own.status_code == 200, own.text
+    assert own.json()["data"]
+    assert_no_leak(own.text, "GET /runs/{id}/chat")
+    assert client.get(f"/runs/{A_RUN}/chat", headers=B_ADMIN_HEADERS).status_code == 404  # A's run, B's token
+    assert client.get(f"/runs/{B_RUN}/chat", headers=B_ADMIN_HEADERS).json()["data"]  # B reads its own chat
+
+
+def _confirm_request(_: World, role: Role) -> Request:
+    return {
+        "method": "POST",
+        "url": f"/runs/{B_RUN}/chat/confirm",
+        "headers": bearer(_token(role)),
+        "json": {"proposal_id": UNKNOWN_PROPOSAL},
+    }
+
+
+def _confirm_check(client: TestClient, xt: World, unscoped: Unscoped) -> None:
+    hr = bearer(_token(Role.HR))
+    soon = datetime.now(UTC) + timedelta(days=1)
+    with unscoped("root write: an org-B proposal, as org B's own chat would have stored it"):
+        xt.root_db["chat_proposals"].replace_one(
+            {"_id": B_PROPOSAL},
+            {
+                "_id": B_PROPOSAL,
+                "org_id": ORG_B,
+                "run_id": B_RUN,
+                "user_id": B_ADMIN[0],
+                "conversation_id": "conv_xt_b",
+                "type": "retry_task",
+                "task_id": BLOCKED_TASK,
+                "status": "pending",
+                "created_at": datetime.now(UTC),
+                "expires_at": soon,
+            },
+            upsert=True,
+        )
+
+    def foreign() -> None:
+        # Org B's proposal on org B's run, and on org A's run, answers like a proposal nobody made.
+        for run_id in (B_RUN, A_RUN):
+            as_foreign = client.post(f"/runs/{run_id}/chat/confirm", json={"proposal_id": B_PROPOSAL}, headers=hr)
+            as_missing = client.post(f"/runs/{run_id}/chat/confirm", json={"proposal_id": UNKNOWN_PROPOSAL}, headers=hr)
+            assert as_foreign.status_code == 404, as_foreign.text
+            assert_indistinguishable(seen(as_foreign), seen(as_missing), f"POST /runs/{{id}}/chat/confirm on {run_id}")
+
+    _unchanged_for_b(xt, unscoped, foreign)
+    run_id = _start_a_run(client)
+    _root_set_blocked(xt, unscoped, run_id)
+    asked = client.post(f"/runs/{run_id}/chat", json={"message": "Please retry the failed task"}, headers=hr)
+    assert asked.status_code == 200, asked.text
+    with unscoped("root read-back of the proposal org A's chat stored"):
+        stored = list(xt.root_db["chat_proposals"].find({"run_id": run_id}))
+    assert len(stored) == 1  # the reply is an event stream: read the proposal from storage
+    assert stored[0]["org_id"] == ORG_A
+    done = client.post(f"/runs/{run_id}/chat/confirm", json={"proposal_id": stored[0]["_id"]}, headers=hr)
+    assert done.status_code == 200, done.text
+    assert_no_leak(done.text, "POST /runs/{id}/chat/confirm")
+    with unscoped("root read-back of org A's confirmed retry: its events, jobs and audit records"):
+        db = xt.root_db
+        event_orgs = {e["org_id"] for e in db["events"].find({"run_id": run_id})}
+        job_orgs = {j["org_id"] for j in db["jobs"].find({"run_id": run_id})}
+        audited = list(db["audit_log"].find({"target": {"$regex": f"^run:{run_id}/task:{BLOCKED_TASK}"}}))
+    assert event_orgs == job_orgs == {ORG_A}
+    assert audited
+    assert {a["org_id"] for a in audited} == {ORG_A}
+
+
 # --- GET /evals/runs, GET /evals/runs/{run_id} (UI-8) ---------------------------------------------------
 # Each org has its own eval runs (`world.EVAL_RUNS`, B holds more). Org B's run id answers exactly like
 # a run id nobody has: 404, never 403; filtering on org B's agent finds what an unknown agent finds.
@@ -1092,6 +1207,10 @@ ROUTE_CASES: Mapping[tuple[str, str], RouteCase] = {
         _control_check(f"tasks/{BLOCKED_TASK}/complete"),
         CONTROL_404,
     ),
+    # CHAT-1: org B's run is a run nobody has; org B's proposal is a proposal nobody made.
+    ("POST", "/runs/{run_id}/chat"): RouteCase(_chat_request, _chat_check, ALL_404),
+    ("GET", "/runs/{run_id}/chat"): RouteCase(_history_request, _reads_only(_history_check), ALL_404),
+    ("POST", "/runs/{run_id}/chat/confirm"): RouteCase(_confirm_request, _confirm_check, CONFIRM_404),
 }
 
 _ROUTE_IDS = [f"{method} {path}" for method, path in ROUTE_CASES]

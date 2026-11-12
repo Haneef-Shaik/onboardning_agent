@@ -313,6 +313,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/runs/{run_id}/chat": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Run Chat */
+        get: operations["getRunChat"];
+        put?: never;
+        /** Chat About Run */
+        post: operations["chatAboutRun"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/runs/{run_id}/chat/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Confirm Chat Action */
+        post: operations["confirmRunChatAction"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/runs/{run_id}/pause": {
         parameters: {
             query?: never;
@@ -748,6 +783,76 @@ export interface components {
             /** Inline Message Id */
             inline_message_id?: string | null;
             message?: components["schemas"]["TelegramMessage"] | null;
+        };
+        /**
+         * ChatConfirmRequest
+         * @description `POST /runs/{id}/chat/confirm`: HR confirms one proposal the assistant made in this run's chat.
+         */
+        ChatConfirmRequest: {
+            /** Proposal Id */
+            proposal_id: string;
+        };
+        /**
+         * ChatEnvelope
+         * @description The stored conversation about one run, oldest first.
+         */
+        ChatEnvelope: {
+            /** Data */
+            data: components["schemas"]["ChatMessageRecord"][] | null;
+            error: components["schemas"]["ErrorBody"] | null;
+            /** @default {} */
+            meta: components["schemas"]["Meta"];
+            /** Success */
+            success: boolean;
+        };
+        /** ChatMessageRecord */
+        ChatMessageRecord: {
+            /** Citations */
+            citations?: components["schemas"]["Citation"][];
+            /** Content */
+            content: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Id */
+            id: string;
+            proposal?: components["schemas"]["ProposalRecord"] | null;
+            /**
+             * Role
+             * @enum {string}
+             */
+            role: "user" | "assistant";
+            /** Status */
+            status?: ("ok" | "refused" | "needs_human") | null;
+        };
+        /**
+         * ChatRequest
+         * @description `POST /runs/{id}/chat`: one question. Free text; it is redacted before it is stored or sent on.
+         */
+        ChatRequest: {
+            /** Message */
+            message: string;
+        };
+        /** Citation */
+        Citation: {
+            /** Run Id */
+            run_id: string;
+            /** Task Id */
+            task_id: string;
+        };
+        /**
+         * ConfirmEnvelope
+         * @description The run after the confirmed retry.
+         */
+        ConfirmEnvelope: {
+            data: components["schemas"]["RunRecord"] | null;
+            error: components["schemas"]["ErrorBody"] | null;
+            /** @default {} */
+            meta: components["schemas"]["Meta"];
+            /** Success */
+            success: boolean;
         };
         /**
          * Decision
@@ -1373,6 +1478,39 @@ export interface components {
             aadhaar_consent?: components["schemas"]["AadhaarConsentInput"] | null;
             /** Value */
             value: string;
+        };
+        /**
+         * ProposalRecord
+         * @description A change the assistant proposed. Nothing has happened yet: `pending` until HR confirms it.
+         */
+        ProposalRecord: {
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+            /** Proposal Id */
+            proposal_id: string;
+            /**
+             * Requires Confirmation
+             * @default true
+             * @constant
+             */
+            requires_confirmation: true;
+            /** Run Id */
+            run_id: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "confirmed" | "failed";
+            /** Task Id */
+            task_id: string;
+            /**
+             * Type
+             * @constant
+             */
+            type: "retry_task";
         };
         /**
          * RevealEnvelope
@@ -2548,6 +2686,107 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RunEnvelope"];
+                };
+            };
+            /** @description Error, in the envelope */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    getRunChat: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatEnvelope"];
+                };
+            };
+            /** @description Error, in the envelope */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    chatAboutRun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChatRequest"];
+            };
+        };
+        responses: {
+            /** @description Server-sent events: message, end. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/event-stream": unknown;
+                };
+            };
+            /** @description Error, in the envelope */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    confirmRunChatAction: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChatConfirmRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConfirmEnvelope"];
                 };
             };
             /** @description Error, in the envelope */

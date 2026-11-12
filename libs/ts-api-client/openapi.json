@@ -621,6 +621,214 @@
         "title": "CallbackQuery",
         "type": "object"
       },
+      "ChatConfirmRequest": {
+        "additionalProperties": false,
+        "description": "`POST /runs/{id}/chat/confirm`: HR confirms one proposal the assistant made in this run's chat.",
+        "properties": {
+          "proposal_id": {
+            "pattern": "^prop_[0-9a-f]{24}$",
+            "title": "Proposal Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "proposal_id"
+        ],
+        "title": "ChatConfirmRequest",
+        "type": "object"
+      },
+      "ChatEnvelope": {
+        "additionalProperties": false,
+        "description": "The stored conversation about one run, oldest first.",
+        "properties": {
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ChatMessageRecord"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ErrorBody"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta",
+            "default": {}
+          },
+          "success": {
+            "title": "Success",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "success",
+          "data",
+          "error",
+          "meta"
+        ],
+        "title": "ChatEnvelope",
+        "type": "object"
+      },
+      "ChatMessageRecord": {
+        "additionalProperties": false,
+        "properties": {
+          "citations": {
+            "items": {
+              "$ref": "#/components/schemas/Citation"
+            },
+            "title": "Citations",
+            "type": "array"
+          },
+          "content": {
+            "title": "Content",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "proposal": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProposalRecord"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "role": {
+            "enum": [
+              "user",
+              "assistant"
+            ],
+            "title": "Role",
+            "type": "string"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "enum": [
+                  "ok",
+                  "refused",
+                  "needs_human"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          }
+        },
+        "required": [
+          "id",
+          "role",
+          "content",
+          "created_at"
+        ],
+        "title": "ChatMessageRecord",
+        "type": "object"
+      },
+      "ChatRequest": {
+        "additionalProperties": false,
+        "description": "`POST /runs/{id}/chat`: one question. Free text; it is redacted before it is stored or sent on.",
+        "properties": {
+          "message": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "title": "ChatRequest",
+        "type": "object"
+      },
+      "Citation": {
+        "additionalProperties": false,
+        "properties": {
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "task_id": {
+            "pattern": "^[a-z][a-z0-9_]{0,63}$",
+            "title": "Task Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id",
+          "task_id"
+        ],
+        "title": "Citation",
+        "type": "object"
+      },
+      "ConfirmEnvelope": {
+        "additionalProperties": false,
+        "description": "The run after the confirmed retry.",
+        "properties": {
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RunRecord"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "error": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ErrorBody"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta",
+            "default": {}
+          },
+          "success": {
+            "title": "Success",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "success",
+          "data",
+          "error",
+          "meta"
+        ],
+        "title": "ConfirmEnvelope",
+        "type": "object"
+      },
       "Decision": {
         "enum": [
           "approve",
@@ -2439,6 +2647,61 @@
           "value"
         ],
         "title": "PiiUpdateRequest",
+        "type": "object"
+      },
+      "ProposalRecord": {
+        "additionalProperties": false,
+        "description": "A change the assistant proposed. Nothing has happened yet: `pending` until HR confirms it.",
+        "properties": {
+          "expires_at": {
+            "format": "date-time",
+            "title": "Expires At",
+            "type": "string"
+          },
+          "proposal_id": {
+            "pattern": "^prop_[0-9a-f]{24}$",
+            "title": "Proposal Id",
+            "type": "string"
+          },
+          "requires_confirmation": {
+            "const": true,
+            "default": true,
+            "title": "Requires Confirmation",
+            "type": "boolean"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "pending",
+              "confirmed",
+              "failed"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "task_id": {
+            "pattern": "^[a-z][a-z0-9_]{0,63}$",
+            "title": "Task Id",
+            "type": "string"
+          },
+          "type": {
+            "const": "retry_task",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "proposal_id",
+          "type",
+          "run_id",
+          "task_id",
+          "status",
+          "expires_at"
+        ],
+        "title": "ProposalRecord",
         "type": "object"
       },
       "RevealEnvelope": {
@@ -5125,6 +5388,164 @@
         "summary": "Cancel Run",
         "tags": [
           "runs"
+        ]
+      }
+    },
+    "/runs/{run_id}/chat": {
+      "get": {
+        "operationId": "getRunChat",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "pattern": "^[A-Za-z0-9_-]{1,64}$",
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatEnvelope"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error, in the envelope"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Run Chat",
+        "tags": [
+          "chat"
+        ]
+      },
+      "post": {
+        "operationId": "chatAboutRun",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "pattern": "^[A-Za-z0-9_-]{1,64}$",
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChatRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "text/event-stream": {}
+            },
+            "description": "Server-sent events: message, end."
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error, in the envelope"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Chat About Run",
+        "tags": [
+          "chat"
+        ]
+      }
+    },
+    "/runs/{run_id}/chat/confirm": {
+      "post": {
+        "operationId": "confirmRunChatAction",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "pattern": "^[A-Za-z0-9_-]{1,64}$",
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChatConfirmRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfirmEnvelope"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error, in the envelope"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Confirm Chat Action",
+        "tags": [
+          "chat"
         ]
       }
     },

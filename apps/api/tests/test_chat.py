@@ -99,6 +99,13 @@ def _ask(client: TestClient, run_id: str, message: str, who: tuple[str, str, Rol
     return client.post(f"/runs/{run_id}/chat", json={"message": message}, headers=_auth(who))
 
 
+def _offering(proposed: AssistantProposal) -> Any:
+    def reply(_: AssistantTurn) -> AssistantAnswer:
+        return AssistantAnswer(status="ok", answer="Shall I?", proposal=proposed)
+
+    return reply
+
+
 def _propose_retry(run_id: str, task_id: str = FAILED) -> Any:
     def reply(_: AssistantTurn) -> AssistantAnswer:
         return AssistantAnswer(
@@ -226,7 +233,7 @@ def test_an_expired_proposal_is_refused_and_changes_nothing(
     assistant.reply = _propose_retry(blocked_run)
     message = _reply_message(_ask(client, blocked_run, "Retry it"))
     later = datetime.now(UTC) + timedelta(hours=1)
-    chat._clock = lambda: later  # noqa: SLF001 - time passes
+    chat._clock = lambda: later
     response = client.post(
         f"/runs/{blocked_run}/chat/confirm", json={"proposal_id": message["proposal"]["proposal_id"]}, headers=_auth(HR)
     )
@@ -264,7 +271,7 @@ def test_a_proposal_naming_another_run_or_action_is_not_offered(
         AssistantProposal(type="cancel_run", run_id=blocked_run, task_id=None),
         AssistantProposal(type="retry_task", run_id=blocked_run, task_id=None),
     ):
-        assistant.reply = lambda _, p=proposed: AssistantAnswer(status="ok", answer="Shall I?", proposal=p)
+        assistant.reply = _offering(proposed)
         assert _reply_message(_ask(client, blocked_run, "do it"))["proposal"] is None
 
 

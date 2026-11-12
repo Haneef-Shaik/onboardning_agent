@@ -41,6 +41,9 @@ from onb_api.auth.mongo_users import MongoUserStore
 from onb_api.auth.passwords import hash_password
 from onb_api.auth.tokens import Principal
 from onb_api.auth.users import NewUser
+from onb_api.chat import AssistantAnswer, AssistantProposal, AssistantTurn, ChatService
+from onb_api.chat.store import ChatStore
+from onb_api.chat.testing import StubAssistant
 from onb_api.documents.service import DocumentService
 from onb_api.evals.store import EvalRunStore
 from onb_api.hires.service import HireService
@@ -344,6 +347,14 @@ def xt_world(root_client: RootClient, mongo_uri: str, database_name: str) -> Wor
 # --- the API ----------------------------------------------------------------------------------------
 
 
+def _xt_assistant_reply(turn: AssistantTurn) -> AssistantAnswer:
+    """A scripted Run Assistant: it proposes retrying `collect_docs` when asked to retry, else just answers."""
+    proposal = AssistantProposal(type="retry_task", run_id=turn.run_id, task_id="collect_docs")
+    if "retry" in turn.message.lower():
+        return AssistantAnswer(status="ok", answer="I can retry it if you confirm.", proposal=proposal)
+    return AssistantAnswer(status="ok", answer="Here is what I see.")
+
+
 def build_api(store: DataStore) -> FastAPI:
     """The app as `onb_api.main` builds it, over the scratch database. A new `create_app` argument
     gets its Mongo-backed value here."""
@@ -358,6 +369,8 @@ def build_api(store: DataStore) -> FastAPI:
     notify = MockChannels(store, webhook_secret=XT_WEBHOOK_SECRET, decisions=BusDecisions(store))
     bus = run_bus(store)
     runs = RunService.build(store, bus, auditor=audit, hires=hires, templates=templates, bus_indexes=bus.ensure_indexes)
+    assert runs.control is not None
+    chat = ChatService(store=ChatStore(store), control=runs.control, assistant=StubAssistant(_xt_assistant_reply))
     return create_app(
         auth=TEST_SETTINGS,
         users=users,
@@ -369,6 +382,7 @@ def build_api(store: DataStore) -> FastAPI:
         evals=evals,
         notify=notify,
         runs=runs,
+        chat=chat,
     )
 
 

@@ -10,7 +10,8 @@ service, the hire and PII routes answer 503; without a template lifecycle, `/tem
 without a document service, the document upload answers 503; without an eval run store,
 `/evals/runs*` answer 503 (UI-8); without mock channels, `GET /mock-outbox` and
 `POST /webhooks/telegram` answer 503 (NOTIF-1); without a run service, `POST /runs` answers 503
-(RUN-1); without a chat service, `/runs/{id}/chat*` answer 503 (CHAT-1); without an LLM configuration, agent records carry no resolved model. On startup the app
+(RUN-1); without a chat service, `/runs/{id}/chat*` answer 503 (CHAT-1); without an LLM
+configuration, agent records carry no resolved model. On startup the app
 makes the user store's, the audit log's, the hire service's (hires, vault, org keys, PII access
 log), the template store's, the document service's (encrypted bucket, `documents_meta`), the eval
 runs', the mock channels' and the run service's (runs, run tasks, the outbox) indexes and the

@@ -92,7 +92,7 @@ class ChatStore:
         self,
         conversation: Mapping[str, Any],
         *,
-        type: str,  # noqa: A002 - the stored field's name
+        type: str,
         task_id: str,
         at: datetime,
         expires_at: datetime,
