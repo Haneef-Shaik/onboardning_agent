@@ -1,56 +1,20 @@
  Image onb/otel-collector:0.165.0 Building 
  Image onb/otel-collector:0.165.0 Built 
- Volume ob-ui-5_mongo_config Creating 
- Volume ob-ui-5_mongo_data Creating 
- Network ob-ui-5_edge Creating 
- Network ob-ui-5_edge Creating 
- Volume ob-ui-5_caddy_config Creating 
- Volume ob-ui-5_caddy_config Creating 
- Network ob-ui-5_backend Creating 
- Network ob-ui-5_backend Creating 
- Volume ob-ui-5_mongo_config Creating 
- Volume ob-ui-5_caddy_data Creating 
- Volume ob-ui-5_mongo_data Creating 
- Volume ob-ui-5_caddy_data Creating 
- Volume ob-ui-5_mongo_data Created 
- Volume ob-ui-5_mongo_data Created 
- Volume ob-ui-5_caddy_config Created 
- Volume ob-ui-5_caddy_config Created 
- Volume ob-ui-5_caddy_data Created 
- Volume ob-ui-5_caddy_data Created 
- Volume ob-ui-5_mongo_config Created 
- Volume ob-ui-5_mongo_config Created 
- Network ob-ui-5_backend Created 
- Network ob-ui-5_backend Created 
- Container ob-ui-5-jaeger-1 Creating 
- Container ob-ui-5-mongo-1 Creating 
- Network ob-ui-5_edge Created 
- Network ob-ui-5_edge Created 
- Container ob-ui-5-jaeger-1 Created 
- Container ob-ui-5-otel-collector-1 Creating 
- Container ob-ui-5-mongo-1 Created 
- Container ob-ui-5-caddy-1 Creating 
- Container ob-ui-5-otel-collector-1 Created 
- Container ob-ui-5-caddy-1 Created 
- Container ob-ui-5-jaeger-1 Starting 
- Container ob-ui-5-mongo-1 Starting 
- Container ob-ui-5-jaeger-1 Started 
+ Container ob-ui-5-caddy-1 Running 
+ Container ob-ui-5-mongo-1 Running 
+ Container ob-ui-5-otel-collector-1 Running 
+ Container ob-ui-5-jaeger-1 Running 
  Container ob-ui-5-jaeger-1 Waiting 
  Container ob-ui-5-jaeger-1 Waiting 
- Container ob-ui-5-mongo-1 Started 
  Container ob-ui-5-jaeger-1 Healthy 
- Container ob-ui-5-otel-collector-1 Starting 
  Container ob-ui-5-jaeger-1 Healthy 
- Container ob-ui-5-caddy-1 Starting 
- Container ob-ui-5-otel-collector-1 Started 
- Container ob-ui-5-caddy-1 Started 
- Container ob-ui-5-otel-collector-1 Waiting 
- Container ob-ui-5-jaeger-1 Waiting 
  Container ob-ui-5-caddy-1 Waiting 
  Container ob-ui-5-mongo-1 Waiting 
+ Container ob-ui-5-otel-collector-1 Waiting 
+ Container ob-ui-5-jaeger-1 Waiting 
+ Container ob-ui-5-caddy-1 Healthy 
  Container ob-ui-5-jaeger-1 Healthy 
  Container ob-ui-5-otel-collector-1 Healthy 
- Container ob-ui-5-caddy-1 Healthy 
  Container ob-ui-5-mongo-1 Healthy 
 make: *** [test-xt] Error 1
 python3 scripts/plan/plan.py check
@@ -67,7 +31,7 @@ uv run --frozen pytest tools/tests scripts/plan/test_plan.py -q
 ........................................................................ [ 40%]
 ........................................................................ [ 80%]
 ...................................                                           [100%]
-179 passed, 67 subtests passed in 5.08s
+179 passed, 67 subtests passed in 6.94s
 node_modules/.bin/nx run-many -t lint --output-style=static
  NX   Running target lint for 17 projects:
 - py-guardrails
@@ -103,6 +67,6 @@ node_modules/.bin/nx run-many -t lint --output-style=static
 [2m> [22muv run --frozen ruff format --check libs/py-telemetry
 23 files already formatted
 > nx run py-crypto:lint  [existing outputs match the cache, left as is]
-... (1154 lines truncated)
-[full output: ~/Library/Application Support/rtk/tee/1794501472_make_check.log]
+... (1809 lines truncated)
+[full output: ~/Library/Application Support/rtk/tee/1794503354_make_check.log]
 exit 2

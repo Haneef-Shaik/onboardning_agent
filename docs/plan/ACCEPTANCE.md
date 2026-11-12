@@ -35,7 +35,7 @@ a result is malformed.
 | U1 | HR describes a flow in plain language and gets a draft template | TB-1, UI-2, E2E-1 | MS-6 | open |
 | U2 | HR reviews the draft as a visual DAG, edits tasks/rules, sends it for publishing | TPL-2, UI-2, E2E-1 | MS-6 | open |
 | U3 | HR adds a new hire, picks a template, and onboarding starts automatically | HIRE-1, RUN-1, UI-4, E2E-1 | MS-6 | open |
-| U4 | HR sees every run's progress, which task is blocked and why | RUN-2, UI-5 | MS-5 | open |
+| U4 | HR sees every run's progress, which task is blocked and why | RUN-2, UI-5 | MS-5 | pass · 2026-11-12 · compose · docs/evidence/UI-5/playwright-via-caddy.txt |
 | U5 | Manager approves/rejects from the web inbox or the Telegram mock with an AI-prepared summary | HIL-1, NOTIF-1, UI-6, E2E-1 | MS-6 | open |
 | U6 | HR asks "why is Priya's onboarding stuck?" and gets a grounded answer | CHAT-1, UI-7 | MS-5 | open |
 | U7 | HR_ADMIN opens a run's trace and sees every agent, LLM and tool call | F-4, RUN-3, UI-5, DEMO-1 | MS-6 | open |
