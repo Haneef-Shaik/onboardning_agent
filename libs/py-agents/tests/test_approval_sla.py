@@ -142,9 +142,58 @@ def test_an_approval_without_an_sla_takes_the_configured_default() -> None:
     assert due_stages(no_sla, REQUESTED + timedelta(hours=24), POLICY) == ("reminder",)
 
 
+def test_the_default_sla_is_the_configured_one_not_a_constant() -> None:
+    six_hours = SlaPolicy(default_sla_hours=6)
+    no_sla = _approval(sla_hours=None)
+    assert due_stages(no_sla, REQUESTED + timedelta(hours=5, minutes=59), six_hours) == ()
+    assert due_stages(no_sla, REQUESTED + timedelta(hours=6), six_hours) == ("reminder",)
+    assert due_stages(no_sla, REQUESTED + timedelta(hours=12), six_hours) == ("reminder", "escalation")
+
+
 def test_a_naive_requested_at_is_read_as_utc() -> None:
     naive = _approval(requested_at=REQUESTED.replace(tzinfo=None))
     assert due_stages(naive, REQUESTED + timedelta(hours=10), POLICY) == ("reminder",)
+
+
+def test_a_stage_is_stamped_once_and_only_while_pending() -> None:
+    import asyncio
+
+    from onb_agents.approvals import ApprovalSpec, ApprovalStore
+    from onb_api.testing_mongo import MemoryDatabase, memory_store
+    from onb_data import tenant_scope
+
+    spec = ApprovalSpec(
+        run_id="run_1",
+        task_id="t",
+        hire_id="h_1",
+        kind="task",
+        rule=None,
+        approver_id="u_mgr",
+        approver_role=None,
+        title="Approve",
+        items=[],
+        sla_hours=10,
+    )
+
+    async def go() -> tuple[bool, bool, bool, bool, Any, Any]:
+        approvals = ApprovalStore(memory_store(MemoryDatabase()))
+        with tenant_scope("org_a"):
+            created = await approvals.create(spec, now=REQUESTED)
+            later = REQUESTED + timedelta(hours=1)
+            first = await approvals.mark_stage(created["_id"], "reminder", at=REQUESTED)
+            again = await approvals.mark_stage(created["_id"], "reminder", at=later)  # another worker, too late
+            await approvals.decide_if_pending(created["_id"], {"decision": "approve"}, "approved")
+            after_decision = await approvals.mark_stage(created["_id"], "escalation", at=later)
+            stored = await approvals.get(created["_id"])
+            assert stored is not None
+            pending_left = await approvals.awaiting_sla(limit=10)
+            return first, again, after_decision, bool(pending_left), stored["reminded_at"], stored.get("escalated_at")
+
+    first, again, after_decision, pending_left, reminded_at, escalated_at = asyncio.run(go())
+    assert (first, again, after_decision) == (True, False, False)
+    assert reminded_at == REQUESTED  # the first stamp stays
+    assert escalated_at is None
+    assert not pending_left  # a decided approval is no longer swept
 
 
 def test_a_record_without_a_usable_requested_at_is_never_due() -> None:

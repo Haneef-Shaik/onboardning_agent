@@ -1,0 +1,116 @@
+baseline: exit=0, failed=0 []
+
+M1 KILLED: a stage already stamped is owed again (the record no longer stops a repeat)
+  file: libs/py-agents/src/onb_agents/approvals/sla.py
+  failing tests (6):
+    apps/orchestrator/tests/test_approval_sla.py::test_a_restarted_worker_does_not_remind_or_escalate_again
+    apps/orchestrator/tests/test_approval_sla.py::test_an_overdue_approval_reminds_once_then_escalates_to_hr_at_the_second_threshold
+    apps/orchestrator/tests/test_approval_sla.py::test_the_sweep_follows_the_thresholds_in_the_config_file
+    apps/orchestrator/tests_int/test_approval_sla_against_mongo.py::test_a_paused_approval_is_reminded_once_then_escalated_once_and_a_restart_repeats_nothing
+    libs/py-agents/tests/test_approval_sla.py::test_a_stage_already_done_is_never_due_again
+    libs/py-agents/tests/test_approval_sla.py::test_an_overdue_approval_is_due_a_reminder_then_an_escalation
+
+M2 KILLED: a decided or cancelled approval is still owed stages
+  file: libs/py-agents/src/onb_agents/approvals/sla.py
+  failing tests (1):
+    libs/py-agents/tests/test_approval_sla.py::test_only_a_pending_approval_is_due
+
+M3 KILLED: the escalation uses the reminder's threshold (no second threshold)
+  file: libs/py-agents/src/onb_agents/approvals/sla.py
+  failing tests (16):
+    apps/orchestrator/tests/test_approval_sla.py::test_a_reminder_whose_event_was_published_but_not_stamped_is_not_sent_again
+    apps/orchestrator/tests/test_approval_sla.py::test_a_restarted_worker_does_not_remind_or_escalate_again
+    apps/orchestrator/tests/test_approval_sla.py::test_an_approval_without_an_sla_takes_the_configured_default
+    apps/orchestrator/tests/test_approval_sla.py::test_an_overdue_approval_reminds_once_then_escalates_to_hr_at_the_second_threshold
+    apps/orchestrator/tests/test_approval_sla.py::test_each_org_is_swept_in_its_own_scope
+    apps/orchestrator/tests/test_approval_sla.py::test_one_orgs_failure_does_not_stop_the_others
+    ... and 10 more
+
+M4 KILLED: the stamp applies to a decided approval (a decision during the pass no longer wins)
+  file: libs/py-agents/src/onb_agents/approvals/store.py
+  failing tests (2):
+    apps/orchestrator/tests/test_approval_sla.py::test_a_decision_that_lands_during_the_pass_wins_and_nothing_is_sent
+    libs/py-agents/tests/test_approval_sla.py::test_a_stage_is_stamped_once_and_only_while_pending
+
+M5 KILLED: the stamp applies again to a stage already stamped (two workers both send)
+  file: libs/py-agents/src/onb_agents/approvals/store.py
+  failing tests (1):
+    libs/py-agents/tests/test_approval_sla.py::test_a_stage_is_stamped_once_and_only_while_pending
+
+M6 KILLED: a lost stamp does not roll the publish back (the event goes out anyway)
+  file: apps/orchestrator/src/onb_orchestrator/approval_sla.py
+  failing tests (1):
+    apps/orchestrator/tests/test_approval_sla.py::test_a_decision_that_lands_during_the_pass_wins_and_nothing_is_sent
+
+M7 KILLED: the event's key is not fixed per approval and stage (a lost stamp sends again)
+  file: apps/orchestrator/src/onb_orchestrator/approval_sla.py
+  failing tests (2):
+    apps/orchestrator/tests/test_approval_sla.py::test_a_reminder_whose_event_was_published_but_not_stamped_is_not_sent_again
+    apps/orchestrator/tests/test_approval_sla.py::test_an_overdue_approval_reminds_once_then_escalates_to_hr_at_the_second_threshold
+
+M8 KILLED: the stamp is written before the publish, outside its transaction (a crash leaves a stamp with no event)
+  file: apps/orchestrator/src/onb_orchestrator/approval_sla.py
+  failing tests (12):
+    apps/orchestrator/tests/test_approval_sla.py::test_a_reminder_whose_event_was_published_but_not_stamped_is_not_sent_again
+    apps/orchestrator/tests/test_approval_sla.py::test_a_restarted_worker_does_not_remind_or_escalate_again
+    apps/orchestrator/tests/test_approval_sla.py::test_an_approval_first_seen_past_both_thresholds_is_reminded_then_escalated_in_order
+    apps/orchestrator/tests/test_approval_sla.py::test_an_approval_without_an_sla_takes_the_configured_default
+    apps/orchestrator/tests/test_approval_sla.py::test_an_overdue_approval_reminds_once_then_escalates_to_hr_at_the_second_threshold
+    apps/orchestrator/tests/test_approval_sla.py::test_each_org_is_swept_in_its_own_scope
+    ... and 6 more
+
+M9 KILLED: the sweep does not stamp at all (only the event's key stops a repeat)
+  file: apps/orchestrator/src/onb_orchestrator/approval_sla.py
+  failing tests (7):
+    apps/orchestrator/tests/test_approval_sla.py::test_a_decision_that_lands_during_the_pass_wins_and_nothing_is_sent
+    apps/orchestrator/tests/test_approval_sla.py::test_a_restarted_worker_does_not_remind_or_escalate_again
+    apps/orchestrator/tests/test_approval_sla.py::test_an_overdue_approval_reminds_once_then_escalates_to_hr_at_the_second_threshold
+    apps/orchestrator/tests/test_approval_sla.py::test_each_org_is_swept_in_its_own_scope
+    apps/orchestrator/tests/test_approval_sla.py::test_the_sweep_follows_the_thresholds_in_the_config_file
+    apps/orchestrator/tests_int/test_approval_sla_against_mongo.py::test_a_paused_approval_is_reminded_once_then_escalated_once_and_a_restart_repeats_nothing
+    ... and 1 more
+
+M10 KILLED: the worker ignores APPROVAL_SLA_CONFIG (always the shipped file)
+  file: apps/orchestrator/src/onb_orchestrator/worker.py
+  failing tests (4):
+    apps/orchestrator/tests/test_worker_main.py::test_a_bad_approval_sla_config_fails_startup[nonsense:
+    apps/orchestrator/tests/test_worker_main.py::test_a_bad_approval_sla_config_fails_startup[remind_after_sla:
+    apps/orchestrator/tests/test_worker_main.py::test_a_missing_approval_sla_config_fails_startup
+    apps/orchestrator/tests/test_worker_main.py::test_the_approval_sla_thresholds_come_from_the_config_file_the_environment_names
+
+M11 KILLED: an approval without an SLA ignores the configured default (a fixed 24 h)
+  file: libs/py-agents/src/onb_agents/approvals/sla.py
+  failing tests (1):
+    libs/py-agents/tests/test_approval_sla.py::test_the_default_sla_is_the_configured_one_not_a_constant
+
+M12 KILLED: a redelivered reminder messages the approver again
+  file: apps/mcp-mocks/src/onb_mcp_mocks/notify/sla.py
+  failing tests (2):
+    apps/mcp-mocks/tests/test_notify_approval_sla.py::test_the_same_escalation_delivered_again_tells_hr_once
+    apps/mcp-mocks/tests/test_notify_approval_sla.py::test_the_same_reminder_delivered_again_tells_the_approver_once
+
+M13 KILLED: the escalation carries decision buttons (HR could press for the approver)
+  file: apps/mcp-mocks/src/onb_mcp_mocks/notify/sla.py
+  failing tests (1):
+    apps/mcp-mocks/tests/test_notify_approval_sla.py::test_an_escalation_tells_every_hr_user_and_not_the_approver
+
+M14 KILLED: an approval decided meanwhile is still chased
+  file: apps/mcp-mocks/src/onb_mcp_mocks/notify/sla.py
+  failing tests (6):
+    apps/mcp-mocks/tests/test_notify_approval_sla.py::test_an_approval_decided_meanwhile_tells_nobody[escalation-approved]
+    apps/mcp-mocks/tests/test_notify_approval_sla.py::test_an_approval_decided_meanwhile_tells_nobody[escalation-cancelled]
+    apps/mcp-mocks/tests/test_notify_approval_sla.py::test_an_approval_decided_meanwhile_tells_nobody[escalation-rejected]
+    apps/mcp-mocks/tests/test_notify_approval_sla.py::test_an_approval_decided_meanwhile_tells_nobody[reminder-approved]
+    apps/mcp-mocks/tests/test_notify_approval_sla.py::test_an_approval_decided_meanwhile_tells_nobody[reminder-cancelled]
+    apps/mcp-mocks/tests/test_notify_approval_sla.py::test_an_approval_decided_meanwhile_tells_nobody[reminder-rejected]
+
+M15 KILLED: the escalation goes to the approver instead of HR
+  file: apps/mcp-mocks/src/onb_mcp_mocks/notify/sla.py
+  failing tests (4):
+    apps/mcp-mocks/tests/test_notify_approval_sla.py::test_an_escalation_tells_every_hr_user_and_not_the_approver
+    apps/mcp-mocks/tests/test_notify_approval_sla.py::test_the_escalation_goes_to_the_role_the_event_names
+    apps/mcp-mocks/tests/test_notify_approval_sla.py::test_the_same_escalation_delivered_again_tells_hr_once
+    apps/orchestrator/tests_int/test_approval_sla_against_mongo.py::test_a_paused_approval_is_reminded_once_then_escalated_once_and_a_restart_repeats_nothing
+
+source diff after all mutations: 0 files differ []
+mutations: 15, killed: 15, survivors: none
