@@ -553,6 +553,82 @@
         "title": "AuditRecordsEnvelope",
         "type": "object"
       },
+      "CallbackQuery": {
+        "description": "Bot API `CallbackQuery`: `id`, `from`, `chat_instance` always; `data` for a callback button.",
+        "properties": {
+          "chat_instance": {
+            "title": "Chat Instance",
+            "type": "string"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          },
+          "from": {
+            "$ref": "#/components/schemas/TelegramUser"
+          },
+          "game_short_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Game Short Name"
+          },
+          "id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Id",
+            "type": "string"
+          },
+          "inline_message_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inline Message Id"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TelegramMessage"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "from",
+          "chat_instance"
+        ],
+        "title": "CallbackQuery",
+        "type": "object"
+      },
+      "Decision": {
+        "enum": [
+          "approve",
+          "reject"
+        ],
+        "title": "Decision",
+        "type": "string"
+      },
       "DocumentMeta": {
         "additionalProperties": false,
         "description": "A scan as anyone sees it (FR-P3): `documents_meta` holds exactly this, plus `org_id`.",
@@ -1829,6 +1905,125 @@
         "title": "Meta",
         "type": "object"
       },
+      "MockOutboxEnvelope": {
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/MockOutboxMessage"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ErrorBody"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta",
+            "default": {}
+          },
+          "success": {
+            "title": "Success",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "success",
+          "data",
+          "error",
+          "meta"
+        ],
+        "title": "MockOutboxEnvelope",
+        "type": "object"
+      },
+      "MockOutboxMessage": {
+        "additionalProperties": false,
+        "description": "One message the Telegram mock \"sent\": the recipient masked, never raw (PRD §7.10).",
+        "properties": {
+          "buttons": {
+            "items": {
+              "$ref": "#/components/schemas/OutboxButton"
+            },
+            "title": "Buttons",
+            "type": "array"
+          },
+          "channel": {
+            "const": "telegram",
+            "title": "Channel",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "message_id": {
+            "title": "Message Id",
+            "type": "integer"
+          },
+          "recipient_masked": {
+            "title": "Recipient Masked",
+            "type": "string"
+          },
+          "run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Id"
+          },
+          "sent_at": {
+            "format": "date-time",
+            "title": "Sent At",
+            "type": "string"
+          },
+          "task_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Task Id"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "channel",
+          "recipient_masked",
+          "text",
+          "buttons",
+          "run_id",
+          "task_id",
+          "message_id",
+          "sent_at"
+        ],
+        "title": "MockOutboxMessage",
+        "type": "object"
+      },
       "NewHireRequest": {
         "additionalProperties": false,
         "description": "`POST /hires`. An Aadhaar needs `aadhaar_consent`; a hire who declines gives `alternative_id`.",
@@ -1903,6 +2098,29 @@
           "pii"
         ],
         "title": "NewHireRequest",
+        "type": "object"
+      },
+      "OutboxButton": {
+        "additionalProperties": false,
+        "properties": {
+          "callback_data": {
+            "title": "Callback Data",
+            "type": "string"
+          },
+          "decision": {
+            "$ref": "#/components/schemas/Decision"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text",
+          "callback_data",
+          "decision"
+        ],
+        "title": "OutboxButton",
         "type": "object"
       },
       "PageMeta": {
@@ -2295,6 +2513,95 @@
           "due"
         ],
         "title": "Sla",
+        "type": "object"
+      },
+      "TelegramChat": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "type": {
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "type"
+        ],
+        "title": "TelegramChat",
+        "type": "object"
+      },
+      "TelegramMessage": {
+        "description": "Bot API `Message` (or `InaccessibleMessage`, whose `date` is 0): the message the button was on.",
+        "properties": {
+          "chat": {
+            "$ref": "#/components/schemas/TelegramChat"
+          },
+          "date": {
+            "title": "Date",
+            "type": "integer"
+          },
+          "message_id": {
+            "title": "Message Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "message_id",
+          "date",
+          "chat"
+        ],
+        "title": "TelegramMessage",
+        "type": "object"
+      },
+      "TelegramUpdate": {
+        "description": "Bot API `Update`. Only `callback_query` updates mean anything here; others are acknowledged.",
+        "properties": {
+          "callback_query": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CallbackQuery"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "update_id": {
+            "title": "Update Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "update_id"
+        ],
+        "title": "TelegramUpdate",
+        "type": "object"
+      },
+      "TelegramUser": {
+        "description": "Bot API `User`; only `id` is used (as the decider's Telegram id). Names are never stored.",
+        "properties": {
+          "first_name": {
+            "title": "First Name",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "is_bot": {
+            "title": "Is Bot",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "is_bot",
+          "first_name"
+        ],
+        "title": "TelegramUser",
         "type": "object"
       },
       "Template": {
@@ -2976,6 +3283,61 @@
           "type"
         ],
         "title": "Variable",
+        "type": "object"
+      },
+      "WebhookAck": {
+        "additionalProperties": false,
+        "description": "The same answer for every accepted update, so the response tells a caller nothing.",
+        "properties": {
+          "ok": {
+            "const": true,
+            "default": true,
+            "title": "Ok",
+            "type": "boolean"
+          }
+        },
+        "title": "WebhookAck",
+        "type": "object"
+      },
+      "WebhookAckEnvelope": {
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WebhookAck"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "error": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ErrorBody"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta",
+            "default": {}
+          },
+          "success": {
+            "title": "Success",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "success",
+          "data",
+          "error",
+          "meta"
+        ],
+        "title": "WebhookAckEnvelope",
         "type": "object"
       }
     },
@@ -3866,6 +4228,68 @@
         ]
       }
     },
+    "/mock-outbox": {
+      "get": {
+        "operationId": "listMockOutbox",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MockOutboxEnvelope"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error, in the envelope"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Mock Outbox",
+        "tags": [
+          "mock channels"
+        ]
+      }
+    },
     "/pii-access-log": {
       "get": {
         "operationId": "listPiiAccessLog",
@@ -4415,6 +4839,65 @@
         "summary": "Archive Version",
         "tags": [
           "templates"
+        ]
+      }
+    },
+    "/webhooks/telegram": {
+      "post": {
+        "operationId": "telegramWebhook",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Telegram-Bot-Api-Secret-Token",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Telegram-Bot-Api-Secret-Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TelegramUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookAckEnvelope"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error, in the envelope"
+          }
+        },
+        "summary": "Telegram Webhook",
+        "tags": [
+          "mock channels"
         ]
       }
     }

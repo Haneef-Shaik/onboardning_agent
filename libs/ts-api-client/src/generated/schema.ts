@@ -226,6 +226,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/mock-outbox": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Mock Outbox */
+        get: operations["listMockOutbox"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/pii-access-log": {
         parameters: {
             query?: never;
@@ -358,6 +375,23 @@ export interface paths {
         put?: never;
         /** Archive Version */
         post: operations["archiveTemplateVersion"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/webhooks/telegram": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Telegram Webhook */
+        post: operations["telegramWebhook"];
         delete?: never;
         options?: never;
         head?: never;
@@ -559,6 +593,29 @@ export interface components {
             /** Success */
             success: boolean;
         };
+        /**
+         * CallbackQuery
+         * @description Bot API `CallbackQuery`: `id`, `from`, `chat_instance` always; `data` for a callback button.
+         */
+        CallbackQuery: {
+            /** Chat Instance */
+            chat_instance: string;
+            /** Data */
+            data?: string | null;
+            from: components["schemas"]["TelegramUser"];
+            /** Game Short Name */
+            game_short_name?: string | null;
+            /** Id */
+            id: string;
+            /** Inline Message Id */
+            inline_message_id?: string | null;
+            message?: components["schemas"]["TelegramMessage"] | null;
+        };
+        /**
+         * Decision
+         * @enum {string}
+         */
+        Decision: "approve" | "reject";
         /**
          * DocumentMeta
          * @description A scan as anyone sees it (FR-P3): `documents_meta` holds exactly this, plus `org_id`.
@@ -998,6 +1055,46 @@ export interface components {
             /** Trace Id */
             trace_id: string | null;
         };
+        /** MockOutboxEnvelope */
+        MockOutboxEnvelope: {
+            /** Data */
+            data: components["schemas"]["MockOutboxMessage"][] | null;
+            error: components["schemas"]["ErrorBody"] | null;
+            /** @default {} */
+            meta: components["schemas"]["Meta"];
+            /** Success */
+            success: boolean;
+        };
+        /**
+         * MockOutboxMessage
+         * @description One message the Telegram mock "sent": the recipient masked, never raw (PRD §7.10).
+         */
+        MockOutboxMessage: {
+            /** Buttons */
+            buttons: components["schemas"]["OutboxButton"][];
+            /**
+             * Channel
+             * @constant
+             */
+            channel: "telegram";
+            /** Id */
+            id: string;
+            /** Message Id */
+            message_id: number;
+            /** Recipient Masked */
+            recipient_masked: string;
+            /** Run Id */
+            run_id: string | null;
+            /**
+             * Sent At
+             * Format: date-time
+             */
+            sent_at: string;
+            /** Task Id */
+            task_id: string | null;
+            /** Text */
+            text: string;
+        };
         /**
          * NewHireRequest
          * @description `POST /hires`. An Aadhaar needs `aadhaar_consent`; a hire who declines gives `alternative_id`.
@@ -1024,6 +1121,14 @@ export interface components {
              * Format: date
              */
             start_date: string;
+        };
+        /** OutboxButton */
+        OutboxButton: {
+            /** Callback Data */
+            callback_data: string;
+            decision: components["schemas"]["Decision"];
+            /** Text */
+            text: string;
         };
         /** PageMeta */
         PageMeta: {
@@ -1165,6 +1270,45 @@ export interface components {
         Sla: {
             /** Due */
             due: string;
+        };
+        /** TelegramChat */
+        TelegramChat: {
+            /** Id */
+            id: number;
+            /** Type */
+            type: string;
+        };
+        /**
+         * TelegramMessage
+         * @description Bot API `Message` (or `InaccessibleMessage`, whose `date` is 0): the message the button was on.
+         */
+        TelegramMessage: {
+            chat: components["schemas"]["TelegramChat"];
+            /** Date */
+            date: number;
+            /** Message Id */
+            message_id: number;
+        };
+        /**
+         * TelegramUpdate
+         * @description Bot API `Update`. Only `callback_query` updates mean anything here; others are acknowledged.
+         */
+        TelegramUpdate: {
+            callback_query?: components["schemas"]["CallbackQuery"] | null;
+            /** Update Id */
+            update_id: number;
+        };
+        /**
+         * TelegramUser
+         * @description Bot API `User`; only `id` is used (as the decider's Telegram id). Names are never stored.
+         */
+        TelegramUser: {
+            /** First Name */
+            first_name: string;
+            /** Id */
+            id: number;
+            /** Is Bot */
+            is_bot: boolean;
         };
         /**
          * Template
@@ -1395,6 +1539,27 @@ export interface components {
             type: "string" | "enum" | "date" | "user_ref" | "number" | "boolean";
             /** Values */
             values?: string[] | null;
+        };
+        /**
+         * WebhookAck
+         * @description The same answer for every accepted update, so the response tells a caller nothing.
+         */
+        WebhookAck: {
+            /**
+             * Ok
+             * @default true
+             * @constant
+             */
+            ok: true;
+        };
+        /** WebhookAckEnvelope */
+        WebhookAckEnvelope: {
+            data: components["schemas"]["WebhookAck"] | null;
+            error: components["schemas"]["ErrorBody"] | null;
+            /** @default {} */
+            meta: components["schemas"]["Meta"];
+            /** Success */
+            success: boolean;
         };
     };
     responses: never;
@@ -1867,6 +2032,38 @@ export interface operations {
             };
         };
     };
+    listMockOutbox: {
+        parameters: {
+            query?: {
+                page?: number;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MockOutboxEnvelope"];
+                };
+            };
+            /** @description Error, in the envelope */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
     listPiiAccessLog: {
         parameters: {
             query?: {
@@ -2172,6 +2369,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TemplateVersionEnvelope"];
+                };
+            };
+            /** @description Error, in the envelope */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    telegramWebhook: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Telegram-Bot-Api-Secret-Token"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TelegramUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WebhookAckEnvelope"];
                 };
             };
             /** @description Error, in the envelope */
