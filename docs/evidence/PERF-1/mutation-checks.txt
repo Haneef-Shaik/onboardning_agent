@@ -1,0 +1,25 @@
+M1 p95 limit not strict (< -> <=): KILLED
+    FAILED tools/tests/test_perf_stats.py::test_an_endpoint_passes_only_when_its_p95_is_strictly_under_the_limit
+M2 min sample count ignored: KILLED
+    FAILED tools/tests/test_perf_stats.py::test_the_verdict_fails_an_endpoint_measured_fewer_times_than_required
+M3 nothing measured passes: KILLED
+    FAILED tools/tests/test_perf_stats.py::test_the_verdict_of_nothing_measured_is_a_fail
+M4 percentile rank lowered (flatters the p95): KILLED
+    FAILED tools/tests/test_perf_stats.py::test_the_percentile_is_nearest_rank - ...
+    FAILED tools/tests/test_perf_stats.py::test_the_percentile_of_a_small_sample_is_never_below_the_true_rank
+M5 unexpected status not checked: KILLED
+    FAILED tools/tests/test_perf_latency.py::test_an_unexpected_status_stops_the_measurement[401]
+    FAILED tools/tests/test_perf_latency.py::test_an_unexpected_status_stops_the_measurement[403]
+    FAILED tools/tests/test_perf_latency.py::test_an_unexpected_status_stops_the_measurement[404]
+M6 resumed counts a ready (not started) task: KILLED
+    FAILED tools/tests/test_perf_latency.py::test_a_run_has_not_resumed_while_the_tasks_after_the_approval_only_wait
+M7 resumed ignores the dependency on the approval: KILLED
+    FAILED tools/tests/test_perf_latency.py::test_a_run_has_not_resumed_while_the_tasks_after_the_approval_only_wait
+M8 pause not kept before resume: KILLED
+    FAILED tools/tests/test_perf_latency.py::test_every_round_visits_every_endpoint_once_with_pause_right_before_resume
+M9 the 30-decision floor removed: KILLED
+    FAILED tools/tests/test_perf_latency.py::test_fewer_than_thirty_decisions_is_refused
+M10 a non-local host allowed: KILLED
+    FAILED tools/tests/test_perf_latency.py::test_only_a_local_stack_is_measured
+10 of 10 killed
+source diff after all mutations: 0 files differ
