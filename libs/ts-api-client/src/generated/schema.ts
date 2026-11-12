@@ -278,6 +278,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/mock-outbox/{message_id}/press": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Press Mock Outbox Button */
+        post: operations["pressMockOutboxButton"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/pii-access-log": {
         parameters: {
             query?: never;
@@ -1472,6 +1489,8 @@ export interface components {
          * @description One message the Telegram mock "sent": the recipient masked, never raw (PRD §7.10).
          */
         MockOutboxMessage: {
+            /** Audience User Id */
+            audience_user_id?: string | null;
             /** Buttons */
             buttons: components["schemas"]["OutboxButton"][];
             /**
@@ -1531,6 +1550,15 @@ export interface components {
             decision: components["schemas"]["Decision"];
             /** Text */
             text: string;
+        };
+        /**
+         * OutboxPressRequest
+         * @description A press on one of the mock outbox's buttons, by the user the message is addressed to. The API turns it
+         *     into the Telegram `Update` a real press sends and calls `POST /webhooks/telegram` with it (ADR 0026).
+         */
+        OutboxPressRequest: {
+            /** Callback Data */
+            callback_data: string;
         };
         /** PageMeta */
         PageMeta: {
@@ -2736,6 +2764,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MockOutboxEnvelope"];
+                };
+            };
+            /** @description Error, in the envelope */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    pressMockOutboxButton: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                message_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OutboxPressRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WebhookAckEnvelope"];
                 };
             };
             /** @description Error, in the envelope */

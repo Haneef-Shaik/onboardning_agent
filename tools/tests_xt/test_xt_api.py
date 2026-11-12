@@ -1136,6 +1136,64 @@ def _webhook_check(client: TestClient, xt: World) -> None:
     assert len(_decisions_in(xt, ORG_A)) == 1
 
 
+# --- UI-6: POST /mock-outbox/{id}/press --------------------------------------------------------------------
+# The mock outbox's buttons: only the user a message is addressed to may press, in their own org. An org-B
+# message (or an org-B button through an org-A message) is a message nobody has. The press reaches the webhook
+# in-process, so a press by org A's manager decides in org A only.
+
+
+def _message_ids(xt: World) -> dict[str, str]:
+    """{org: id} of each org's Approve/Reject message (sent by `_decision_messages`)."""
+    _decision_messages(xt)
+
+    async def main() -> dict[str, str]:
+        store = xt.store()
+        try:
+            found: dict[str, str] = {}
+            for org in (ORG_A, ORG_B):
+                with tenant_scope(org):
+                    [doc] = await store.tenant("mock_outbox").find({"ref.type": "approval"}, limit=1)
+                    found[org] = str(doc["_id"])
+            return found
+        finally:
+            await store.close()
+
+    return asyncio.run(main())
+
+
+def _press_request(xt: World, role: Role) -> Request:
+    buttons, ids = _decision_messages(xt), _message_ids(xt)
+    return {
+        "method": "POST",
+        "url": f"/mock-outbox/{ids[ORG_A]}/press",
+        "headers": bearer(_token(role)),
+        "json": {"callback_data": buttons[ORG_A]["approve"]},
+    }
+
+
+def _press_check(client: TestClient, xt: World, unscoped: Unscoped) -> None:
+    buttons, ids = _decision_messages(xt), _message_ids(xt)
+    manager = bearer(_token(Role.MANAGER))
+
+    def press(message_id: str, data: str, headers: dict[str, str]) -> Response:
+        return client.post(f"/mock-outbox/{message_id}/press", json={"callback_data": data}, headers=headers)
+
+    def call() -> None:
+        missing = press("m_nobody_xt", buttons[ORG_B]["approve"], manager)
+        foreign = press(ids[ORG_B], buttons[ORG_B]["approve"], manager)
+        assert foreign.status_code == 404, foreign.json()
+        assert_indistinguishable(seen(foreign), seen(missing), "POST /mock-outbox/{id}/press, org B's message")
+        crossed = press(ids[ORG_A], buttons[ORG_B]["approve"], manager)  # org B's button through org A's message
+        assert crossed.status_code == 404, crossed.json()
+        b_manager = bearer(token_for(_OUTBOX_AUDIENCE[ORG_B], ORG_B, Role.MANAGER))
+        assert press(ids[ORG_A], buttons[ORG_A]["approve"], b_manager).status_code == 404
+        assert press(ids[ORG_A], buttons[ORG_A]["approve"], manager).status_code == 200
+
+    _unchanged_for_b(xt, unscoped, call)
+    assert [(d["decision"], d["ref_id"]) for d in _decisions_in(xt, ORG_A)] == [("approve", f"ap_xt_{ORG_A}")]
+    assert _decisions_in(xt, ORG_B) == []
+
+
 # --- HIL-1: GET /approvals, POST /approvals/{id}/decision ----------------------------------------------------------
 # Org A's manager is the approver of org A's seeded approvals (seed_v1) and org B's of `appr_globex_xt`. Org B's
 # approval answers exactly like one nobody has, for every verb; an org-B manager cannot decide org A's; a
@@ -1291,6 +1349,9 @@ ROUTE_CASES: Mapping[tuple[str, str], RouteCase] = {
     ("GET", "/evals/runs/{run_id}"): RouteCase(_eval_run_request, _reads_only(_eval_run_check), ADMIN_ONLY),
     ("GET", "/mock-outbox"): RouteCase(_outbox_request, _reads_only(_outbox_check), ALL_200),
     ("POST", "/webhooks/telegram"): RouteCase(_webhook_request, _reads_only(_webhook_check), ALL_200),
+    ("POST", "/mock-outbox/{message_id}/press"): RouteCase(
+        _press_request, _press_check, {Role.HR_ADMIN: 404, Role.HR: 404, Role.MANAGER: 200}
+    ),
     ("POST", "/runs"): RouteCase(_start_run_request, _start_run_check, AUTHORS_CREATE, volatile=RUN_VOLATILE),
     # RUN-2: org A reads and controls its own runs only; org B's run is a run nobody has.
     ("GET", "/runs"): RouteCase(_runs_request, _runs_check, ALL_200),

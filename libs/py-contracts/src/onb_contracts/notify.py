@@ -62,6 +62,7 @@ __all__ = [
     "NotifySendArgs",
     "NotifySendResult",
     "OutboxButton",
+    "OutboxPressRequest",
     "TelegramChat",
     "TelegramMessage",
     "TelegramUpdate",
@@ -281,7 +282,21 @@ class MockOutboxMessage(BaseModel):
     task_id: str | None
     message_id: int
     sent_at: datetime
+    # The platform user the message is for (an approver), or None. The UI shows the buttons only to them (UI-6).
+    audience_user_id: str | None = None
 
 
 class MockOutboxEnvelope(Envelope[list[MockOutboxMessage]]):
     pass
+
+
+# --- POST /mock-outbox/{message_id}/press (UI-6) ---------------------------------------------------------
+
+
+class OutboxPressRequest(BaseModel):
+    """A press on one of the mock outbox's buttons, by the user the message is addressed to. The API turns it
+    into the Telegram `Update` a real press sends and calls `POST /webhooks/telegram` with it (ADR 0026)."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    callback_data: str = Field(pattern=CALLBACK_DATA_PATTERN, max_length=64)

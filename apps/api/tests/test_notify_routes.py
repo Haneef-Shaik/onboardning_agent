@@ -218,6 +218,7 @@ def test_hr_sees_the_orgs_outbox_masked_newest_first(client: TestClient, notify_
         "task_id",
         "message_id",
         "sent_at",
+        "audience_user_id",  # UI-6: the outbox shows the buttons only to the user they are for
     }
     assert second["sent_at"] < first["sent_at"]
 

@@ -20,16 +20,19 @@ from __future__ import annotations
 import hmac
 import logging
 import re
+import secrets
 from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Final, Protocol
 
+from onb_contracts.approvals import APPROVAL_REF_TYPE, APPROVALS_COLLECTION
 from onb_contracts.auth import Role
 from onb_contracts.notify import (
     DECISION_RECEIVED,
     NOTIFY_SUBSCRIPTIONS,
     OUTBOX_COLLECTION,
+    TELEGRAM_AUTH_HEADER,
     TELEGRAM_CALLBACKS_COLLECTION,
     CallbackQuery,
     Decision,
@@ -44,10 +47,12 @@ from onb_eventbus import MongoEventBus
 from onb_api.auth.tokens import Principal
 
 __all__ = [
+    "AlreadyDecidedPressError",
     "BusDecisions",
     "DecisionPublisher",
     "MockChannels",
     "OutboxPage",
+    "PressRefusedError",
     "WebhookSecretError",
     "check_webhook_secret",
 ]
@@ -56,6 +61,14 @@ _log = logging.getLogger("onb_api.notify")
 # Bot API setWebhook(secret_token): 1-256 characters, A-Z, a-z, 0-9, _ and -.
 _SECRET: Final = re.compile(r"[A-Za-z0-9_-]{32,256}")
 _ID: Final = re.compile(r"[A-Za-z0-9_.:-]{1,128}")
+
+
+class PressRefusedError(LookupError):
+    """The message is not the caller's to press (another user's, another org's, or no such button): 404."""
+
+
+class AlreadyDecidedPressError(RuntimeError):
+    """The approval the message is for is no longer pending: 409, "already decided"."""
 
 
 class WebhookSecretError(ValueError):
@@ -115,6 +128,7 @@ def _message(doc: Mapping[str, Any]) -> MockOutboxMessage:
         sent_at=doc["sent_at"]
         if isinstance(doc.get("sent_at"), datetime)
         else datetime.fromisoformat(str(doc["sent_at"])),
+        audience_user_id=_id_or_none(doc.get("audience_user_id")),
     )
 
 
@@ -126,6 +140,24 @@ def _readable(doc: Mapping[str, Any]) -> MockOutboxMessage | None:
     except (KeyError, TypeError, ValueError):
         _log.warning("mock_outbox: skipped an unreadable document %s", doc.get("_id"))
         return None
+
+
+_MOCK_PRESSER: Final = {"id": 0, "is_bot": False, "first_name": "Mock outbox"}
+
+
+def _callback_update(callback_data: str, message_id: int) -> dict[str, Any]:
+    """A Bot API `Update` with a `callback_query`, as Telegram sends for one tap: a fresh query id per tap. The
+    presser carries no Telegram identity (the webhook never uses one: ADR 0013, ADR 0020 §5)."""
+    return {
+        "update_id": secrets.randbelow(2**31),
+        "callback_query": {
+            "id": str(secrets.randbits(63)),
+            "from": _MOCK_PRESSER,
+            "chat_instance": "mock-outbox",
+            "message": {"message_id": message_id, "date": 0, "chat": {"id": 0, "type": "private"}},
+            "data": callback_data,
+        },
+    }
 
 
 class MockChannels:
@@ -148,6 +180,31 @@ class MockChannels:
         repo = self._store.tenant(OUTBOX_COLLECTION)
         docs = await repo.find(query, sort=[("sent_at", -1), ("_id", -1)], skip=(page - 1) * limit, limit=limit)
         return OutboxPage(tuple(m for m in map(_readable, docs) if m is not None), await repo.count(query))
+
+    # --- POST /mock-outbox/{id}/press (UI-6, ADR 0026) ------------------------------------------------
+
+    async def press_update(self, principal: Principal, message_id: str, callback_data: str) -> dict[str, Any]:
+        """The Telegram `Update` a press of `callback_data` on `message_id` sends, for the user the message is
+        addressed to. Anyone else, another org's message (the read is the token's org) and a button that is not
+        on that message: `PressRefusedError`. An approval no longer pending: `AlreadyDecidedPressError` (the
+        decision itself stays first-wins downstream; this only answers early)."""
+        message = await self._store.tenant(OUTBOX_COLLECTION).find_one({"_id": message_id})
+        if message is None or message.get("audience_user_id") != principal.user_id:
+            raise PressRefusedError(message_id)
+        if not any(b.get("callback_data") == callback_data for b in message.get("buttons") or []):
+            raise PressRefusedError(message_id)
+        ref = message.get("ref") or {}
+        if ref.get("type") == APPROVAL_REF_TYPE:
+            approval = await self._store.tenant(APPROVALS_COLLECTION).find_one(
+                {"_id": ref.get("id")}, projection={"status": 1}
+            )
+            if approval is not None and approval.get("status") != "pending":
+                raise AlreadyDecidedPressError(str(ref.get("id")))
+        return _callback_update(callback_data, int(message.get("message_id", 0)))
+
+    def webhook_headers(self) -> dict[str, str]:
+        """The header Telegram sends with every webhook call. Server-side only: never in a response."""
+        return {TELEGRAM_AUTH_HEADER: self._secret.decode()}
 
     # --- POST /webhooks/telegram ----------------------------------------------------------------------
 

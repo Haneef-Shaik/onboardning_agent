@@ -103,6 +103,8 @@ ROLE_MATRIX: dict[tuple[str, str], dict[Role, int]] = {
     # anyone else gets 404, as for an approval that does not exist (the sample one is the manager's).
     ("GET", "/approvals"): ALL_200,
     ("POST", "/approvals/{approval_id}/decision"): {Role.HR_ADMIN: 404, Role.HR: 404, Role.MANAGER: 200},
+    # UI-6: only the user a mock-outbox message is addressed to may press its buttons (the sample is the manager's).
+    ("POST", "/mock-outbox/{message_id}/press"): {Role.HR_ADMIN: 404, Role.HR: 404, Role.MANAGER: 200},
 }
 
 CONFIG = Path(__file__).resolve().parents[3] / "config"
@@ -111,6 +113,8 @@ SAMPLE_DRAFT = "tdr_" + "a" * 32  # seeded unpublished
 PUBLISHED_DRAFT = "tdr_" + "b" * 32  # seeded and published as engineer-india v1
 SAMPLE_EVAL_RUN = "evr_20261102T090000Z_0000aaa1"
 SAMPLE_APPROVAL = "appr_sample"  # pending in org_acme, the manager's to decide
+SAMPLE_MESSAGE = "m_sample"  # org_acme's mock-outbox message with the sample approval's buttons, to the manager
+SAMPLE_BUTTON = "ob1:" + "A" * 22
 
 RUN_BLOCKED = "run_" + "b" * 24  # blocked on a failed `collect_docs`
 RUN_RUNNING = "run_" + "c" * 24
@@ -132,6 +136,7 @@ SAMPLE_PATHS = {
     "/hires/{hire_id}/documents": "/hires/h_acme_001/documents",
     "/evals/runs/{run_id}": f"/evals/runs/{SAMPLE_EVAL_RUN}",
     "/approvals/{approval_id}/decision": f"/approvals/{SAMPLE_APPROVAL}/decision",
+    "/mock-outbox/{message_id}/press": f"/mock-outbox/{SAMPLE_MESSAGE}/press",
     # RUN-2: each control has a run in the state it needs (seeded by `_sample_runs`), all h_acme_001's.
     "/runs/{run_id}": f"/runs/{RUN_BLOCKED}",
     "/runs/{run_id}/stream": f"/runs/{RUN_DONE}/stream",
@@ -158,6 +163,7 @@ SAMPLE_BODIES: dict[tuple[str, str], dict[str, Any]] = {
     ("POST", "/runs/{run_id}/chat"): {"message": "Why is this run stuck?"},
     ("POST", "/runs/{run_id}/chat/confirm"): {"proposal_id": "prop_" + "0" * 24},
     ("POST", "/approvals/{approval_id}/decision"): {"decision": "approve"},
+    ("POST", "/mock-outbox/{message_id}/press"): {"callback_data": SAMPLE_BUTTON},
 }
 
 
@@ -250,6 +256,30 @@ def _sample_approval(memory_db: MemoryDatabase) -> None:
             await memory_store(memory_db).tenant("approvals").insert_one(document)
 
     asyncio.run(seed())
+
+
+@pytest.fixture(autouse=True)
+def _sample_outbox_message(notify_db: MemoryDatabase) -> None:
+    """UI-6: one Approve/Reject message of org_acme addressed to the manager, at the sample path."""
+    notify_db["mock_outbox"].documents.append(
+        {
+            "_id": SAMPLE_MESSAGE,
+            "org_id": "org_acme",
+            "channel": "telegram",
+            "recipient": {"token": None, "masked": "user:u_acme_mgr_ravi"},
+            "text": "Approval needed",
+            "buttons": [{"text": "Approve", "callback_data": SAMPLE_BUTTON, "decision": "approve"}],
+            "ref": {"type": "approval", "id": SAMPLE_APPROVAL},
+            "audience_user_id": "u_acme_mgr_ravi",
+            "run_id": "run_x",
+            "task_id": "manager_approval",
+            "message_id": 1,
+            "sent_at": datetime(2026, 11, 12, tzinfo=UTC),
+        }
+    )
+    notify_db["telegram_callbacks"].documents.append(
+        {"_id": SAMPLE_BUTTON, "org_id": "org_acme", "created_at": datetime(2026, 11, 12, tzinfo=UTC)}
+    )
 
 
 def _routes(app: FastAPI) -> list[APIRoute]:

@@ -2550,6 +2550,17 @@
         "additionalProperties": false,
         "description": "One message the Telegram mock \"sent\": the recipient masked, never raw (PRD §7.10).",
         "properties": {
+          "audience_user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Audience User Id"
+          },
           "buttons": {
             "items": {
               "$ref": "#/components/schemas/OutboxButton"
@@ -2717,6 +2728,23 @@
           "decision"
         ],
         "title": "OutboxButton",
+        "type": "object"
+      },
+      "OutboxPressRequest": {
+        "additionalProperties": false,
+        "description": "A press on one of the mock outbox's buttons, by the user the message is addressed to. The API turns it\ninto the Telegram `Update` a real press sends and calls `POST /webhooks/telegram` with it (ADR 0026).",
+        "properties": {
+          "callback_data": {
+            "maxLength": 64,
+            "pattern": "^ob1:[A-Za-z0-9_-]{22}$",
+            "title": "Callback Data",
+            "type": "string"
+          }
+        },
+        "required": [
+          "callback_data"
+        ],
+        "title": "OutboxPressRequest",
         "type": "object"
       },
       "PageMeta": {
@@ -5536,6 +5564,64 @@
           }
         ],
         "summary": "List Mock Outbox",
+        "tags": [
+          "mock channels"
+        ]
+      }
+    },
+    "/mock-outbox/{message_id}/press": {
+      "post": {
+        "operationId": "pressMockOutboxButton",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "message_id",
+            "required": true,
+            "schema": {
+              "pattern": "^[A-Za-z0-9_.:-]{1,128}$",
+              "title": "Message Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OutboxPressRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookAckEnvelope"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error, in the envelope"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Press Mock Outbox Button",
         "tags": [
           "mock channels"
         ]
