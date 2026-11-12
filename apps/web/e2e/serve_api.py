@@ -50,7 +50,7 @@ def main() -> int:
     users = asyncio.run(seeded(password))
     admin = asyncio.run(admin_services(users))  # includes the hire and document services (UI-4)
     driver = admin.pop("run_driver")  # UI-5: the test's stand-in for the orchestrator
-    app = create_app(auth=settings, users=users, **admin)
+    app = create_app(auth=settings, users=users, chat=driver.chat, **admin)
     app.include_router(driver_router(driver))
     uvicorn.run(app, host=HOST, port=port, log_level="warning")
     return 0

@@ -18,10 +18,12 @@ from typing import Any, Final
 
 import yaml
 from fastapi import APIRouter
+from chat_seed import chat_service
 from onb_agents.registry import AgentRegistry
 from onb_agents.runs import RunStarter, RunState, RunStore, TaskState
 from onb_agents.runs.testing import OutboxStandIn
 from onb_api.auth.tokens import Principal
+from onb_api.chat.service import ChatService
 from onb_api.hires.service import HireService
 from onb_api.runs import RunService
 from onb_api.runs.control import RunControl
@@ -56,7 +58,8 @@ def _traceparent() -> str:
 class RunDriver:
     """What the orchestrator does to a stored run, for tests to play."""
 
-    def __init__(self, store: RunStore, service: RunService, hire_id: str) -> None:
+    def __init__(self, store: RunStore, service: RunService, hire_id: str, chat: ChatService) -> None:
+        self.chat = chat  # UI-7: the run assistant's service, handed to `create_app`
         self.hire_id = hire_id  # the seeded hire (UI-8's), which every test's run is for
         self._store = store
         self._service = service
@@ -148,4 +151,5 @@ async def run_services(
     with tenant_scope(ORG):
         draft = await templates.create_draft(Template.model_validate(document), actor_id=ADMIN.user_id)
         await templates.publish(draft.id, actor_id=ADMIN.user_id)
-    return service, RunDriver(run_store, service, hire_id)
+    await (chat := chat_service(store, run_store, control)).ensure_indexes()
+    return service, RunDriver(run_store, service, hire_id, chat)
