@@ -68,7 +68,7 @@ E       OSError: connection closed
 The above exception was the direct cause of the following exception:
 
 root_client = MongoClient(host=['127.0.0.1:57647'], document_class=dict, tz_aware=True, connect=True, authsource='admin', directconnection=True, serverselectiontimeoutms=10000)
-mongo_uri = 'mongodb://root:2gQXljzqCy9xI8Yg8TVfKODot9Trpv-I@127.0.0.1:57647/?authSource=admin&directConnection=true'
+mongo_uri = 'mongodb://root:<redacted>@127.0.0.1:57647/?authSource=admin&directConnection=true'
 database_name = 'xt_7e179ea51c54'
 
     @pytest.fixture
@@ -190,7 +190,7 @@ E           pymongo.errors.AutoReconnect: 127.0.0.1:57647: connection closed (co
 _ ERROR at setup of test_naming_org_b_in_the_request_changes_nothing[POST /templates/drafts/{draft_id}/validate-HR_ADMIN] _
 
 root_client = MongoClient(host=['127.0.0.1:57647'], document_class=dict, tz_aware=True, connect=True, authsource='admin', directconnection=True, serverselectiontimeoutms=10000)
-mongo_uri = 'mongodb://root:2gQXljzqCy9xI8Yg8TVfKODot9Trpv-I@127.0.0.1:57647/?authSource=admin&directConnection=true'
+mongo_uri = 'mongodb://root:<redacted>@127.0.0.1:57647/?authSource=admin&directConnection=true'
 database_name = 'xt_7e179ea51c54'
 
     @pytest.fixture
