@@ -82,4 +82,4 @@ None.
 ## Traps hit
 - `rtk`-wrapped vitest wrote `apps/web/.vitest/json/output.json` into the tree and it was committed; removed and ignored.
 - Reveal answers are the typed form (`+91 90000 00042`), not the canonical digits; the Playwright assertion uses the typed value.
-- A descendant `<Routes>` under the `path="*"` guard route resolves relative to `/`, so `HiresPage` declares its paths as `/hires` and `/hires/:hireId`.
+- A descendant `<Routes>` under the `path="*"` guard route resolves relative to `/`, so `HiresPage` first declared absolute paths. After UI-8 merged, it is mounted at `/hires/*` and its inner routes are relative (`index`, `:hireId`).
