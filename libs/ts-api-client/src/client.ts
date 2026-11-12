@@ -20,6 +20,12 @@ export type LoginRequest = Schemas["LoginRequest"];
 export type Me = Schemas["Me"];
 export type Role = Schemas["Role"];
 export type Token = Schemas["Token"];
+export type DocumentMeta = Schemas["DocumentMeta"];
+export type DocumentType = Schemas["DocumentType"];
+export type HireRecord = Schemas["HireRecord"];
+export type NewHireRequest = Schemas["NewHireRequest"];
+export type PiiField = Schemas["PiiField"];
+export type RevealedValue = Schemas["RevealedValue"];
 
 export type ApiClient = Client<paths>;
 

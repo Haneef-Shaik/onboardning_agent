@@ -1,10 +1,12 @@
 """The real API for the Playwright smoke test (UI-1), on 127.0.0.1 only.
 
 AUTH-1's app (`create_app`: login, JWT, `/me`, the envelope) with its in-memory user store, seeded
-with the synthetic users of `onb_api.testing.SEED_USERS`. No Mongo: the Mongo-backed store is proved
-by AUTH-1's integration tests, and the compose golden path is E2E-1's.
+with the synthetic users of `onb_api.testing.SEED_USERS`. No Mongo: the Mongo-backed stores are proved
+by their own integration tests, and the compose golden path is E2E-1's.
 
 UI-8: the admin routes' services, seeded in memory through the real services (`admin_seed.py`).
+UI-4: that seed also builds the real document service next to the hire service (vault, masking, audited
+reveal, encrypted scans, one master key per run), which the hires screens use.
 
 Test-only. The password and the JWT secret come from the environment (Playwright makes fresh ones
 per run); nothing here is a real credential.
@@ -44,7 +46,7 @@ def main() -> int:
     password = require_env(os.environ, "E2E_PASSWORD")
     settings = AuthSettings(jwt_secret=require_env(os.environ, "E2E_JWT_SECRET"), bcrypt_rounds=BCRYPT_ROUNDS)
     users = asyncio.run(seeded(password))
-    admin = asyncio.run(admin_services(users))
+    admin = asyncio.run(admin_services(users))  # includes the hire and document services (UI-4)
     uvicorn.run(create_app(auth=settings, users=users, **admin), host=HOST, port=port, log_level="warning")
     return 0
 

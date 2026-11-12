@@ -7,6 +7,7 @@ import { AdminSection } from "./admin/AdminSection";
 import { AuthProvider, useAuth } from "./auth/AuthProvider";
 import type { SessionStore } from "./auth/session";
 import { canAccess, navFor, safeReturnPath, sectionOf } from "./nav/nav";
+import { HiresPage } from "./hires/HiresPage";
 import { LoginPage } from "./pages/LoginPage";
 import { NotAvailablePage, SectionPage } from "./pages/SectionPage";
 import { Shell } from "./pages/Shell";
@@ -81,6 +82,14 @@ function AppRoutes({ client }: { client: ApiClient }) {
       <Route path="/login" element={<AfterLogin me={me} />} />
       <Route element={<Shell me={me} />}>
         <Route index element={<Navigate to={homeOf(me)} replace />} />
+        <Route
+          path="/hires/*"
+          element={
+            <RequireSection me={me}>
+              <HiresPage client={client} role={me.role} />
+            </RequireSection>
+          }
+        />
         <Route
           path="/admin/*"
           element={

@@ -20,6 +20,7 @@ from typing import Any, Final
 from onb_agents.registry import AgentRegistry, load_catalog, load_manifests
 from onb_agents.testing import InMemoryRegistryStore
 from onb_api.auth.tokens import Principal
+from onb_api.documents.service import DocumentService
 from onb_api.evals.store import EvalRunStore
 from onb_api.hires.service import HireService
 from onb_api.testing import InMemoryAuditLog, InMemoryUserStore
@@ -99,15 +100,20 @@ async def audit_log() -> InMemoryAuditLog:
     return log
 
 
-async def hires(users: InMemoryUserStore, auditor: InMemoryAuditLog) -> tuple[HireService, str]:
+async def hires(users: InMemoryUserStore, auditor: InMemoryAuditLog) -> tuple[HireService, DocumentService, str]:
+    """The hire service, and (UI-4) the document service over the same store, keyring and audit log, as
+    `onb_api.main` shares one keyring between them."""
     store = memory_store()
-    service = HireService.build(store, memory_keyring(store), auditor=auditor, users=users)
+    keyring = memory_keyring(store)
+    service = HireService.build(store, keyring, auditor=auditor, users=users)
+    documents = DocumentService.build(store, keyring, auditor=auditor)
     await service.ensure_indexes()
+    await documents.ensure_indexes()
     hr = Principal(user_id="u_acme_hr1", org_id=ORG, role=Role.HR)
     with tenant_scope(ORG):
         hire_id = (await service.create(hr, NewHireRequest.model_validate(HIRE))).id
         await service.reveal(hr, hire_id, PiiField.PAN, "payroll setup")
-    return service, hire_id
+    return service, documents, hire_id
 
 
 def _report(run_id: str, agent: str, passed: bool, started: datetime) -> dict[str, Any]:
@@ -162,11 +168,12 @@ async def eval_runs() -> EvalRunStore:
 async def admin_services(users: InMemoryUserStore) -> dict[str, Any]:
     """The `create_app` arguments the admin views read, seeded."""
     log = await audit_log()
-    hire_service, _ = await hires(users, log)
+    hire_service, document_service, _ = await hires(users, log)
     return {
         "audit": log,
         "agents": await registry(),
         "hires": hire_service,
+        "documents": document_service,
         "evals": await eval_runs(),
         "llm": llm_config(),
     }
