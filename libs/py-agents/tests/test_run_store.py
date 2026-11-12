@@ -133,6 +133,33 @@ def test_an_outcome_is_stored_and_a_recorded_failure_is_never_cleared() -> None:
     assert task["result"] == {"outcome": "completed", "usage": {"tokens": 7}}
 
 
+def test_fail_running_fails_only_a_running_task_and_an_outcome_can_be_limited_to_one() -> None:
+    async def go() -> tuple[bool, bool, bool, dict[str, Any] | None, dict[str, Any] | None]:
+        store = _store()
+        with tenant_scope("org_a"):
+            await _insert(store)
+            pending = await store.fail_running("run_1", "a", failure={"kind": "k", "reason": "r"}, at=LATER)
+            record = await store.task("run_1", "a")
+            assert record is not None
+            ready = await store.move_task("run_1", "a", TaskState.READY, at=NOW, expected=record)
+            await store.move_task("run_1", "a", TaskState.RUNNING, at=NOW, expected=ready)
+            await store.record_outcome(
+                "run_1", "b", result={"outcome": "completed"}, failure=None, only_if=TaskState.RUNNING
+            )  # `b` is not running: nothing is written
+            failed = await store.fail_running("run_1", "a", failure={"kind": "k", "reason": "r"}, at=LATER)
+            again = await store.fail_running("run_1", "a", failure={"kind": "z", "reason": "z"}, at=LATER)
+            return pending, failed, again, await store.task("run_1", "a"), await store.task("run_1", "b")
+
+    pending, failed, again, a, b = run(go())
+    assert pending is False  # a pending task is not failed by a rejection
+    assert failed is True
+    assert again is False  # a task that is no longer running is not touched again
+    assert a is not None
+    assert (a["status"], a["failure"], a["finished_at"]) == ("failed", {"kind": "k", "reason": "r"}, LATER)
+    assert b is not None
+    assert "result" not in b
+
+
 def test_an_outcome_for_an_unknown_task_is_an_error_and_another_orgs_task_is_unknown() -> None:
     async def go() -> None:
         store = _store()

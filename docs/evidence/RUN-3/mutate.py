@@ -168,16 +168,16 @@ MUTATIONS: list[tuple[str, str, Path, str, str]] = [
     (
         "M20",
         "the fail_task consumer fails a task that already finished",
-        ORCH / "consumer.py",
-        '        if task is None or task["status"] != TaskState.RUNNING.value:',
-        "        if task is None:",
+        AGENTS / "runs/store.py",
+        '            {"run_id": run_id, "task_id": task_id, "status": TaskState.RUNNING.value},\n            {"$set": {"status"',
+        '            {"run_id": run_id, "task_id": task_id},\n            {"$set": {"status"',
     ),
     (
         "M21",
         "a sink's rejection is not applied: the task stays running",
         ORCH / "consumer.py",
-        "            await runs.move_task(run_id, task_id, TaskState.FAILED, at=at, expected=task)",
-        "            return False",
+        "    return await runs.fail_running(",
+        "    return False\n    return await runs.fail_running(",
     ),
     (
         "M22",
@@ -188,10 +188,10 @@ MUTATIONS: list[tuple[str, str, Path, str, str]] = [
     ),
     (
         "M23",
-        "a later outcome write clears the cause a sink recorded",
+        "an agent's outcome is written onto a task that is no longer running (overwrites a sink's cause)",
         AGENTS / "runs/store.py",
-        '        if failure is not None:  # never clear a cause another writer recorded (a sink\'s rejection)\n            changes["failure"] = dict(failure)',
-        '        changes["failure"] = dict(failure) if failure else None',
+        '            match["status"] = only_if.value',
+        "            pass",
     ),
     (
         "M24",

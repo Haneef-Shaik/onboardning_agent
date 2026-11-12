@@ -27,16 +27,18 @@ from __future__ import annotations
 import logging
 from collections import OrderedDict
 from collections.abc import Callable, Mapping
+from dataclasses import replace
 from datetime import timedelta
 from typing import Any, Final, Protocol
 
 from onb_agents.registry import AgentManifest, RegisteredAgent
-from onb_agents.runs import RunStore, stored_dag
+from onb_agents.runs import RunStore, TaskState, stored_dag
 from onb_agents.runtime import AgentRunner, AgentRunResult, AgentTask, ModelChoice, ToolSource
 from onb_crypto import CryptoError, GrantIssuer, VaultField
 from onb_data import Auditor, DataStore, current_tenant
 from onb_guardrails import Budget, BudgetLimits, ExternalGuard
 from onb_llm import LLMRuntime, LLMSelection
+from pymongo.errors import PyMongoError
 
 from .executor import TaskWork
 
@@ -136,18 +138,19 @@ class AgentTaskExecutor:
         run = await self._runs.get(work.run_id)
         if run is None:
             raise LookupError("no such run")
-        template_task = _template_task(run, work.task_id)
         try:
+            template_task = _template_task(run, work.task_id)
             registered = await self._registered(work.agent)
             task = AgentTask(
                 org_id=current_tenant().org_id,
                 run_id=work.run_id,
                 task_id=work.task_id,
                 input=_agent_input(template_task, str(run["hire_id"])),
-                grant=self._grant(work, template_task, str(run["hire_id"]), registered.manifest),
             )
             choice = await self._model(registered.manifest, task)
             budget = await self._run_budget(work.run_id)
+            # The grant is issued last, right before the agent starts, so its lifetime is the task's.
+            task = replace(task, grant=self._grant(work, template_task, str(run["hire_id"]), registered.manifest))
             runner = AgentRunner(
                 models=lambda _manifest, _task: choice,
                 tools=self._tools,
@@ -157,11 +160,24 @@ class AgentTaskExecutor:
             )
             result = await runner.run(registered, task, run_budget=budget)
         except AgentTaskFailedError as error:
-            await self._runs.record_outcome(
-                work.run_id, work.task_id, result=None, failure={"kind": error.kind, "reason": error.reason}
-            )
+            await self._record_failure(work, error)
             raise
+        except PyMongoError:
+            raise  # transient: the bus retries the job, the task is not failed for it
+        except Exception as error:  # any other error is a visible failure too, by type only
+            failed = AgentTaskFailedError("error", type(error).__name__)
+            await self._record_failure(work, failed)
+            raise failed from None
         await self._finish(work, result)
+
+    async def _record_failure(self, work: TaskWork, error: AgentTaskFailedError) -> None:
+        await self._runs.record_outcome(
+            work.run_id,
+            work.task_id,
+            result=None,
+            failure={"kind": error.kind, "reason": error.reason},
+            only_if=TaskState.RUNNING,
+        )
 
     async def _registered(self, name: str) -> RegisteredAgent:
         found = await self._agents.get_agent(name)
@@ -217,8 +233,9 @@ class AgentTaskExecutor:
             self._budgets.move_to_end(key)
             return existing
         used = await self._runs.run_tokens(run_id)
-        budget = self._budgets.setdefault(key, Budget(BudgetLimits(max_tokens=self._run_max_tokens)))
-        if used and budget.usage.tokens == 0:
+        created = Budget(BudgetLimits(max_tokens=self._run_max_tokens))
+        budget = self._budgets.setdefault(key, created)
+        if budget is created and used:  # only the call that made it charges the recorded usage
             budget.charge(used)
         while len(self._budgets) > _MAX_RUN_BUDGETS:
             self._budgets.popitem(last=False)
@@ -226,7 +243,9 @@ class AgentTaskExecutor:
 
     async def _finish(self, work: TaskWork, result: AgentRunResult) -> None:
         failure = {"kind": result.failure.kind, "reason": result.failure.reason} if result.failure else None
-        await self._runs.record_outcome(work.run_id, work.task_id, result=_stored(result), failure=failure)
+        await self._runs.record_outcome(
+            work.run_id, work.task_id, result=_stored(result), failure=failure, only_if=TaskState.RUNNING
+        )
         if result.failure is not None:
             _log.warning(
                 "agent task failed",

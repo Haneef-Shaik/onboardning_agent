@@ -102,12 +102,30 @@ class RunStore:
         recorded: dict[str, Any] = stored["llm"]
         return recorded
 
+    async def fail_running(self, run_id: str, task_id: str, *, failure: Mapping[str, str], at: datetime) -> bool:
+        """Fail a task and record why, in one update that applies only while the task is `running`.
+        Returns False (writing nothing) for a task in any other state, so a task that finished meanwhile
+        never gets a failure stamped on it."""
+        check_transition(TaskState.RUNNING, TaskState.FAILED)
+        outcome = await self._tasks.update_one(
+            {"run_id": run_id, "task_id": task_id, "status": TaskState.RUNNING.value},
+            {"$set": {"status": TaskState.FAILED.value, "finished_at": at, "failure": dict(failure)}},
+        )
+        return outcome.matched == 1
+
     async def record_outcome(
-        self, run_id: str, task_id: str, *, result: Mapping[str, Any] | None, failure: Mapping[str, str] | None
+        self,
+        run_id: str,
+        task_id: str,
+        *,
+        result: Mapping[str, Any] | None,
+        failure: Mapping[str, str] | None,
+        only_if: TaskState | None = None,
     ) -> None:
         """Store what an agent task produced (`result`; left as it is when None) and why it failed, if it did
         (`failure = {kind, reason}`: codes and counts, never message text). Call it before the state move,
-        so a failed task shows its cause."""
+        so a failed task shows its cause. With `only_if`, nothing is written unless the task is in that state
+        (a task moved from outside, e.g. failed by a sink, keeps what that writer recorded)."""
         changes: dict[str, Any] = {}
         if failure is not None:  # never clear a cause another writer recorded (a sink's rejection)
             changes["failure"] = dict(failure)
@@ -115,8 +133,11 @@ class RunStore:
             changes["result"] = dict(result)
         if not changes:
             return
-        outcome = await self._tasks.update_one({"run_id": run_id, "task_id": task_id}, {"$set": changes})
-        if outcome.matched == 0:
+        match: dict[str, Any] = {"run_id": run_id, "task_id": task_id}
+        if only_if is not None:
+            match["status"] = only_if.value
+        outcome = await self._tasks.update_one(match, {"$set": changes})
+        if outcome.matched == 0 and await self.task(run_id, task_id) is None:
             raise LookupError("no such task in this run")
 
     async def run_tokens(self, run_id: str) -> int:

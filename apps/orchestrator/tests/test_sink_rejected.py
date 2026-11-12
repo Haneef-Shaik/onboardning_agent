@@ -168,7 +168,24 @@ def test_a_task_failed_by_a_rejection_while_its_agent_runs_ends_failed_and_fails
     record = run(h.task(run_id, "notify_hire"))
     assert record["status"] == "failed"
     assert record["failure"] == {"kind": "sink_rejected", "reason": "wrong_run"}
-    assert record["result"]["outcome"] == "completed"  # the agent's own outcome is kept beside it
+    assert "result" not in record  # the agent's late outcome is not written onto a task failed from outside
     assert run(h.task(run_id, "after"))["status"] == "cancelled"
     assert run(h.run(run_id))["status"] == RunState.FAILED.value
     assert isinstance(h.tools, Tools)
+
+
+def test_an_agents_own_failure_never_overwrites_the_sinks_cause(tmp_path: Path) -> None:
+    """The agent fails too (bad output) after the sink rejected: the task keeps the sink's reason."""
+    h = Harness.create(Models([{"content": "not json"}, {"content": "still not json"}], tmp_path))
+    run_id_box: list[str] = []
+
+    async def reject(_task: Any) -> None:
+        await deliver(h, run_id_box[0], rejected("notify_hire"))
+
+    h.tools.on_open = reject
+    run_id = run(h.start(template(task_doc("notify_hire"))))
+    run_id_box.append(run_id)
+    run(h.execute(run_id, h.executor()))
+    record = run(h.task(run_id, "notify_hire"))
+    assert record["status"] == "failed"
+    assert record["failure"] == {"kind": "sink_rejected", "reason": "wrong_run"}

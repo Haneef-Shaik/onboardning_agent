@@ -146,17 +146,7 @@ def _rejection(payload: Mapping[str, Any]) -> tuple[str, str | None, str | None,
 async def _fail_running(runs: RunStore, run_id: str, task_id: str, reason: str, at: datetime) -> bool:
     """Fail one task if it is `running`, with the sink's reason on it. A task that finished meanwhile
     (its own move won the race) stays as it is."""
-    for _ in range(2):
-        task = await runs.task(run_id, task_id)
-        if task is None or task["status"] != TaskState.RUNNING.value:
-            return False
-        await runs.record_outcome(run_id, task_id, result=None, failure={"kind": SINK_REJECTED_KIND, "reason": reason})
-        try:
-            await runs.move_task(run_id, task_id, TaskState.FAILED, at=at, expected=task)
-        except TransitionConflictError:
-            continue
-        return True
-    return False
+    return await runs.fail_running(run_id, task_id, failure={"kind": SINK_REJECTED_KIND, "reason": reason}, at=at)
 
 
 def fail_task_handler(store: DataStore, clock: Callable[[], datetime] = _utc_now) -> Handler:

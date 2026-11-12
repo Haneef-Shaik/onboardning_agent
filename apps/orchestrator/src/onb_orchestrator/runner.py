@@ -141,7 +141,12 @@ class RunExecutor:
             except Exception as error:
                 failure = type(error).__name__
         if failure is not None:
-            await self.runs.move_task(run_id, task["task_id"], TaskState.FAILED, at=self.clock(), expected=task)
+            try:
+                await self.runs.move_task(run_id, task["task_id"], TaskState.FAILED, at=self.clock(), expected=task)
+            except TransitionConflictError:
+                current = await self.runs.task(run_id, task["task_id"])  # already failed from outside (a sink)
+                if current is None or current["status"] != TaskState.FAILED.value:
+                    raise
             raise TaskFailedError(failure)
         try:
             await self.runs.move_task(run_id, task["task_id"], TaskState.DONE, at=self.clock(), expected=task)

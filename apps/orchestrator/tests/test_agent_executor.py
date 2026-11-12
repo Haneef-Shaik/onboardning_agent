@@ -17,7 +17,7 @@ from onb_agents.runs import RunState, TaskState
 from onb_agents.runtime import AgentTask, task_scopes
 from onb_agents.tokens import verify_agent_token
 from onb_crypto import VaultField
-from onb_orchestrator.agent_executor import AgentTaskExecutor
+from onb_orchestrator.agent_executor import AgentTaskExecutor, AgentTaskFailedError
 from onb_orchestrator.executor import TaskWork
 
 from .agent_support import (
@@ -271,26 +271,25 @@ def test_the_run_budget_counts_tokens_across_parallel_tasks(tmp_path: Path) -> N
 def test_the_run_budget_is_rebuilt_from_the_tasks_recorded_usage_after_a_restart(tmp_path: Path) -> None:
     h = harness(tmp_path, [final(OK, tokens=600)])
     run_id = started(h, task_doc("one"), task_doc("two", "one"))
-    run(
-        h.execute(
-            run_id,
-            h.executor(run_max_tokens=1000),
-        )
-    )
-    # `two` already failed in the first process; a new executor (a restarted worker) reads task `one`'s
-    # recorded usage, so a fresh attempt of `two` starts with 600 used and still fails on the same budget.
-    again = h.executor(run_max_tokens=1000)
+    run(h.execute(run_id, h.executor(run_max_tokens=10_000)))  # both fit: 1200 tokens recorded in all
+    assert run(h.run(run_id))["status"] == RunState.COMPLETED.value
+    # A restarted worker (a new executor, empty memory) with a 1000-token run budget reads the 1200 recorded
+    # tokens, so the very next task of the run is refused before its first model call.
+    restarted = h.executor(run_max_tokens=1000)
+    models_built = len(h.models.pinned_from)
 
     async def retry() -> None:
         from onb_data import tenant_scope
 
         with tenant_scope(ORG):
-            await again.execute(
+            await restarted.execute(
                 TaskWork(run_id=run_id, task_id="two", agent="db_agent", action="do_two", type="action", attempt=2)
             )
 
-    with pytest.raises(Exception, match="budget_exceeded"):
+    with pytest.raises(AgentTaskFailedError) as refused:
         run(retry())
+    assert (refused.value.kind, refused.value.reason) == ("budget_exceeded", "run tokens 1200/1000")
+    assert len(h.models.pinned_from) == models_built + 1  # it got as far as the agent, which refused it
 
 
 def test_a_task_that_fits_the_run_budget_records_its_usage(tmp_path: Path) -> None:

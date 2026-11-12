@@ -49,17 +49,20 @@ M7 KILLED: the model is not recorded on the task (box 2)
     apps/orchestrator/tests/test_agent_executor.py::test_a_new_attempt_of_a_task_keeps_its_model_and_a_new_task_takes_the_new_config
     apps/orchestrator/tests/test_agent_executor.py::test_the_model_is_recorded_on_the_task
 
-M8 SURVIVED: a new attempt re-resolves the model instead of keeping the recorded one (box 2)
+M8 KILLED: a new attempt re-resolves the model instead of keeping the recorded one (box 2)
   file: apps/orchestrator/src/onb_orchestrator/agent_executor.py
-  failing tests (0):
+  failing tests (1):
+    apps/orchestrator/tests/test_agent_executor.py::test_a_new_attempt_of_a_task_keeps_its_model_and_a_new_task_takes_the_new_config
 
-M9 SURVIVED: the recorded model is overwritten on every attempt (box 2)
+M9 KILLED: the recorded model is overwritten on every attempt (box 2)
   file: libs/py-agents/src/onb_agents/runs/store.py
-  failing tests (0):
+  failing tests (1):
+    libs/py-agents/tests/test_run_store.py::test_a_tasks_model_is_recorded_once_and_never_overwritten
 
-M10 SURVIVED: each task gets its own fresh run budget: no run-level limit (box 3)
+M10 KILLED: each task gets its own fresh run budget: tasks running together do not share the limit (box 3)
   file: apps/orchestrator/src/onb_orchestrator/agent_executor.py
-  failing tests (0):
+  failing tests (1):
+    apps/orchestrator/tests/test_agent_executor.py::test_the_run_budget_counts_tokens_across_parallel_tasks
 
 M11 KILLED: the run budget is not passed to the agent runtime (box 3)
   file: apps/orchestrator/src/onb_orchestrator/agent_executor.py
@@ -133,8 +136,9 @@ M22 KILLED: an agent's late success turns a task failed by a sink `done` again
 
 M23 KILLED: a later outcome write clears the cause a sink recorded
   file: libs/py-agents/src/onb_agents/runs/store.py
-  failing tests (1):
+  failing tests (2):
     apps/orchestrator/tests/test_sink_rejected.py::test_a_task_failed_by_a_rejection_while_its_agent_runs_ends_failed_and_fails_the_run
+    libs/py-agents/tests/test_run_store.py::test_an_outcome_is_stored_and_a_recorded_failure_is_never_cleared
 
 M24 KILLED: a rejection without a task id fails every running task, whatever the agent
   file: apps/orchestrator/src/onb_orchestrator/consumer.py
@@ -149,9 +153,10 @@ M25 KILLED: the run bus no longer subscribes the fail_task consumer
     apps/orchestrator/tests/test_worker_main.py::test_prepare_makes_every_index_and_subscribes_the_run_consumers
     libs/py-agents/tests/test_run_store.py::test_the_run_bus_subscribes_the_orchestrator_to_run_started
 
-M26 SURVIVED: the sink's bus does not subscribe the fail_task consumer (no job is written)
+M26 KILLED: the sink's bus does not subscribe the fail_task consumer (no job is written)
   file: libs/py-contracts/src/onb_contracts/notify.py
-  failing tests (0):
+  failing tests (1):
+    libs/py-contracts/tests/test_notify_contracts.py::test_the_in_app_consumer_is_subscribed_to_its_events
 
 M27 KILLED: the worker does not run the fail_task consumer
   file: apps/orchestrator/src/onb_orchestrator/worker.py
@@ -166,4 +171,4 @@ M28 KILLED: an unknown ORCHESTRATOR_EXECUTOR value silently runs the stub
     apps/orchestrator/tests/test_agents_setup.py::test_choosing_the_agents_executor_without_its_settings_fails_fast
 
 source diff after all mutations: 0 files differ []
-mutations: 28, killed: 24, survivors: ['M8', 'M9', 'M10', 'M26']
+mutations: 28, killed: 28, survivors: none
