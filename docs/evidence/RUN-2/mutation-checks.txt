@@ -1,0 +1,85 @@
+baseline: exit=0, failed=0
+
+M1 KILLED: a task whose holder died is never taken over (box 1)
+  file: apps/orchestrator/src/onb_orchestrator/runner.py
+  failing test: ['apps/orchestrator/tests/test_run_control.py::test_a_task_whose_holder_died_is_taken_over_once_its_lease_ran_out_and_runs_with_the_same_key']
+
+M2 KILLED: a running task may be finished by a worker that no longer holds its lease (box 1)
+  file: libs/py-agents/src/onb_agents/runs/store.py
+  failing test: ['libs/py-agents/tests/test_run_control_store.py::test_a_worker_that_was_taken_over_cannot_finish_the_task_the_new_holder_runs']
+
+M3 KILLED: a task's half-written checkpoint writes are applied (box 1, found by the SIGKILL test)
+  file: apps/orchestrator/src/onb_orchestrator/checkpointer.py
+  failing test: ['apps/orchestrator/tests/test_checkpointer.py::test_a_task_whose_writes_were_cut_short_by_a_crash_is_not_half_applied']
+
+M4 KILLED: a task gets one attempt more than its maximum (box 2)
+  file: apps/orchestrator/src/onb_orchestrator/runner.py
+  failing test: ['apps/orchestrator/tests/test_run_control.py::test_a_task_failing_past_its_max_attempts_blocks_the_run_and_records_an_hr_notification']
+
+M5 KILLED: a blocked run tells nobody: `run.blocked` is not published (box 2)
+  file: apps/orchestrator/src/onb_orchestrator/consumer.py
+  failing test: ['apps/orchestrator/tests/test_run_control.py::test_a_task_failing_past_its_max_attempts_blocks_the_run_and_records_an_hr_notification']
+
+M6 KILLED: completing a task by hand needs no reason (box 3)
+  file: libs/py-contracts/src/onb_contracts/runs.py
+  failing test: ['libs/py-contracts/tests/test_run_control_contracts.py::test_completing_a_task_by_hand_needs_a_reason']
+
+M7 KILLED: a manual completion is not audited (box 3)
+  file: apps/api/src/onb_api/runs/control.py
+  failing test: ['apps/api/tests/test_run_control_routes.py::test_hr_retrying_a_failed_task_unblocks_the_run_and_resumes_it']
+
+M8 KILLED: a manager lists every run of the org (box 4)
+  file: apps/api/src/onb_api/runs/control.py
+  failing test: ['apps/api/tests/test_run_control_routes.py::test_hr_lists_every_run_of_the_org_newest_first_and_a_manager_only_their_reports']
+
+M9 KILLED: a manager reads a run of someone else's report (box 4)
+  file: apps/api/src/onb_api/runs/control.py
+  failing test: ['apps/api/tests/test_run_control_routes.py::test_a_run_is_read_with_its_tasks_by_hr_and_by_the_hires_manager_only']
+
+M10 KILLED: the stream sends only a task's latest transition, not each one (box 5)
+  file: apps/api/src/onb_api/runs/stream.py
+  failing test: ['apps/api/tests/test_run_control_routes.py::test_the_stream_emits_each_task_transition_in_order_and_ends_with_the_run']
+
+M11 KILLED: a run that was never paused can be 'resumed' (found by the route tests)
+  file: apps/api/src/onb_api/runs/control.py
+  failing test: ['apps/api/tests/test_run_control_routes.py::test_a_control_that_does_not_fit_the_runs_state_is_a_conflict_and_changes_nothing']
+
+M12 KILLED: a paused or cancelled run keeps starting tasks
+  file: apps/orchestrator/src/onb_orchestrator/runner.py
+  failing test: ['apps/orchestrator/tests/test_run_control.py::test_a_paused_run_starts_no_new_task_and_resumes_where_it_stopped']
+
+M13 KILLED: a draining worker starts new tasks
+  file: apps/orchestrator/src/onb_orchestrator/runner.py
+  failing test: ['apps/orchestrator/tests/test_run_control.py::test_a_draining_worker_finishes_the_task_in_hand_starts_no_more_and_releases_the_job']
+
+M14 KILLED: a released job costs an attempt (graceful drain)
+  file: libs/py-eventbus/src/onb_eventbus/documents.py
+  failing test: ['libs/py-eventbus/tests/test_worker.py::test_a_released_job_is_claimable_at_once_and_costs_no_attempt']
+
+M15 KILLED: a cancelled run keeps its checkpoints
+  file: apps/orchestrator/src/onb_orchestrator/checkpointer.py
+  failing test: ['apps/orchestrator/tests/test_run_control.py::test_hr_retrying_the_failed_task_lets_the_blocked_run_finish']
+
+M16 KILLED: a cut-off task keeps the attempt it did not finish
+  file: apps/orchestrator/src/onb_orchestrator/runner.py
+  failing test: ['apps/orchestrator/tests/test_run_control.py::test_a_blocked_run_keeps_its_checkpoint_and_a_siblings_lease_is_released']
+
+M17 KILLED: a takeover is not an attempt, so a task that kills its workers is never blocked
+  file: libs/py-agents/src/onb_agents/runs/store.py
+  failing test: ['libs/py-agents/tests/test_run_control_store.py::test_a_task_whose_lease_ran_out_is_taken_over_once']
+
+M18 KILLED: a task that keeps crashing its workers is taken over for ever
+  file: apps/orchestrator/src/onb_orchestrator/runner.py
+  failing test: ['apps/orchestrator/tests/test_run_control.py::test_a_task_that_keeps_crashing_workers_stops_at_its_max_attempts_and_blocks_the_run']
+
+M19 KILLED: a manager may control runs
+  file: apps/api/src/onb_api/runs/routes.py
+  failing test: ['apps/api/tests/test_run_control_routes.py::test_a_manager_may_not_control_a_run_and_another_orgs_run_is_not_found']
+
+M20 KILLED: a running task's lease is never renewed, so a live task is taken over
+  file: apps/orchestrator/src/onb_orchestrator/runner.py
+  failing test: ['apps/orchestrator/tests/test_run_control.py::test_a_worker_that_lost_its_lease_stops_its_task_and_does_not_finish_it']
+
+source diff after all mutations: 0 files differ []
+mutations: 20, killed: 20, survivors: none
+exit 0

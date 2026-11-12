@@ -14,6 +14,7 @@ __all__ = [
     "JobStatus",
     "Processed",
     "PublishResult",
+    "ReleaseJob",
     "WorkOutcome",
 ]
 
@@ -33,8 +34,16 @@ class DeadLetterReason(StrEnum):
     EXHAUSTED = "exhausted"
 
 
+class ReleaseJob(Exception):  # noqa: N818 - a signal, not an error
+    """Raised by a handler to hand its job back: the job becomes claimable again at once and the attempt
+    is not counted. For a worker that is draining (SIGTERM): it finished what it could and leaves the
+    rest to the next worker, however many times that happens."""
+
+
 class WorkOutcome(StrEnum):
     COMPLETED = "completed"
+    RELEASED = "released"
+    """The handler raised `ReleaseJob`: the job is pending again, no attempt used, no backoff."""
     RETRIED = "retried"
     DEAD_LETTERED = "dead_lettered"
     LEASE_LOST = "lease_lost"

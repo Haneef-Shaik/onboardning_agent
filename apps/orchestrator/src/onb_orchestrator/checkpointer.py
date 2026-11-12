@@ -19,8 +19,8 @@ repositories (ADR 0015):
   tooling that lists across threads is refused rather than reading past one run.
 
 Only the async interface is offered (the orchestrator is async end to end); the sync methods raise
-`NotImplementedError`, as LangGraph's base class does. Deleting threads is not offered yet (retention
-belongs with RUN-2 and the ops goals).
+`NotImplementedError`, as LangGraph's base class does. `adelete_thread` removes one run's checkpoints
+(RUN-2: a run that completed, failed or was cancelled keeps none).
 """
 
 from __future__ import annotations
@@ -69,6 +69,21 @@ def _namespace(config: RunnableConfig | None) -> str:
 
 def _config(thread: str, namespace: str, checkpoint_id: str) -> RunnableConfig:
     return {"configurable": {"thread_id": thread, "checkpoint_ns": namespace, "checkpoint_id": checkpoint_id}}
+
+
+def _whole_tasks(writes: Sequence[Mapping[str, Any]]) -> list[Mapping[str, Any]]:
+    """The writes of the tasks whose writes are all stored, in the order they were read.
+
+    A task's writes are several documents written one after the other, so a process killed between two
+    leaves the task half recorded. LangGraph takes whatever is stored for a task as its whole output
+    (and then never schedules what the missing write would have triggered), so a task counts only
+    when it has as many documents as the `count` each one carries. The task's replay (a run resumed by
+    a restarted worker) writes the missing ones. A document with no `count` predates this and counts.
+    """
+    stored: dict[str, int] = {}
+    for write in writes:
+        stored[write["task_id"]] = stored.get(write["task_id"], 0) + 1
+    return [w for w in writes if stored[w["task_id"]] >= int(w.get("count", 0))]
 
 
 class TenantCheckpointSaver(BaseCheckpointSaver[int]):
@@ -143,9 +158,20 @@ class TenantCheckpointSaver(BaseCheckpointSaver[int]):
             metadata=self.serde.loads_typed((document["metadata_type"], document["metadata"])),
             parent_config=_config(thread, namespace, parent) if parent else None,
             pending_writes=[
-                (w["task_id"], w["channel"], self.serde.loads_typed((w["type"], w["value"]))) for w in writes
+                (w["task_id"], w["channel"], self.serde.loads_typed((w["type"], w["value"])))
+                for w in _whole_tasks(writes)
             ],
         )
+
+    # --- deleting --------------------------------------------------------------------------------
+
+    async def adelete_thread(self, thread_id: str) -> None:
+        """Delete every checkpoint and pending write of one run's thread (RUN-2 retention: a finished or
+        cancelled run keeps no checkpoint). The thread is checked like any other: `<org_id>:<run_id>`
+        for the tenant's org, so another org's thread is refused before anything is deleted."""
+        thread = _thread({"configurable": {"thread_id": thread_id}})
+        await self._writes.delete_many({"thread_id": thread})
+        await self._checkpoints.delete_many({"thread_id": thread})
 
     # --- writes ----------------------------------------------------------------------------------
 
@@ -196,5 +222,11 @@ class TenantCheckpointSaver(BaseCheckpointSaver[int]):
                 "task_id": task_id,
                 "idx": WRITES_IDX_MAP.get(channel, idx),
             }
-            fields = {"task_path": task_path, "channel": channel, "type": value_type, "value": serialized}
+            fields = {
+                "task_path": task_path,
+                "channel": channel,
+                "type": value_type,
+                "value": serialized,
+                "count": len(writes),
+            }
             await self._writes.update_one(key, {operator: fields}, upsert=True)

@@ -350,8 +350,21 @@ def test_the_traceparent_of_the_request_is_stored_on_the_run() -> None:
 
 
 def test_the_run_bus_subscribes_the_orchestrator_to_run_started() -> None:
-    # RUN-3 adds `orchestrator.fail_task` for `task.sink_rejected` (NOTIF-1); run.started is unchanged.
-    assert SUBSCRIPTIONS == {RUN_STARTED: (START_RUN,), "task.sink_rejected": ("orchestrator.fail_task",)}
+    # The exact map, every consumer named: RUN-1's start, RUN-2's resume, cleanup and HR notification, and
+    # RUN-3's `orchestrator.fail_task` for `task.sink_rejected` (NOTIF-1).
+    assert SUBSCRIPTIONS == {
+        RUN_STARTED: (START_RUN,),
+        "run.resumed": ("orchestrator.resume_run",),
+        "run.cancelled": ("orchestrator.cleanup_run",),
+        "run.blocked": ("notify.in_app",),
+        "task.sink_rejected": ("orchestrator.fail_task",),
+    }
     assert started_key("run_x") == "run:run_x:started"
     bus = run_bus(memory_store(MemoryDatabase()))
-    assert bus.consumers() == ("orchestrator.fail_task", START_RUN)
+    assert bus.consumers() == (
+        "notify.in_app",
+        "orchestrator.cleanup_run",
+        "orchestrator.fail_task",
+        "orchestrator.resume_run",
+        START_RUN,
+    )

@@ -9,7 +9,13 @@ running, a finished one back to running, a skipped one revived) raises `IllegalT
 nothing is written. A task is runnable only when every dependency is `done` or `skipped`
 (`dependencies_met`): a skipped dependency never blocks.
 
-Retrying a failed task and blocking a run (FR-R4, FR-R5) belong to RUN-2, which extends these tables.
+RUN-2 extends the tables (FR-R4, FR-R5):
+
+    failed → ready          a retry, automatic (backoff) or by HR
+    failed → done           HR completes the task by hand, with an audited reason
+    run: started | running → paused → running            HR pauses and resumes
+    run: running → blocked → running                     a task failed past its attempts; HR retries
+    run: started | running | paused | blocked → cancelled
 """
 
 from __future__ import annotations
@@ -42,14 +48,28 @@ class TaskState(StrEnum):
     def terminal(self) -> bool:
         return self in _TERMINAL
 
+    @property
+    def resolvable(self) -> bool:
+        """Terminal for the run's progress, but HR may still retry or complete it by hand."""
+        return self is TaskState.FAILED
+
 
 class RunState(StrEnum):
     STARTED = "started"  # written with its tasks; the orchestrator has not picked it up yet
     RUNNING = "running"
+    PAUSED = "paused"  # HR paused it: no new task starts until it is resumed
+    BLOCKED = "blocked"  # a task failed past its attempts; HR was notified and must act
     COMPLETED = "completed"
     FAILED = "failed"
+    CANCELLED = "cancelled"
+
+    @property
+    def active(self) -> bool:
+        """Not finished: the run may still move."""
+        return self in _ACTIVE_RUN
 
 
+_ACTIVE_RUN: Final = frozenset({RunState.STARTED, RunState.RUNNING, RunState.PAUSED, RunState.BLOCKED})
 _TERMINAL: Final = frozenset({TaskState.DONE, TaskState.FAILED, TaskState.SKIPPED, TaskState.CANCELLED})
 # A dependency in one of these states lets its dependents run (FR-R3).
 _FINISHED: Final = frozenset({TaskState.DONE, TaskState.SKIPPED})
@@ -60,16 +80,21 @@ _TASK_MOVES: Final[Mapping[TaskState, frozenset[TaskState]]] = {
     TaskState.RUNNING: frozenset({TaskState.WAITING_APPROVAL, TaskState.DONE, TaskState.FAILED, TaskState.CANCELLED}),
     TaskState.WAITING_APPROVAL: frozenset({TaskState.DONE, TaskState.FAILED, TaskState.CANCELLED}),
     TaskState.DONE: frozenset(),
-    TaskState.FAILED: frozenset(),
+    TaskState.FAILED: frozenset({TaskState.READY, TaskState.DONE}),
     TaskState.SKIPPED: frozenset(),
     TaskState.CANCELLED: frozenset(),
 }
 
 _RUN_MOVES: Final[Mapping[RunState, frozenset[RunState]]] = {
-    RunState.STARTED: frozenset({RunState.RUNNING, RunState.FAILED}),
-    RunState.RUNNING: frozenset({RunState.COMPLETED, RunState.FAILED}),
+    RunState.STARTED: frozenset({RunState.RUNNING, RunState.FAILED, RunState.PAUSED, RunState.CANCELLED}),
+    RunState.RUNNING: frozenset(
+        {RunState.COMPLETED, RunState.FAILED, RunState.PAUSED, RunState.BLOCKED, RunState.CANCELLED}
+    ),
+    RunState.PAUSED: frozenset({RunState.RUNNING, RunState.CANCELLED}),
+    RunState.BLOCKED: frozenset({RunState.RUNNING, RunState.CANCELLED}),
     RunState.COMPLETED: frozenset(),
     RunState.FAILED: frozenset(),
+    RunState.CANCELLED: frozenset(),
 }
 
 

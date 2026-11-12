@@ -8,7 +8,7 @@ are compare-and-set on the current status, so two writers never both move one ta
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from datetime import datetime
 from typing import Any, Final
 
@@ -17,7 +17,7 @@ from onb_data import DataStore
 from .records import RUN_TASKS, RUNS, RunRecords
 from .states import RunState, TaskState, check_run_transition, check_transition
 
-__all__ = ["RunStore", "TransitionConflictError"]
+__all__ = ["RunStore", "TransitionConflictError", "lease_expired"]
 
 # The time each state stamps on a task, when it is entered.
 _STAMPS: Final[Mapping[TaskState, str]] = {
@@ -32,6 +32,21 @@ _STAMPS: Final[Mapping[TaskState, str]] = {
 
 class TransitionConflictError(Exception):
     """The record's status changed between reading it and writing the move; nothing was written."""
+
+
+def lease_expired(task: Mapping[str, Any], now: datetime) -> bool:
+    """True when nobody holds the task's lease: it ran out, was released, or was never set."""
+    until = task.get("lease_until")
+    return until is None or bool(until <= now)
+
+
+def _history(
+    current: Mapping[str, Any], source: str, target: str, at: datetime, by: str | None, *, note: str | None = None
+) -> list[dict[str, Any]]:
+    entry: dict[str, Any] = {"from": source, "to": target, "at": at, "by": by}
+    if note is not None:
+        entry["note"] = note
+    return [*current.get("history", ()), entry]
 
 
 class RunStore:
@@ -52,6 +67,28 @@ class RunStore:
     async def get(self, run_id: str) -> dict[str, Any] | None:
         return await self._runs.find_one({"_id": run_id})
 
+    async def list_runs(
+        self,
+        *,
+        hire_ids: Sequence[str] | None = None,
+        status: RunState | None = None,
+        skip: int = 0,
+        limit: int = 50,
+    ) -> tuple[list[dict[str, Any]], int]:
+        """One page of the org's runs, newest first, and how many match. `hire_ids` narrows to those hires
+        (an empty list matches nothing: a manager with no reports sees no runs)."""
+        if hire_ids is not None and not hire_ids:
+            return [], 0
+        # Only runs of this platform (in one of its states, pinned to a DAG): the collection may also hold
+        # fixture documents of another shape (the eval harness's seed), which are not runs of this platform.
+        query: dict[str, Any] = {"status": {"$in": [state.value for state in RunState]}, "dag_hash": {"$exists": True}}
+        if hire_ids is not None:
+            query["hire_id"] = {"$in": list(hire_ids)}
+        if status is not None:
+            query["status"] = status.value
+        page = await self._runs.find(query, sort=[("created_at", -1), ("_id", -1)], skip=skip, limit=limit)
+        return page, await self._runs.count(query)
+
     async def tasks(self, run_id: str) -> list[dict[str, Any]]:
         return await self._tasks.find({"run_id": run_id}, sort=[("position", 1)])
 
@@ -66,10 +103,15 @@ class RunStore:
         *,
         at: datetime,
         expected: Mapping[str, Any] | None = None,
+        by: str | None = None,
+        fields: Mapping[str, Any] | None = None,
     ) -> dict[str, Any]:
         """Move a task to `target` and return it as written.
 
-        `expected` is the record the caller decided on (read now when not given). Raises
+        `expected` is the record the caller decided on (read now when not given). `fields` are written
+        with the move (the lease, the error type, a reset attempt count) and win over the defaults. Each
+        move is appended to the task's `history` (`from`, `to`, `at`, `by`) in the same write, which is
+        what the live stream replays. Leaving `running` releases the lease. Raises
         `IllegalTransitionError` for a move the state machine refuses, `TransitionConflictError` when
         the status changed since `expected` was read, `LookupError` for an unknown task.
         """
@@ -82,9 +124,16 @@ class RunStore:
             changes[_STAMPS[target]] = at
         if target is TaskState.RUNNING:
             changes["attempts"] = int(current.get("attempts", 0)) + 1
-        outcome = await self._tasks.update_one(
-            {"run_id": run_id, "task_id": task_id, "status": current["status"]}, {"$set": changes}
-        )
+        else:
+            changes.update({"lease_token": None, "lease_until": None})
+        changes.update(fields or {})
+        changes["history"] = _history(current, current["status"], target.value, at, by)
+        guard: dict[str, Any] = {"run_id": run_id, "task_id": task_id, "status": current["status"]}
+        if current["status"] == TaskState.RUNNING.value and "lease_token" in current:
+            # A running task is moved only by the holder of its lease: a worker that was taken over
+            # cannot finish or fail the task the new holder is running.
+            guard["lease_token"] = current["lease_token"]
+        outcome = await self._tasks.update_one(guard, {"$set": changes})
         if outcome.matched == 0:
             raise TransitionConflictError("the task changed state while this move was decided")
         return {**current, **changes}
@@ -102,14 +151,35 @@ class RunStore:
         recorded: dict[str, Any] = stored["llm"]
         return recorded
 
-    async def fail_running(self, run_id: str, task_id: str, *, failure: Mapping[str, str], at: datetime) -> bool:
+    async def fail_running(
+        self, run_id: str, task_id: str, *, failure: Mapping[str, str], at: datetime, by: str | None = None
+    ) -> bool:
         """Fail a task and record why, in one update that applies only while the task is `running`.
         Returns False (writing nothing) for a task in any other state, so a task that finished meanwhile
-        never gets a failure stamped on it."""
+        never gets a failure stamped on it. Like every task move it releases the lease and is appended to
+        the task's history (the live stream shows it), and it applies only to the lease holder that was
+        read, so a takeover in between wins."""
         check_transition(TaskState.RUNNING, TaskState.FAILED)
+        current = await self.task(run_id, task_id)
+        if current is None or current["status"] != TaskState.RUNNING.value:
+            return False
+        changes: dict[str, Any] = {
+            "status": TaskState.FAILED.value,
+            "finished_at": at,
+            "failure": dict(failure),
+            "lease_token": None,
+            "lease_until": None,
+            "retry_at": None,
+            "history": _history(current, "running", "failed", at, by, note="failed_from_outside"),
+        }
         outcome = await self._tasks.update_one(
-            {"run_id": run_id, "task_id": task_id, "status": TaskState.RUNNING.value},
-            {"$set": {"status": TaskState.FAILED.value, "finished_at": at, "failure": dict(failure)}},
+            {
+                "run_id": run_id,
+                "task_id": task_id,
+                "status": TaskState.RUNNING.value,
+                "lease_token": current.get("lease_token"),
+            },
+            {"$set": changes},
         )
         return outcome.matched == 1
 
@@ -148,6 +218,56 @@ class RunStore:
             total += int(usage.get("tokens", 0))
         return total
 
+    async def take_over(
+        self,
+        run_id: str,
+        task_id: str,
+        *,
+        expected: Mapping[str, Any],
+        token: str,
+        lease_until: datetime,
+        at: datetime,
+    ) -> dict[str, Any]:
+        """Take a `running` task whose holder is gone: new lease, one more attempt, recorded in its history.
+
+        Compare-and-set on the lease token the caller saw, so of two workers taking over one task only
+        one wins; the other gets `TransitionConflictError`.
+        """
+        changes: dict[str, Any] = {
+            "lease_token": token,
+            "lease_until": lease_until,
+            "attempts": int(expected.get("attempts", 0)) + 1,
+            "started_at": at,
+        }
+        changes["history"] = _history(expected, "running", "running", at, None, note="takeover")
+        outcome = await self._tasks.update_one(
+            {"run_id": run_id, "task_id": task_id, "status": "running", "lease_token": expected.get("lease_token")},
+            {"$set": changes},
+        )
+        if outcome.matched == 0:
+            raise TransitionConflictError("the task was taken over, finished or released while this was decided")
+        return {**expected, **changes}
+
+    async def renew_lease(self, run_id: str, task_id: str, token: str, lease_until: datetime) -> bool:
+        """Extend the lease the caller holds. False when it no longer holds it (so it must stop)."""
+        outcome = await self._tasks.update_one(
+            {"run_id": run_id, "task_id": task_id, "status": "running", "lease_token": token},
+            {"$set": {"lease_until": lease_until}},
+        )
+        return outcome.matched > 0
+
+    async def release_lease(self, run_id: str, task_id: str, token: str, *, attempts: int | None = None) -> bool:
+        """Let go of the lease the caller holds, so another worker may take the task over at once.
+        `attempts` is the count to leave behind: a task cut off through no fault of its own gives the
+        attempt back, and the takeover that follows counts it again."""
+        changes: dict[str, Any] = {"lease_until": None, "lease_token": None}
+        if attempts is not None:
+            changes["attempts"] = attempts
+        outcome = await self._tasks.update_one(
+            {"run_id": run_id, "task_id": task_id, "status": "running", "lease_token": token}, {"$set": changes}
+        )
+        return outcome.matched > 0
+
     async def cancel_unfinished(self, run_id: str, *, at: datetime) -> list[str]:
         """Cancel every task of the run that has not finished (pending, ready, running, waiting), for a
         run that is ending. Returns the ids cancelled. A task that finishes concurrently keeps its state."""
@@ -162,13 +282,28 @@ class RunStore:
             cancelled.append(task["task_id"])
         return cancelled
 
-    async def move_run(self, run_id: str, target: RunState, *, at: datetime) -> dict[str, Any]:
-        """Move a run to `target`; same errors as `move_task`."""
+    async def move_run(
+        self,
+        run_id: str,
+        target: RunState,
+        *,
+        at: datetime,
+        by: str | None = None,
+        expected_status: RunState | None = None,
+    ) -> dict[str, Any]:
+        """Move a run to `target`; same errors as `move_task`. `expected_status` makes the move apply only
+        when the run is in that state (`TransitionConflictError` otherwise). Appended to the run's `history`."""
         current = await self.get(run_id)
         if current is None:
             raise LookupError("no such run")
+        if expected_status is not None and current["status"] != expected_status.value:
+            raise TransitionConflictError("the run is not in the state this move expects")
         check_run_transition(current["status"], target)
-        changes = {"status": target.value, "updated_at": at}
+        changes = {
+            "status": target.value,
+            "updated_at": at,
+            "history": _history(current, current["status"], target.value, at, by),
+        }
         outcome = await self._runs.update_one({"_id": run_id, "status": current["status"]}, {"$set": changes})
         if outcome.matched == 0:
             raise TransitionConflictError("the run changed state while this move was decided")

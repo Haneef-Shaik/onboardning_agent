@@ -6,6 +6,7 @@ from typing import Annotated, Any
 
 from fastapi import Depends, FastAPI, Header
 from fastapi.dependencies.models import Dependant
+from fastapi.responses import StreamingResponse
 from fastapi.routing import APIRoute, iter_route_contexts
 from fastapi.testclient import TestClient
 from onb_api import create_app
@@ -129,6 +130,8 @@ def test_the_route_walk_finds_org_id_however_it_is_declared() -> None:
 def test_every_route_declares_an_envelope_response_model() -> None:
     app = create_app()
     for route in _api_routes(app):
+        if route.response_class is StreamingResponse:
+            continue  # a server-sent event stream (RUN-2: `GET /runs/{id}/stream`) has no envelope
         model = route.response_model
         assert isinstance(model, type), f"{route.path} has no response model"
         assert issubclass(model, Envelope), f"{route.path} answers outside the envelope"

@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Coroutine
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from types import MappingProxyType
 from typing import Any
 
@@ -29,10 +29,12 @@ from onb_eventbus import JobContext
 from onb_orchestrator.checkpointer import CHECKPOINT_WRITES
 from onb_orchestrator.consumer import start_run_handler
 from onb_orchestrator.executor import StubExecutor
+from onb_orchestrator.policy import RunPolicy
 from onb_orchestrator.runner import RunExecutor, TaskStepError
 from pymongo.errors import AutoReconnect
 
 ORG = "org_a"
+ONE_ATTEMPT = RunPolicy(max_attempts=1, backoff_base=0.0, backoff_max=0.0)
 UNFINISHED = {"pending", "ready", "running", "waiting_approval"}
 
 
@@ -64,23 +66,27 @@ async def _state(store: DataStore, run_id: str) -> tuple[str, dict[str, str]]:
     return str(found["status"]), tasks
 
 
-def test_a_failed_task_cancels_its_cut_off_sibling_and_every_task_after_it() -> None:
+def test_a_failed_task_blocks_the_run_and_the_sibling_langgraph_cut_off_gives_its_lease_back() -> None:
+    """RUN-2 (FR-R4) replaced RUN-1's rule: a task failing its last attempt blocks the run, it does not
+    fail it and cancel the rest. The cut-off sibling stays `running` but with its lease released, so the
+    resumed run takes it over at once; the tasks after the failed one wait."""
     store = memory_store(MemoryDatabase())
     executor = StubExecutor(delays={"c": 1.0}, fail=frozenset({"b"}))
 
-    async def go() -> tuple[str, dict[str, str]]:
+    async def go() -> tuple[str, dict[str, str], dict[str, Any]]:
         run_id = await _start(store)
         with tenant_scope(ORG):
-            await start_run_handler(store, executor)(_job(run_id))
-        return await _state(store, run_id)
+            await start_run_handler(store, executor, bus=OutboxStandIn(), policy=ONE_ATTEMPT)(_job(run_id))
+        status, tasks = await _state(store, run_id)
+        with tenant_scope(ORG):
+            return status, tasks, await RunStore(store).task(run_id, "c") or {}
 
-    status, tasks = run(go())
-    assert status == "failed"
+    status, tasks, c = run(go())
+    assert status == "blocked"
     assert tasks["b"] == "failed"
-    assert tasks["c"] == "cancelled", "the sibling LangGraph cut off is left running"
-    assert tasks["d"] == "cancelled"
-    assert tasks["f"] in {"done", "cancelled"}
-    assert not set(tasks.values()) & UNFINISHED, tasks
+    assert (tasks["c"], c["lease_token"], c["lease_until"]) == ("running", None, None)
+    assert tasks["d"] == "pending"
+    assert tasks["f"] == "pending"
 
 
 def test_a_blocked_task_fails_the_run_instead_of_retrying_forever() -> None:
@@ -158,7 +164,13 @@ def test_a_task_another_delivery_is_running_is_not_executed_again() -> None:
         at = datetime(2026, 11, 12, tzinfo=UTC)
         with tenant_scope(ORG):
             await runs.move_task(run_id, "a", TaskState.READY, at=at)
-            await runs.move_task(run_id, "a", TaskState.RUNNING, at=at)  # another delivery holds it
+            await runs.move_task(
+                run_id,
+                "a",
+                TaskState.RUNNING,
+                at=at,
+                fields={"lease_token": "tok_live", "lease_until": datetime.now(UTC) + timedelta(hours=1)},
+            )  # another delivery holds it
             with pytest.raises(TaskStepError) as raised:
                 await start_run_handler(store, executor)(_job(run_id))
         assert raised.value.transient
@@ -170,9 +182,14 @@ def test_a_task_another_delivery_is_running_is_not_executed_again() -> None:
     assert (status, tasks["a"]) == ("running", "running")  # left for the delivery running it
 
 
-def test_a_node_error_reaches_the_checkpoint_as_its_type_only() -> None:
+def test_a_node_error_reaches_the_checkpoint_as_its_type_only(monkeypatch: pytest.MonkeyPatch) -> None:
     db = MemoryDatabase()
     store = memory_store(db)
+
+    async def keep(self: object, run_id: str) -> None:  # a failed run's checkpoint is deleted: keep it to read
+        return None
+
+    monkeypatch.setattr("onb_orchestrator.consumer._Driver.cleanup", keep)
 
     async def go() -> None:
         run_id = await _start(store)

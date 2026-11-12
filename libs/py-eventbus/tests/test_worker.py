@@ -13,7 +13,7 @@ from typing import Any
 
 import pytest
 from onb_data import NoTenantContextError, current_tenant, tenant_scope
-from onb_eventbus import DeadLetterReason, JobContext, JobStatus, WorkOutcome
+from onb_eventbus import DeadLetterReason, JobContext, JobStatus, ReleaseJob, WorkOutcome
 
 from .helpers import CONSUMER, EVENT, FAST, ORG_A, ORG_B, Clock, make_bus
 from .memory_mongo import MemoryDatabase
@@ -568,3 +568,66 @@ def test_run_keeps_going_after_an_unexpected_worker_error() -> None:
         return int(count)
 
     assert asyncio.run(main()) == 1
+
+
+# --- RUN-2: a handler that hands its job back (graceful drain) ----------------------------------
+
+
+async def _release(job: JobContext) -> None:
+    raise ReleaseJob
+
+
+def test_a_released_job_is_claimable_at_once_and_costs_no_attempt() -> None:
+    bus, db, _ = make_bus()
+
+    async def main() -> tuple[Any, ...]:
+        job_id = await _publish(bus)
+        first = await bus.worker({CONSUMER: _release}).run_once()
+        snapshot = _job(db, job_id)
+        second = await bus.worker({CONSUMER: _ok}).run_once()  # no clock advance: no backoff
+        return first, snapshot, second, _job(db, job_id)
+
+    first, snapshot, second, final = asyncio.run(main())
+    assert first.outcome is WorkOutcome.RELEASED
+    assert snapshot["status"] == JobStatus.PENDING
+    assert snapshot["attempts"] == 0
+    assert "lease_token" not in snapshot
+    assert snapshot.get("last_error") is None
+    assert second.outcome is WorkOutcome.COMPLETED
+    assert final["attempts"] == 1
+
+
+def test_a_job_released_again_and_again_is_never_dead_lettered() -> None:
+    bus, db, _ = make_bus()
+
+    async def main() -> list[WorkOutcome]:
+        job_id = await _publish(bus)
+        outcomes = []
+        for _ in range(FAST.max_attempts * 3):
+            done = await bus.worker({CONSUMER: _release}).run_once()
+            assert done is not None
+            outcomes.append(done.outcome)
+        assert _job(db, job_id)["status"] == JobStatus.PENDING
+        return outcomes
+
+    assert set(asyncio.run(main())) == {WorkOutcome.RELEASED}
+    assert db["dead_letters"].docs == []
+
+
+def test_a_job_released_by_a_worker_that_lost_its_lease_is_not_touched() -> None:
+    bus, db, clock = make_bus()
+
+    async def slow_release(job: JobContext) -> None:
+        clock.advance(FAST.lease_seconds + 1)  # the lease lapsed ...
+        taken = await bus.worker({CONSUMER: _ok}, worker_id="w2").run_once()  # ... and w2 took the job
+        assert taken is not None
+        raise ReleaseJob
+
+    async def main() -> Any:
+        job_id = await _publish(bus)
+        outcome = await bus.worker({CONSUMER: slow_release}, worker_id="w1").run_once()
+        return outcome, _job(db, job_id)
+
+    outcome, job = asyncio.run(main())
+    assert outcome.outcome is WorkOutcome.LEASE_LOST
+    assert job["status"] == JobStatus.DONE, "w2's result stands"

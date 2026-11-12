@@ -75,7 +75,8 @@ def test_the_task_and_run_states_are_those_of_fr_r2() -> None:
         "skipped",
         "cancelled",
     }
-    assert set(get_args(RunStatus)) == {"started", "running", "completed", "failed"}
+    # FR-R2 names the task states; the run's are RUN-1's plus RUN-2's control states (FR-R4, FR-R5).
+    assert set(get_args(RunStatus)) == {"started", "running", "paused", "blocked", "completed", "failed", "cancelled"}
 
 
 def test_a_started_run_record_round_trips() -> None:

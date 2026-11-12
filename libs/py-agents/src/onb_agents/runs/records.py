@@ -111,6 +111,7 @@ def run_records(
         "created_by": actor_id,
         "created_at": now,
         "updated_at": now,
+        "history": [],
     }
     tasks = tuple(_task_record(run_id, position, task) for position, task in enumerate(document["tasks"]))
     return RunRecords(run=run, tasks=tasks)
@@ -132,6 +133,10 @@ def _task_record(run_id: str, position: int, task: Mapping[str, Any]) -> dict[st
         "due": task["due"],
         "sla_hours": task.get("sla_hours"),
         "attempts": 0,
+        "lease_token": None,
+        "lease_until": None,
+        "error": None,
+        "history": [],
         "ready_at": None,
         "started_at": None,
         "finished_at": None,

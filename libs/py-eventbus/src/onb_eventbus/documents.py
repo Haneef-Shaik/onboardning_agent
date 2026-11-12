@@ -25,6 +25,7 @@ __all__ = [
     "heartbeat_update",
     "job_document",
     "new_id",
+    "release_update",
     "retry_update",
 ]
 
@@ -131,6 +132,15 @@ def heartbeat_update(*, now: datetime, lease: timedelta) -> Document:
 def complete_update(*, now: datetime) -> Document:
     return {
         "$set": {"status": JobStatus.DONE.value, "completed_at": now, "updated_at": now},
+        "$unset": dict(_RELEASE),
+    }
+
+
+def release_update(*, now: datetime) -> Document:
+    """Give the job back: pending, claimable now, and the claim's attempt handed back."""
+    return {
+        "$set": {"status": JobStatus.PENDING.value, "available_at": now, "updated_at": now},
+        "$inc": {"attempts": -1},
         "$unset": dict(_RELEASE),
     }
 

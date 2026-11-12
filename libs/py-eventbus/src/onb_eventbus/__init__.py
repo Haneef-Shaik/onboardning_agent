@@ -16,6 +16,7 @@ from .models import (
     JobStatus,
     Processed,
     PublishResult,
+    ReleaseJob,
     WorkOutcome,
 )
 from .settings import QueueSettings, backoff_delay
@@ -34,6 +35,7 @@ __all__ = [
     "Processed",
     "PublishResult",
     "QueueSettings",
+    "ReleaseJob",
     "WorkOutcome",
     "Worker",
     "backoff_delay",

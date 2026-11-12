@@ -2544,6 +2544,28 @@
         "title": "Role",
         "type": "string"
       },
+      "RunControlRequest": {
+        "additionalProperties": false,
+        "description": "`POST /runs/{id}/{pause|resume|cancel}` and `.../tasks/{task_id}/retry`: a reason is optional.",
+        "properties": {
+          "reason": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "minLength": 1,
+                "pattern": "\\S",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          }
+        },
+        "title": "RunControlRequest",
+        "type": "object"
+      },
       "RunCreate": {
         "additionalProperties": false,
         "description": "`POST /runs`: start a run for a hire on a published template version (FR-R1).",
@@ -2646,8 +2668,11 @@
             "enum": [
               "started",
               "running",
+              "paused",
+              "blocked",
               "completed",
-              "failed"
+              "failed",
+              "cancelled"
             ],
             "title": "Status",
             "type": "string"
@@ -2682,6 +2707,67 @@
         "title": "RunRecord",
         "type": "object"
       },
+      "RunSummary": {
+        "additionalProperties": false,
+        "description": "A run in a list: no tasks (`GET /runs/{id}` has them).",
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "created_by": {
+            "title": "Created By",
+            "type": "string"
+          },
+          "hire_id": {
+            "title": "Hire Id",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "started",
+              "running",
+              "paused",
+              "blocked",
+              "completed",
+              "failed",
+              "cancelled"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "template_key": {
+            "title": "Template Key",
+            "type": "string"
+          },
+          "template_version": {
+            "title": "Template Version",
+            "type": "integer"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "hire_id",
+          "template_key",
+          "template_version",
+          "status",
+          "created_by",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "RunSummary",
+        "type": "object"
+      },
       "RunTaskRecord": {
         "additionalProperties": false,
         "properties": {
@@ -2692,6 +2778,11 @@
           "agent": {
             "title": "Agent",
             "type": "string"
+          },
+          "attempts": {
+            "default": 0,
+            "title": "Attempts",
+            "type": "integer"
           },
           "depends_on": {
             "items": {
@@ -2710,6 +2801,17 @@
               }
             ],
             "title": "Due"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
           },
           "skip_reason": {
             "anyOf": [
@@ -2767,6 +2869,52 @@
         "title": "RunTaskRecord",
         "type": "object"
       },
+      "RunsEnvelope": {
+        "additionalProperties": false,
+        "description": "One page of runs, newest first; `meta.page` has the total.",
+        "properties": {
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/RunSummary"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ErrorBody"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta",
+            "default": {}
+          },
+          "success": {
+            "title": "Success",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "success",
+          "data",
+          "error",
+          "meta"
+        ],
+        "title": "RunsEnvelope",
+        "type": "object"
+      },
       "Sla": {
         "additionalProperties": false,
         "description": "`due` is a date variable with an optional offset: `start_date - 7d`, `start_date + 48h`.",
@@ -2782,6 +2930,24 @@
           "due"
         ],
         "title": "Sla",
+        "type": "object"
+      },
+      "TaskCompleteRequest": {
+        "additionalProperties": false,
+        "description": "`POST /runs/{id}/tasks/{task_id}/complete`: HR says the task is done and why (FR-R5).",
+        "properties": {
+          "reason": {
+            "maxLength": 500,
+            "minLength": 1,
+            "pattern": "\\S",
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "reason"
+        ],
+        "title": "TaskCompleteRequest",
         "type": "object"
       },
       "TelegramChat": {
@@ -4719,6 +4885,91 @@
       }
     },
     "/runs": {
+      "get": {
+        "operationId": "listRuns",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "started",
+                    "running",
+                    "paused",
+                    "blocked",
+                    "completed",
+                    "failed",
+                    "cancelled"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "maximum": 1000,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunsEnvelope"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error, in the envelope"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Runs",
+        "tags": [
+          "runs"
+        ]
+      },
       "post": {
         "operationId": "startRun",
         "requestBody": {
@@ -4759,6 +5010,436 @@
           }
         ],
         "summary": "Start Run",
+        "tags": [
+          "runs"
+        ]
+      }
+    },
+    "/runs/{run_id}": {
+      "get": {
+        "operationId": "getRun",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "pattern": "^[A-Za-z0-9_-]{1,64}$",
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunEnvelope"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error, in the envelope"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Run",
+        "tags": [
+          "runs"
+        ]
+      }
+    },
+    "/runs/{run_id}/cancel": {
+      "post": {
+        "operationId": "cancelRun",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "pattern": "^[A-Za-z0-9_-]{1,64}$",
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/RunControlRequest"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunEnvelope"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error, in the envelope"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Cancel Run",
+        "tags": [
+          "runs"
+        ]
+      }
+    },
+    "/runs/{run_id}/pause": {
+      "post": {
+        "operationId": "pauseRun",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "pattern": "^[A-Za-z0-9_-]{1,64}$",
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/RunControlRequest"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunEnvelope"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error, in the envelope"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Pause Run",
+        "tags": [
+          "runs"
+        ]
+      }
+    },
+    "/runs/{run_id}/resume": {
+      "post": {
+        "operationId": "resumeRun",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "pattern": "^[A-Za-z0-9_-]{1,64}$",
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/RunControlRequest"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunEnvelope"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error, in the envelope"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Resume Run",
+        "tags": [
+          "runs"
+        ]
+      }
+    },
+    "/runs/{run_id}/stream": {
+      "get": {
+        "operationId": "streamRun",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "pattern": "^[A-Za-z0-9_-]{1,64}$",
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "text/event-stream": {}
+            },
+            "description": "Server-sent events: task, run and end."
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error, in the envelope"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Stream",
+        "tags": [
+          "runs"
+        ]
+      }
+    },
+    "/runs/{run_id}/tasks/{task_id}/complete": {
+      "post": {
+        "operationId": "completeRunTask",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "pattern": "^[A-Za-z0-9_-]{1,64}$",
+              "title": "Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "pattern": "^[a-z][a-z0-9_]{0,63}$",
+              "title": "Task Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskCompleteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunEnvelope"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error, in the envelope"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Complete Task",
+        "tags": [
+          "runs"
+        ]
+      }
+    },
+    "/runs/{run_id}/tasks/{task_id}/retry": {
+      "post": {
+        "operationId": "retryRunTask",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "pattern": "^[A-Za-z0-9_-]{1,64}$",
+              "title": "Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "pattern": "^[a-z][a-z0-9_]{0,63}$",
+              "title": "Task Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/RunControlRequest"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunEnvelope"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error, in the envelope"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Retry Task",
         "tags": [
           "runs"
         ]

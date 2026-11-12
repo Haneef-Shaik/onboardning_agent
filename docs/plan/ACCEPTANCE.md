@@ -51,7 +51,7 @@ a result is malformed.
 | NF-PII | 0 raw sensitive values outside the vault: prompts, outputs, logs, traces | OBS-1, GR-1, NOTIF-1, SEC-1 | MS-6 | open |
 | NF-PII-INT | 100% of tampered vault records and forged or widened grants rejected | PII-2, PII-4, SEC-1 | MS-6 | open |
 | NF-EVAL | Eval gates met before any agent, prompt or model change merges | EVAL-1, EVAL-2 | MS-6 | open |
-| NF-DUR | No run state lost on worker restart; jobs at-least-once with idempotent handlers | EVT-1, RUN-2 | MS-4 | open |
+| NF-DUR | No run state lost on worker restart; jobs at-least-once with idempotent handlers | EVT-1, RUN-2 | MS-4 | pass · 2026-11-12 · compose · docs/evidence/RUN-2/kill-and-restart.txt |
 | NF-LAT | API p95 < 300 ms (non-LLM); approval decision → run resumed < 5 s | HIL-1, PERF-1 | MS-6 | open |
 | NF-SEC | No secrets in code; agent tokens ≤ 15 min; inputs validated at boundaries | HUB-1, SEC-2 | MS-6 | open |
 | NF-OBS | 100% of LLM and tool calls traced; every run has a trace link | F-4, RUN-3, UI-5, DEMO-1 | MS-6 | open |

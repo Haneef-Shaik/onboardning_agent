@@ -598,6 +598,144 @@ def _start_run_check(client: TestClient, xt: World, unscoped: Unscoped) -> None:
     assert task_orgs == event_orgs == job_orgs == {ORG_A}
 
 
+# --- RUN-2: reading and controlling runs -----------------------------------------------------------------------
+# Org A reads and controls its own runs only. Org B's run answers exactly like a run nobody has, for every read
+# and every control, and a control on org B's run writes nothing. The ordinary request of each route names org
+# B's run (the generic checks then hold every role to a 404, or 403 for a manager on a control); the route's own
+# check runs org A's real lifecycle and shows every row it wrote, and every event and job, is org A's.
+
+A_RUN, A_HIRE = XT_RUNS[ORG_A]
+B_RUN, B_HIRE = XT_RUNS[ORG_B]
+MISSING_RUN = "run_xt_nobody"
+BLOCKED_TASK = "collect_docs"
+B_ADMIN_HEADERS = bearer(token_for(*B_ADMIN))
+CONTROL_404: Mapping[Role, int] = {Role.HR_ADMIN: 404, Role.HR: 404, Role.MANAGER: 403}
+ALL_404: Mapping[Role, int] = dict.fromkeys(ACTORS, 404)
+CONTROL_BODIES: Mapping[str, dict[str, Any]] = {
+    "pause": {},
+    "resume": {},
+    "cancel": {},
+    f"tasks/{BLOCKED_TASK}/retry": {},
+    f"tasks/{BLOCKED_TASK}/complete": {"reason": "xt: done by hand"},
+}
+
+
+def _start_a_run(client: TestClient) -> str:
+    response = client.post("/runs", json=_run_body(), headers=bearer(_token(Role.HR)))
+    assert response.status_code == 201, response.text
+    run_id: str = response.json()["data"]["id"]
+    return run_id
+
+
+def _like_missing_run(client: TestClient, method: str, suffix: str, who: Mapping[str, str], **kw: Any) -> None:
+    """Org B's run and a run nobody has answer a read or control the same way: 404, identical body."""
+    as_foreign = client.request(method, f"/runs/{B_RUN}{suffix}", headers=who, **kw)
+    as_missing = client.request(method, f"/runs/{MISSING_RUN}{suffix}", headers=who, **kw)
+    assert as_foreign.status_code == 404, as_foreign.text
+    assert_indistinguishable(seen(as_foreign), seen(as_missing), f"{method} /runs/{{id}}{suffix}")
+
+
+def _runs_request(_: World, role: Role) -> Request:
+    return {"method": "GET", "url": "/runs", "headers": bearer(_token(role)), "params": {"limit": 100}}
+
+
+def _runs_check(client: TestClient, xt: World, unscoped: Unscoped) -> None:
+    with unscoped("root read of each org's run ids"):
+        ids = {
+            org: {r["_id"] for r in xt.root_db["onboarding_runs"].find({"org_id": org, "dag_hash": {"$exists": True}})}
+            for org in (ORG_A, ORG_B)
+        }
+    listed = client.get("/runs", params={"limit": 100}, headers=bearer(_token(Role.HR))).json()
+    assert {r["id"] for r in listed["data"]} == ids[ORG_A]
+    assert listed["meta"]["page"]["total"] == len(ids[ORG_A])
+    as_b = client.get("/runs", params={"limit": 100}, headers=B_ADMIN_HEADERS).json()
+    assert {r["id"] for r in as_b["data"]} == ids[ORG_B]
+    assert ids[ORG_A].isdisjoint(ids[ORG_B])
+    narrowed = client.get("/runs", params={"status": "started"}, headers=bearer(_token(Role.HR))).json()
+    assert {r["id"] for r in narrowed["data"]} <= ids[ORG_A]
+
+
+def _run_request(_: World, role: Role) -> Request:
+    return {"method": "GET", "url": f"/runs/{A_RUN}", "headers": bearer(_token(role))}
+
+
+def _run_check(client: TestClient, xt: World) -> None:
+    for role in ACTORS:
+        _like_missing_run(client, "GET", "", bearer(_token(role)))
+    own = client.get(f"/runs/{B_RUN}", headers=B_ADMIN_HEADERS)
+    assert own.status_code == 200, own.text
+    assert {t["task_id"] for t in own.json()["data"]["tasks"]}
+    assert_no_leak(client.get(f"/runs/{A_RUN}", headers=bearer(_token(Role.HR))).text, "GET /runs/{id}")
+
+
+def _stream_request(_: World, role: Role) -> Request:
+    return {"method": "GET", "url": f"/runs/{B_RUN}/stream", "headers": bearer(_token(role))}
+
+
+def _stream_check(client: TestClient, xt: World) -> None:
+    for role in ACTORS:
+        _like_missing_run(client, "GET", "/stream", bearer(_token(role)))
+    run_id = _start_a_run(client)
+    hr = bearer(_token(Role.HR))
+    assert client.post(f"/runs/{run_id}/cancel", json={}, headers=hr).status_code == 200
+    streamed = client.get(f"/runs/{run_id}/stream", headers=hr)  # a cancelled run's stream ends at once
+    assert streamed.status_code == 200
+    assert streamed.headers["content-type"].startswith("text/event-stream")
+    assert "event: end" in streamed.text
+    assert_no_leak(streamed.text, "GET /runs/{id}/stream")
+
+
+def _control_request(verb: str) -> Callable[[World, Role], Request]:
+    def request(_: World, role: Role) -> Request:
+        return {
+            "method": "POST",
+            "url": f"/runs/{B_RUN}/{verb}",
+            "headers": bearer(_token(role)),
+            "json": CONTROL_BODIES[verb],
+        }
+
+    return request
+
+
+def _root_set_blocked(xt: World, unscoped: Unscoped, run_id: str) -> None:
+    """What the orchestrator does to a run whose task failed its last attempt (its own tests prove it)."""
+    with unscoped("root write: org A's run blocked on a failed task, as the orchestrator leaves it"):
+        xt.root_db["run_tasks"].update_one(
+            {"org_id": ORG_A, "run_id": run_id, "task_id": BLOCKED_TASK},
+            {"$set": {"status": "failed", "attempts": 3, "error": "StubTaskError"}},
+        )
+        xt.root_db["onboarding_runs"].update_one({"_id": run_id, "org_id": ORG_A}, {"$set": {"status": "blocked"}})
+
+
+def _control_check(verb: str) -> Callable[[TestClient, World, Unscoped], None]:
+    def check(client: TestClient, xt: World, unscoped: Unscoped) -> None:
+        hr = bearer(_token(Role.HR))
+        body = CONTROL_BODIES[verb]
+
+        def foreign() -> None:
+            _like_missing_run(client, "POST", f"/{verb}", hr, json=body)
+
+        _unchanged_for_b(xt, unscoped, foreign)  # org B's run: a 404 like a missing run, and nothing written
+        run_id = _start_a_run(client)
+        if verb == "resume":
+            assert client.post(f"/runs/{run_id}/pause", json={}, headers=hr).status_code == 200
+        if verb.startswith("tasks/"):
+            _root_set_blocked(xt, unscoped, run_id)
+        done = client.post(f"/runs/{run_id}/{verb}", json=body, headers=hr)
+        assert done.status_code == 200, done.text
+        assert_no_leak(done.text, f"POST /runs/{{id}}/{verb}")
+        with unscoped(f"root read-back of org A's run {verb}: its events, jobs and audit records"):
+            db = xt.root_db
+            event_orgs = {e["org_id"] for e in db["events"].find({"run_id": run_id})}
+            job_orgs = {j["org_id"] for j in db["jobs"].find({"run_id": run_id})}
+            audited = list(db["audit_log"].find({"target": {"$regex": f"^run:{run_id}"}}))
+        assert event_orgs == job_orgs == {ORG_A}
+        assert audited
+        assert {a["org_id"] for a in audited} == {ORG_A}
+
+    return check
+
+
 def _reads_only(check: Callable[[TestClient, World], None]) -> Callable[[TestClient, World, Unscoped], None]:
     """A check that takes no root snapshot."""
 
@@ -939,6 +1077,21 @@ ROUTE_CASES: Mapping[tuple[str, str], RouteCase] = {
     ("GET", "/mock-outbox"): RouteCase(_outbox_request, _reads_only(_outbox_check), ALL_200),
     ("POST", "/webhooks/telegram"): RouteCase(_webhook_request, _reads_only(_webhook_check), ALL_200),
     ("POST", "/runs"): RouteCase(_start_run_request, _start_run_check, AUTHORS_CREATE, volatile=RUN_VOLATILE),
+    # RUN-2: org A reads and controls its own runs only; org B's run is a run nobody has.
+    ("GET", "/runs"): RouteCase(_runs_request, _runs_check, ALL_200),
+    ("GET", "/runs/{run_id}"): RouteCase(_run_request, _reads_only(_run_check), ALL_200),
+    ("GET", "/runs/{run_id}/stream"): RouteCase(_stream_request, _reads_only(_stream_check), ALL_404),
+    ("POST", "/runs/{run_id}/pause"): RouteCase(_control_request("pause"), _control_check("pause"), CONTROL_404),
+    ("POST", "/runs/{run_id}/resume"): RouteCase(_control_request("resume"), _control_check("resume"), CONTROL_404),
+    ("POST", "/runs/{run_id}/cancel"): RouteCase(_control_request("cancel"), _control_check("cancel"), CONTROL_404),
+    ("POST", "/runs/{run_id}/tasks/{task_id}/retry"): RouteCase(
+        _control_request(f"tasks/{BLOCKED_TASK}/retry"), _control_check(f"tasks/{BLOCKED_TASK}/retry"), CONTROL_404
+    ),
+    ("POST", "/runs/{run_id}/tasks/{task_id}/complete"): RouteCase(
+        _control_request(f"tasks/{BLOCKED_TASK}/complete"),
+        _control_check(f"tasks/{BLOCKED_TASK}/complete"),
+        CONTROL_404,
+    ),
 }
 
 _ROUTE_IDS = [f"{method} {path}" for method, path in ROUTE_CASES]

@@ -268,10 +268,130 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** List Runs */
+        get: operations["listRuns"];
         put?: never;
         /** Start Run */
         post: operations["startRun"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/runs/{run_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Run */
+        get: operations["getRun"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/runs/{run_id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cancel Run */
+        post: operations["cancelRun"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/runs/{run_id}/pause": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Pause Run */
+        post: operations["pauseRun"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/runs/{run_id}/resume": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Resume Run */
+        post: operations["resumeRun"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/runs/{run_id}/stream": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Stream */
+        get: operations["streamRun"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/runs/{run_id}/tasks/{task_id}/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Complete Task */
+        post: operations["completeRunTask"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/runs/{run_id}/tasks/{task_id}/retry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Retry Task */
+        post: operations["retryRunTask"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1295,6 +1415,14 @@ export interface components {
          */
         Role: "HR_ADMIN" | "HR" | "MANAGER";
         /**
+         * RunControlRequest
+         * @description `POST /runs/{id}/{pause|resume|cancel}` and `.../tasks/{task_id}/retry`: a reason is optional.
+         */
+        RunControlRequest: {
+            /** Reason */
+            reason?: string | null;
+        };
+        /**
          * RunCreate
          * @description `POST /runs`: start a run for a hire on a published template version (FR-R1).
          */
@@ -1340,7 +1468,7 @@ export interface components {
              * Status
              * @enum {string}
              */
-            status: "started" | "running" | "completed" | "failed";
+            status: "started" | "running" | "paused" | "blocked" | "completed" | "failed" | "cancelled";
             /** Tasks */
             tasks: components["schemas"]["RunTaskRecord"][];
             /** Template Key */
@@ -1348,16 +1476,54 @@ export interface components {
             /** Template Version */
             template_version: number;
         };
+        /**
+         * RunSummary
+         * @description A run in a list: no tasks (`GET /runs/{id}` has them).
+         */
+        RunSummary: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Created By */
+            created_by: string;
+            /** Hire Id */
+            hire_id: string;
+            /** Id */
+            id: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "started" | "running" | "paused" | "blocked" | "completed" | "failed" | "cancelled";
+            /** Template Key */
+            template_key: string;
+            /** Template Version */
+            template_version: number;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
         /** RunTaskRecord */
         RunTaskRecord: {
             /** Action */
             action: string;
             /** Agent */
             agent: string;
+            /**
+             * Attempts
+             * @default 0
+             */
+            attempts: number;
             /** Depends On */
             depends_on: string[];
             /** Due */
             due: string | null;
+            /** Error */
+            error?: string | null;
             /** Skip Reason */
             skip_reason: string | null;
             /**
@@ -1376,12 +1542,33 @@ export interface components {
             type: "action" | "approval";
         };
         /**
+         * RunsEnvelope
+         * @description One page of runs, newest first; `meta.page` has the total.
+         */
+        RunsEnvelope: {
+            /** Data */
+            data: components["schemas"]["RunSummary"][] | null;
+            error: components["schemas"]["ErrorBody"] | null;
+            /** @default {} */
+            meta: components["schemas"]["Meta"];
+            /** Success */
+            success: boolean;
+        };
+        /**
          * Sla
          * @description `due` is a date variable with an optional offset: `start_date - 7d`, `start_date + 48h`.
          */
         Sla: {
             /** Due */
             due: string;
+        };
+        /**
+         * TaskCompleteRequest
+         * @description `POST /runs/{id}/tasks/{task_id}/complete`: HR says the task is done and why (FR-R5).
+         */
+        TaskCompleteRequest: {
+            /** Reason */
+            reason: string;
         };
         /** TelegramChat */
         TelegramChat: {
@@ -2242,6 +2429,39 @@ export interface operations {
             };
         };
     };
+    listRuns: {
+        parameters: {
+            query?: {
+                status?: ("started" | "running" | "paused" | "blocked" | "completed" | "failed" | "cancelled") | null;
+                page?: number;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunsEnvelope"];
+                };
+            };
+            /** @description Error, in the envelope */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
     startRun: {
         parameters: {
             query?: never;
@@ -2257,6 +2477,245 @@ export interface operations {
         responses: {
             /** @description Successful Response */
             201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunEnvelope"];
+                };
+            };
+            /** @description Error, in the envelope */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    getRun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunEnvelope"];
+                };
+            };
+            /** @description Error, in the envelope */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    cancelRun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["RunControlRequest"] | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunEnvelope"];
+                };
+            };
+            /** @description Error, in the envelope */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    pauseRun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["RunControlRequest"] | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunEnvelope"];
+                };
+            };
+            /** @description Error, in the envelope */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    resumeRun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["RunControlRequest"] | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunEnvelope"];
+                };
+            };
+            /** @description Error, in the envelope */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    streamRun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Server-sent events: task, run and end. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/event-stream": unknown;
+                };
+            };
+            /** @description Error, in the envelope */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    completeRunTask: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+                task_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TaskCompleteRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunEnvelope"];
+                };
+            };
+            /** @description Error, in the envelope */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    retryRunTask: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+                task_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["RunControlRequest"] | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };

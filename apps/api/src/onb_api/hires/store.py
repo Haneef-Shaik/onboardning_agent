@@ -79,6 +79,11 @@ class HireStore:
         found: dict[str, Any] | None = await self._repo().find_one({"_id": hire_id})
         return found
 
+    async def ids(self, query: Mapping[str, Any]) -> list[str]:
+        """The ids of the org's hires matching `query` (a manager's reports), nothing else of them."""
+        found = await self._repo().find(query, projection={"_id": 1})
+        return [str(document["_id"]) for document in found]
+
     async def delete(self, hire_id: str) -> None:
         await self._repo().delete_one({"_id": hire_id})
 

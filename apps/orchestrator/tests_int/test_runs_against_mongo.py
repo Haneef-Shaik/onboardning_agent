@@ -22,6 +22,7 @@ from onb_eventbus import MongoEventBus, QueueSettings
 from onb_orchestrator.checkpointer import TenantCheckpointSaver
 from onb_orchestrator.consumer import start_run_handler
 from onb_orchestrator.executor import StubExecutor
+from onb_orchestrator.policy import RunPolicy
 
 from .conftest import Scratch
 
@@ -41,6 +42,7 @@ class Stack:
     store: DataStore
     bus: MongoEventBus
     executor: StubExecutor
+    policy: RunPolicy | None = None
 
     async def start(self, template: Template | None = None, org: str = ORG_A, auditor: Any = None) -> dict[str, Any]:
         starter = RunStarter(RunStore(self.store), self.bus, auditor or AuditLog(self.store))
@@ -51,25 +53,32 @@ class Stack:
         return started.run
 
     async def drain(self) -> int:
-        worker = self.bus.worker({START_RUN: start_run_handler(self.store, self.executor)})
+        worker = self.bus.worker(
+            {START_RUN: start_run_handler(self.store, self.executor, bus=self.bus, policy=self.policy)}
+        )
         processed = 0
         while await worker.run_once() is not None:
             processed += 1
         return processed
 
 
-async def _stack(scratch: Scratch, executor: StubExecutor) -> Stack:
+async def _stack(scratch: Scratch, executor: StubExecutor, policy: RunPolicy | None = None) -> Stack:
     store = connect(scratch.uri, scratch.name)
     bus = run_bus(store, QueueSettings(lease_seconds=30, heartbeat_seconds=5))
     await bus.ensure_indexes()
     await RunStore(store).ensure_indexes()
     await TenantCheckpointSaver(store).ensure_indexes()
-    return Stack(store, bus, executor)
+    return Stack(store, bus, executor, policy)
 
 
-def _with_stack(scratch: Scratch, executor: StubExecutor, body: Callable[[Stack], Awaitable[Any]]) -> Any:
+def _with_stack(
+    scratch: Scratch,
+    executor: StubExecutor,
+    body: Callable[[Stack], Awaitable[Any]],
+    policy: RunPolicy | None = None,
+) -> Any:
     async def go() -> Any:
-        stack = await _stack(scratch, executor)
+        stack = await _stack(scratch, executor, policy)
         try:
             return await body(stack)
         finally:
@@ -111,7 +120,9 @@ def test_the_checkpoint_thread_id_is_org_id_colon_run_id_and_every_checkpoint_ca
         await stack.drain()
         return str(run["_id"])
 
-    run_id = _with_stack(scratch, StubExecutor(), body)
+    # A completed run's checkpoints are deleted (RUN-2); a blocked run's stay, so block this one.
+    blocking = RunPolicy(max_attempts=1, backoff_base=0.0, backoff_max=0.0)
+    run_id = _with_stack(scratch, StubExecutor(fail=frozenset({"b"})), body, blocking)
     checkpoints = scratch.find("run_checkpoints")
     writes = scratch.find("run_checkpoint_writes")
     assert checkpoints
@@ -206,7 +217,8 @@ def test_two_orgs_runs_execute_each_in_its_own_org(scratch: Scratch) -> None:
         assert await stack.drain() == 2
         return str(a["_id"]), str(b["_id"])
 
-    a_id, b_id = _with_stack(scratch, StubExecutor(), body)
+    blocking = RunPolicy(max_attempts=1, backoff_base=0.0, backoff_max=0.0)  # blocked runs keep their checkpoints
+    a_id, b_id = _with_stack(scratch, StubExecutor(fail=frozenset({"b"})), body, blocking)
     for org, run_id in ((ORG_A, a_id), (ORG_B, b_id)):
         assert {t["org_id"] for t in scratch.find("run_tasks", {"run_id": run_id})} == {org}
         assert {d["org_id"] for d in scratch.find("run_checkpoints", {"thread_id": f"{org}:{run_id}"})} == {org}

@@ -31,7 +31,7 @@ from opentelemetry.trace import Span, SpanKind, Status, StatusCode
 
 from . import documents
 from .interface import Worker
-from .models import DeadLetterReason, Handler, JobContext, Processed, WorkOutcome
+from .models import DeadLetterReason, Handler, JobContext, Processed, ReleaseJob, WorkOutcome
 from .settings import QueueSettings, backoff_delay
 
 __all__ = ["MongoWorker"]
@@ -177,6 +177,7 @@ class MongoWorker(Worker):
         lease_lost = asyncio.Event()
         heartbeat = asyncio.create_task(self._heartbeat(context.job_id, lease_token, handler_task, lease_lost))
         error: str | None = None
+        released = False
         try:
             await handler_task
         except asyncio.CancelledError as exc:
@@ -187,6 +188,8 @@ class MongoWorker(Worker):
             # The handler raised CancelledError itself (e.g. it awaited something cancelled): a failure.
             error = _error_name(exc)
             span.set_status(Status(StatusCode.ERROR, error))
+        except ReleaseJob:
+            released = True
         except Exception as exc:
             error = _error_name(exc)
             span.set_status(Status(StatusCode.ERROR, error))
@@ -198,6 +201,10 @@ class MongoWorker(Worker):
         if _shutting_down():
             # A stop request that arrived while the heartbeat was being stopped: don't swallow it.
             raise asyncio.CancelledError
+        if released:
+            if await self._jobs.update_leased(context.job_id, lease_token, documents.release_update(now=self._clock())):
+                return WorkOutcome.RELEASED
+            return WorkOutcome.LEASE_LOST
         if error is not None:
             return await self._failed(job, lease_token, error)
         now = self._clock()

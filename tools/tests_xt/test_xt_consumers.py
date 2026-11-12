@@ -22,12 +22,21 @@ from dataclasses import dataclass
 from typing import Any
 
 import pytest
-from onb_agents.runs import FAIL_TASK, RUN_STARTED, SINK_REJECTED, START_RUN
+from onb_agents.runs import (
+    CLEANUP_RUN,
+    FAIL_TASK,
+    RESUME_RUN,
+    RUN_CANCELLED,
+    RUN_RESUMED,
+    RUN_STARTED,
+    SINK_REJECTED,
+    START_RUN,
+)
 from onb_contracts.notify import CHANGE_REQUEST_DECIDED, IN_APP_CONSUMER, NOTIFY_SUBSCRIPTIONS, RUN_BLOCKED
 from onb_data import DataStore, current_tenant, tenant_scope
 from onb_eventbus import Handler, JobContext, MongoEventBus
 from onb_mcp_mocks.notify.in_app import in_app_handler
-from onb_orchestrator.consumer import fail_task_handler, start_run_handler
+from onb_orchestrator.consumer import cleanup_run_handler, fail_task_handler, start_run_handler
 from onb_orchestrator.executor import StubExecutor
 
 from .conftest import Unscoped, World
@@ -79,6 +88,10 @@ CONSUMER_CASES: Mapping[str, ConsumerCase] = {
         },
         _fail_task,
     ),
+    # RUN-2: the same handler drives a resumed run, and the cleanup consumer deletes a cancelled run's
+    # checkpoints; both read the org's seeded run (`XT_RUNS`) in the job's org only.
+    RESUME_RUN: ConsumerCase(RUN_RESUMED, lambda org: {"run_id": XT_RUNS[org][0]}, _start_run),
+    CLEANUP_RUN: ConsumerCase(RUN_CANCELLED, lambda org: {"run_id": XT_RUNS[org][0]}, cleanup_run_handler),
 }
 
 
@@ -246,8 +259,9 @@ def test_the_orchestrator_completes_an_org_a_run_entirely_in_org_a(xt_world: Wor
     assert (run["org_id"], run["status"]) == (ORG_A, "completed")
     assert {t["status"] for t in tasks} <= {"done", "skipped"}
     assert {t["org_id"] for t in tasks} == {ORG_A}
-    assert checkpoints
-    assert {c["org_id"] for c in checkpoints} == {ORG_A}
+    # RUN-2: a completed run keeps no checkpoint (they are deleted with it), and no checkpoint of any
+    # other thread than an org-A one exists, while it ran or after.
+    assert checkpoints == []
     assert foreign_threads == 0
 
 

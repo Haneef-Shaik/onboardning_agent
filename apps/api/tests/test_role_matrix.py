@@ -18,7 +18,9 @@ import yaml
 from fastapi import Depends, FastAPI
 from fastapi.routing import APIRoute, iter_route_contexts
 from fastapi.testclient import TestClient
+from onb_agents.dag import compile_dag
 from onb_agents.registry import AgentRegistry
+from onb_agents.runs import RunState, RunStore, TaskState, run_records
 from onb_api import create_app
 from onb_api.auth.dependencies import authenticated, require_role
 from onb_api.auth.tokens import Principal
@@ -39,6 +41,7 @@ ACTORS = {
     Role.MANAGER: ("u_acme_mgr_ravi", "org_acme"),
 }
 ALL_200 = {Role.HR_ADMIN: 200, Role.HR: 200, Role.MANAGER: 200}
+HR_ONLY_200 = {Role.HR_ADMIN: 200, Role.HR: 200, Role.MANAGER: 403}
 
 # Routes anyone may call without a token.
 # NOTIF-1: Telegram's webhook carries no user token; it authenticates with its secret token header.
@@ -82,6 +85,15 @@ ROLE_MATRIX: dict[tuple[str, str], dict[Role, int]] = {
     ("GET", "/hires/{hire_id}/documents"): {Role.HR_ADMIN: 200, Role.HR: 200, Role.MANAGER: 403},
     # RUN-1: HR and HR_ADMIN start runs (PRD FR-R1, §3, §10 Hires & runs); a manager does not.
     ("POST", "/runs"): {Role.HR_ADMIN: 201, Role.HR: 201, Role.MANAGER: 403},
+    # RUN-2 (FR-R5, §3, §7.8): every role reads runs (a MANAGER those of their reports); HR and HR_ADMIN control them.
+    ("GET", "/runs"): ALL_200,
+    ("GET", "/runs/{run_id}"): ALL_200,
+    ("GET", "/runs/{run_id}/stream"): ALL_200,
+    ("POST", "/runs/{run_id}/pause"): HR_ONLY_200,
+    ("POST", "/runs/{run_id}/resume"): HR_ONLY_200,
+    ("POST", "/runs/{run_id}/cancel"): HR_ONLY_200,
+    ("POST", "/runs/{run_id}/tasks/{task_id}/retry"): HR_ONLY_200,
+    ("POST", "/runs/{run_id}/tasks/{task_id}/complete"): HR_ONLY_200,
 }
 
 CONFIG = Path(__file__).resolve().parents[3] / "config"
@@ -89,6 +101,12 @@ SEED_TEMPLATE: dict[str, Any] = yaml.safe_load((CONFIG.parent / "templates" / "e
 SAMPLE_DRAFT = "tdr_" + "a" * 32  # seeded unpublished
 PUBLISHED_DRAFT = "tdr_" + "b" * 32  # seeded and published as engineer-india v1
 SAMPLE_EVAL_RUN = "evr_20261102T090000Z_0000aaa1"
+
+RUN_BLOCKED = "run_" + "b" * 24  # blocked on a failed `collect_docs`
+RUN_RUNNING = "run_" + "c" * 24
+RUN_PAUSED = "run_" + "d" * 24
+RUN_DONE = "run_" + "e" * 24  # cancelled: its stream ends at once
+FAILED_TASK = "collect_docs"
 
 # A concrete path for each route with path parameters: an existing record, so HR_ADMIN gets 200.
 SAMPLE_PATHS = {
@@ -103,6 +121,14 @@ SAMPLE_PATHS = {
     "/templates/{key}/versions/{version}/archive": "/templates/engineer-india/versions/1/archive",
     "/hires/{hire_id}/documents": "/hires/h_acme_001/documents",
     "/evals/runs/{run_id}": f"/evals/runs/{SAMPLE_EVAL_RUN}",
+    # RUN-2: each control has a run in the state it needs (seeded by `_sample_runs`), all h_acme_001's.
+    "/runs/{run_id}": f"/runs/{RUN_BLOCKED}",
+    "/runs/{run_id}/stream": f"/runs/{RUN_DONE}/stream",
+    "/runs/{run_id}/pause": f"/runs/{RUN_RUNNING}/pause",
+    "/runs/{run_id}/resume": f"/runs/{RUN_PAUSED}/resume",
+    "/runs/{run_id}/cancel": f"/runs/{RUN_BLOCKED}/cancel",
+    "/runs/{run_id}/tasks/{task_id}/retry": f"/runs/{RUN_BLOCKED}/tasks/{FAILED_TASK}/retry",
+    "/runs/{run_id}/tasks/{task_id}/complete": f"/runs/{RUN_BLOCKED}/tasks/{FAILED_TASK}/complete",
 }
 
 # A valid body for the routes whose permitted roles should succeed (the hire routes are sent none).
@@ -111,6 +137,11 @@ SAMPLE_BODIES: dict[tuple[str, str], dict[str, Any]] = {
     ("PUT", "/templates/drafts/{draft_id}"): {"template": SEED_TEMPLATE},
     # h_acme_001 on engineer-india v1, which the `templates` fixture publishes.
     ("POST", "/runs"): {"hire_id": "h_acme_001", "template_key": "engineer-india", "template_version": 1},
+    ("POST", "/runs/{run_id}/pause"): {},
+    ("POST", "/runs/{run_id}/resume"): {},
+    ("POST", "/runs/{run_id}/cancel"): {},
+    ("POST", "/runs/{run_id}/tasks/{task_id}/retry"): {},
+    ("POST", "/runs/{run_id}/tasks/{task_id}/complete"): {"reason": "Done by hand, sample"},
 }
 
 
@@ -132,6 +163,40 @@ def templates(
 
     asyncio.run(seed())
     return lifecycle
+
+
+@pytest.fixture(autouse=True)
+def _sample_runs(memory_db: MemoryDatabase) -> None:
+    """Four runs of h_acme_001 (Ravi's report), one in each state the run controls need."""
+    store = RunStore(memory_store(memory_db))
+    now = datetime(2026, 11, 12, 9, 0, tzinfo=UTC)
+    dag = compile_dag(
+        Template.model_validate({**SEED_TEMPLATE, "status": "published", "version": 1}),
+        {"role": "engineer", "location": "Bangalore", "start_date": "2026-12-07", "manager_id": "u_acme_mgr_ravi"},
+    )
+
+    async def seed() -> None:
+        with tenant_scope("org_acme"):
+            for run_id in (RUN_BLOCKED, RUN_RUNNING, RUN_PAUSED, RUN_DONE):
+                records = run_records(
+                    org_id="org_acme",
+                    run_id=run_id,
+                    hire_id="h_acme_001",
+                    dag=dag,
+                    actor_id="u_acme_hr1",
+                    traceparent=None,
+                    now=now,
+                )
+                await store.insert(records)
+                await store.move_run(run_id, RunState.RUNNING, at=now)
+            ready = await store.move_task(RUN_BLOCKED, FAILED_TASK, TaskState.READY, at=now)
+            running = await store.move_task(RUN_BLOCKED, FAILED_TASK, TaskState.RUNNING, at=now, expected=ready)
+            await store.move_task(RUN_BLOCKED, FAILED_TASK, TaskState.FAILED, at=now, expected=running)
+            await store.move_run(RUN_BLOCKED, RunState.BLOCKED, at=now)
+            await store.move_run(RUN_PAUSED, RunState.PAUSED, at=now)
+            await store.move_run(RUN_DONE, RunState.CANCELLED, at=now)
+
+    asyncio.run(seed())
 
 
 @pytest.fixture(autouse=True)

@@ -20,6 +20,7 @@ from onb_agents.runs import (
     RUN_STARTED,
     START_RUN,
     RunStarter,
+    RunState,
     RunStore,
     TaskState,
     thread_id,
@@ -34,7 +35,10 @@ from onb_orchestrator.checkpointer import CHECKPOINT_WRITES, CHECKPOINTS
 from onb_orchestrator.consumer import start_run_handler
 from onb_orchestrator.executor import StubExecutor, TaskWork
 from onb_orchestrator.graph import build_run_graph
+from onb_orchestrator.policy import RunPolicy
 from onb_orchestrator.runner import RunExecutor
+
+ONE_ATTEMPT = RunPolicy(max_attempts=1, backoff_base=0.0, backoff_max=0.0)
 
 ORG = "org_a"
 
@@ -62,8 +66,8 @@ class World:
             )
         return str(started.run["_id"])
 
-    async def execute(self, run_id: str, org: str = ORG, attempt: int = 1) -> None:
-        handler = start_run_handler(self.store, self.executor)
+    async def execute(self, run_id: str, org: str = ORG, attempt: int = 1, policy: RunPolicy | None = None) -> None:
+        handler = start_run_handler(self.store, self.executor, bus=self.bus, policy=policy)
         job = JobContext(
             job_id="job_1",
             org_id=org,
@@ -200,6 +204,7 @@ def test_a_task_whose_dependency_is_not_finished_is_refused() -> None:
         run_id = await world.start()
         runner = RunExecutor(world.store, world.executor)
         with tenant_scope(ORG):
+            await world.runs.move_run(run_id, RunState.RUNNING, at=datetime.now().astimezone())
             with pytest.raises(RuntimeError, match="dependencies"):
                 await runner.run_task(run_id, "d", traceparent=None)
             assert (await world.runs.task(run_id, "d") or {})["status"] == "pending"
@@ -225,18 +230,20 @@ def test_an_illegal_transition_is_rejected_and_nothing_is_written() -> None:
     assert run(go())["a"]["status"] == "pending"
 
 
-def test_a_failing_task_fails_the_run_and_its_dependents_never_start() -> None:
+def test_a_failing_task_blocks_the_run_and_its_dependents_never_start() -> None:
+    """FR-R4 (RUN-2): a task that fails its last attempt blocks the run (HR can retry it); it no longer
+    fails the run. The unfinished tasks wait, untouched."""
     world = _world(fail=frozenset({"b"}))
 
     async def go() -> tuple[dict[str, Any], dict[str, dict[str, Any]]]:
         run_id = await world.start()
-        await world.execute(run_id)
+        await world.execute(run_id, policy=ONE_ATTEMPT)
         return await world.get(run_id), await world.tasks(run_id)
 
     run_doc, tasks = run(go())
-    assert run_doc["status"] == "failed"
+    assert run_doc["status"] == "blocked"
     assert tasks["b"]["status"] == "failed"
-    assert tasks["d"]["status"] == "cancelled"  # a failed run leaves no task unfinished
+    assert tasks["d"]["status"] == "pending"  # waits for HR
     assert tasks["d"]["started_at"] is None
     assert "d" not in world.executor.calls
 
@@ -249,9 +256,11 @@ def test_the_checkpoint_thread_id_is_org_id_colon_run_id() -> None:
 
     async def go() -> str:
         run_id = await world.start()
-        await world.execute(run_id)
+        # A blocked run keeps its checkpoint (a finished run's is deleted, RUN-2), so one can be read.
+        await world.execute(run_id, policy=ONE_ATTEMPT)
         return run_id
 
+    world.executor.fail = frozenset({"b"})
     run_id = run(go())
     checkpoints = world.db.raw(CHECKPOINTS)
     assert checkpoints, "the graph wrote no checkpoint"
@@ -332,6 +341,7 @@ def test_a_redelivered_job_resumes_a_run_that_stopped_part_way() -> None:
         run_id = await world.start()
         runner = RunExecutor(world.store, world.executor)
         with tenant_scope(ORG):
+            await world.runs.move_run(run_id, RunState.RUNNING, at=datetime.now().astimezone())
             await runner.run_task(run_id, "a", traceparent=None)  # a crashed attempt finished `a` only
             await world.runs.move_task(run_id, "b", TaskState.READY, at=datetime.now().astimezone())
         await world.execute(run_id, attempt=2)

@@ -25,6 +25,9 @@ LEGAL = [
     (TaskState.WAITING_APPROVAL, TaskState.DONE),
     (TaskState.WAITING_APPROVAL, TaskState.FAILED),
     (TaskState.WAITING_APPROVAL, TaskState.CANCELLED),
+    # RUN-2 (FR-R4, FR-R5): a failed task is retried (automatically or by HR) or completed by hand.
+    (TaskState.FAILED, TaskState.READY),
+    (TaskState.FAILED, TaskState.DONE),
 ]
 
 
@@ -54,7 +57,8 @@ def test_illegal_state_transitions_are_rejected(current: TaskState, target: Task
         (TaskState.DONE, TaskState.RUNNING),  # a finished task never runs again
         (TaskState.SKIPPED, TaskState.READY),  # a pruned task never comes back
         (TaskState.CANCELLED, TaskState.READY),
-        (TaskState.FAILED, TaskState.DONE),
+        (TaskState.FAILED, TaskState.RUNNING),  # a retry goes through `ready`
+        (TaskState.FAILED, TaskState.SKIPPED),
         (TaskState.RUNNING, TaskState.RUNNING),
     ],
 )
@@ -83,6 +87,8 @@ def test_terminal_task_states() -> None:
         TaskState.SKIPPED,
         TaskState.CANCELLED,
     }
+    # `failed` is terminal for the run's progress but HR may retry or complete it (RUN-2).
+    assert {s for s in TaskState if s.resolvable} == {TaskState.FAILED}
 
 
 def test_skipped_dependencies_do_not_block() -> None:
@@ -116,7 +122,33 @@ RUN_LEGAL = [
     (RunState.STARTED, RunState.FAILED),
     (RunState.RUNNING, RunState.COMPLETED),
     (RunState.RUNNING, RunState.FAILED),
+    # RUN-2: control and blocking (FR-R4, FR-R5)
+    (RunState.STARTED, RunState.PAUSED),
+    (RunState.STARTED, RunState.CANCELLED),
+    (RunState.RUNNING, RunState.PAUSED),
+    (RunState.RUNNING, RunState.BLOCKED),
+    (RunState.RUNNING, RunState.CANCELLED),
+    (RunState.PAUSED, RunState.RUNNING),
+    (RunState.PAUSED, RunState.CANCELLED),
+    (RunState.BLOCKED, RunState.RUNNING),
+    (RunState.BLOCKED, RunState.CANCELLED),
 ]
+
+
+def test_a_finished_run_never_moves_again() -> None:
+    for finished in (RunState.COMPLETED, RunState.FAILED, RunState.CANCELLED):
+        for target in RunState:
+            with pytest.raises(IllegalTransitionError):
+                check_run_transition(finished, target)
+
+
+def test_which_run_states_are_active() -> None:
+    assert {s for s in RunState if s.active} == {
+        RunState.STARTED,
+        RunState.RUNNING,
+        RunState.PAUSED,
+        RunState.BLOCKED,
+    }
 
 
 @pytest.mark.parametrize(("current", "target"), RUN_LEGAL)

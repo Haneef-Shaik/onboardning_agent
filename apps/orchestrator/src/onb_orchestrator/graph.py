@@ -26,7 +26,15 @@ from onb_agents.runs import stored_dag, thread_id
 from onb_data import current_tenant
 
 from .checkpointer import TenantCheckpointSaver
-from .runner import RunExecutor, TaskFailedError, TaskStepError, step_error
+from .runner import (
+    DrainRequestedError,
+    RunExecutor,
+    RunHaltedError,
+    TaskExhaustedError,
+    TaskFailedError,
+    TaskStepError,
+    step_error,
+)
 
 __all__ = ["RunGraph", "RunGraphState", "build_run_graph"]
 
@@ -56,7 +64,7 @@ class _TaskStep:
     async def __call__(self, state: RunGraphState) -> RunGraphState:
         try:
             await self.runner.run_task(self.run_id, self.task_id, traceparent=self.traceparent)
-        except (TaskFailedError, TaskStepError):
+        except (TaskFailedError, TaskExhaustedError, RunHaltedError, DrainRequestedError, TaskStepError):
             raise
         except Exception as error:
             # LangGraph stores a node's error in the checkpoint: only its type goes there.

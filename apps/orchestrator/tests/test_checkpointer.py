@@ -122,6 +122,48 @@ def test_pending_writes_come_back_in_order_and_are_written_once(saver: TenantChe
     assert run(go()) == [("task-a", "finished", ["a"]), ("task-b", "finished", ["b"]), ("task-b", "other", 1)]
 
 
+def test_a_task_whose_writes_were_cut_short_by_a_crash_is_not_half_applied(
+    db: MemoryDatabase, saver: TenantCheckpointSaver
+) -> None:
+    """RUN-2 (found by the SIGKILL test): a task's writes are several documents, so a process killed between
+    two of them leaves the task half recorded. LangGraph would take the first write as the task's whole
+    output and never schedule what the missing one triggers (a run that ends with tasks never started).
+    A task's writes come back only when all of them are stored; the replay then completes them."""
+
+    async def pending() -> list[tuple[str, str, Any]]:
+        latest = await saver.aget_tuple(_config("org_a:run_1"))
+        assert latest is not None
+        return list(latest.pending_writes or [])
+
+    async def go() -> tuple[list[Any], list[Any], list[Any]]:
+        with tenant_scope("org_a"):
+            await _put_three(saver, "org_a:run_1")
+            config = _config("org_a:run_1", "1ef0-c")
+            await saver.aput_writes(
+                config, [("finished", ["c"]), ("branch:to:d", None)], task_id="task-c", task_path="~c"
+            )
+            await saver.aput_writes(config, [("finished", ["e"])], task_id="task-e", task_path="~e")
+            complete = await pending()
+            # The process died after task-c's first write: the second never reached the database.
+            await store_delete(db, "branch:to:d")
+            cut_short = await pending()
+            # The task ran again (a takeover) and wrote its output once more: now it is whole.
+            await saver.aput_writes(
+                config, [("finished", ["c"]), ("branch:to:d", None)], task_id="task-c", task_path="~c"
+            )
+            return complete, cut_short, await pending()
+
+    complete, cut_short, replayed = run(go())
+    assert [w[:2] for w in complete] == [("task-c", "finished"), ("task-c", "branch:to:d"), ("task-e", "finished")]
+    assert [w[:2] for w in cut_short] == [("task-e", "finished")], "task-c is not half applied"
+    assert replayed == complete
+
+
+async def store_delete(db: MemoryDatabase, channel: str) -> None:
+    collection = db[CHECKPOINT_WRITES]
+    collection.documents = [d for d in collection.documents if d["channel"] != channel]
+
+
 def test_a_special_write_replaces_the_earlier_one(saver: TenantCheckpointSaver) -> None:
     async def go() -> list[tuple[str, str, Any]]:
         with tenant_scope("org_a"):
@@ -269,3 +311,39 @@ def test_a_planted_type_in_a_checkpoint_blob_is_never_built(saver: TenantCheckpo
 def test_the_saver_still_round_trips_its_own_state(saver: TenantCheckpointSaver) -> None:
     state = {"finished": ["a", "b"], "n": 3}
     assert saver.serde.loads_typed(saver.serde.dumps_typed(state)) == state
+
+
+# --- RUN-2: deleting a finished run's thread -------------------------------------------------------
+
+
+def test_deleting_a_thread_removes_its_checkpoints_and_writes_and_no_other_threads(
+    db: MemoryDatabase, saver: TenantCheckpointSaver
+) -> None:
+    async def go() -> None:
+        with tenant_scope("org_a"):
+            await _put_three(saver, "org_a:run_1")
+            await _put_three(saver, "org_a:run_2")
+            await saver.aput_writes(_config("org_a:run_1", "1ef0-c"), [("count", 9)], "task_1")
+            await saver.aput_writes(_config("org_a:run_2", "1ef0-c"), [("count", 9)], "task_1")
+            await saver.adelete_thread("org_a:run_1")
+            assert await saver.aget_tuple(_config("org_a:run_1")) is None
+            assert await saver.aget_tuple(_config("org_a:run_2")) is not None
+            assert {d["thread_id"] for d in db.raw(CHECKPOINT_WRITES)} == {"org_a:run_2"}
+            await saver.adelete_thread("org_a:run_1")  # deleting twice is not an error
+
+    run(go())
+
+
+def test_another_orgs_thread_is_refused_and_nothing_is_deleted(saver: TenantCheckpointSaver) -> None:
+    async def go() -> None:
+        with tenant_scope("org_b"):
+            await _put_three(saver, "org_b:run_1")
+        with tenant_scope("org_a"):
+            with pytest.raises(TenantViolationError):
+                await saver.adelete_thread("org_b:run_1")
+            with pytest.raises(TenantViolationError):
+                await saver.adelete_thread("run_1")
+        with tenant_scope("org_b"):
+            assert await saver.aget_tuple(_config("org_b:run_1")) is not None
+
+    run(go())
