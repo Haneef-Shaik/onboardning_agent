@@ -7,7 +7,7 @@ import sys
 
 ROOT = pathlib.Path(sys.argv[1])
 WF = ROOT / ".github/workflows/ci.yml"
-ADR = ROOT / "docs/adr/0001-ci-host.md"
+ADR = ROOT / "docs/adr/0009-ci-host.md"
 MAKEFILE = ROOT / "Makefile"
 ENV = "      - run: uv run --frozen python tools/ci_env.py > .env\n"
 MUTATIONS = [

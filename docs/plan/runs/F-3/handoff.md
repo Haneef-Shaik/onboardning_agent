@@ -38,7 +38,7 @@ or change GitHub settings, so those runs are Haneef's steps (below).
 ## Done when
 | Box | Met | Evidence |
 |-----|-----|----------|
-| `docs/adr/0001-ci-host.md` records the host and why (closes DEC-5) | yes | The ADR: GitHub Actions; Decision (jobs table, runner `.env`, triggers, caches, hardening, required checks), Why, Alternatives, Consequences. `uv run --frozen pytest tools/tests/test_ci_workflow.py tools/tests/test_ci_pii.py -q` gives `38 passed`. |
+| `docs/adr/0009-ci-host.md` records the host and why (closes DEC-5) | yes | The ADR: GitHub Actions; Decision (jobs table, runner `.env`, triggers, caches, hardening, required checks), Why, Alternatives, Consequences. `uv run --frozen pytest tools/tests/test_ci_workflow.py tools/tests/test_ci_pii.py -q` gives `38 passed`. |
 | A CI run with a deliberately failing test is red, and the fixed run is green (both run links in the handoff) | **no: needs Haneef to push** | There are no hosted runs yet (`origin/main` 4493565 has no workflow). Local stand-ins: `docs/evidence/F-3/local-red-green.txt` (attempt 1: red exit=2, then green exit=0), and `docs/evidence/F-3/attempt2-local-ci.txt` at c077695, where every `check` and `integration` command exits 0. The demo is step 3 below. |
 | The integration job starts a testcontainers Mongo and passes (run link) | **no: needs Haneef to push** | No run link yet. Local proof, `docs/evidence/F-3/attempt2-testcontainers.txt`: during `nx run mcp-mongo:test-int` (`79 passed`, exit=0), Docker started `testcontainers/ryuk:0.8.1` and `mongo:8.0.34@sha256:b992…` with label `org.testcontainers=true`. The full `make test-int` gives `Successfully ran target test-int for 10 projects`, exit=0. |
 
@@ -99,7 +99,7 @@ This session pushed nothing, opened no PR and changed no GitHub setting.
 ## Acceptance evidence
 | Ledger row | Environment, date | Result | Evidence | Row written here? |
 |------------|-------------------|--------|----------|-------------------|
-| DEC-5 @ MS-0 | dev machine (decision record), 2026-11-10 | pass | `docs/adr/0001-ci-host.md` | yes, in attempt 1. Kept after the rebase; `plan.py check` is ok inside `make check` |
+| DEC-5 @ MS-0 | dev machine (decision record), 2026-11-10 | pass | `docs/adr/0009-ci-host.md` | yes, in attempt 1. Kept after the rebase; `plan.py check` is ok inside `make check` |
 
 ## Gates (at c077695, local main 912ad50 + F-3)
 | Gate | Command | Result |
@@ -146,7 +146,7 @@ From attempt 1 (sonnet review, no critical or high findings):
 ## Left undone, and why
 - **Boxes 2 and 3**: hosted runs need a push, which is Haneef's call (steps above).
 - **`docs/plan/board.html` rebuild**: left to the orchestrator, because the file is shared.
-- **ADR number clash**: `0001-ci-host.md` sits next to F-1's `0001-nx-uv-monorepo-layout.md`. I kept
+- **ADR number clash**: `0009-ci-host.md` sits next to F-1's `0001-nx-uv-monorepo-layout.md`. I kept
   the card's path; renumbering is Haneef's call.
 
 ## Found for other goals
@@ -156,7 +156,7 @@ From attempt 1 (sonnet review, no critical or high findings):
   own job. That is a Makefile/PRD §7.9 decision, not F-3's.
 
 ## Decisions forced (ADRs written)
-- `docs/adr/0001-ci-host.md` revised 2026-11-13: three required checks, runner `.env`, every gate in CI.
+- `docs/adr/0009-ci-host.md` revised 2026-11-13: three required checks, runner `.env`, every gate in CI.
 
 ## Traps hit
 - Main's `ci.yml` came from SEC-1 copying this branch's workflow, so the rebase hit an add/add

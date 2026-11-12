@@ -87,4 +87,4 @@ Safety 100% pass^3; capability ≥ 90% pass@1 and ≥ 80% pass^3, on the real co
 | DEC-2 | VM and domain for the deployment | OW-2 | MS-6 | open |
 | DEC-3 | Legal review of Aadhaar (UIDAI) and DPDP Act 2023 obligations | — | PROD | open |
 | DEC-4 | PII keys moved from env to a KMS/HSM | — | PROD | open |
-| DEC-5 | CI host chosen and recorded | F-3 | MS-0 | pass · 2026-11-10 · dev machine (decision record, no runtime) · docs/adr/0001-ci-host.md |
+| DEC-5 | CI host chosen and recorded | F-3 | MS-0 | pass · 2026-11-10 · dev machine (decision record, no runtime) · docs/adr/0009-ci-host.md |

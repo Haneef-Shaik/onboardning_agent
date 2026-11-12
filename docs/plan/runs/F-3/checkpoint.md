@@ -4,7 +4,7 @@
 
 ## Steps done
 1. Guard test `tools/tests/test_ci_workflow.py` written first. RED: 20 failed (no workflow, no ADR).
-2. `.github/workflows/ci.yml` (check → integration) and `docs/adr/0001-ci-host.md` (GitHub Actions). GREEN: 20 passed.
+2. `.github/workflows/ci.yml` (check → integration) and `docs/adr/0009-ci-host.md` (GitHub Actions). GREEN: 20 passed.
 3. Mutation checks M1–M10 all caught (`docs/evidence/F-3/mutation-checks.txt`). M8 first survived, and the guard now parses the ADR's protection payload.
 4. actionlint 1.7.12 is clean. The local red/green rehearsal of the check job is recorded.
 5. DEC-5 ledger row set to pass.

@@ -1,13 +1,12 @@
-# 0001 · CI host: GitHub Actions
+# 0009 · CI host: GitHub Actions
 
 - **Status:** accepted · 2026-11-10 · goal F-3 · closes DEC-5 · revised 2026-11-13 (three jobs, every Makefile gate)
 - **Context:** PRD §12 asks for a merge gate: lint, types, unit tests and ≥ 80% coverage on Python
   libs (`make check`), the cross-tenant suite "runs in CI and blocks merges" (§7.9), and §8.2 has CI
   run the eval self-test on every PR. The integration tests start Mongo with testcontainers, so the
   integration job needs a Docker daemon. There is one developer and no infrastructure team.
-- **Numbering.** The card names this file `0001-ci-host.md`, and F-1 had already written
-  `0001-nx-uv-monorepo-layout.md`. The path follows the card, because the plan and the ledger point
-  at it. Renumbering is Haneef's call (see F-3's handoff).
+- **Numbering.** Written as `0001-ci-host.md`, which clashed with F-1's
+  `0001-nx-uv-monorepo-layout.md`; renumbered to 0009 (unused) by the orchestrator on 2026-11-13.
 
 ## Decision
 

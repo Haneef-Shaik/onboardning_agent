@@ -136,12 +136,12 @@ merging into `main`.
 
 **PRD.** §12 Quality, §8.2 (CI runs the eval self-test once it exists).
 
-**Scope.** Choose the CI host and record it in `docs/adr/0001-ci-host.md`. Workflow: bootstrap with
+**Scope.** Choose the CI host and record it in `docs/adr/0009-ci-host.md`. Workflow: bootstrap with
 caches, `make check`, then an integration job with Docker for testcontainers. Pushing to a remote is
 your call; the goal stops at "workflow ready" if no remote exists yet and says so.
 
 **Done when.**
-- [ ] `docs/adr/0001-ci-host.md` records the host and why (closes DEC-5)
+- [ ] `docs/adr/0009-ci-host.md` records the host and why (closes DEC-5)
 - [ ] A CI run with a deliberately failing test is red, and the fixed run is green (both run links in the handoff)
 - [ ] The integration job starts a testcontainers Mongo and passes (run link)
 

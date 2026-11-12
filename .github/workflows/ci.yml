@@ -1,4 +1,4 @@
-# CI gate (goal F-3; host and why: docs/adr/0001-ci-host.md).
+# CI gate (goal F-3; host and why: docs/adr/0009-ci-host.md).
 # Every push runs `make check` (which includes the cross-tenant suite) and `make contracts-check`, then,
 # in parallel, the stack gates: `make test-int` + `make evals-selftest`, and `make test-pii`. Branch
 # protection on `main` requires the "check", "integration" and "pii" checks, so a red run blocks merging.

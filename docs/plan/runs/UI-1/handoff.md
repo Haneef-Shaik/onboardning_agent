@@ -90,7 +90,7 @@ Still open:
 - No real screens behind the sections. Each later UI goal builds its own.
 
 ## Found for other goals
-- **Haneef / plan:** the ADR number 0002 was used twice, by EVT-1 (`0002-cross-org-job-queue.md`) and by this card's token-storage ADR, now renumbered to `0005-web-token-storage.md` by the orchestrator, after AUTH-1's ADR 0004 reserved 0002 for UI-1. The `0001-ci-host.md` that CI's card names will also clash with `0001-nx-uv-monorepo-layout.md`. Renumber, or have cards say "next free number".
+- **Haneef / plan:** the ADR number 0002 was used twice, by EVT-1 (`0002-cross-org-job-queue.md`) and by this card's token-storage ADR, now renumbered to `0005-web-token-storage.md` by the orchestrator, after AUTH-1's ADR 0004 reserved 0002 for UI-1. The `0009-ci-host.md` that CI's card names will also clash with `0001-nx-uv-monorepo-layout.md`. Renumber, or have cards say "next free number".
 - **SEC:** consider moving the token to an `HttpOnly; Secure; SameSite=Strict` cookie: a login `Set-Cookie`, cookie auth in the token dependency, a logout route, CSRF protection. Only `session.ts` and the client middleware would change in the web app (ADR 0005). Add login rate limiting; the UI already maps `RATE_LIMITED`.
 - **DEP-1:** add a CSP, `X-Frame-Options: DENY` and `Referrer-Policy` in the VM Caddyfile; serve the built `dist/apps/web` (`vite build`, already working) in the `vm` profile; disable FastAPI docs outside dev.
 - **E2E-1:** build on `apps/web/playwright.config.ts`, pointing `E2E_BASE_URL` at Caddy and the API at the compose service. Sign in through the UI in each test (memory-only token).

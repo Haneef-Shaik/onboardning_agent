@@ -1,4 +1,4 @@
-"""Guards for the CI gate (goal F-3, PRD §12 Quality, §8.2; ADR docs/adr/0001-ci-host.md).
+"""Guards for the CI gate (goal F-3, PRD §12 Quality, §8.2; ADR docs/adr/0009-ci-host.md).
 
 The workflow is checked as data: what runs, in which order, on which events, with which pinned
 actions. A hosted run is the only proof that it is green; these tests stop the file from drifting.
@@ -17,7 +17,7 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[2]
 WORKFLOW = ROOT / ".github" / "workflows" / "ci.yml"
-ADR = ROOT / "docs" / "adr" / "0001-ci-host.md"
+ADR = ROOT / "docs" / "adr" / "0009-ci-host.md"
 SHA_PIN = re.compile(r"^[\w.-]+/[\w.-]+@[0-9a-f]{40}$")
 CHECK_JOB, INT_JOB, PII_JOB = "check", "integration", "pii"
 JOBS = (CHECK_JOB, INT_JOB, PII_JOB)
