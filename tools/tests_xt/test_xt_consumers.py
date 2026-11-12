@@ -37,7 +37,9 @@ from onb_agents.runs import (
 from onb_contracts.notify import (
     APPROVAL_DECIDED,
     APPROVAL_NOTIFY_CONSUMER,
+    APPROVAL_OVERDUE,
     APPROVAL_REQUESTED,
+    APPROVAL_SLA_CONSUMER,
     CHANGE_REQUEST_DECIDED,
     DECISION_RECEIVED,
     IN_APP_CONSUMER,
@@ -51,6 +53,7 @@ from onb_eventbus import Handler, JobContext, MongoEventBus
 from onb_mcp_mocks.notify.approvals import approval_notify_handler
 from onb_mcp_mocks.notify.in_app import in_app_handler
 from onb_mcp_mocks.notify.outbox import TelegramMockChannel
+from onb_mcp_mocks.notify.sla import approval_sla_handler
 from onb_mcp_mocks.telegram import TelegramMockTransport
 from onb_orchestrator.consumer import (
     cleanup_run_handler,
@@ -103,6 +106,11 @@ def _approval_notify(store: DataStore) -> Handler:
     return approval_notify_handler(store, TelegramMockChannel(store, TelegramMockTransport()))
 
 
+def _approval_sla(store: DataStore) -> Handler:
+    """HIL-2: mcp-notify's real `approval.overdue` consumer (reminder / escalation)."""
+    return approval_sla_handler(store, TelegramMockChannel(store, TelegramMockTransport()))
+
+
 # The approval each org's events name: org A's is seeded by seed_v1, org B's by `world.EXTRA_DOCUMENTS`.
 XT_APPROVALS = {ORG_A: "appr_acme_001", ORG_B: "appr_globex_xt"}
 
@@ -153,6 +161,19 @@ CONSUMER_CASES: Mapping[str, ConsumerCase] = {
         APPROVAL_REQUESTED,
         lambda org: {"approval_id": XT_APPROVALS[org], "run_id": XT_RUNS[org][0], "task_id": "manager_approval"},
         _approval_notify,
+    ),
+    # HIL-2: an approval is overdue; the escalation reads the job's org's approval and HR users only (org A's
+    # approval is pending, so org A's HR are told) and writes notes and messages in that org alone.
+    APPROVAL_SLA_CONSUMER: ConsumerCase(
+        APPROVAL_OVERDUE,
+        lambda org: {
+            "approval_id": XT_APPROVALS[org],
+            "run_id": XT_RUNS[org][0],
+            "task_id": "manager_approval",
+            "stage": "escalation",
+            "escalate_to": "HR",
+        },
+        _approval_sla,
     ),
 }
 
