@@ -154,16 +154,20 @@ def test_a_paused_approval_is_reminded_once_then_escalated_once_and_a_restart_re
     assert stored["escalated_at"] == requested + timedelta(hours=96)
     assert stored["status"] == "pending"
     # one reminder to the manager (with the decision buttons), one escalation to each HR user (without)
-    assert _messages(scratch) == [(MANAGER, "reminder"), ("u_acme_hr1", "escalation"), ("u_acme_hr2", "escalation")]
+    assert _messages(scratch) == sorted(
+        [(MANAGER, "reminder"), ("u_acme_hr1", "escalation"), ("u_acme_hr2", "escalation")]
+    )
     kinds = sorted(
         (n["user_id"], n["kind"])
         for n in scratch.find("notifications", {"kind": {"$regex": "^approval\\.(reminder|escalated)$"}})
     )
-    assert kinds == [
-        (MANAGER, "approval.reminder"),
-        ("u_acme_hr1", "approval.escalated"),
-        ("u_acme_hr2", "approval.escalated"),
-    ]
+    assert kinds == sorted(
+        [
+            (MANAGER, "approval.reminder"),
+            ("u_acme_hr1", "approval.escalated"),
+            ("u_acme_hr2", "approval.escalated"),
+        ]
+    )
     jobs = scratch.find("jobs", {"consumer": APPROVAL_SLA_CONSUMER})
     assert [j["status"] for j in jobs] == ["done", "done"]
 
