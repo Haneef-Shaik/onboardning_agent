@@ -103,3 +103,9 @@ browser context. Left open:
   its own store, so the harness mirrors `{_id, manager_id}` there (otherwise the approver falls back to the HR role).
 - `apps/web/e2e/*.py` and `docs/evidence/**` are outside the ruff gate (main's `run_seed.py` already has a warning).
 - `rtk` filters `make` output; run gates as `rtk proxy make …` to keep the result lines.
+
+## Verifier
+Attempt 1 (goal-verifier, at 739afa5): **pass**. All three boxes met (re-ran Playwright: 23 passed; broke the relay
+itself and box 2's test failed); gates check / integration / cross-tenant pass (test-xt and test-int each hit the
+known Mongo setup flake once and passed on re-run of the affected parts); ledger U5@MS-6 left open (not the last
+prover); no problems.
