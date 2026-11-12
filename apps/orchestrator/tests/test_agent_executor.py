@@ -224,6 +224,7 @@ def test_a_new_attempt_of_a_task_keeps_its_model_and_a_new_task_takes_the_new_co
     first = run(h.task(run_id, "first"))["llm"]
     assert first["model"] == "fake-standard"
     models.reconfigure("fake-standard-v2")
+    resolved_before = len(models.chosen)
     work = TaskWork(run_id=run_id, task_id="first", agent="db_agent", action="do_first", type="action", attempt=2)
 
     async def again() -> None:
@@ -235,6 +236,7 @@ def test_a_new_attempt_of_a_task_keeps_its_model_and_a_new_task_takes_the_new_co
     run(again())
     assert run(h.task(run_id, "first"))["llm"] == first  # recorded once, never rewritten
     assert models.pinned_from == [first]  # the second attempt rebuilt the recorded model, not the default
+    assert len(models.chosen) == resolved_before  # and never resolved the configuration again
     # A task that starts after the change is a new task: it takes the new configuration.
     fresh = started(h, task_doc("third"))
     run(h.execute(fresh, executor))

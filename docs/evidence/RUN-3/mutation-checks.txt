@@ -1,0 +1,169 @@
+baseline: exit=0, failed=0
+
+M1 KILLED: every task gets a grant, declared or not (box 1)
+  file: apps/orchestrator/src/onb_orchestrator/agent_executor.py
+  failing tests (2):
+    apps/orchestrator/tests/test_agent_executor.py::test_a_task_without_pii_access_gets_no_grant
+    apps/orchestrator/tests/test_agent_executor.py::test_only_the_task_that_declares_pii_access_gets_a_grant_in_a_run
+
+M2 KILLED: a task that declares pii_access gets no grant (box 1)
+  file: apps/orchestrator/src/onb_orchestrator/agent_executor.py
+  failing tests (7):
+    apps/orchestrator/tests/test_agent_executor.py::test_a_field_that_is_not_a_vault_field_fails_the_task
+    apps/orchestrator/tests/test_agent_executor.py::test_a_field_the_sink_does_not_resolve_fails_the_task_before_the_agent_runs
+    apps/orchestrator/tests/test_agent_executor.py::test_a_task_with_pii_access_gets_a_grant_limited_to_its_fields_and_sink
+    apps/orchestrator/tests/test_agent_executor.py::test_only_the_task_that_declares_pii_access_gets_a_grant_in_a_run
+    apps/orchestrator/tests/test_agent_executor.py::test_pii_access_without_a_grant_issuer_fails_closed
+    apps/orchestrator/tests/test_agent_executor.py::test_the_grant_and_the_token_are_never_stored
+    ... and 1 more
+
+M3 KILLED: the grant names another sink than the task declared (box 1)
+  file: apps/orchestrator/src/onb_orchestrator/agent_executor.py
+  failing tests (4):
+    apps/orchestrator/tests/test_agent_executor.py::test_a_task_with_pii_access_gets_a_grant_limited_to_its_fields_and_sink
+    apps/orchestrator/tests/test_agent_executor.py::test_only_the_task_that_declares_pii_access_gets_a_grant_in_a_run
+    apps/orchestrator/tests/test_agent_executor.py::test_the_grant_and_the_token_are_never_stored
+    apps/orchestrator/tests/test_agent_executor.py::test_the_grant_is_issued_with_the_runs_own_run_id
+
+M4 KILLED: the grant is for the task id, not the run's own run_id (NOTIF-1 wrong_run)
+  file: apps/orchestrator/src/onb_orchestrator/agent_executor.py
+  failing tests (2):
+    apps/orchestrator/tests/test_agent_executor.py::test_a_task_with_pii_access_gets_a_grant_limited_to_its_fields_and_sink
+    apps/orchestrator/tests/test_agent_executor.py::test_the_grant_is_issued_with_the_runs_own_run_id
+
+M5 KILLED: a refused grant does not fail the task: the agent runs without one (box 1)
+  file: apps/orchestrator/src/onb_orchestrator/agent_executor.py
+  failing tests (2):
+    apps/orchestrator/tests/test_agent_executor.py::test_a_field_that_is_not_a_vault_field_fails_the_task
+    apps/orchestrator/tests/test_agent_executor.py::test_a_field_the_sink_does_not_resolve_fails_the_task_before_the_agent_runs
+
+M6 KILLED: no grant issuer configured: pii_access is silently ignored instead of failing closed (box 1)
+  file: apps/orchestrator/src/onb_orchestrator/agent_executor.py
+  failing tests (1):
+    apps/orchestrator/tests/test_agent_executor.py::test_pii_access_without_a_grant_issuer_fails_closed
+
+M7 KILLED: the model is not recorded on the task (box 2)
+  file: apps/orchestrator/src/onb_orchestrator/agent_executor.py
+  failing tests (3):
+    apps/orchestrator/tests/test_agent_executor.py::test_a_config_change_while_the_task_runs_does_not_change_its_recorded_model
+    apps/orchestrator/tests/test_agent_executor.py::test_a_new_attempt_of_a_task_keeps_its_model_and_a_new_task_takes_the_new_config
+    apps/orchestrator/tests/test_agent_executor.py::test_the_model_is_recorded_on_the_task
+
+M8 SURVIVED: a new attempt re-resolves the model instead of keeping the recorded one (box 2)
+  file: apps/orchestrator/src/onb_orchestrator/agent_executor.py
+  failing tests (0):
+
+M9 SURVIVED: the recorded model is overwritten on every attempt (box 2)
+  file: libs/py-agents/src/onb_agents/runs/store.py
+  failing tests (0):
+
+M10 SURVIVED: each task gets its own fresh run budget: no run-level limit (box 3)
+  file: apps/orchestrator/src/onb_orchestrator/agent_executor.py
+  failing tests (0):
+
+M11 KILLED: the run budget is not passed to the agent runtime (box 3)
+  file: apps/orchestrator/src/onb_orchestrator/agent_executor.py
+  failing tests (3):
+    apps/orchestrator/tests/test_agent_executor.py::test_an_exhausted_run_token_budget_fails_the_task_visibly
+    apps/orchestrator/tests/test_agent_executor.py::test_the_run_budget_counts_tokens_across_parallel_tasks
+    apps/orchestrator/tests/test_agent_executor.py::test_the_run_budget_is_rebuilt_from_the_tasks_recorded_usage_after_a_restart
+
+M12 KILLED: a restarted worker forgets the tokens the run's tasks already used (box 3)
+  file: apps/orchestrator/src/onb_orchestrator/agent_executor.py
+  failing tests (1):
+    apps/orchestrator/tests/test_agent_executor.py::test_the_run_budget_is_rebuilt_from_the_tasks_recorded_usage_after_a_restart
+
+M13 KILLED: a failed agent outcome does not fail the task (box 3)
+  file: apps/orchestrator/src/onb_orchestrator/agent_executor.py
+  failing tests (4):
+    apps/orchestrator/tests/test_agent_executor.py::test_a_failed_agent_fails_the_task_and_the_run_with_the_reason
+    apps/orchestrator/tests/test_agent_executor.py::test_an_exhausted_run_token_budget_fails_the_task_visibly
+    apps/orchestrator/tests/test_agent_executor.py::test_the_run_budget_counts_tokens_across_parallel_tasks
+    apps/orchestrator/tests/test_agent_executor.py::test_the_run_budget_is_rebuilt_from_the_tasks_recorded_usage_after_a_restart
+
+M14 KILLED: the failure cause is not stored on the task (box 3)
+  file: apps/orchestrator/src/onb_orchestrator/agent_executor.py
+  failing tests (2):
+    apps/orchestrator/tests/test_agent_executor.py::test_a_failed_agent_fails_the_task_and_the_run_with_the_reason
+    apps/orchestrator/tests/test_agent_executor.py::test_an_exhausted_run_token_budget_fails_the_task_visibly
+
+M15 KILLED: a retired agent still runs
+  file: apps/orchestrator/src/onb_orchestrator/agent_executor.py
+  failing tests (1):
+    apps/orchestrator/tests/test_agent_executor.py::test_a_task_naming_an_unregistered_or_retired_agent_fails
+
+M16 KILLED: no run span: tasks hang off the request trace directly (box 4)
+  file: apps/orchestrator/src/onb_orchestrator/consumer.py
+  failing tests (2):
+    apps/orchestrator/tests/test_run_spans.py::test_a_runs_spans_form_run_task_agent_llm_and_tool
+    apps/orchestrator/tests/test_run_spans.py::test_the_run_span_joins_the_trace_of_the_request_that_started_the_run
+
+M17 KILLED: the task span ignores the run span (box 4)
+  file: apps/orchestrator/src/onb_orchestrator/runner.py
+  failing tests (1):
+    apps/orchestrator/tests/test_run_spans.py::test_a_runs_spans_form_run_task_agent_llm_and_tool
+
+M18 KILLED: no agent span (box 4)
+  file: libs/py-agents/src/onb_agents/runtime/runner.py
+  failing tests (1):
+    apps/orchestrator/tests/test_run_spans.py::test_a_runs_spans_form_run_task_agent_llm_and_tool
+
+M19 KILLED: no tool span (box 4)
+  file: libs/py-agents/src/onb_agents/runtime/graph.py
+  failing tests (1):
+    apps/orchestrator/tests/test_run_spans.py::test_a_runs_spans_form_run_task_agent_llm_and_tool
+
+M20 KILLED: the fail_task consumer fails a task that already finished
+  file: apps/orchestrator/src/onb_orchestrator/consumer.py
+  failing tests (2):
+    apps/orchestrator/tests/test_sink_rejected.py::test_a_finished_task_stays_finished
+    apps/orchestrator/tests/test_sink_rejected.py::test_a_redelivered_event_changes_nothing_more
+
+M21 KILLED: a sink's rejection is not applied: the task stays running
+  file: apps/orchestrator/src/onb_orchestrator/consumer.py
+  failing tests (3):
+    apps/orchestrator/tests/test_sink_rejected.py::test_a_rejection_without_a_task_id_fails_the_running_tasks_of_that_agent_only
+    apps/orchestrator/tests/test_sink_rejected.py::test_a_running_task_is_failed_with_the_sinks_reason
+    apps/orchestrator/tests/test_sink_rejected.py::test_a_task_failed_by_a_rejection_while_its_agent_runs_ends_failed_and_fails_the_run
+
+M22 KILLED: an agent's late success turns a task failed by a sink `done` again
+  file: apps/orchestrator/src/onb_orchestrator/runner.py
+  failing tests (1):
+    apps/orchestrator/tests/test_sink_rejected.py::test_a_task_failed_by_a_rejection_while_its_agent_runs_ends_failed_and_fails_the_run
+
+M23 KILLED: a later outcome write clears the cause a sink recorded
+  file: libs/py-agents/src/onb_agents/runs/store.py
+  failing tests (1):
+    apps/orchestrator/tests/test_sink_rejected.py::test_a_task_failed_by_a_rejection_while_its_agent_runs_ends_failed_and_fails_the_run
+
+M24 KILLED: a rejection without a task id fails every running task, whatever the agent
+  file: apps/orchestrator/src/onb_orchestrator/consumer.py
+  failing tests (1):
+    apps/orchestrator/tests/test_sink_rejected.py::test_a_rejection_without_a_task_id_fails_the_running_tasks_of_that_agent_only
+
+M25 KILLED: the run bus no longer subscribes the fail_task consumer
+  file: libs/py-agents/src/onb_agents/runs/events.py
+  failing tests (4):
+    apps/orchestrator/tests/test_agents_setup.py::test_prepare_subscribes_the_start_run_and_fail_task_consumers
+    apps/orchestrator/tests/test_agents_setup.py::test_prepare_uses_the_executor_it_is_given
+    apps/orchestrator/tests/test_worker_main.py::test_prepare_makes_every_index_and_subscribes_the_run_consumers
+    libs/py-agents/tests/test_run_store.py::test_the_run_bus_subscribes_the_orchestrator_to_run_started
+
+M26 SURVIVED: the sink's bus does not subscribe the fail_task consumer (no job is written)
+  file: libs/py-contracts/src/onb_contracts/notify.py
+  failing tests (0):
+
+M27 KILLED: the worker does not run the fail_task consumer
+  file: apps/orchestrator/src/onb_orchestrator/worker.py
+  failing tests (3):
+    apps/orchestrator/tests/test_agents_setup.py::test_prepare_subscribes_the_start_run_and_fail_task_consumers
+    apps/orchestrator/tests/test_agents_setup.py::test_prepare_uses_the_executor_it_is_given
+    apps/orchestrator/tests/test_worker_main.py::test_prepare_makes_every_index_and_subscribes_the_run_consumers
+
+M28 KILLED: an unknown ORCHESTRATOR_EXECUTOR value silently runs the stub
+  file: apps/orchestrator/src/onb_orchestrator/worker.py
+  failing tests (1):
+    apps/orchestrator/tests/test_agents_setup.py::test_choosing_the_agents_executor_without_its_settings_fails_fast
+
+source diff after all mutations: 0 files differ []
+mutations: 28, killed: 24, survivors: ['M8', 'M9', 'M10', 'M26']

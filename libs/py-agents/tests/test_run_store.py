@@ -91,6 +91,78 @@ def test_indexes_start_with_org_id_and_task_ids_are_unique_per_run() -> None:
     assert all(k[1][0] == "org_id" for k in keys)
 
 
+def test_a_tasks_model_is_recorded_once_and_never_overwritten() -> None:
+    """RUN-3 (PRD §7.1): a task keeps the model it started with, whatever is recorded later."""
+    first = {"connector": "fake", "model": "m1", "alias": "standard", "source": "manifest"}
+    second = {"connector": "fake", "model": "m2", "alias": "standard", "source": "default"}
+
+    async def go() -> tuple[dict[str, Any], dict[str, Any], dict[str, Any] | None, dict[str, Any] | None]:
+        store = _store()
+        with tenant_scope("org_a"):
+            await _insert(store)
+            one = await store.record_model("run_1", "a", first)
+            two = await store.record_model("run_1", "a", second)
+            other = await store.task("run_1", "b")
+            kept = await store.task("run_1", "a")
+        return one, two, other, kept
+
+    one, two, other, kept = run(go())
+    assert one == first
+    assert two == first  # the second record is not written: the first is returned
+    assert kept is not None
+    assert kept["llm"] == first
+    assert other is not None
+    assert "llm" not in other  # another task is untouched
+
+
+def test_an_outcome_is_stored_and_a_recorded_failure_is_never_cleared() -> None:
+    async def go() -> dict[str, Any]:
+        store = _store()
+        with tenant_scope("org_a"):
+            await _insert(store)
+            await store.record_outcome("run_1", "a", result=None, failure={"kind": "sink_rejected", "reason": "x"})
+            await store.record_outcome(
+                "run_1", "a", result={"outcome": "completed", "usage": {"tokens": 7}}, failure=None
+            )
+            task = await store.task("run_1", "a")
+        assert task is not None
+        return task
+
+    task = run(go())
+    assert task["failure"] == {"kind": "sink_rejected", "reason": "x"}
+    assert task["result"] == {"outcome": "completed", "usage": {"tokens": 7}}
+
+
+def test_an_outcome_for_an_unknown_task_is_an_error_and_another_orgs_task_is_unknown() -> None:
+    async def go() -> None:
+        store = _store()
+        with tenant_scope("org_a"):
+            await _insert(store)
+        with tenant_scope("org_b"), pytest.raises(LookupError):
+            await store.record_outcome("run_1", "a", result={"outcome": "completed"}, failure=None)
+        with tenant_scope("org_a"), pytest.raises(LookupError):
+            await store.record_outcome("run_1", "nope", result={"outcome": "completed"}, failure=None)
+        with tenant_scope("org_b"), pytest.raises(LookupError):
+            await store.record_model("run_1", "a", {"connector": "fake", "model": "m"})
+
+    run(go())
+
+
+def test_the_runs_tokens_are_the_sum_of_its_tasks_recorded_usage() -> None:
+    async def go() -> tuple[int, int]:
+        store = _store()
+        with tenant_scope("org_a"):
+            await _insert(store)
+            empty = await store.run_tokens("run_1")
+            await store.record_outcome("run_1", "a", result={"usage": {"steps": 1, "tokens": 40}}, failure=None)
+            await store.record_outcome("run_1", "b", result={"usage": {"steps": 2, "tokens": 2}}, failure=None)
+            await store.record_outcome("run_1", "c", result={"outcome": "failed"}, failure=None)  # no usage key
+        with tenant_scope("org_a"):
+            return empty, await store.run_tokens("run_1")
+
+    assert run(go()) == (0, 42)
+
+
 def test_a_task_moves_only_along_the_state_machine_and_stamps_its_times() -> None:
     store = _store()
 
