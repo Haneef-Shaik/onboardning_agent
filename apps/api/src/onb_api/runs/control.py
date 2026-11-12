@@ -115,7 +115,11 @@ class RunControl:
 
     async def get(self, principal: Principal, run_id: str) -> RunRecord:
         run = await self.visible_run(principal, run_id)
-        return run_record(run, await self._runs.tasks(run_id))
+        record = run_record(run, await self._runs.tasks(run_id))
+        if principal.role is Role.MANAGER:
+            # Traces are an HR view (PRD U7): least privilege, so the id is withheld here, not just in the UI.
+            record = record.model_copy(update={"trace_id": None})
+        return record
 
     async def list_runs(
         self, principal: Principal, *, status: RunState | None, page: int, limit: int

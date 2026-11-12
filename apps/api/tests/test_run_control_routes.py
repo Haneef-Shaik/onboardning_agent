@@ -494,3 +494,26 @@ def test_a_stream_ends_after_its_lifetime_so_the_client_reconnects(
     run_id = _start(client)  # `started` forever: nothing finishes it
     events = _events(client, run_id)
     assert events[-1] == ("end", {"status": "started", "reason": "timeout"})
+
+
+# --- UI-5: the trace id is for HR, not for managers -----------------------------------------------------
+
+TRACE_ID = "4bf92f3577b34da6a3ce929d0e0e4736"
+
+
+def test_hr_and_hr_admin_get_the_runs_trace_id_and_a_manager_does_not(
+    client: TestClient, memory_db: MemoryDatabase
+) -> None:
+    _publish(client)
+    run_id = _start(client, "h_acme_001")  # Ravi's report
+    for collection in memory_db.collections.values():
+        for document in collection.documents:
+            if document.get("_id") == run_id:
+                document["traceparent"] = f"00-{TRACE_ID}-00f067aa0ba902b7-01"
+
+    for who in (HR, ADMIN):
+        assert client.get(f"/runs/{run_id}", headers=_auth(who)).json()["data"]["trace_id"] == TRACE_ID
+    seen = client.get(f"/runs/{run_id}", headers=_auth(RAVI))
+    assert seen.status_code == 200  # the run itself is his to see
+    assert seen.json()["data"]["trace_id"] is None
+    assert TRACE_ID not in seen.text
