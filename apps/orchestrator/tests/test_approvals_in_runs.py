@@ -606,3 +606,34 @@ def test_a_cancelled_run_cancels_its_pending_approvals() -> None:
             return [a["status"] for a in await world.approvals.for_task(run_id, "appr")]
 
     assert run(go()) == ["cancelled"]
+
+
+def test_an_approved_tool_calls_re_run_holds_a_lease_like_any_running_task() -> None:
+    """RUN-2: a `running` task without a live lease is taken over by the next delivery. The approved re-run
+    must hold its own lease while the agent works, and be released when it is done."""
+    template = _template([_task("a")])
+    seen: list[dict[str, Any]] = []
+
+    class Spy(Executor):
+        async def execute(self, work: TaskWork) -> None:
+            with tenant_scope(ORG):
+                seen.append(dict(await world.runs.task(work.run_id, work.task_id) or {}))
+            await super().execute(work)
+
+    world = _world(Spy(requests={"a": [ApprovalRequestedError("tool_call", "r")]}))
+
+    async def go() -> dict[str, Any]:
+        run_id = await world.start(template)
+        approval = await world.approval_of(run_id, "a")
+        await world.decide(approval["_id"])
+        await world.resume(approval["_id"], run_id)
+        return (await world.tasks(run_id))["a"]
+
+    done = run(go())
+    first, rerun = seen
+    assert first["status"] == rerun["status"] == "running"
+    assert first["lease_token"]
+    assert rerun["lease_token"]
+    assert rerun["lease_token"] != first["lease_token"]  # a new holder: the first lease was released when it parked
+    assert done["status"] == "done"
+    assert done["lease_token"] is None  # released with the finish

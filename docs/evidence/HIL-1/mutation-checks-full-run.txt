@@ -45,14 +45,14 @@ M7 KILLED: a comment of any length is accepted by the decision write
 
 M8 KILLED: approval ids are not deterministic: a redelivered job opens a second approval
   file: libs/py-agents/src/onb_agents/approvals/store.py
-  failing tests (24):
+  failing tests (26):
     apps/orchestrator/tests/test_agent_approvals.py::test_an_approval_task_whose_agent_fails_still_asks_the_human_and_says_why_there_is_no_packet
     apps/orchestrator/tests/test_agent_approvals.py::test_an_approval_task_whose_agent_needs_a_human_has_no_packet_either
     apps/orchestrator/tests/test_agent_approvals.py::test_the_approvals_agent_prepares_the_packet_of_an_approval_task
     apps/orchestrator/tests/test_agent_approvals.py::test_the_packet_is_never_replaced_by_a_later_run_of_the_agent
+    apps/orchestrator/tests/test_approvals_in_runs.py::test_a_cancelled_run_cancels_its_pending_approvals
     apps/orchestrator/tests/test_approvals_in_runs.py::test_a_failed_run_cancels_the_approvals_still_pending
-    apps/orchestrator/tests/test_approvals_in_runs.py::test_a_rejection_fails_the_task_cancels_what_follows_and_fails_the_run
-    ... and 18 more
+    ... and 20 more
 
 M9 KILLED: a later packet overwrites the first
   file: libs/py-agents/src/onb_agents/approvals/store.py
@@ -89,14 +89,14 @@ M13 KILLED: a task without an approver rule goes to nobody-specific HR even when
 
 M14 KILLED: an approval task completes instead of waiting
   file: apps/orchestrator/src/onb_orchestrator/runner.py
-  failing tests (16):
+  failing tests (18):
     apps/orchestrator/tests/test_agent_approvals.py::test_an_approval_task_whose_agent_fails_still_asks_the_human_and_says_why_there_is_no_packet
     apps/orchestrator/tests/test_agent_approvals.py::test_the_approvals_agent_prepares_the_packet_of_an_approval_task
+    apps/orchestrator/tests/test_approvals_in_runs.py::test_a_cancelled_run_cancels_its_pending_approvals
     apps/orchestrator/tests/test_approvals_in_runs.py::test_a_failed_run_cancels_the_approvals_still_pending
     apps/orchestrator/tests/test_approvals_in_runs.py::test_a_rejection_fails_the_task_cancels_what_follows_and_fails_the_run
     apps/orchestrator/tests/test_approvals_in_runs.py::test_a_resume_for_an_approval_nobody_decided_does_nothing
-    apps/orchestrator/tests/test_approvals_in_runs.py::test_a_resume_for_another_orgs_approval_does_nothing
-    ... and 10 more
+    ... and 12 more
 
 M15 KILLED: a rejection does not fail the task
   file: apps/orchestrator/src/onb_orchestrator/runner.py
@@ -123,14 +123,14 @@ M17 KILLED: a tool call refused again after its approval waits again instead of 
 
 M18 KILLED: the graph node does not interrupt: the paused task is settled at once
   file: apps/orchestrator/src/onb_orchestrator/graph.py
-  failing tests (32):
+  failing tests (34):
     apps/orchestrator/tests/test_agent_approvals.py::test_a_rejected_tool_call_never_gets_its_rule_approved
     apps/orchestrator/tests/test_agent_approvals.py::test_a_requires_approval_tool_call_creates_an_approval_task
     apps/orchestrator/tests/test_agent_approvals.py::test_an_agent_that_answers_needs_human_waits_for_an_approval_instead_of_completing
     apps/orchestrator/tests/test_agent_approvals.py::test_an_approval_task_whose_agent_fails_still_asks_the_human_and_says_why_there_is_no_packet
     apps/orchestrator/tests/test_agent_approvals.py::test_an_approval_task_whose_agent_needs_a_human_has_no_packet_either
     apps/orchestrator/tests/test_agent_approvals.py::test_an_approved_tool_call_runs_the_task_again_with_that_rule_in_the_agents_token
-    ... and 26 more
+    ... and 28 more
 
 M19 KILLED: settle finishes a task whose approval is still pending
   file: apps/orchestrator/src/onb_orchestrator/runner.py
@@ -154,14 +154,14 @@ M21 KILLED: waiting_approval → running is not a legal move
 
 M22 KILLED: the run finishes (completes) when its graph paused for an approval
   file: apps/orchestrator/src/onb_orchestrator/consumer.py
-  failing tests (26):
+  failing tests (35):
     apps/orchestrator/tests/test_agent_approvals.py::test_a_rejected_tool_call_never_gets_its_rule_approved
     apps/orchestrator/tests/test_agent_approvals.py::test_a_requires_approval_tool_call_creates_an_approval_task
     apps/orchestrator/tests/test_agent_approvals.py::test_an_agent_that_answers_needs_human_waits_for_an_approval_instead_of_completing
     apps/orchestrator/tests/test_agent_approvals.py::test_an_approval_task_whose_agent_fails_still_asks_the_human_and_says_why_there_is_no_packet
     apps/orchestrator/tests/test_agent_approvals.py::test_an_approved_tool_call_runs_the_task_again_with_that_rule_in_the_agents_token
-    apps/orchestrator/tests/test_approvals_in_runs.py::test_a_failed_run_cancels_the_approvals_still_pending
-    ... and 20 more
+    apps/orchestrator/tests/test_agent_approvals.py::test_the_approvals_agent_prepares_the_packet_of_an_approval_task
+    ... and 29 more
 
 M23 KILLED: the resume handler resumes an approval nobody decided
   file: apps/orchestrator/src/onb_orchestrator/consumer.py
@@ -286,7 +286,7 @@ M44 KILLED: the run bus does not subscribe the resume consumer
   failing tests (13):
     apps/orchestrator/tests/test_agents_setup.py::test_prepare_subscribes_the_start_run_fail_task_and_approval_consumers
     apps/orchestrator/tests/test_agents_setup.py::test_prepare_uses_the_executor_it_is_given
-    apps/orchestrator/tests/test_worker_main.py::test_prepare_makes_every_index_and_subscribes_the_run_consumers
+    apps/orchestrator/tests/test_worker_main.py::test_prepare_makes_every_index_and_runs_the_start_resume_cleanup_and_fail_task_consumers
     apps/orchestrator/tests_int/test_approvals_against_mongo.py::test_a_decision_whose_audit_write_fails_is_not_made_and_publishes_nothing
     apps/orchestrator/tests_int/test_approvals_against_mongo.py::test_a_rejection_through_telegram_fails_the_run
     apps/orchestrator/tests_int/test_approvals_against_mongo.py::test_a_telegram_press_resumes_the_run_and_is_recorded_for_the_approver
@@ -303,7 +303,7 @@ M46 KILLED: the worker does not run the resume consumer
   failing tests (8):
     apps/orchestrator/tests/test_agents_setup.py::test_prepare_subscribes_the_start_run_fail_task_and_approval_consumers
     apps/orchestrator/tests/test_agents_setup.py::test_prepare_uses_the_executor_it_is_given
-    apps/orchestrator/tests/test_worker_main.py::test_prepare_makes_every_index_and_subscribes_the_run_consumers
+    apps/orchestrator/tests/test_worker_main.py::test_prepare_makes_every_index_and_runs_the_start_resume_cleanup_and_fail_task_consumers
     apps/orchestrator/tests_int/test_approvals_against_mongo.py::test_a_rejection_through_telegram_fails_the_run
     apps/orchestrator/tests_int/test_approvals_against_mongo.py::test_a_telegram_press_resumes_the_run_and_is_recorded_for_the_approver
     apps/orchestrator/tests_int/test_approvals_against_mongo.py::test_an_approval_task_pauses_the_run_through_the_real_bus_and_a_web_decision_resumes_it
@@ -314,7 +314,7 @@ M47 KILLED: the worker does not run the decision recorder
   failing tests (5):
     apps/orchestrator/tests/test_agents_setup.py::test_prepare_subscribes_the_start_run_fail_task_and_approval_consumers
     apps/orchestrator/tests/test_agents_setup.py::test_prepare_uses_the_executor_it_is_given
-    apps/orchestrator/tests/test_worker_main.py::test_prepare_makes_every_index_and_subscribes_the_run_consumers
+    apps/orchestrator/tests/test_worker_main.py::test_prepare_makes_every_index_and_runs_the_start_resume_cleanup_and_fail_task_consumers
     apps/orchestrator/tests_int/test_approvals_against_mongo.py::test_a_rejection_through_telegram_fails_the_run
     apps/orchestrator/tests_int/test_approvals_against_mongo.py::test_a_telegram_press_resumes_the_run_and_is_recorded_for_the_approver
 
@@ -324,6 +324,39 @@ M48 KILLED: the notify bus does not subscribe the approvals notifier
     apps/mcp-mocks/tests/test_notify_main.py::test_the_service_serves_notify_send_and_subscribes_the_in_app_consumer
     libs/py-contracts/tests/test_notify_contracts.py::test_the_in_app_consumer_is_subscribed_to_its_events
 
+M49 SURVIVED: an approved tool call's re-run takes no lease (the task runs unleased)
+  file: apps/orchestrator/src/onb_orchestrator/runner.py
+  failing tests (0):
+
+M50 KILLED: a failed run leaves its pending approvals pending
+  file: apps/orchestrator/src/onb_orchestrator/consumer.py
+  failing tests (1):
+    apps/orchestrator/tests/test_approvals_in_runs.py::test_a_failed_run_cancels_the_approvals_still_pending
+
+M51 KILLED: a cancelled run leaves its pending approvals pending
+  file: apps/orchestrator/src/onb_orchestrator/consumer.py
+  failing tests (1):
+    apps/orchestrator/tests/test_approvals_in_runs.py::test_a_cancelled_run_cancels_its_pending_approvals
+
+M52 KILLED: driving a run on does not settle approvals decided while it was paused (it pauses again)
+  file: apps/orchestrator/src/onb_orchestrator/consumer.py
+  failing tests (1):
+    apps/orchestrator/tests/test_approvals_in_runs.py::test_an_approval_decided_while_the_run_is_paused_is_settled_when_hr_resumes_the_run
+
+M53 KILLED: the agent's inner graph inherits the run graph's checkpoint (a re-run resumes stale state)
+  file: libs/py-agents/src/onb_agents/runtime/graph.py
+  failing tests (1):
+    apps/orchestrator/tests/test_agent_approvals.py::test_an_approved_tool_call_runs_the_task_again_with_that_rule_in_the_agents_token
+
+M54 KILLED: a third approval for one task is not refused
+  file: apps/orchestrator/src/onb_orchestrator/runner.py
+  failing tests (1):
+    apps/orchestrator/tests/test_approvals_in_runs.py::test_a_third_approval_for_one_task_fails_it_visibly_instead_of_wedging_the_run
+
+M55 SURVIVED: a decision while the run is paused is acted on (the resume handler ignores the run state)
+  file: apps/orchestrator/src/onb_orchestrator/consumer.py
+  failing tests (0):
+
 source diff after all mutations: 0 files differ []
-mutations: 48, killed: 48, survivors: none
-exit 0
+mutations: 55, killed: 53, survivors: ['M49', 'M55']
+exit 1

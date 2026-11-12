@@ -142,8 +142,8 @@ MUTATIONS: list[tuple[str, str, Path, str, str]] = [
         "M14",
         "an approval task completes instead of waiting",
         ORCH / "runner.py",
-        "        if requested is not None or approval_task:",
-        "        if requested is not None:",
+        '            if isinstance(failure, _Asked) or (failure is None and task["type"] == "approval"):',
+        "            if isinstance(failure, _Asked):",
     ),
     (
         "M15",
@@ -198,8 +198,8 @@ MUTATIONS: list[tuple[str, str, Path, str, str]] = [
         "M22",
         "the run finishes (completes) when its graph paused for an approval",
         ORCH / "consumer.py",
-        "    if not paused:\n        await _finish(runner, run_id, RunState.COMPLETED)",
-        "    await _finish(runner, run_id, RunState.COMPLETED)",
+        "    if paused:\n        return  # waiting for an approval: the decision resumes it\n",
+        "",
     ),
     (
         "M23",
@@ -291,8 +291,8 @@ MUTATIONS: list[tuple[str, str, Path, str, str]] = [
         "M35",
         "the agent is not told which approval it summarises",
         ORCH / "agent_executor.py",
-        '        asked["approval_id"] = approval_id',
-        "        pass",
+        '        return {**asked, "approval_id": approval_id} if approval_id is not None else dict(asked)',
+        "        return dict(asked)",
     ),
     # --- notification --------------------------------------------------------------------------------------
     (
@@ -357,7 +357,7 @@ MUTATIONS: list[tuple[str, str, Path, str, str]] = [
         "M44",
         "the run bus does not subscribe the resume consumer",
         AGENTS / "runs/events.py",
-        "    APPROVAL_DECIDED: (RESUME_RUN,),\n",
+        "    APPROVAL_DECIDED: (RESUME_APPROVAL,),\n",
         "",
     ),
     (
@@ -371,7 +371,7 @@ MUTATIONS: list[tuple[str, str, Path, str, str]] = [
         "M46",
         "the worker does not run the resume consumer",
         ORCH / "worker.py",
-        "        RESUME_RUN: resume_approval_handler(store, tasks, bus=bus),  # HIL-1: an approval was decided\n",
+        "        RESUME_APPROVAL: resume_approval_handler(  # HIL-1: an approval was decided\n            store, tasks, bus=bus, policy=policy, drain=drain\n        ),\n",
         "",
     ),
     (
@@ -387,6 +387,56 @@ MUTATIONS: list[tuple[str, str, Path, str, str]] = [
         CONTRACTS / "notify.py",
         "    APPROVAL_REQUESTED: [APPROVAL_NOTIFY_CONSUMER],  # HIL-1: the notifier lives in mcp-mocks\n",
         "",
+    ),
+    # --- merged with RUN-2 / AGT-1 ----------------------------------------------------------------------------
+    (
+        "M49",
+        "an approved tool call's re-run takes no lease (the task runs unleased)",
+        ORCH / "runner.py",
+        '                fields={**self._lease(), "error": None, "retry_at": None, "failure": None},\n            )\n            await self._attempts(run_id, running, traceparent)',
+        '                fields={"error": None, "retry_at": None, "failure": None},\n            )\n            await self._attempts(run_id, running, traceparent)',
+    ),
+    (
+        "M50",
+        "a failed run leaves its pending approvals pending",
+        ORCH / "consumer.py",
+        "            await runner.approvals.cancel_pending(run_id, at=runner.clock())  # nothing left to decide (HIL-1)\n",
+        "",
+    ),
+    (
+        "M51",
+        "a cancelled run leaves its pending approvals pending",
+        ORCH / "consumer.py",
+        "        await approvals.cancel_pending(run_id, at=_utc_now())\n",
+        "",
+    ),
+    (
+        "M52",
+        "driving a run on does not settle approvals decided while it was paused (it pauses again)",
+        ORCH / "consumer.py",
+        "        await self._settle_decided(built)\n",
+        "",
+    ),
+    (
+        "M53",
+        "the agent's inner graph inherits the run graph's checkpoint (a re-run resumes stale state)",
+        AGENTS / "runtime/graph.py",
+        "    return graph.compile(checkpointer=False)",
+        "    return graph.compile()",
+    ),
+    (
+        "M54",
+        "a third approval for one task is not refused",
+        ORCH / "runner.py",
+        "        if f\"{kind}\\x1f{rule or ''}\" not in known and len(existing) >= MAX_APPROVALS_PER_TASK:",
+        "        if False:",
+    ),
+    (
+        "M55",
+        "a decision while the run is paused is acted on (the resume handler ignores the run state)",
+        ORCH / "consumer.py",
+        '        if run is None or run.get("status") != RunState.RUNNING.value:\n            return\n        task = await runner.runs.task(',
+        "        if run is None:\n            return\n        task = await runner.runs.task(",
     ),
 ]
 
@@ -414,7 +464,15 @@ def _run_tests() -> tuple[int, list[str]]:
     return code, sorted(failed)
 
 
+# Mutants that cannot change behaviour because another guard holds the same line (documented, not ignored).
+EQUIVALENT: dict[str, str] = {
+    "M55": "RUN-2's `_ensure_runnable` halts a paused run before the resumed node does anything, so the handler's "
+    "own early return changes nothing observable (defence in depth)",
+}
+
+
 def main() -> int:
+    only = set(sys.argv[1:])  # optional: re-run only these mutation ids
     originals = {path: path.read_bytes() for _, _, path, _, _ in MUTATIONS}
     code, failed = _run_tests()
     print(f"baseline: exit={code}, failed={len(failed)}")
@@ -423,6 +481,8 @@ def main() -> int:
         return 1
     survivors: list[str] = []
     for mid, what, path, old, new in MUTATIONS:
+        if only and mid not in only:
+            continue
         text = originals[path].decode()
         assert text.count(old) == 1, f"{mid}: snippet must occur exactly once in {path}"
         path.write_text(text.replace(old, new))
@@ -440,8 +500,15 @@ def main() -> int:
             print(f"    ... and {len(failed) - 6} more")
     differing = [str(p.relative_to(REPO)) for p, data in originals.items() if p.read_bytes() != data]
     print(f"\nsource diff after all mutations: {len(differing)} files differ {differing}")
-    print(f"mutations: {len(MUTATIONS)}, killed: {len(MUTATIONS) - len(survivors)}, survivors: {survivors or 'none'}")
-    return 0 if not survivors and not differing else 1
+    equivalent = [mid for mid in survivors if mid in EQUIVALENT]
+    for mid in equivalent:
+        print(f"{mid} is an equivalent mutant: {EQUIVALENT[mid]}")
+    real = [mid for mid in survivors if mid not in EQUIVALENT]
+    total = len(only) if only else len(MUTATIONS)
+    print(
+        f"mutations: {total}, killed: {total - len(survivors)}, equivalent: {equivalent or 'none'}, survivors: {real or 'none'}"
+    )
+    return 0 if not real and not differing else 1
 
 
 if __name__ == "__main__":

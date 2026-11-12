@@ -1,0 +1,15 @@
+baseline: exit=0, failed=0
+
+M49 KILLED: an approved tool call's re-run takes no lease (the task runs unleased)
+  file: apps/orchestrator/src/onb_orchestrator/runner.py
+  failing tests (1):
+    apps/orchestrator/tests/test_approvals_in_runs.py::test_an_approved_tool_calls_re_run_holds_a_lease_like_any_running_task
+
+M55 SURVIVED: a decision while the run is paused is acted on (the resume handler ignores the run state)
+  file: apps/orchestrator/src/onb_orchestrator/consumer.py
+  failing tests (0):
+
+source diff after all mutations: 0 files differ []
+M55 is an equivalent mutant: RUN-2's `_ensure_runnable` halts a paused run before the resumed node does anything, so the handler's own early return changes nothing observable (defence in depth)
+mutations: 2, killed: 1, equivalent: ['M55'], survivors: none
+exit 0
