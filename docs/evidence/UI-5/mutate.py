@@ -34,6 +34,7 @@ MUTATIONS = [
     ("M10 trace id taken from the whole traceparent", "apps/api/src/onb_api/runs/records.py", "return match.group(1)", "return str(traceparent)", PY + ["apps/api/tests/test_run_trace_id.py"]),
     ("M11 the all-zero trace id is accepted", "apps/api/src/onb_api/runs/records.py", 'or set(match.group(1)) == {"0"}', "", PY + ["apps/api/tests/test_run_trace_id.py"]),
     ("M12 a trace link for a malformed id", S + "policy.ts", "!TRACE_ID.test(traceId)", "false", VT + ["src/runs/policy.test.ts"]),
+    ("M14 a manager gets the trace id from the API", "apps/api/src/onb_api/runs/control.py", "if principal.role is Role.MANAGER:\n            # Traces", "if False:\n            # Traces", PY + ["apps/api/tests/test_run_control_routes.py", "-k", "trace_id"]),
     ("M13 blocked run offers pause", S + "policy.ts", 'case "blocked":\n      return ["cancel"];', 'case "blocked":\n      return ["pause", "cancel"];', VT + ["src/runs/policy.test.ts"]),
 ]
 
