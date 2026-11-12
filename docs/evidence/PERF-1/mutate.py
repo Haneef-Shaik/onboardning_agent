@@ -95,6 +95,18 @@ MUTATIONS = [
         "if error.status != 409:",
     ),
     (
+        "M16 a failing concurrent client does not release the others (hang)",
+        "tools/perf/latency.py",
+        "            start.abort()  # a client that fails releases the others instead of leaving them waiting\n",
+        "",
+    ),
+    (
+        "M17 a released client's BrokenBarrierError hides the real error",
+        "tools/perf/latency.py",
+        "        raise (root or errors)[0]",
+        "        raise errors[-1]",
+    ),
+    (
         "M10 a non-local host allowed",
         "tools/perf/latency.py",
         'if urlparse(base_url).hostname not in {"localhost", "127.0.0.1"}:',

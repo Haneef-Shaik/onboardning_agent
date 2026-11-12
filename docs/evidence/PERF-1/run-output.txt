@@ -1,24 +1,4 @@
 perf: sequential, 30 endpoints x 200
-Traceback (most recent call last):
-  File "/Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-perf-1/tools/perf/latency.py", line 607, in <module>
-    sys.exit(main())
-             ^^^^^^
-  File "/Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-perf-1/tools/perf/latency.py", line 558, in main
-    sequential_s = _sequential(args.base_url, users, probes, args)
-                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-perf-1/tools/perf/latency.py", line 322, in _sequential
-    return _measure(session, probes, args.samples, rng)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-perf-1/tools/perf/latency.py", line 313, in _measure
-    samples[name].append(probes[name](session))
-                         ^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-perf-1/tools/perf/latency.py", line 292, in <lambda>
-    "POST /runs/{run_id}/pause": lambda s: pause_resume(s, "pause"),
-                                           ^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-perf-1/tools/perf/latency.py", line 233, in pause_resume
-    return s.call("POST", f"/runs/{run}/{action}", who="hr", expect=200)[0]
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-perf-1/tools/perf/latency.py", line 110, in call
-    raise MeasurementError(f"{method} {path}: {response.status_code}, expected {expect}")
-MeasurementError: POST /runs/run_922e152407fc5aa702017a4b/pause: 409, expected 200
-exit 1
+perf: decisions x 40
+perf: concurrent, 8 clients
+exit 124

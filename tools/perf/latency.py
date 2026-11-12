@@ -52,6 +52,7 @@ APPROVAL_TASK = "manager_approval"
 LIMIT_MS = 300.0
 RESUME_LIMIT_S = 5.0
 MIN_DECISIONS = 30
+BARRIER_TIMEOUT_S = 300.0  # clients that cannot all start together stop the run
 MIN_SAMPLES = 100  # per endpoint for the box-1 verdict: a p95 of a handful proves nothing
 STARTED = frozenset({"running", "done"})
 TERMINAL_RUN = frozenset({"completed", "failed", "cancelled"})
@@ -352,22 +353,36 @@ def _concurrent(
     # record race on it (a pause against a pause is a legal 409; a reveal against a PII update hit a 500,
     # `concurrent-reveal-500.txt`), which is a correctness question, not latency.
     rounds = max(1, args.samples // args.concurrency)
-    start = threading.Barrier(args.concurrency)
+    start = threading.Barrier(args.concurrency, timeout=BARRIER_TIMEOUT_S)
 
     def worker(n: int) -> dict[str, list[float]]:
-        session = Session(_client(base, args.ca_file))
-        _login(session, users)
-        probes = _endpoints(_fixture(session, users), users, incidents)
-        rng = random.Random(args.seed + n + 1)  # noqa: S311 - visiting order, not security
-        _measure(session, probes, 1, rng)
-        start.wait()  # every client measures at the same time, none while another still sets up
-        return _measure(session, probes, rounds, rng)
+        try:
+            session = Session(_client(base, args.ca_file))
+            _login(session, users)
+            probes = _endpoints(_fixture(session, users), users, incidents)
+            rng = random.Random(args.seed + n + 1)  # noqa: S311 - visiting order, not security
+            _measure(session, probes, 1, rng)
+            start.wait()  # every client measures at the same time, none while another still sets up
+            return _measure(session, probes, rounds, rng)
+        except BaseException:
+            start.abort()  # a client that fails releases the others instead of leaving them waiting
+            raise
 
-    merged: dict[str, list[float]] = {}
     with concurrent.futures.ThreadPoolExecutor(args.concurrency) as pool:
-        for result in pool.map(worker, range(args.concurrency)):
-            for name, values in result.items():
-                merged.setdefault(name, []).extend(values)
+        futures = [pool.submit(worker, n) for n in range(args.concurrency)]
+    return _merge(futures)
+
+
+def _merge(futures: list[concurrent.futures.Future[dict[str, list[float]]]]) -> dict[str, list[float]]:
+    """All clients' samples; if any client failed, its own error (not a released client's) is raised."""
+    errors = [error for f in futures if (error := f.exception()) is not None]
+    root = [e for e in errors if not isinstance(e, threading.BrokenBarrierError)]
+    if errors:
+        raise (root or errors)[0]
+    merged: dict[str, list[float]] = {}
+    for future in futures:
+        for name, values in future.result().items():
+            merged.setdefault(name, []).extend(values)
     return merged
 
 

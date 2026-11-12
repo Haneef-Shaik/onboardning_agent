@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+import argparse
 import importlib.util
 import random
 import sys
+import threading
+import time
 from pathlib import Path
 from types import ModuleType
 from typing import Any
@@ -149,6 +152,28 @@ def test_a_refused_resume_stops_the_measurement() -> None:
     with pytest.raises(latency.MeasurementError, match="409"):
         probe("resume")
     assert incidents == []
+
+
+def test_a_concurrent_client_that_fails_releases_the_others_and_its_own_error_is_raised(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # A client failing before the shared start must not leave the others waiting for ever (a hang).
+    monkeypatch.setattr(latency, "BARRIER_TIMEOUT_S", 30.0)
+    monkeypatch.setattr(latency, "_client", lambda base, ca: object())
+    monkeypatch.setattr(latency, "_login", lambda session, users: None)
+
+    def fixture(session: Any, users: Any) -> Any:
+        if threading.current_thread().name.endswith("_0"):
+            raise latency.MeasurementError("POST /hires: 500, expected 201", 500)
+        return None
+
+    monkeypatch.setattr(latency, "_fixture", fixture)
+    monkeypatch.setattr(latency, "_endpoints", lambda fx, users, incidents: {})
+    args = argparse.Namespace(samples=100, concurrency=4, seed=1, ca_file=Path("x"))
+    started = time.monotonic()
+    with pytest.raises(latency.MeasurementError, match="500"):
+        latency._concurrent("https://localhost/api", None, args, [])
+    assert time.monotonic() - started < 10.0
 
 
 def test_only_a_local_stack_is_measured(tmp_path: Path) -> None:
