@@ -1,0 +1,29 @@
+# PERF-1 third full measurement (2026-11-12 22:29 UTC): sequential phase stopped on POST /runs/{id}/pause -> 409
+# The fixture run had been failed by the orchestrator worker right after a pause/resume pair 8 ms apart.
+
+## reports/perf/worker.log, line 1
+run run_922e152407fc5aa702017a4b failed: TaskCancelled
+
+## run history (last 5 of 54) and each task's last moves, read from the compose mongo
+running -> paused 2026-11-12T22:29:49.063Z by u_demo_hr
+paused -> running 2026-11-12T22:29:49.073Z by u_demo_hr
+running -> paused 2026-11-12T22:29:49.586Z by u_demo_hr
+paused -> running 2026-11-12T22:29:49.594Z by u_demo_hr
+running -> failed 2026-11-12T22:29:49.614Z by null
+collect_docs: done
+  ready -> running 2026-11-12T22:29:32.693Z
+  running -> done 2026-11-12T22:29:32.696Z
+manager_approval: cancelled
+  running -> waiting_approval 2026-11-12T22:29:32.711Z
+  waiting_approval -> cancelled 2026-11-12T22:29:49.603Z
+laptop: cancelled
+  pending -> cancelled 2026-11-12T22:29:49.603Z
+bitbucket_access: cancelled
+  pending -> cancelled 2026-11-12T22:29:49.603Z
+security_training: cancelled
+  pending -> cancelled 2026-11-12T22:29:49.603Z
+orientation: done
+  ready -> running 2026-11-12T22:29:32.690Z
+  running -> done 2026-11-12T22:29:32.691Z
+welcome_message: cancelled
+  pending -> cancelled 2026-11-12T22:29:49.603Z

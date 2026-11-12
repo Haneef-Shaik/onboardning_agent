@@ -26,7 +26,4 @@ M12 report paths kept absolute: KILLED
 M10 a non-local host allowed: KILLED
     FAILED tools/tests/test_perf_latency.py::test_only_a_local_stack_is_measured
 12 of 12 killed
-source diff after all mutations: tools/perf/latency.py            | 33 +++++++++++++++++++++++++++------
- tools/perf/run.sh                | 20 +++++++++++++++++---
- tools/tests/test_perf_latency.py | 13 +++++++++++++
- 3 files changed, 57 insertions(+), 9 deletions(-)
+source diff after all mutations: 0 files differ

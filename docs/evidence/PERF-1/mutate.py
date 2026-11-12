@@ -77,6 +77,24 @@ MUTATIONS = [
         "return str(resolved)",
     ),
     (
+        "M13 a refused pause on a live run is replaced (hides a real 409)",
+        "tools/perf/latency.py",
+        "        if status not in TERMINAL_RUN:\n            raise error\n",
+        "",
+    ),
+    (
+        "M14 a replaced run is not recorded as an incident",
+        "tools/perf/latency.py",
+        'incidents.append({"run_id": controlled["run"], "status": status, "at": datetime.now(UTC).isoformat()})',
+        "pass",
+    ),
+    (
+        "M15 a refused resume is replaced too",
+        "tools/perf/latency.py",
+        'if action != "pause" or error.status != 409:',
+        "if error.status != 409:",
+    ),
+    (
         "M10 a non-local host allowed",
         "tools/perf/latency.py",
         'if urlparse(base_url).hostname not in {"localhost", "127.0.0.1"}:',

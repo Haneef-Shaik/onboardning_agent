@@ -99,6 +99,58 @@ def test_report_paths_are_relative_to_the_repository() -> None:
     assert latency._relative(Path("/somewhere/else/root.crt")) == "root.crt"
 
 
+def _pause_probe(run_status: str, refused: str = "pause") -> tuple[Any, list[dict[str, str]], list[str]]:
+    """The pause/resume probes against a fake API whose first `refused` call on run_old is a 409."""
+    calls: list[str] = []
+    seen = {"refused": False}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls.append(f"{request.method} {request.url.path}")
+        path = request.url.path
+        if path.endswith(f"/runs/run_old/{refused}") and not seen["refused"]:
+            seen["refused"] = True
+            return httpx.Response(409, json={"data": None})
+        if request.method == "GET" and path.endswith("/runs/run_old"):
+            return httpx.Response(200, json={"data": {"status": run_status}})
+        if request.method == "POST" and path.endswith("/runs"):
+            return httpx.Response(201, json={"data": {"id": "run_new"}})
+        return httpx.Response(200, json={"data": {}})
+
+    session = latency.Session(httpx.Client(base_url="https://localhost/api", transport=httpx.MockTransport(handler)))
+    session.tokens.update(hr="t", hr_admin="t", manager="t")
+    fixture = latency.Fixture("h_1", "run_old", 1, "d_1", {}, "db_agent")
+    users = latency.Users(("a", "p"), ("b", "p"), ("c", "p"), manager_id="u_m")
+    incidents: list[dict[str, str]] = []
+    probes = latency._endpoints(fixture, users, incidents)
+    return (lambda action: probes[f"POST /runs/{{run_id}}/{action}"](session)), incidents, calls
+
+
+@pytest.mark.parametrize("status", ["failed", "cancelled", "completed"])
+def test_a_pause_refused_because_the_run_ended_is_recorded_and_measured_on_a_fresh_run(status: str) -> None:
+    probe, incidents, calls = _pause_probe(status)
+    assert probe("pause") >= 0.0
+    assert [i["run_id"] for i in incidents] == ["run_old"]
+    assert incidents[0]["status"] == status
+    assert calls[-2:] == ["POST /api/runs", "POST /api/runs/run_new/pause"]
+    probe("resume")
+    assert calls[-1] == "POST /api/runs/run_new/resume"  # later rounds use the fresh run
+
+
+@pytest.mark.parametrize("status", ["running", "started", "paused", "blocked"])
+def test_a_pause_refused_on_a_live_run_stops_the_measurement(status: str) -> None:
+    probe, incidents, _ = _pause_probe(status)
+    with pytest.raises(latency.MeasurementError, match="409"):
+        probe("pause")
+    assert incidents == []
+
+
+def test_a_refused_resume_stops_the_measurement() -> None:
+    probe, incidents, _ = _pause_probe("failed", refused="resume")
+    with pytest.raises(latency.MeasurementError, match="409"):
+        probe("resume")
+    assert incidents == []
+
+
 def test_only_a_local_stack_is_measured(tmp_path: Path) -> None:
     with pytest.raises(SystemExit, match="local"):
         latency._client("https://example.com/api", tmp_path / "root.crt")

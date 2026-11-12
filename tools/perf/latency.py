@@ -54,6 +54,7 @@ RESUME_LIMIT_S = 5.0
 MIN_DECISIONS = 30
 MIN_SAMPLES = 100  # per endpoint for the box-1 verdict: a p95 of a handful proves nothing
 STARTED = frozenset({"running", "done"})
+TERMINAL_RUN = frozenset({"completed", "failed", "cancelled"})
 TINY_PNG = bytes.fromhex(
     "89504e470d0a1a0a0000000d4948445200000001000000010806000000"
     "1f15c4890000000d49444154789c6360000002000154a24f5d0000000049454e44ae426082"
@@ -79,6 +80,10 @@ EXCLUDED = {
 
 class MeasurementError(RuntimeError):
     """A request returned an unexpected status: the measurement is invalid and stops."""
+
+    def __init__(self, message: str, status: int | None = None) -> None:
+        super().__init__(message)
+        self.status = status
 
 
 @dataclass(frozen=True, slots=True)
@@ -107,7 +112,7 @@ class Session:
         response.read()
         elapsed = time.perf_counter() - start
         if response.status_code != expect:
-            raise MeasurementError(f"{method} {path}: {response.status_code}, expected {expect}")
+            raise MeasurementError(f"{method} {path}: {response.status_code}, expected {expect}", response.status_code)
         return elapsed, response
 
 
@@ -219,9 +224,10 @@ def _get(path: str, who: str | None = "hr", **kwargs: Any) -> Probe:
     return lambda s: s.call("GET", path, who=who, expect=200, **kwargs)[0]
 
 
-def _endpoints(fx: Fixture, users: Users) -> dict[str, Probe]:
+def _endpoints(fx: Fixture, users: Users, incidents: list[dict[str, str]]) -> dict[str, Probe]:
     """Every non-LLM request/response endpoint, each as a probe returning one sample in seconds."""
     hire, run, version = fx.hire_id, fx.run_id, fx.template_version
+    controlled = {"run": run}  # the run pause/resume act on; replaced only if the orchestrator ended it
 
     def put_draft(s: Session) -> float:
         # No `revision`: an unconditional save of the whole body (concurrent clients would 409 otherwise).
@@ -229,8 +235,25 @@ def _endpoints(fx: Fixture, users: Users) -> dict[str, Probe]:
         return s.call("PUT", f"/templates/drafts/{fx.draft_id}", who="hr", expect=200, json=body)[0]
 
     def pause_resume(s: Session, action: str) -> float:
-        # Rounds keep pause before resume on the fixture run, so each is a legal move (running ↔ paused).
-        return s.call("POST", f"/runs/{run}/{action}", who="hr", expect=200)[0]
+        # Rounds keep pause before resume on the controlled run, so each is a legal move (running ↔ paused).
+        try:
+            return s.call("POST", f"/runs/{controlled['run']}/{action}", who="hr", expect=200)[0]
+        except MeasurementError as error:
+            if action != "pause" or error.status != 409:
+                raise
+            return _pause_a_fresh_run(s, error)
+
+    def _pause_a_fresh_run(s: Session, error: MeasurementError) -> float:
+        # A pause is refused only if the run is no longer active. If the orchestrator ended it, that is a
+        # finding (recorded and reported), not a latency sample: the refused request is dropped and the
+        # pause is measured on a fresh run. Anything else stops the measurement.
+        _, response = s.call("GET", f"/runs/{controlled['run']}", who="hr", expect=200)
+        status = str(response.json()["data"]["status"])
+        if status not in TERMINAL_RUN:
+            raise error
+        incidents.append({"run_id": controlled["run"], "status": status, "at": datetime.now(UTC).isoformat()})
+        controlled["run"] = _new_run(s, hire, version)
+        return s.call("POST", f"/runs/{controlled['run']}/pause", who="hr", expect=200)[0]
 
     def login(s: Session) -> float:
         email, password = users.hr
@@ -322,7 +345,9 @@ def _sequential(base: str, users: Users, probes: dict[str, Probe], args: argpars
     return _measure(session, probes, args.samples, rng)
 
 
-def _concurrent(base: str, users: Users, args: argparse.Namespace) -> dict[str, list[float]]:
+def _concurrent(
+    base: str, users: Users, args: argparse.Namespace, incidents: list[dict[str, str]]
+) -> dict[str, list[float]]:
     # Each client works on its own hire, run and draft, as different HR users would: clients sharing one
     # record race on it (a pause against a pause is a legal 409; a reveal against a PII update hit a 500,
     # `concurrent-reveal-500.txt`), which is a correctness question, not latency.
@@ -332,7 +357,7 @@ def _concurrent(base: str, users: Users, args: argparse.Namespace) -> dict[str, 
     def worker(n: int) -> dict[str, list[float]]:
         session = Session(_client(base, args.ca_file))
         _login(session, users)
-        probes = _endpoints(_fixture(session, users), users)
+        probes = _endpoints(_fixture(session, users), users, incidents)
         rng = random.Random(args.seed + n + 1)  # noqa: S311 - visiting order, not security
         _measure(session, probes, 1, rng)
         start.wait()  # every client measures at the same time, none while another still sets up
@@ -498,6 +523,12 @@ def _report(report: dict[str, Any]) -> str:
         "",
         f"Failing: {', '.join(seq_verdict['failing']) or 'none'}.",
         "",
+        f"**Runs the orchestrator ended during pause/resume:** {len(report['incidents'])} (all phases). Each was "
+        "found when its next pause was refused (409, not counted as a sample); that pause was then measured "
+        "on a fresh run. A run that HR only paused and resumed should never end: see "
+        "`pause-resume-run-failed.txt`.",
+        *[f"- `{i['run_id']}` → {i['status']} (seen {i['at']})" for i in report["incidents"]],
+        "",
         f"## Result 2 · decision → run resumed, {resume['count']} decisions: {'PASS' if resume['passed'] else 'FAIL'}",
         "",
         "| Measure | n | p50 | p95 | p99 | max |",
@@ -552,7 +583,8 @@ def main(argv: list[str] | None = None) -> int:
     setup = Session(_client(args.base_url, args.ca_file))
     _login(setup, users)
     fx = _fixture(setup, users)
-    probes = _endpoints(fx, users)
+    incidents: list[dict[str, str]] = []
+    probes = _endpoints(fx, users, incidents)
 
     print(f"perf: sequential, {len(probes)} endpoints x {args.samples}", flush=True)
     sequential_s = _sequential(args.base_url, users, probes, args)
@@ -560,7 +592,7 @@ def main(argv: list[str] | None = None) -> int:
     print(f"perf: decisions x {args.decisions}", flush=True)
     requests, resumed = _decisions(args.base_url, users, fx.template_version, args)
     print(f"perf: concurrent, {args.concurrency} clients", flush=True)
-    concurrent_s = _concurrent(args.base_url, users, args)
+    concurrent_s = _concurrent(args.base_url, users, args, incidents)
     concurrent_ = _summaries(concurrent_s)
 
     resume_summary = stats.summarise(resumed)
@@ -584,6 +616,7 @@ def main(argv: list[str] | None = None) -> int:
             "samples_s": [round(v, 4) for v in resumed],
         },
         "verdicts": {"sequential": asdict(seq_verdict), "concurrent": asdict(conc_verdict)},
+        "incidents": incidents,
         "samples_s": {
             "sequential": {k: [round(v, 5) for v in vs] for k, vs in sequential_s.items()},
             "concurrent": {k: [round(v, 5) for v in vs] for k, vs in concurrent_s.items()},
