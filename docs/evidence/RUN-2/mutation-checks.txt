@@ -80,6 +80,22 @@ M20 KILLED: a running task's lease is never renewed, so a live task is taken ove
   file: apps/orchestrator/src/onb_orchestrator/runner.py
   failing test: ['apps/orchestrator/tests/test_run_control.py::test_a_worker_that_lost_its_lease_stops_its_task_and_does_not_finish_it']
 
+M21 KILLED: a retried task keeps the previous attempt's cause (RUN-3's stale `failure`)
+  file: apps/orchestrator/src/onb_orchestrator/runner.py
+  failing test: ['apps/orchestrator/tests/test_run_control.py::test_a_sink_rejection_counts_as_an_attempt_and_the_retry_starts_clean']
+
+M22 KILLED: an executor that says retrying cannot help is retried anyway
+  file: apps/orchestrator/src/onb_orchestrator/runner.py
+  failing test: ['apps/orchestrator/tests/test_run_control.py::test_an_executor_error_that_retrying_cannot_fix_blocks_the_run_at_once']
+
+M23 KILLED: a database error from the executor fails the task instead of retrying the job
+  file: apps/orchestrator/src/onb_orchestrator/runner.py
+  failing test: ['apps/orchestrator/tests/test_run_control.py::test_a_database_error_from_the_executor_is_not_the_tasks_failure']
+
+M24 KILLED: a task failed by a sink is not an attempt: the driver's conflict is an error
+  file: apps/orchestrator/src/onb_orchestrator/runner.py
+  failing test: ['apps/orchestrator/tests/test_run_control.py::test_a_sink_rejection_counts_as_an_attempt_and_the_retry_starts_clean']
+
 source diff after all mutations: 0 files differ []
-mutations: 20, killed: 20, survivors: none
+mutations: 24, killed: 24, survivors: none
 exit 0

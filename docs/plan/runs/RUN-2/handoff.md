@@ -1,4 +1,4 @@
-# Handoff — RUN-2 · Survive restarts and let HR control a run        attempt 1 · goal/run-2-run-control · evidence at cfc4b05 + this commit (see `git log -1`)
+# Handoff — RUN-2 · Survive restarts and let HR control a run        attempt 2 · goal/run-2-run-control · rebased on main df2ad35 (RUN-3 merged) · see `git log -1`
 
 **Outcome claimed.** A worker killed with SIGKILL mid-run restarts and the run completes with no task effect applied twice; a task failing past its attempts blocks the run and queues the HR notification in the same transaction; HR pauses, resumes, cancels, retries and manually completes (reason mandatory for completion, everything audited); managers see only their reports' runs; `GET /runs/{id}/stream` emits every task transition. Design: `docs/adr/0018-run-recovery-and-control.md`.
 
@@ -31,13 +31,15 @@ Gates ran on compose project `ob-run-2` (Mongo 8 replica set). Evidence is in `d
 | U4 @ MS-5 | compose, 2026-11-12 | contributes: HR pauses, resumes, cancels, retries, completes; runs stream live | `test_run_control_routes.py`, `make-check.txt` | no (MS-5 is the last prover) |
 
 ## Gates
+All re-run on the rebased branch (attempt 2), compose project `ob-run-2`.
+
 | Gate | Command | Result |
 |------|---------|--------|
-| Check | `make check` | `docs/evidence/RUN-2/make-check.txt`: lint, typecheck and test pass for 17 projects; cross-tenant `314 passed`, `cross-tenant surface: 36 API routes, 9 MCP tools, 4 event consumers`. The run's last line is the known mcp-hub flake (see below); `make check` on the previous commit and the tail re-runs passed. |
-| mcp-hub flake | `apps/mcp-hub/tests_int/test_hub_xt.py` | one `[mongo__find]` failure (the known random-hex marker tripping the PII guard), then `11 passed` on four re-runs (`mcp-hub-xt-rerun.txt`) |
-| Integration | `make test-int` | `NX Successfully ran target test-int for 10 projects` (`make-test-int.txt`); orchestrator `12 passed` (5 old, 3 changed, kill ×2, block/resume) |
+| Check | `make check` | `make check: all passed` (`docs/evidence/RUN-2/make-check.txt`): lint, typecheck and test pass for 17 projects; orchestrator `154 passed`, cross-tenant `316 passed`, `cross-tenant surface: 36 API routes, 9 MCP tools, 5 event consumers`, mcp-hub xt `13 passed`. |
+| Integration | `make test-int` | `NX Successfully ran target test-int for 10 projects` (`make-test-int.txt`); orchestrator `16 passed` (RUN-1's 8, RUN-3's 4, kill ×2, block/resume, plus the changed budget test). |
+| Kill test | `apps/orchestrator/tests_int/test_kill_and_restart.py` | `2 passed` ×6 consecutive runs after the rebase |
 | Contracts | `make contracts-check` | `contracts-check: openapi.json and the TS client are up to date` |
-| Eval self-test | `make evals-selftest` | `27 cases x 3, all cases passed: True, gates: PASS, controls caught 8/8`, `result: PASS` |
+| Eval self-test | `make evals-selftest` | `result: PASS` (`make-evals-selftest.txt`) |
 | Plan | `python3 scripts/plan/plan.py check` | `plan ok: 67 goals, 34 ledger rows` |
 
 ## Inherited and used
@@ -50,16 +52,29 @@ Gates ran on compose project `ob-run-2` (Mongo 8 replica set). Evidence is in `d
 | T-3 | route/consumer coverage | yes: 8 route cases and 2 consumer cases added. |
 
 ## Mutation checks
-`docs/evidence/RUN-2/mutation-checks.txt` (script `mutate.py`): **20 of 20 killed**, `source diff after all mutations: 0 files differ`. Examples: M1 takeover disabled → `test_a_task_whose_holder_died_is_taken_over...`; M2 lease-token CAS removed → `test_a_worker_that_was_taken_over_cannot_finish_the_task...`; M3 half-written checkpoint writes applied → `test_a_task_whose_writes_were_cut_short...`; M4 one attempt too many → `test_a_task_failing_past_its_max_attempts...`; M5 no `run.blocked` → same test; M6 reason optional → contract test; M7 no audit → audit test; M8/M9 manager scope → box 4 tests; M10 stream skips transitions → box 5; M11 `resume` on a never-paused run → conflict test; M12 pause ignored; M13 drain ignored; M14 release costs an attempt (eventbus); M15 no checkpoint delete; M16/M17 attempt accounting; M18 endless takeover; M19 manager may control (role matrix); M20 lease never renewed. Not covered by a mutation here: the SIGKILL integration test itself (it failed ~3/8 before the checkpoint fix, 0/24 after).
+`docs/evidence/RUN-2/mutation-checks.txt` (script `mutate.py`): **24 of 24 killed** (M21–M24 added in attempt 2), `source diff after all mutations: 0 files differ`. Examples: M1 takeover disabled → `test_a_task_whose_holder_died_is_taken_over...`; M2 lease-token CAS removed → `test_a_worker_that_was_taken_over_cannot_finish_the_task...`; M3 half-written checkpoint writes applied → `test_a_task_whose_writes_were_cut_short...`; M4 one attempt too many → `test_a_task_failing_past_its_max_attempts...`; M5 no `run.blocked` → same test; M6 reason optional → contract test; M7 no audit → audit test; M8/M9 manager scope → box 4 tests; M10 stream skips transitions → box 5; M11 `resume` on a never-paused run → conflict test; M12 pause ignored; M13 drain ignored; M14 release costs an attempt (eventbus); M15 no checkpoint delete; M16/M17 attempt accounting; M18 endless takeover; M19 manager may control (role matrix); M20 lease never renewed. M21 stale `failure` not cleared → `test_a_sink_rejection_counts_as_an_attempt_and_the_retry_starts_clean`; M22 deterministic failure retried → `test_an_executor_error_that_retrying_cannot_fix_blocks_the_run_at_once`; M23 database error fails the task → `test_a_database_error_from_the_executor_is_not_the_tasks_failure`; M24 sink-failed task not an attempt → same test as M21. Not covered by a mutation here: the SIGKILL integration test itself (it failed ~3/8 before the checkpoint fix, 0/24 after).
 
 ## Review findings left open
 Code and security reviews (two independent general-purpose agents) found no CRITICAL. Fixed with tests: HIGH a pause overridden by the start's `started→running` (now `expected_status`), HIGH a run left `running` after its tasks were cancelled (now failed), MEDIUM concurrent retries leaving a run blocked, MEDIUM a pause during the last task failing the job, MEDIUM heartbeat dying on a non-database error. Left open:
 - **MEDIUM · `consumer.py` · a dead-lettered job leaves its run `running` with no driver** (the job's attempts used by crashes and transient errors). Nothing reacts to a dead letter yet → ops/alerting goal (OBS/PERF); recovery is `POST .../pause` then `resume`, which publishes a fresh job.
-- **MEDIUM · `consumer.py:handle` · any non-transient executor error (`TimeoutError`, `OSError` from agents) fails the run and deletes its checkpoint.** The stub never raises them; RUN-3 should classify transient agent errors (or raise `TaskFailedError` from the executor, which retries and blocks).
+- ~~any non-transient executor error fails the run~~ **fixed in attempt 2**: executor errors are task attempts (retry, then block); an executor can say `retryable = False`; database errors retry the job.
 - **MEDIUM · `routes.py`/`stream.py` · the stream checks access once, runs up to an hour, polls twice a second per stream, no per-user cap.** Add a re-check every N polls and a concurrent-stream limit → SEC-2 (rate limiting).
 - **MEDIUM · `runner.py` · lease expiry uses each worker's wall clock** (skew over a third of the lease can cause a double execution; the idempotency key is the guard) → deploy/ops: NTP or Mongo server time.
 - **MEDIUM (product) · `POST /runs` is still not idempotent over HTTP.** Not built; the two options are in ADR 0018 §9 for Haneef/SEC-2.
 - **LOW** the audit `reason` is free text (GR-1/SEC-1); `HireStore.ids` unbounded; a client retry of a succeeded control returns 409; a takeover keeps the old `error`; two drivers can briefly share a run after a quick pause/resume (task CAS prevents double execution); the run-id path pattern is `^[A-Za-z0-9_-]{1,64}$` (the eval seed's ids do not match `run_<24hex>`).
+
+## Attempt 2: rebase onto RUN-3 (main df2ad35)
+The orchestrator authorised the rebase. To resolve the conflicts once instead of through 12 commits, the branch was squashed to one commit on its old base (fcc6ab9) and rebased; a second commit reconciles semantics (so the 12 attempt-1 commits are no longer separate). Conflicts and how they were resolved, semantically:
+- **`events.py`/`__init__.py`/`store.py`:** both sides kept. RUN-3's `FAIL_TASK`, `SINK_REJECTED`, `record_model`, `record_outcome(only_if=)`, `run_tokens` stay; `RUN_TASK_CHANGED` (unused in attempt 1) was dropped. `fail_running` now also releases the lease, appends to history and sets `error`, and applies only to the lease holder it read.
+- **`runner.py`/`consumer.py`/`worker.py`:** RUN-3's task span, `orchestrator.run` span, `fail_task_handler`, agent-executor selection (`ORCHESTRATOR_EXECUTOR`) and `ConfigError` (now from `agents_setup`) kept with my leases, retry/block, controls, drain and policy. The worker runs four consumers: `start_run`, `resume_run`, `cleanup_run`, `fail_task`. The executor future is now created *inside* the task span (RUN-3's span-tree test caught it nested under the run).
+- **Exact-list tests extended, not loosened:** `test_run_store` now asserts the exact `SUBSCRIPTIONS` map (5 events) and the exact sorted consumer tuple; `test_agents_setup`, `test_worker_main` and the xt consumer table name all four orchestrator consumers (`tools/tests_xt/test_xt_consumers.py` has cases for each).
+
+Decisions recorded in ADR 0018 addendum (§10–15):
+- **A sink-rejected `fail_task` is an ordinary failed attempt:** the task is retried while attempts remain, and at the maximum the run is **blocked** (HR notified), not failed. The cause stays on the task (`failure`, `error = sink_rejected`).
+- **A retry starts clean:** `error`, `retry_at` and `failure` are cleared when a task re-enters `running` (RUN-3's open item).
+- **Recovery of a run whose driver died after `fail_task`:** the redelivered job finds the failed task and retries/blocks it (test `test_a_run_whose_driver_died_after_a_sink_failed_its_task_is_recovered_by_the_next_delivery`). A dead-lettered job is still the open item.
+- **Executor error classification (RUN-3's agent executor):** `AgentTaskFailedError.retryable` is false for `no_agent`, `retired_agent`, `grant_refused`, `budget_exceeded`, `guardrail_blocked`: the task fails once and the run blocks at once; other errors (`timeout`, `invalid_output`, `error`, rejections) are attempts; database errors release the lease, hand the attempt back and retry the job.
+- **RUN-3 tests changed where FR-R4 supersedes them** (not loosened): agent failures now end the run `blocked` with the remaining tasks `pending` (was `failed`/`cancelled`) in `test_agent_executor` (4 asserts), `test_sink_rejected` (2), and the integration budget test; RUN-3's harness uses a no-wait 3-attempt policy and a bus stand-in.
 
 ## Left undone, and why
 - No compose service for the orchestrator worker (RUN-1 left it; still the deployment goal's). The kill test runs the real worker module as a process.
