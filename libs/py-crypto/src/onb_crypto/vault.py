@@ -253,7 +253,7 @@ class Vault:
     ) -> PurgeOutcome:
         token = doc.get("token")
         try:
-            field = VaultField(doc.get("field"))
+            field = VaultField(str(doc.get("field")))
         except ValueError:
             raise self._refuse(org_id, str(token), "the record names no known field") from None
         if collection_for(field) != collection:
