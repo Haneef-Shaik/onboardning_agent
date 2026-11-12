@@ -36,10 +36,13 @@ from onb_eventbus import JobContext
 from onb_llm import LLMRuntime, LLMSelection, discover_connectors, load_llm_config
 from onb_orchestrator.agent_executor import AgentTaskExecutor
 from onb_orchestrator.consumer import start_run_handler
+from onb_orchestrator.policy import RunPolicy
 
 ROOT = Path(__file__).resolve().parents[3]
 MANIFESTS: dict[str, AgentManifest] = {m.name: m for m in load_manifests(ROOT / "config" / "agents")}
 AGENT_TOKEN_KEY = secrets.token_urlsafe(40)
+NO_WAIT = RunPolicy(max_attempts=3, backoff_base=0.0, backoff_max=0.0)
+"""Retries without waiting: a failing task is attempted `max_attempts` times, then the run blocks (RUN-2)."""
 ORG = "org_a"
 HIRE = "h_1"
 OK = {"status": "ok", "answer": {}}
@@ -250,7 +253,7 @@ class Harness:
         )
 
     async def execute(self, run_id: str, executor: AgentTaskExecutor, org: str = ORG) -> None:
-        handler = start_run_handler(self.store, executor)
+        handler = start_run_handler(self.store, executor, bus=self.bus, policy=NO_WAIT)
         job = JobContext(
             job_id="job_1",
             org_id=org,

@@ -62,10 +62,13 @@ def test_serve_runs_the_worker_until_stopped(monkeypatch: pytest.MonkeyPatch) ->
             seen["stop"] = stop
             return 3
 
-    async def fake_prepare(store: Any, *, stub_delay: float, policy: RunPolicy, drain_seconds: float) -> FakeWorker:
+    async def fake_prepare(
+        store: Any, *, stub_delay: float, policy: RunPolicy, drain_seconds: float, executor: Any
+    ) -> FakeWorker:
         seen["delay"] = stub_delay
         seen["policy"] = policy
         seen["drain_seconds"] = drain_seconds
+        seen["executor"] = executor
         return FakeWorker()
 
     class FakeStore:

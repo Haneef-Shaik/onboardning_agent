@@ -131,7 +131,7 @@ def test_a_field_the_sink_does_not_resolve_fails_the_task_before_the_agent_runs(
     assert record["failure"] == {"kind": "grant_refused", "reason": "SinkPolicyError"}
     assert h.tools.opened == []  # the agent never started
     assert h.issuer.issued == 0
-    assert run(h.run(run_id))["status"] == RunState.FAILED.value
+    assert run(h.run(run_id))["status"] == RunState.BLOCKED.value  # RUN-2 (FR-R4): a failed task blocks the run for HR
 
 
 def test_a_field_that_is_not_a_vault_field_fails_the_task(tmp_path: Path) -> None:
@@ -190,7 +190,7 @@ def test_a_failed_agent_fails_the_task_and_the_run_with_the_reason(tmp_path: Pat
     assert record["status"] == "failed"
     assert record["failure"]["kind"] == "invalid_output"
     assert record["result"]["outcome"] == "failed"
-    assert run(h.run(run_id))["status"] == RunState.FAILED.value
+    assert run(h.run(run_id))["status"] == RunState.BLOCKED.value  # RUN-2 (FR-R4): a failed task blocks the run for HR
 
 
 # --- box 2: the model is recorded on the task and does not change mid-run ---------------------------
@@ -255,8 +255,8 @@ def test_an_exhausted_run_token_budget_fails_the_task_visibly(tmp_path: Path) ->
     assert two["status"] == "failed"  # 1200 > 1000
     assert two["failure"] == {"kind": "budget_exceeded", "reason": "run tokens 1200/1000"}
     assert two["result"]["outcome"] == "failed"
-    assert run(h.task(run_id, "three"))["status"] == "cancelled"
-    assert run(h.run(run_id))["status"] == RunState.FAILED.value
+    assert run(h.task(run_id, "three"))["status"] == "pending"  # RUN-2: a blocked run keeps the rest for HR
+    assert run(h.run(run_id))["status"] == RunState.BLOCKED.value  # RUN-2 (FR-R4): a failed task blocks the run for HR
 
 
 def test_the_run_budget_counts_tokens_across_parallel_tasks(tmp_path: Path) -> None:
@@ -265,7 +265,7 @@ def test_the_run_budget_counts_tokens_across_parallel_tasks(tmp_path: Path) -> N
     run(h.execute(run_id, h.executor(run_max_tokens=1000)))
     statuses = sorted(run(h.task(run_id, t))["status"] for t in ("one", "two"))
     assert statuses.count("failed") >= 1  # 600 + 600 tokens cannot both fit in 1000
-    assert run(h.run(run_id))["status"] == RunState.FAILED.value
+    assert run(h.run(run_id))["status"] == RunState.BLOCKED.value  # RUN-2 (FR-R4): a failed task blocks the run for HR
 
 
 def test_the_run_budget_is_rebuilt_from_the_tasks_recorded_usage_after_a_restart(tmp_path: Path) -> None:

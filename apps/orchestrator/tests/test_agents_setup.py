@@ -8,7 +8,7 @@ from collections.abc import Mapping
 from pathlib import Path
 
 import pytest
-from onb_agents.runs import FAIL_TASK, START_RUN
+from onb_agents.runs import CLEANUP_RUN, FAIL_TASK, RESUME_RUN, START_RUN
 from onb_api.testing_mongo import MemoryDatabase, memory_store
 from onb_crypto import GrantSigningKey
 from onb_orchestrator.agent_executor import AgentTaskExecutor
@@ -97,10 +97,10 @@ def test_build_agent_executor_makes_an_agent_task_executor_on_the_fake_connector
 
 def test_prepare_subscribes_the_start_run_and_fail_task_consumers() -> None:
     worker = asyncio.run(prepare(memory_store(MemoryDatabase()), stub_delay=0.0))
-    assert worker.consumers == (START_RUN, FAIL_TASK)
+    assert worker.consumers == (START_RUN, RESUME_RUN, CLEANUP_RUN, FAIL_TASK)  # RUN-2 adds resume + cleanup
 
 
 def test_prepare_uses_the_executor_it_is_given() -> None:
     given = StubExecutor()
     worker = asyncio.run(prepare(memory_store(MemoryDatabase()), stub_delay=0.0, executor=given))
-    assert worker.consumers == (START_RUN, FAIL_TASK)
+    assert worker.consumers == (START_RUN, RESUME_RUN, CLEANUP_RUN, FAIL_TASK)

@@ -45,6 +45,7 @@ import contextlib
 import secrets
 from collections.abc import Awaitable, Callable, Iterator, Mapping
 from contextlib import contextmanager
+from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
@@ -142,6 +143,27 @@ _TRANSIENT = (PyMongoError, TransitionConflictError, TaskInProgressError)
 def step_error(error: Exception) -> TaskStepError:
     """The type-only stand-in for `error`; transient for database errors and compare-and-set races."""
     return TaskStepError(type(error).__name__, transient=isinstance(error, _TRANSIENT))
+
+
+@dataclass(frozen=True, slots=True)
+class _Failure:
+    """Why an attempt failed: the error type (or the failure kind an executor reports) and whether another
+    attempt can help. Only the type or kind, never a message."""
+
+    error: str
+    retryable: bool = True
+
+
+def _failure_of(error: Exception) -> _Failure:
+    """An executor error as a failed attempt. An executor that knows retrying cannot help (RUN-3's agent
+    failures with a deterministic `kind`: no agent, a refused grant, an exhausted budget) says so with
+    `retryable = False`, and the run is blocked at once instead of after `max_attempts` identical failures.
+    The `kind` an executor reports is a code, so it is the better `error` for HR than the exception type."""
+    kind = getattr(error, "kind", None)
+    return _Failure(
+        error=kind if isinstance(kind, str) and kind else type(error).__name__,
+        retryable=getattr(error, "retryable", True) is not False,
+    )
 
 
 def _outside_failure(task: Mapping[str, Any]) -> str:
@@ -275,11 +297,11 @@ class RunExecutor:
                     outside = await self.runs.task(run_id, task["task_id"])
                     if outside is None or outside["status"] != TaskState.FAILED.value:
                         raise
-                    failure = _outside_failure(outside)
+                    failure = _Failure(_outside_failure(outside))
             attempts = int(task["attempts"])
-            last = attempts >= self.policy.max_attempts
+            last = not failure.retryable or attempts >= self.policy.max_attempts
             retry_at = None if last else self.clock() + timedelta(seconds=self.policy.backoff(attempts))
-            failed = await self._fail(run_id, task, failure, retry_at)
+            failed = await self._fail(run_id, task, failure.error, retry_at)
             if last:
                 raise TaskExhaustedError(task["task_id"])
             await self._wait_until(retry_at)
@@ -325,7 +347,7 @@ class RunExecutor:
         else:
             await asyncio.sleep(seconds)
 
-    async def _execute(self, run_id: str, task: Mapping[str, Any], traceparent: str | None) -> str | None:
+    async def _execute(self, run_id: str, task: Mapping[str, Any], traceparent: str | None) -> _Failure | None:
         """Run the task's work under its lease. Returns the error type when it failed, `None` on success."""
         task_id, token = task["task_id"], task["lease_token"]
         attributes = span_attributes(
@@ -340,11 +362,13 @@ class RunExecutor:
             attempt=int(task["attempts"]),
             idempotency_key=f"{run_id}:{task_id}",
         )
-        working = asyncio.ensure_future(self._executor.execute(work))
         lost = asyncio.Event()
-        beating = asyncio.ensure_future(self._heartbeat(run_id, task_id, token, working, lost))
-        failure: str | None = None
+        failure: _Failure | None = None
         with _task_span(traceparent, attributes):
+            # Started inside the span: the executor runs in a copy of this context, so its own spans (the
+            # agent, its LLM and tool calls) are children of the task's span (run → task → agent → LLM/tool).
+            working = asyncio.ensure_future(self._executor.execute(work))
+            beating = asyncio.ensure_future(self._heartbeat(run_id, task_id, token, working, lost))
             try:
                 await working
             except asyncio.CancelledError:
@@ -360,7 +384,7 @@ class RunExecutor:
                 await asyncio.shield(self._release(run_id, task_id, token, int(task["attempts"]) - 1))
                 raise
             except Exception as error:  # any other executor error is this attempt's failure: retry, then block
-                failure = type(error).__name__
+                failure = _failure_of(error)
             finally:
                 beating.cancel()
                 with contextlib.suppress(asyncio.CancelledError):

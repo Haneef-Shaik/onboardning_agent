@@ -167,6 +167,7 @@ class RunStore:
             "status": TaskState.FAILED.value,
             "finished_at": at,
             "failure": dict(failure),
+            "error": failure.get("kind"),  # the cause code HR sees on the task (never a message)
             "lease_token": None,
             "lease_until": None,
             "retry_at": None,

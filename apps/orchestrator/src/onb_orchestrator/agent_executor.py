@@ -58,6 +58,12 @@ _GRANT_MARGIN_S: Final = 30
 OrgOverrides = Callable[[str], LLMSelection | None]
 
 
+DETERMINISTIC_KINDS: Final = frozenset(
+    {"no_agent", "retired_agent", "grant_refused", "budget_exceeded", "guardrail_blocked"}
+)
+"""Failure kinds a retry cannot change: the run is blocked for HR at once, not after `max_attempts` of them."""
+
+
 class AgentTaskFailedError(Exception):
     """An agent task ended without a usable result. `kind` and `reason` are codes, never message text."""
 
@@ -65,6 +71,12 @@ class AgentTaskFailedError(Exception):
         super().__init__(kind)
         self.kind = kind
         self.reason = reason
+
+    @property
+    def retryable(self) -> bool:
+        """False when another attempt cannot help (RUN-2's retry policy reads this): the agent or its grant
+        is not usable, or the run's budget is spent. A timeout, an invalid answer or an error may pass."""
+        return self.kind not in DETERMINISTIC_KINDS
 
 
 class AgentLookup(Protocol):

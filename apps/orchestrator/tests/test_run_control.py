@@ -555,3 +555,173 @@ def test_a_pause_that_lands_while_the_last_task_finishes_is_not_a_job_failure() 
         return (await world.run_state(run_id))[0]
 
     assert run(go()) == "paused"
+
+
+# --- reconciling with RUN-3's agents: sink rejections, deterministic failures, stale causes (ADR 0018) --------
+
+
+class RejectedOnce(StubExecutor):
+    """A sink refuses the first attempt of `target` (as `orchestrator.fail_task` does while the agent runs);
+    the agent still reports success, which must not turn the task `done`."""
+
+    def __init__(self, world: World, run_id: str, target: str, times: int = 1) -> None:
+        super().__init__()
+        self.world, self.run_id, self.target, self.times = world, run_id, target, times
+
+    async def execute(self, work: TaskWork) -> None:
+        await super().execute(work)
+        if work.task_id == self.target and self.calls.count(self.target) <= self.times:
+            with tenant_scope(ORG):
+                failed = await self.world.runs.fail_running(
+                    self.run_id,
+                    self.target,
+                    failure={"kind": "sink_rejected", "reason": "wrong_run"},
+                    at=self.world.now,
+                )
+            assert failed
+
+
+def test_a_sink_rejection_counts_as_an_attempt_and_the_retry_starts_clean() -> None:
+    world = _world()
+
+    async def go() -> tuple[str, dict[str, dict[str, Any]], RejectedOnce]:
+        run_id = await world.start()
+        executor = RejectedOnce(world, run_id, "b")
+        await world.drive(run_id, executor)
+        status, tasks = await world.run_state(run_id)
+        return status, tasks, executor
+
+    status, tasks, executor = run(go())
+    assert status == "completed"
+    assert tasks["b"]["status"] == "done", "the agent's late success never turned the rejected attempt done"
+    assert tasks["b"]["attempts"] == 2, "the rejection was attempt 1"
+    assert executor.calls.count("b") == 2
+    assert tasks["b"]["failure"] is None, "the retry cleared the sink's stale cause"
+    assert tasks["b"]["error"] is None
+    moves = [(h["from"], h["to"]) for h in tasks["b"]["history"]]
+    assert ("running", "failed") in moves, "the rejection shows in the task's history (and so in the stream)"
+
+
+def test_a_task_rejected_on_every_attempt_blocks_the_run_and_shows_the_cause() -> None:
+    world = _world()
+
+    async def go() -> tuple[str, dict[str, dict[str, Any]]]:
+        run_id = await world.start()
+        await world.drive(run_id, RejectedOnce(world, run_id, "b", times=99))
+        return await world.run_state(run_id)
+
+    status, tasks = run(go())
+    assert status == "blocked"
+    assert (tasks["b"]["status"], tasks["b"]["attempts"]) == ("failed", 3)
+    assert tasks["b"]["failure"] == {"kind": "sink_rejected", "reason": "wrong_run"}
+    assert tasks["b"]["error"] == "sink_rejected"
+    assert len([e for e in world.bus.published if e["type"] == RUN_BLOCKED]) == 1
+
+
+def test_a_run_whose_driver_died_after_a_sink_failed_its_task_is_recovered_by_the_next_delivery() -> None:
+    """`fail_task` failed the running task, then the worker driving the run died: the run is `running`, the
+    task `failed` with the sink's cause, nobody drives. The job comes back (its lease ran out) and the
+    run's next delivery retries the task and finishes the run."""
+    world = _world()
+
+    async def go() -> tuple[str, dict[str, dict[str, Any]]]:
+        run_id = await world.start()
+        await _left_running(world, run_id, "b", until=world.now - timedelta(seconds=1))
+        with tenant_scope(ORG):
+            await world.runs.take_over(
+                run_id,
+                "b",
+                expected=await world.runs.task(run_id, "b") or {},
+                token="tok_dead",
+                lease_until=world.now + timedelta(seconds=30),
+                at=world.now,
+            )
+            assert await world.runs.fail_running(
+                run_id, "b", failure={"kind": "sink_rejected", "reason": "wrong_run"}, at=world.now
+            )
+        executor = StubExecutor()
+        await world.drive(run_id, executor)
+        return await world.run_state(run_id)
+
+    status, tasks = run(go())
+    assert status == "completed"
+    assert tasks["b"]["status"] == "done"
+    assert tasks["b"]["failure"] is None
+
+
+class Deterministic(Exception):  # noqa: N818 - a stand-in for RUN-3's AgentTaskFailedError
+    kind = "grant_refused"
+    retryable = False
+
+
+class Passing(Exception):  # noqa: N818
+    kind = "timeout"
+    retryable = True
+
+
+class Raising(StubExecutor):
+    def __init__(self, error: BaseException, task: str = "b") -> None:
+        super().__init__()
+        self.error, self.task = error, task
+
+    async def execute(self, work: TaskWork) -> None:
+        await super().execute(work)
+        if work.task_id == self.task:
+            raise self.error
+
+
+def test_an_executor_error_that_retrying_cannot_fix_blocks_the_run_at_once() -> None:
+    world = _world()
+    executor = Raising(Deterministic())
+
+    async def go() -> tuple[str, dict[str, dict[str, Any]]]:
+        run_id = await world.start()
+        await world.drive(run_id, executor)
+        return await world.run_state(run_id)
+
+    status, tasks = run(go())
+    assert status == "blocked"
+    assert executor.calls.count("b") == 1, "no attempts wasted on a deterministic failure"
+    assert (tasks["b"]["status"], tasks["b"]["attempts"], tasks["b"]["error"]) == ("failed", 1, "grant_refused")
+    assert len([e for e in world.bus.published if e["type"] == RUN_BLOCKED]) == 1
+
+
+def test_an_executor_error_that_may_pass_is_retried_up_to_the_maximum() -> None:
+    world = _world()
+    executor = Raising(Passing())
+
+    async def go() -> tuple[str, dict[str, dict[str, Any]]]:
+        run_id = await world.start()
+        await world.drive(run_id, executor)
+        return await world.run_state(run_id)
+
+    status, tasks = run(go())
+    assert status == "blocked"
+    assert executor.calls.count("b") == 3
+    assert tasks["b"]["error"] == "timeout"
+
+
+def test_a_database_error_from_the_executor_is_not_the_tasks_failure() -> None:
+    """The agent executor re-raises database errors for the bus to retry: the task keeps its attempt count,
+    gives its lease back, and the job is retried (not failed, not blocked)."""
+    from pymongo.errors import AutoReconnect
+
+    world = _world()
+    executor = Raising(AutoReconnect("primary stepped down"))
+
+    async def go() -> tuple[str, dict[str, dict[str, Any]], BaseException]:
+        run_id = await world.start()
+        try:
+            await world.drive(run_id, executor)
+        except BaseException as error:
+            caught = error
+        status, tasks = await world.run_state(run_id)
+        return status, tasks, caught
+
+    status, tasks, caught = run(go())
+    assert isinstance(caught, TaskStepError)  # the graph's type-only stand-in, marked transient: the bus retries
+    assert (caught.type_name, caught.transient) == ("AutoReconnect", True)
+    assert status == "running"
+    assert tasks["b"]["status"] == "running"
+    assert tasks["b"]["attempts"] == 0, "the attempt is handed back"
+    assert tasks["b"]["lease_token"] is None, "the lease is released: the retry takes the task at once"

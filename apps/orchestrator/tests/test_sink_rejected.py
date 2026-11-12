@@ -152,9 +152,11 @@ def test_a_malformed_payload_is_refused_and_changes_nothing(tmp_path: Path, payl
     assert run(h.task(run_id, "notify_hire"))["status"] == "running"
 
 
-def test_a_task_failed_by_a_rejection_while_its_agent_runs_ends_failed_and_fails_the_run(tmp_path: Path) -> None:
+def test_a_task_failed_by_a_rejection_while_its_agent_runs_ends_failed_and_blocks_the_run(tmp_path: Path) -> None:
     """The sink's rejection arrives while the agent is still mid-task: the agent's late success never
-    turns the task `done`, the reason stays on the task, and the run fails."""
+    turns the task `done`, the reason stays on the task. RUN-2 (FR-R4, ADR 0018): a rejection counts as an
+    attempt like any failure, so the task is retried and, rejected on every attempt, blocks the run at its
+    last one (HR is told); the cause shown is the last attempt's, not a stale one."""
     h = harness(tmp_path)
     run_id_box: list[str] = []
 
@@ -169,8 +171,11 @@ def test_a_task_failed_by_a_rejection_while_its_agent_runs_ends_failed_and_fails
     assert record["status"] == "failed"
     assert record["failure"] == {"kind": "sink_rejected", "reason": "wrong_run"}
     assert "result" not in record  # the agent's late outcome is not written onto a task failed from outside
-    assert run(h.task(run_id, "after"))["status"] == "cancelled"
-    assert run(h.run(run_id))["status"] == RunState.FAILED.value
+    assert run(h.task(run_id, "after"))["status"] == "pending"  # RUN-2: the run blocks, the rest waits for HR
+    assert record["attempts"] == 3, "each rejected attempt counted, up to the maximum"
+    assert record["error"] == "sink_rejected"
+    assert run(h.run(run_id))["status"] == RunState.BLOCKED.value
+    assert [e["type"] for e in h.bus.published if e["type"] == "run.blocked"] == ["run.blocked"]
     assert isinstance(h.tools, Tools)
 
 

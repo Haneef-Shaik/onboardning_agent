@@ -289,6 +289,8 @@ def fail_task_handler(store: DataStore, clock: Callable[[], datetime] = _utc_now
             if await _fail_running(runs, run_id, target, reason, clock()):
                 _log.warning("task failed by a sink rejection", extra={"run_id": run_id, "task_id": target})
 
+    return handle
+
 
 def cleanup_run_handler(store: DataStore) -> Handler:
     """The handler for `run.cancelled`: delete the checkpoints of a run that is cancelled. A run that is
