@@ -36,6 +36,7 @@ ALLOW: Final = (
     Allow("container_logs", r"caddy:\d+\.GOMEMLIMIT", "MOBILE", "Caddy's startup line: the Go memory limit in bytes"),
 )
 MIN_SPANS: Final = 50
+SOURCES: Final = ("mongo", "mock_outbox", "events", "app_logs", "container_logs", "jaeger", "llm_inputs")
 EXPECTED_TASKS: Final = {
     "collect_docs", "manager_approval", "laptop", "bitbucket_access", "security_training", "orientation",
     "welcome_message",
@@ -88,17 +89,21 @@ def test_a_full_run_leaves_no_raw_pii_outside_the_vault(
     write_scan_report(session.report_dir, result, flow, journey)
     print(f"\nSEC-1 PII scan: {json.dumps(result.report()['items_scanned_by_source'])}, hits={len(result.hits)}")
 
-    assert flow["run_status"] == "completed", journey.tasks
-    assert set(flow["tasks_done"]) >= EXPECTED_TASKS - {"manager_approval"}
-    assert flow["vault_records"] >= 7  # six fields + the superseded mobile
-    assert flow["aadhaar_vault_records"] == 1
-    assert flow["mock_outbox_messages"] >= 1
-    assert flow["sink_resolutions"] >= 1
-    assert flow["documents"] == 1
-    assert flow["notes_redacted"]
-    assert flow["chat_redacted"] >= 1
-    assert flow["jaeger_spans"] >= MIN_SPANS
-    assert flow["llm_calls"] >= len(EXPECTED_TASKS)
-    for source in ("mongo", "mock_outbox", "events", "app_logs", "container_logs", "jaeger", "llm_inputs"):
-        assert result.items_by_source.get(source, 0) > 0, f"nothing scanned from {source}"
-    assert result.clean, "\n".join(h.describe() for h in result.hits)
+    # Every unmet check and every hit, reported together (a leak often breaks a flow check too).
+    checks = {
+        "the run completed": flow["run_status"] == "completed",
+        "every non-approval task is done": set(flow["tasks_done"]) >= EXPECTED_TASKS - {"manager_approval"},
+        "six fields and the superseded mobile are in the vault": flow["vault_records"] >= 7,
+        "the Aadhaar is in its own partition": flow["aadhaar_vault_records"] == 1,
+        "the welcome message reached mock_outbox": flow["mock_outbox_messages"] >= 1,
+        "the sink resolved the mobile with a grant": flow["sink_resolutions"] >= 1,
+        "the scan was stored": flow["documents"] == 1,
+        "the hire notes are stored redacted": flow["notes_redacted"],
+        "the chat question is stored redacted": flow["chat_redacted"] >= 1,
+        f"Jaeger holds at least {MIN_SPANS} spans of the session": flow["jaeger_spans"] >= MIN_SPANS,
+        "every agent task called its model": flow["llm_calls"] >= len(EXPECTED_TASKS),
+        **{f"something was scanned from {s}": result.items_by_source.get(s, 0) > 0 for s in SOURCES},
+    }
+    problems = [f"check failed: {name}" for name, ok in checks.items() if not ok]
+    problems += [hit.describe() for hit in result.hits]
+    assert problems == [], "\n".join(problems)
