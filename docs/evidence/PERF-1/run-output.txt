@@ -1,4 +1,6 @@
 perf: sequential, 30 endpoints x 200
 perf: decisions x 40
 perf: concurrent, 8 clients
-exit 124
+perf: box 1 (sequential p95 < 300 ms): PASS failing=[]
+perf: box 2 (decision -> resumed p95 < 5 s over 40): PASS p95=1.055 s
+exit 0

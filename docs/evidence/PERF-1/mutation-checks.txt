@@ -33,7 +33,11 @@ M14 a replaced run is not recorded as an incident: KILLED
     FAILED tools/tests/test_perf_latency.py::test_a_pause_refused_because_the_run_ended_is_recorded_and_measured_on_a_fresh_run[completed]
 M15 a refused resume is replaced too: KILLED
     FAILED tools/tests/test_perf_latency.py::test_a_refused_resume_stops_the_measurement
+M16 a failing concurrent client does not release the others (hang): KILLED
+    FAILED tools/tests/test_perf_latency.py::test_a_concurrent_client_that_fails_releases_the_others_and_its_own_error_is_raised
+M17 a released client's BrokenBarrierError hides the real error: KILLED
+    FAILED tools/tests/test_perf_latency.py::test_a_concurrent_client_that_fails_releases_the_others_and_its_own_error_is_raised
 M10 a non-local host allowed: KILLED
     FAILED tools/tests/test_perf_latency.py::test_only_a_local_stack_is_measured
-15 of 15 killed
+17 of 17 killed
 source diff after all mutations: 0 files differ
