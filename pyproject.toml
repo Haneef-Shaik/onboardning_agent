@@ -86,6 +86,7 @@ select = ["E", "W", "F", "I", "B", "UP", "S", "N", "SIM", "RUF", "PT"]
 "**/tests/**" = ["S101", "S603", "S607"]
 "**/tests_int/**" = ["S101", "S603", "S607"]
 "**/tests_xt/**" = ["S101", "S603", "S607"]
+"**/tests_pii/**" = ["S101", "S603", "S607"]
 
 [tool.mypy]
 python_version = "3.12"
