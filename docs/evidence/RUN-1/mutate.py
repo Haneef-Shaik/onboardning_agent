@@ -22,6 +22,7 @@ TESTS = [
     "libs/py-agents/tests/test_run_records.py",
     "libs/py-agents/tests/test_run_store.py",
     "apps/orchestrator/tests/test_run_graph.py",
+    "apps/orchestrator/tests/test_run_failures.py",
     "apps/orchestrator/tests/test_checkpointer.py",
     "apps/api/tests/test_runs_route.py",
     "apps/api/tests/test_role_matrix.py",
@@ -129,7 +130,7 @@ MUTATIONS: list[tuple[str, str, Path, str, str]] = [
     (
         "M15",
         "the consumer drives runs in states it does not own",
-        ORCH / "runner.py",
+        ORCH / "consumer.py",
         '        if run.get("status") not in _DRIVEN:',
         '        if run.get("status") in ("completed", "failed"):',
     ),
@@ -139,6 +140,41 @@ MUTATIONS: list[tuple[str, str, Path, str, str]] = [
         API / "routes.py",
         "Depends(require_role(Role.HR, Role.HR_ADMIN))",
         "Depends(require_role(Role.HR, Role.HR_ADMIN, Role.MANAGER))",
+    ),
+    (
+        "M17",
+        "a failed run leaves its unfinished tasks (a cut-off sibling stays running) (review HIGH)",
+        ORCH / "consumer.py",
+        "        await runner.runs.cancel_unfinished(run_id, at=runner.clock())",
+        "        pass",
+    ),
+    (
+        "M18",
+        "a task another delivery is running is executed again (review)",
+        ORCH / "runner.py",
+        '            raise TaskInProgressError("another delivery is running this task")',
+        "            pass",
+    ),
+    (
+        "M19",
+        "a deterministic error is retried instead of failing the run (review MEDIUM)",
+        ORCH / "consumer.py",
+        "            await _fail(runner, run_id, type(error).__name__)\n            return",
+        "            raise",
+    ),
+    (
+        "M20",
+        "checkpoints load with the permissive msgpack hook (security MEDIUM)",
+        ORCH / "checkpointer.py",
+        "JsonPlusSerializer(allowed_msgpack_modules=None)",
+        "JsonPlusSerializer(allowed_msgpack_modules=True)",
+    ),
+    (
+        "M21",
+        "a node error reaches the checkpoint with its message (review LOW)",
+        ORCH / "graph.py",
+        "            raise step_error(error) from None",
+        "            raise",
     ),
 ]
 

@@ -13,6 +13,11 @@ repositories (ADR 0015):
 - Indexes start with `org_id`: one checkpoint per (thread, namespace, id), one write per
   (thread, namespace, checkpoint, task, index).
 
+- Checkpoints load with LangGraph's strict msgpack allowlist (`allowed_msgpack_modules=None`): a
+  blob naming any other type loads as plain data, so a planted document cannot run code.
+- Listing needs a thread: `alist(None)` (every thread) raises `TenantViolationError`, so LangGraph
+  tooling that lists across threads is refused rather than reading past one run.
+
 Only the async interface is offered (the orchestrator is async end to end); the sync methods raise
 `NotImplementedError`, as LangGraph's base class does. Deleting threads is not offered yet (retention
 belongs with RUN-2 and the ops goals).
@@ -34,6 +39,7 @@ from langgraph.checkpoint.base import (
     get_checkpoint_id,
     get_checkpoint_metadata,
 )
+from langgraph.checkpoint.serde.jsonplus import JsonPlusSerializer
 from onb_data import DataStore, TenantViolationError, current_tenant
 
 __all__ = ["CHECKPOINTS", "CHECKPOINT_WRITES", "TenantCheckpointSaver"]
@@ -67,7 +73,9 @@ def _config(thread: str, namespace: str, checkpoint_id: str) -> RunnableConfig:
 
 class TenantCheckpointSaver(BaseCheckpointSaver[int]):
     def __init__(self, store: DataStore) -> None:
-        super().__init__()
+        # Strict msgpack: a stored blob naming a type outside LangGraph's safe built-ins loads as plain
+        # data; nothing it names is imported or called (a planted checkpoint cannot run code).
+        super().__init__(serde=JsonPlusSerializer(allowed_msgpack_modules=None))
         self._store = store
         self._checkpoints = store.tenant(CHECKPOINTS)
         self._writes = store.tenant(CHECKPOINT_WRITES)

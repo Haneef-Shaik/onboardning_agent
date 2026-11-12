@@ -74,7 +74,7 @@ class RunService:
             )
         except CompileError as error:
             field = f"tasks.{error.task_id}" if error.task_id else "template"
-            detail = ErrorDetail(field=field, issue=f"{error.reason.value}: {error}")
+            detail = ErrorDetail(field=field, issue=str(error))  # `<reason>: <message>`, no values
             raise AppError(
                 ErrorCode.VALIDATION_ERROR, "The template version cannot start a run for this hire", details=[detail]
             ) from None

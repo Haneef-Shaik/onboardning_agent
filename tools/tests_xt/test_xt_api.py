@@ -577,8 +577,16 @@ def _start_run_check(client: TestClient, xt: World, unscoped: Unscoped) -> None:
         assert response.status_code == 201, response.text
         started.append(response.json()["data"]["id"])
 
+    with unscoped("root count of org A's runs and audit records before the calls"):
+        runs_before = xt.root_db["onboarding_runs"].count_documents({"org_id": ORG_A})
+        audits_before = xt.root_db["audit_log"].count_documents({"org_id": ORG_A, "action": "run.start"})
     _unchanged_for_b(xt, unscoped, call)
     [run_id] = started
+    with unscoped("root count of org A's runs and audit records after the calls"):
+        runs_after = xt.root_db["onboarding_runs"].count_documents({"org_id": ORG_A})
+        audits_after = xt.root_db["audit_log"].count_documents({"org_id": ORG_A, "action": "run.start"})
+    # The three 404s wrote nothing in org A either: one run and one audit record, for the 201 only.
+    assert (runs_after - runs_before, audits_after - audits_before) == (1, 1)
     with unscoped("root read-back of the run org A started, its tasks, event and job"):
         db = xt.root_db
         run = db["onboarding_runs"].find_one({"_id": run_id})

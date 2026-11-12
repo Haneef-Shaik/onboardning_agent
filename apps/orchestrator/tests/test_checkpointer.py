@@ -10,11 +10,13 @@ from __future__ import annotations
 import asyncio
 import operator
 from collections.abc import Coroutine
+from dataclasses import dataclass
 from typing import Annotated, Any, TypedDict
 
 import pytest
 from langchain_core.runnables import RunnableConfig
 from langgraph.checkpoint.base import Checkpoint, CheckpointMetadata, empty_checkpoint
+from langgraph.checkpoint.serde.jsonplus import JsonPlusSerializer
 from langgraph.graph import END, START, StateGraph
 from onb_api.testing_mongo import MemoryDatabase, memory_store
 from onb_data import NoTenantContextError, TenantViolationError, tenant_scope
@@ -239,3 +241,31 @@ def test_a_langgraph_graph_checkpoints_through_the_saver_and_resumes_its_state(
     assert pending == ()
     assert {d["thread_id"] for d in db.raw(CHECKPOINTS)} == {"org_a:run_g"}
     assert {d["org_id"] for d in db.raw(CHECKPOINTS)} == {"org_a"}
+
+
+@dataclass
+class Planted:
+    """A type someone with write access to the checkpoint collections might plant in a blob."""
+
+    command: str
+
+    def __post_init__(self) -> None:
+        PLANTED_BUILT.append(self.command)
+
+
+PLANTED_BUILT: list[str] = []
+
+
+def test_a_planted_type_in_a_checkpoint_blob_is_never_built(saver: TenantCheckpointSaver) -> None:
+    """The saver loads checkpoints with LangGraph's strict msgpack allowlist: a stored blob naming an
+    arbitrary module's type comes back as plain data, and nothing of that module is built or called."""
+    blob = JsonPlusSerializer(allowed_msgpack_modules=True).dumps_typed({"x": Planted("echo")})
+    PLANTED_BUILT.clear()
+    loaded = saver.serde.loads_typed(blob)
+    assert PLANTED_BUILT == []
+    assert loaded == {"x": {"command": "echo"}}
+
+
+def test_the_saver_still_round_trips_its_own_state(saver: TenantCheckpointSaver) -> None:
+    state = {"finished": ["a", "b"], "n": 3}
+    assert saver.serde.loads_typed(saver.serde.dumps_typed(state)) == state

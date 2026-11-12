@@ -176,6 +176,7 @@ def test_a_hire_whose_variables_do_not_compile_is_422_naming_the_reason(
     assert response.status_code == 422
     issue = response.json()["error"]["details"][0]["issue"]
     assert issue.startswith("bad_variable:")
+    assert issue.count("bad_variable") == 1  # the reason once, not repeated
     assert "astronaut" not in response.text  # the hire's value is never echoed
     assert memory_db.raw(RUNS) == []
 

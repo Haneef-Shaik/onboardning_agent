@@ -27,8 +27,8 @@ from onb_contracts.notify import CHANGE_REQUEST_DECIDED, IN_APP_CONSUMER, NOTIFY
 from onb_data import DataStore, current_tenant, tenant_scope
 from onb_eventbus import Handler, JobContext, MongoEventBus
 from onb_mcp_mocks.notify.in_app import in_app_handler
+from onb_orchestrator.consumer import start_run_handler
 from onb_orchestrator.executor import StubExecutor
-from onb_orchestrator.runner import start_run_handler
 
 from .conftest import Unscoped, World
 from .world import ORG_A, ORG_B, XT_RUNS, seed_users, tenant_documents
@@ -176,3 +176,59 @@ def test_the_in_app_consumer_never_tells_another_orgs_user(xt_world: World, unsc
         stored = sorted((d["org_id"], d["user_id"], d["kind"]) for d in xt_world.root_db["notifications"].find())
     hr_users = sorted(u["_id"] for u in seed_users() if u["org_id"] == ORG_A and u["role"] in ("HR", "HR_ADMIN"))
     assert stored == [(ORG_A, user, RUN_BLOCKED) for user in hr_users]
+
+
+# --- orchestrator.start_run (RUN-1): its own cross-tenant checks --------------------------------------
+
+
+def _drain_start_run(xt: World, org: str, run_id: str, key: str) -> None:
+    async def go() -> None:
+        store = xt.store()
+        try:
+            bus = MongoEventBus(store, subscriptions={RUN_STARTED: [START_RUN]})
+            await bus.ensure_indexes()
+            with tenant_scope(org):
+                await bus.publish(RUN_STARTED, {"run_id": run_id}, idempotency_key=key, run_id=run_id)
+            worker = bus.worker({START_RUN: _start_run(store)})
+            while await worker.run_once() is not None:
+                pass
+        finally:
+            await store.close()
+
+    asyncio.run(go())
+
+
+def test_an_org_a_job_naming_org_bs_run_changes_nothing_and_starts_nothing(xt_world: World, unscoped: Unscoped) -> None:
+    """A confused deputy: org A's job carries org B's run id. The consumer reads in org A only, so it
+    finds no run, writes no checkpoint for that thread, and org B's run stays as it was."""
+    b_run = XT_RUNS[ORG_B][0]
+    before = xt_world.org_b_snapshot(unscoped)
+    _drain_start_run(xt_world, ORG_A, b_run, "xt-foreign-run")
+    assert xt_world.org_b_snapshot(unscoped) == before, "an org-A job changed org B"
+    with unscoped("root read-back: no checkpoint or run was made for org B's run id"):
+        db = xt_world.root_db
+        assert db["run_checkpoints"].count_documents({"thread_id": {"$regex": b_run}}) == 0
+        assert db["onboarding_runs"].count_documents({"_id": b_run, "org_id": ORG_A}) == 0
+        b_record = db["onboarding_runs"].find_one({"_id": b_run})
+    assert b_record is not None
+    assert b_record["status"] == "started"
+
+
+def test_the_orchestrator_completes_an_org_a_run_entirely_in_org_a(xt_world: World, unscoped: Unscoped) -> None:
+    a_run = XT_RUNS[ORG_A][0]
+    before = xt_world.org_b_snapshot(unscoped)
+    _drain_start_run(xt_world, ORG_A, a_run, "xt-own-run")
+    assert xt_world.org_b_snapshot(unscoped) == before
+    with unscoped("root read-back of org A's executed run, its tasks and checkpoints"):
+        db = xt_world.root_db
+        run = db["onboarding_runs"].find_one({"_id": a_run})
+        tasks = list(db["run_tasks"].find({"run_id": a_run}))
+        checkpoints = list(db["run_checkpoints"].find({"thread_id": f"{ORG_A}:{a_run}"}))
+        foreign_threads = db["run_checkpoints"].count_documents({"thread_id": {"$not": {"$regex": f"^{ORG_A}:"}}})
+    assert run is not None
+    assert (run["org_id"], run["status"]) == (ORG_A, "completed")
+    assert {t["status"] for t in tasks} <= {"done", "skipped"}
+    assert {t["org_id"] for t in tasks} == {ORG_A}
+    assert checkpoints
+    assert {c["org_id"] for c in checkpoints} == {ORG_A}
+    assert foreign_threads == 0

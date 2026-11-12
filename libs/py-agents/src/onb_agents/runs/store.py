@@ -89,6 +89,20 @@ class RunStore:
             raise TransitionConflictError("the task changed state while this move was decided")
         return {**current, **changes}
 
+    async def cancel_unfinished(self, run_id: str, *, at: datetime) -> list[str]:
+        """Cancel every task of the run that has not finished (pending, ready, running, waiting), for a
+        run that is ending. Returns the ids cancelled. A task that finishes concurrently keeps its state."""
+        cancelled: list[str] = []
+        for task in await self.tasks(run_id):
+            if TaskState(task["status"]).terminal:
+                continue
+            try:
+                await self.move_task(run_id, task["task_id"], TaskState.CANCELLED, at=at, expected=task)
+            except TransitionConflictError:
+                continue
+            cancelled.append(task["task_id"])
+        return cancelled
+
     async def move_run(self, run_id: str, target: RunState, *, at: datetime) -> dict[str, Any]:
         """Move a run to `target`; same errors as `move_task`."""
         current = await self.get(run_id)

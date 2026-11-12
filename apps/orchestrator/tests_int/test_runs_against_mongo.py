@@ -20,8 +20,8 @@ from onb_contracts.templates import Template
 from onb_data import Actor, AuditLog, AuditOutcome, DataStore, connect, tenant_scope
 from onb_eventbus import MongoEventBus, QueueSettings
 from onb_orchestrator.checkpointer import TenantCheckpointSaver
+from onb_orchestrator.consumer import start_run_handler
 from onb_orchestrator.executor import StubExecutor
-from onb_orchestrator.runner import start_run_handler
 
 from .conftest import Scratch
 

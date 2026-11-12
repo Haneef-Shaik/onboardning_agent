@@ -31,9 +31,10 @@ from onb_data import DataStore, tenant_scope
 from onb_data.testing import InMemoryAuditLog
 from onb_eventbus import JobContext
 from onb_orchestrator.checkpointer import CHECKPOINT_WRITES, CHECKPOINTS
+from onb_orchestrator.consumer import start_run_handler
 from onb_orchestrator.executor import StubExecutor, TaskWork
 from onb_orchestrator.graph import build_run_graph
-from onb_orchestrator.runner import RunExecutor, start_run_handler
+from onb_orchestrator.runner import RunExecutor
 
 ORG = "org_a"
 
@@ -235,7 +236,8 @@ def test_a_failing_task_fails_the_run_and_its_dependents_never_start() -> None:
     run_doc, tasks = run(go())
     assert run_doc["status"] == "failed"
     assert tasks["b"]["status"] == "failed"
-    assert tasks["d"]["status"] == "pending"
+    assert tasks["d"]["status"] == "cancelled"  # a failed run leaves no task unfinished
+    assert tasks["d"]["started_at"] is None
     assert "d" not in world.executor.calls
 
 

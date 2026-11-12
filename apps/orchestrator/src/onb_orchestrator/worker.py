@@ -22,8 +22,8 @@ from onb_data import DataStore, connect
 from onb_eventbus import Worker
 
 from .checkpointer import TenantCheckpointSaver
+from .consumer import start_run_handler
 from .executor import StubExecutor
-from .runner import start_run_handler
 
 __all__ = ["SERVICE_NAME", "ConfigError", "RunWorker", "Settings", "main", "prepare", "serve"]
 
