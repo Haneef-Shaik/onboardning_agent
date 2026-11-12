@@ -1,4 +1,6 @@
-# Templates agent (PRD FR-N1): renders a message and sends it through the notification tool. The
+# Templates agent (PRD FR-N1): renders a message and sends it through the notification tool. It reads the hire
+# record for the name and start date a welcome message needs (never a raw sensitive value: documents hold
+# vault tokens only, §7.3) and writes nothing (AGT-1, ADR 0021). The
 # recipient is a PII token; the notification sink resolves it with a grant (§7.10), never the agent.
 name: templates_agent
 purpose: Render a message template for a task and send it through a notification channel
@@ -7,7 +9,7 @@ mcp:
   mongo:
     tools: [find]
     collections:
-      read: [run_tasks, templates]
+      read: [new_hires, run_tasks, templates]
   notify:
     tools: [notify_send]
 tools: [render]
