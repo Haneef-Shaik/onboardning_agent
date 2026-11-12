@@ -1,0 +1,12 @@
+Gates, 2026-11-12, compose project ob-chat-1 (this worktree), LLM_CONNECTOR=fake, no model call.
+
+make check            exit 0 ("make check: all passed"): plan ok 67 goals/34 rows, env-check, tooling-test, lint, typecheck,
+                      per-project tests (api 775 passed, py-evals 258 passed incl. adapter test), test-xt.
+                      test-xt shows up to 4 setup ERRORs per run from the known Mongo "connection closed" flake
+                      (different tests each run: POST /runs MANAGER; publish MANAGER; GET /templates; GET /agents/{name};
+                      POST /hires); each set re-run on its own: 71 passed, then 27 passed. Every chat xt case passed.
+make test-int         exit 0 ("Successfully ran target test-int for 10 projects"; nx projects 4..79 passed each,
+                      py-evals selftest 4 passed)
+make contracts-check  clean (openapi.json + schema.ts regenerated and committed)
+make evals-selftest   PASS: evr_20261112T164241Z_e40475fd, 27 cases x3, controls 8/8 (fake connector)
+apps/api/tests/test_chat.py  17 passed
