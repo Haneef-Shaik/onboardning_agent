@@ -152,7 +152,8 @@ describe("RunDetail: a manager", () => {
     renderDetail("MANAGER");
     expect(await screen.findByTestId("blocked-reason")).toBeInTheDocument();
     expect(screen.queryByRole("group", { name: "Run controls" })).toBeNull();
-    expect(screen.queryByRole("button")).toBeNull();
+    // Only the chat's "Ask" (managers may ask, FR-C1); no run control or task action.
+    expect(screen.getAllByRole("button").map((b) => b.textContent)).toEqual(["Ask"]);
     expect(screen.queryByRole("link", { name: "Open trace" })).toBeNull();
   });
 });

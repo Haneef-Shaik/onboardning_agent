@@ -13,6 +13,7 @@ import {
   resumeRun,
   retryTask,
 } from "./runs-api";
+import { ChatPanel } from "./chat/ChatPanel";
 import { StatusBadge } from "./StatusBadge";
 import { useRunStream } from "./useRunStream";
 
@@ -114,6 +115,13 @@ export function RunDetail({ client, role, runId, jaegerBase, retryDelayMs }: Run
         </tbody>
       </table>
 
+      <ChatPanel
+        client={client}
+        role={role}
+        runId={runId}
+        onRunChanged={() => void queryClient.invalidateQueries({ queryKey: key })}
+      />
+
       <section aria-label="Activity">
         <h2 className="text-sm font-medium">Activity</h2>
         {stream.activity.length === 0 ? (
@@ -154,7 +162,13 @@ function TaskRow({ task, staff, busy, client, runId, act }: TaskRowProps) {
   }
 
   return (
-    <tr data-testid={`task-${task.task_id}`} data-status={task.status} className="border-t border-slate-100 align-top">
+    <tr
+      id={`task-${task.task_id}`}
+      tabIndex={-1}
+      data-testid={`task-${task.task_id}`}
+      data-status={task.status}
+      className="border-t border-slate-100 align-top focus:bg-amber-50 focus:outline-none"
+    >
       <td className="py-1 pr-4">
         {task.title}
         {failed && (

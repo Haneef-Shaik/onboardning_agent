@@ -2,6 +2,9 @@ export { API_PREFIX, apiPath } from "./paths";
 export { ApiError, createApiClient, unwrap } from "./client";
 export type {
   ApiClient,
+  ChatCitation,
+  ChatMessageRecord,
+  ChatProposal,
   DocumentMeta,
   DocumentType,
   ErrorCode,
