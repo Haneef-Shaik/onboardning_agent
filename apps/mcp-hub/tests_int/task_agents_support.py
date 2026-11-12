@@ -20,17 +20,19 @@ from pathlib import Path
 from types import MappingProxyType
 from typing import Any
 
+from onb_agents.approvals import ApprovalDecider, ApprovalStore
 from onb_agents.registry import AgentManifest, AgentRegistry
 from onb_agents.registry.mongo import MongoRegistryStore
 from onb_agents.runs import RUN_STARTED, START_RUN, RunStarter, RunStore
 from onb_agents.runs.testing import OutboxStandIn
 from onb_agents.runtime import AgentTask, HubToolSource, ModelChoice
+from onb_contracts.notify import Decision
 from onb_contracts.templates import Template
 from onb_data import AuditLog, DataStore, connect, tenant_scope
 from onb_eventbus import JobContext
 from onb_llm import LLMRuntime, LLMSelection, discover_connectors, load_llm_config
 from onb_orchestrator.agent_executor import AgentTaskExecutor
-from onb_orchestrator.consumer import start_run_handler
+from onb_orchestrator.consumer import resume_approval_handler, start_run_handler
 
 from .conftest import DATABASE, ROOT, Stack
 
@@ -209,7 +211,33 @@ class Platform:
             attempt=1,
         )
         with tenant_scope(ORG):
-            await start_run_handler(self.store, self.executor)(job)
+            await start_run_handler(self.store, self.executor, bus=self.bus)(job)
+
+    async def approve_and_resume(self, run_id: str) -> None:
+        """HIL-1: the run paused at its approval task. Decide the approval as its approver (the real decision
+        write; the outbox stand-in takes its event, as for the start) and resume the paused graph."""
+        with tenant_scope(ORG):
+            approvals = ApprovalStore(self.store)
+            [approval] = [a for a in await approvals.for_task(run_id, "manager_approval") if a["status"] == "pending"]
+            await ApprovalDecider(approvals, self.bus, auditor=AuditLog(self.store)).decide(
+                approval["_id"],
+                decision=Decision.APPROVE,
+                comment=None,
+                channel="web",
+                user_id=approval["approver_id"] or "u_hr",
+                role="HR",
+            )
+            job = JobContext(
+                job_id=f"job_{secrets.token_hex(4)}",
+                org_id=ORG,
+                consumer="orchestrator.resume_approval",
+                event_id=f"ev_{secrets.token_hex(4)}",
+                event_type="approval.decided",
+                payload=MappingProxyType({"approval_id": approval["_id"]}),
+                run_id=run_id,
+                attempt=1,
+            )
+            await resume_approval_handler(self.store, self.executor, bus=self.bus)(job)
 
     async def tasks(self, run_id: str) -> dict[str, dict[str, Any]]:
         with tenant_scope(ORG):

@@ -117,6 +117,13 @@ def test_the_seed_template_completes_every_non_approval_task_without_human_actio
     async def body(p: Platform) -> tuple[str, str, dict[str, dict[str, Any]]]:
         run_id = await p.start(_seed_template())
         await p.drive(run_id)
+        # HIL-1: the seed template's approval task is the one human step: the run waits at it, and nothing
+        # that depends on it has started. The manager's decision resumes the run.
+        waiting = await p.tasks(run_id)
+        assert waiting["manager_approval"]["status"] == "waiting_approval"
+        assert await p.run_status(run_id) == "running"
+        assert {t for t, rec in waiting.items() if rec["status"] == "done"} == {"collect_docs", "orientation"}
+        await p.approve_and_resume(run_id)
         return run_id, await p.run_status(run_id), await p.tasks(run_id)
 
     run_id, status, tasks = on_platform(stack, tmp_path, body)
