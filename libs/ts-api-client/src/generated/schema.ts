@@ -165,7 +165,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** List Hire Documents */
+        get: operations["listHireDocuments"];
         put?: never;
         /** Upload Hire Document */
         post: operations["uploadHireDocument"];
@@ -653,6 +654,19 @@ export interface components {
          * @enum {string}
          */
         DocumentType: "aadhaar" | "pan" | "passport" | "voter_id" | "driving_licence";
+        /**
+         * DocumentsEnvelope
+         * @description The scans of one hire, oldest first (UI-4): metadata only.
+         */
+        DocumentsEnvelope: {
+            /** Data */
+            data: components["schemas"]["DocumentMeta"][] | null;
+            error: components["schemas"]["ErrorBody"] | null;
+            /** @default {} */
+            meta: components["schemas"]["Meta"];
+            /** Success */
+            success: boolean;
+        };
         /**
          * DraftCreate
          * @description `POST /templates/drafts`: a new draft from a template body.
@@ -1878,6 +1892,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HireEnvelope"];
+                };
+            };
+            /** @description Error, in the envelope */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    listHireDocuments: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                hire_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentsEnvelope"];
                 };
             };
             /** @description Error, in the envelope */

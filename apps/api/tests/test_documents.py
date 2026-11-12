@@ -443,3 +443,61 @@ def _hire_with_aadhaar(client: TestClient) -> str:
     assert response.status_code == 201, response.text
     hire_id: str = response.json()["data"]["id"]
     return hire_id
+
+
+# --- UI-4: the list of a hire's scans, metadata only ----------------------------------------------------------
+
+
+def test_hr_lists_a_hires_scans_as_metadata_only(client: TestClient) -> None:
+    pan = _upload(client, document_type="pan").json()["data"]
+    passport = _upload(client, document_type="passport", data=PDF, media_type="application/pdf").json()["data"]
+
+    response = client.get(f"/hires/{HIRE}/documents", headers=bearer(token_for(*HR)))
+
+    assert response.status_code == 200, response.text
+    listed = response.json()["data"]
+    assert [d["id"] for d in listed] == [pan["id"], passport["id"]]  # oldest first
+    assert listed == [pan, passport]
+    for item in listed:
+        assert set(item) == {"id", "hire_id", "type", "uploaded_at", "verified"}
+    assert MARKER.decode() not in response.text
+
+
+def test_a_hire_without_scans_lists_none(client: TestClient) -> None:
+    response = client.get(f"/hires/{HIRE}/documents", headers=bearer(token_for(*ADMIN)))
+    assert response.status_code == 200
+    assert response.json()["data"] == []
+
+
+def test_the_list_holds_only_that_hires_scans(client: TestClient) -> None:
+    mine = _upload(client).json()["data"]["id"]
+    _upload(client, hire_id="h_acme_002")
+    response = client.get(f"/hires/{HIRE}/documents", headers=bearer(token_for(*HR)))
+    assert [d["id"] for d in response.json()["data"]] == [mine]
+
+
+def test_a_manager_cannot_list_scans(client: TestClient) -> None:
+    _upload(client)
+    response = client.get(f"/hires/{HIRE}/documents", headers=bearer(token_for(*MANAGER)))
+    assert response.status_code == 403
+
+
+def test_listing_the_scans_of_a_missing_or_foreign_hire_is_404(client: TestClient) -> None:
+    missing = client.get("/hires/h_nobody/documents", headers=bearer(token_for(*HR)))
+    foreign = client.get("/hires/h_globex_001/documents", headers=bearer(token_for(*HR)))
+    assert missing.status_code == foreign.status_code == 404
+    assert missing.json()["error"]["code"] == foreign.json()["error"]["code"]
+
+
+def test_another_orgs_scans_are_not_listed(client: TestClient) -> None:
+    _upload(client, hire_id="h_globex_001", actor=GLOBEX_HR)
+    response = client.get("/hires/h_globex_001/documents", headers=bearer(token_for(*GLOBEX_HR)))
+    assert len(response.json()["data"]) == 1
+    assert client.get("/hires/h_globex_001/documents", headers=bearer(token_for(*HR))).status_code == 404
+
+
+def test_without_a_document_service_the_list_answers_503(app: Any) -> None:
+    app.state.documents = None
+    with TestClient(app) as bare:
+        response = bare.get(f"/hires/{HIRE}/documents", headers=bearer(token_for(*HR)))
+    assert response.status_code == 503

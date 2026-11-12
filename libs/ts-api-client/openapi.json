@@ -718,6 +718,52 @@
         "title": "DocumentType",
         "type": "string"
       },
+      "DocumentsEnvelope": {
+        "additionalProperties": false,
+        "description": "The scans of one hire, oldest first (UI-4): metadata only.",
+        "properties": {
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/DocumentMeta"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ErrorBody"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta",
+            "default": {}
+          },
+          "success": {
+            "title": "Success",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "success",
+          "data",
+          "error",
+          "meta"
+        ],
+        "title": "DocumentsEnvelope",
+        "type": "object"
+      },
       "DraftCreate": {
         "additionalProperties": false,
         "description": "`POST /templates/drafts`: a new draft from a template body.",
@@ -3978,6 +4024,53 @@
       }
     },
     "/hires/{hire_id}/documents": {
+      "get": {
+        "operationId": "listHireDocuments",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "hire_id",
+            "required": true,
+            "schema": {
+              "maxLength": 66,
+              "pattern": "^h_[A-Za-z0-9_]{1,64}$",
+              "title": "Hire Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentsEnvelope"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error, in the envelope"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Hire Documents",
+        "tags": [
+          "documents"
+        ]
+      },
       "post": {
         "operationId": "uploadHireDocument",
         "parameters": [

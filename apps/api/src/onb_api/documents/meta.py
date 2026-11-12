@@ -41,5 +41,19 @@ class DocumentMetaStore:
         )
         return record
 
+    async def list_for_hire(self, hire_id: str) -> list[DocumentMeta]:
+        """The hire's scans in the current org, oldest first (ties by id)."""
+        rows = await self._repo().find({"hire_id": hire_id}, sort=[("uploaded_at", 1), ("_id", 1)])
+        return [
+            DocumentMeta(
+                id=row["_id"],
+                hire_id=row["hire_id"],
+                type=DocumentType(row["type"]),
+                uploaded_at=row["uploaded_at"],
+                verified=row["verified"],
+            )
+            for row in rows
+        ]
+
     async def delete(self, document_id: str) -> None:
         await self._repo().delete_one({"_id": document_id})

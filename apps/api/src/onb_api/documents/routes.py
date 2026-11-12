@@ -3,6 +3,7 @@
 | Route | Roles |
 |---|---|
 | `POST /hires/{hire_id}/documents?type=<DocumentType>` | HR, HR_ADMIN |
+| `GET /hires/{hire_id}/documents` (metadata only, UI-4) | HR, HR_ADMIN |
 
 The scan is the raw request body, its `Content-Type` one of `ALLOWED_DOCUMENT_MEDIA_TYPES`, at most
 `MAX_DOCUMENT_BYTES` (413 beyond). The answer is the scan's metadata only. A role outside the list is
@@ -17,7 +18,7 @@ from typing import Annotated, Any, Final
 from fastapi import APIRouter, Depends, Path, Query, Request
 from onb_contracts import Envelope, ErrorCode
 from onb_contracts.auth import Role
-from onb_contracts.documents import ALLOWED_DOCUMENT_MEDIA_TYPES, DocumentMeta, DocumentMetaEnvelope, DocumentType
+from onb_contracts.documents import ALLOWED_DOCUMENT_MEDIA_TYPES, DocumentMeta, DocumentMetaEnvelope, DocumentsEnvelope, DocumentType
 from onb_contracts.hires import HIRE_ID_PATTERN
 
 from onb_api.auth.dependencies import require_role
@@ -53,6 +54,11 @@ def document_service(request: Request) -> DocumentService:
 
 
 Documents = Annotated[DocumentService, Depends(document_service)]
+
+
+@router.get("/hires/{hire_id}/documents", response_model=DocumentsEnvelope, operation_id="listHireDocuments")
+async def list_hire_documents(_: Hr, documents: Documents, hire_id: HireId) -> Envelope[list[DocumentMeta]]:
+    return respond(await documents.list_for_hire(hire_id))
 
 
 @router.post(

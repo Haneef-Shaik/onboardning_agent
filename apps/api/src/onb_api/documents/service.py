@@ -136,6 +136,12 @@ class DocumentService:
         log.info("document uploaded: org=%s hire=%s document=%s type=%s", org_id, hire_id, stored.id, document_type)
         return record
 
+    async def list_for_hire(self, hire_id: str) -> list[DocumentMeta]:
+        """The metadata of a hire's scans, oldest first; 404 for a hire that is not the caller org's."""
+        if await self._hires.get(hire_id) is None:
+            raise AppError(ErrorCode.NOT_FOUND)
+        return await self.meta.list_for_hire(hire_id)
+
     async def read(self, org_id: str, *, hire_id: str, document_id: str) -> bytes:
         """The plaintext of one scan, only for the hire it was uploaded for (see `DocumentBucket.read`)."""
         return await self.bucket.read(org_id, hire_id=hire_id, document_id=document_id)

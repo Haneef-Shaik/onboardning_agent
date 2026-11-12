@@ -22,6 +22,7 @@ __all__ = [
     "MAX_DOCUMENT_BYTES",
     "DocumentMeta",
     "DocumentMetaEnvelope",
+    "DocumentsEnvelope",
     "DocumentType",
 ]
 
@@ -56,3 +57,7 @@ class DocumentMeta(BaseModel):
 
 class DocumentMetaEnvelope(Envelope[DocumentMeta]):
     """One uploaded scan's metadata."""
+
+
+class DocumentsEnvelope(Envelope[list[DocumentMeta]]):
+    """The scans of one hire, oldest first (UI-4): metadata only."""

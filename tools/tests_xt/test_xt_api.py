@@ -596,6 +596,25 @@ def _upload_check(client: TestClient, xt: World) -> None:
     assert _read_scan(xt, ORG_B, b_hire, b_doc) == XT_SCAN
 
 
+def _list_documents_request(xt: World, role: Role) -> Request:
+    return {"method": "GET", "url": f"/hires/{xt.vault_hires()[ORG_A]}/documents", "headers": bearer(_token(role))}
+
+
+def _list_documents_check(client: TestClient, xt: World) -> None:
+    xt.vault_hires()  # seed both orgs' vault hires before anything is read
+    a_hire, b_hire = xt.vault_hires()[ORG_A], xt.vault_hires()[ORG_B]
+    b_doc = _upload(client, b_hire, bearer(token_for(*B_ADMIN))).json()["data"]["id"]
+    for role in (Role.HR_ADMIN, Role.HR):
+        headers = bearer(_token(role))
+        missing = client.get(f"/hires/{MISSING_HIRE}/documents", headers=headers)
+        for foreign_id in (b_hire, "h_globex_001"):
+            foreign = client.get(f"/hires/{foreign_id}/documents", headers=headers)
+            assert foreign.status_code == 404, foreign.json()
+            assert_indistinguishable(seen(foreign), seen(missing), f"list of org B's scans as {role.value}")
+        listed = client.get(f"/hires/{a_hire}/documents", headers=headers)
+        assert listed.status_code == 200 and b_doc not in listed.text, "org B's scan is listed for org A"
+
+
 def _documents_meta(xt: World, org_id: str) -> set[tuple[str, str]]:
     async def main() -> set[tuple[str, str]]:
         store = xt.store()
@@ -847,6 +866,9 @@ ROUTE_CASES: Mapping[tuple[str, str], RouteCase] = {
     ("GET", "/templates"): RouteCase(_list_templates_request, _reads_only(_list_templates_check), ALL_200),
     ("GET", "/templates/{key}/versions/{version}"): RouteCase(_version_request, _reads_only(_version_check), ALL_200),
     ("POST", "/templates/{key}/versions/{version}/archive"): RouteCase(_archive_request, _archive_check, ADMIN_ONLY),
+    ("GET", "/hires/{hire_id}/documents"): RouteCase(
+        _list_documents_request, _reads_only(_list_documents_check), HR_ONLY
+    ),
     ("POST", "/hires/{hire_id}/documents"): RouteCase(
         _upload_request,
         _reads_only(_upload_check),

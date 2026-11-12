@@ -78,6 +78,8 @@ ROLE_MATRIX: dict[tuple[str, str], dict[Role, int]] = {
     ("GET", "/evals/runs/{run_id}"): {Role.HR_ADMIN: 200, Role.HR: 403, Role.MANAGER: 403},
     # NOTIF-1 (PRD FR-N2, §10 Mock channels): every role; a MANAGER sees only messages addressed to them.
     ("GET", "/mock-outbox"): ALL_200,
+    # UI-4: HR and HR_ADMIN read a hire's scan metadata; managers never see documents.
+    ("GET", "/hires/{hire_id}/documents"): {Role.HR_ADMIN: 200, Role.HR: 200, Role.MANAGER: 403},
 }
 
 CONFIG = Path(__file__).resolve().parents[3] / "config"
