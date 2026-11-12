@@ -101,3 +101,14 @@
   settings) and mcp-notify runs `notify.approval`.
 - `waiting_approval → running` is a new legal task move (an approved tool call runs the task again); it does not
   count as another attempt.
+
+## Amendment (rebase onto RUN-2, ADR 0018, and AGT-1)
+
+- The approval resume consumer is **`orchestrator.resume_approval`**: `orchestrator.resume_run` is RUN-2's (`run.resumed`).
+- An attempt that asks a human parks the task (leaving `running` releases its lease) and is not an attempt's
+  failure; an approved tool call runs the task again under a new lease in the same attempt, through RUN-2's retry
+  loop. A rejection fails the task and the run (nothing to retry). A decision made while the run is paused or
+  blocked is stored and settled by the driver when the run is driven on (`_settle_decided`).
+- Cancelling or failing a run cancels its pending approvals (`orchestrator.cleanup_run`, `_Driver.finish`).
+- The agent runtime's inner graph is compiled with `checkpointer=False`: it must not inherit the run graph's
+  checkpoint, or an approved re-run would resume the first attempt's stale state.

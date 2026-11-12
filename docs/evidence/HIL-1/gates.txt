@@ -12,3 +12,14 @@ make contracts-check    contracts-check: openapi.json and the TS client are up t
 make evals-selftest     selftest evr_20261112T162850Z_05954c5d: 27 cases x 3, all cases passed: True, gates: PASS,
                         controls caught 8/8; result: PASS
 mutations               48 of 48 killed, source diff after all mutations: 0 files differ (mutation-checks.txt)
+
+--- Rebased tree (main c307fe9: RUN-2 + AGT-1 + RUN-3 + NOTIF-1), 2026-11-12/13 ---
+make check              exit 0 (final run on the last commit; earlier rebased runs also exit 0)
+make test-int           exit 0 (first run: one AGT-1 test, test_the_seed_template_completes_every_non_approval_task_*,
+                        failed because the seed template's approval task now pauses the run; the test now decides the
+                        approval and resumes; re-run exit 0)
+make contracts-check    contracts-check: openapi.json and the TS client are up to date
+make evals-selftest     selftest evr_20261112T182011Z_9a88836f: 27 cases x 3, all cases passed: True, gates: PASS,
+                        controls caught 8/8; result: PASS
+mutations               55: 53 killed in the full run (mutation-checks-full-run.txt); M49 killed after a new test
+                        (mutation-checks-rerun.txt); M55 a documented equivalent mutant
