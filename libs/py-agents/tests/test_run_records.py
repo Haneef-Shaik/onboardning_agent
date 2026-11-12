@@ -99,7 +99,7 @@ def test_the_stored_dag_is_returned_only_when_its_hash_still_matches() -> None:
 def test_the_run_record_does_not_share_state_with_the_compiled_dag() -> None:
     dag, run, _ = _records()
     dag.tasks[0].task.inputs["late"] = "change"
-    assert "late" not in run["dag"]["tasks"][0]["inputs"]  # type: ignore[index]
+    assert "late" not in run["dag"]["tasks"][0]["inputs"]  # type: ignore[index]  # RunRecords.run is dict[str, Any]; `dag` is typed object here
     assert stored_dag(run) == run["dag"]
 
 

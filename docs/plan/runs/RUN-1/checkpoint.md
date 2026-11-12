@@ -11,3 +11,7 @@ Everything below is committed.
 ## Next
 1. goal-verifier (attempt 1).
 2. On pass: set the board to `in review` and run `make down`. Hold for the orchestrator; no merge or rebase.
+
+## Verifier
+- attempt 1 (HEAD f674d92): **pass**, all 5 boxes met, gates pass. Notes fixed after: the type-ignore reason, the probe count in the handoff (86/20000 as recorded).
+- Left on the ob-run-1 Mongo volume: one onb_eval_* scratch database from a crashed eval self-test run (not dropped; `make evals-selftest` cleanup asserts until it is).
