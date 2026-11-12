@@ -1,0 +1,69 @@
+ Image onb/otel-collector:0.165.0 Building 
+ Image onb/otel-collector:0.165.0 Built 
+ Container ob-run-3-caddy-1 Running 
+ Container ob-run-3-mongo-1 Running 
+ Container ob-run-3-otel-collector-1 Running 
+ Container ob-run-3-jaeger-1 Running 
+ Container ob-run-3-jaeger-1 Waiting 
+ Container ob-run-3-jaeger-1 Waiting 
+ Container ob-run-3-jaeger-1 Healthy 
+ Container ob-run-3-jaeger-1 Healthy 
+ Container ob-run-3-otel-collector-1 Waiting 
+ Container ob-run-3-jaeger-1 Waiting 
+ Container ob-run-3-caddy-1 Waiting 
+ Container ob-run-3-mongo-1 Waiting 
+ Container ob-run-3-mongo-1 Healthy 
+ Container ob-run-3-otel-collector-1 Healthy 
+ Container ob-run-3-caddy-1 Healthy 
+ Container ob-run-3-jaeger-1 Healthy 
+infra/mongo/gen-keyfile.sh
+gen-keyfile: keeping existing infra/mongo/keyfile
+docker compose up -d --wait --build
+#1 [internal] load local bake definitions
+#1 reading from stdin 647B done
+#1 DONE 0.0s
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 578B done
+#2 DONE 0.0s
+#3 [internal] load metadata for docker.io/otel/opentelemetry-collector-contrib:0.165.0@sha256:e40d61f10c9a617cca1ffd1be4d7e2b3a4b0f0001798ff07e58cabe82e618cea
+#3 DONE 0.0s
+#4 [internal] load metadata for docker.io/library/alpine:3.24.4@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf
+#4 DONE 0.0s
+#5 [internal] load .dockerignore
+#5 transferring context: 2B done
+#5 DONE 0.0s
+#6 [stage-1 1/3] FROM docker.io/library/alpine:3.24.4@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf
+#6 resolve docker.io/library/alpine:3.24.4@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf 0.1s done
+#6 DONE 0.1s
+#7 [upstream 1/1] FROM docker.io/otel/opentelemetry-collector-contrib:0.165.0@sha256:e40d61f10c9a617cca1ffd1be4d7e2b3a4b0f0001798ff07e58cabe82e618cea
+#7 resolve docker.io/otel/opentelemetry-collector-contrib:0.165.0@sha256:e40d61f10c9a617cca1ffd1be4d7e2b3a4b0f0001798ff07e58cabe82e618cea 0.1s done
+#7 DONE 0.1s
+#8 [stage-1 2/3] RUN adduser -D -H -u 10001 otel
+#8 CACHED
+#9 [stage-1 3/3] COPY --from=upstream /otelcol-contrib /otelcol-contrib
+#9 CACHED
+#10 exporting to image
+#10 exporting layers done
+#10 exporting manifest sha256:56c24f8cb9586b5acb7c03a201b8b30aa63ca36b467abd4cbe39aa442896ad3a done
+#10 exporting config sha256:56b153ba2b6fa700b2f3765466c5b64452260880c4f2f085092205db018a8293 done
+#10 exporting attestation manifest sha256:518674b8e70cf2a69eaa79ce77766d4a338f599818baa9c5778007a94c583b0d 0.0s done
+#10 exporting manifest list sha256:96e58d50e1c92c86731246d4745a8bd3b0ff89a9d2c44f93dc49fac425cda146 done
+#10 naming to docker.io/onb/otel-collector:0.165.0 done
+#10 unpacking to docker.io/onb/otel-collector:0.165.0 done
+#10 DONE 0.1s
+#11 resolving provenance for metadata file
+#11 DONE 0.1s
+set -a && . ./.env && set +a && \
+	uv run --frozen pytest tools/tests_xt -q -o cache_dir=.pytest_cache/tests-xt && \
+	node_modules/.bin/nx run-many -t test-xt --output-style=static
+........................................................................ [ 27%]
+........................................................................ [ 55%]
+........................................................................ [ 83%]
+..........................................                               [100%]
+cross-tenant surface: 28 API routes, 9 MCP tools, 3 event consumers
+  route    GET    /agents
+  route    GET    /agents/{name}
+  route    GET    /audit
+  route    GET    /evals/runs
+  route    GET    /evals/runs/{run_id}
+... (57 lines truncated)

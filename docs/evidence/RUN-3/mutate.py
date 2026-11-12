@@ -99,8 +99,8 @@ MUTATIONS: list[tuple[str, str, Path, str, str]] = [
         "M10",
         "each task gets its own fresh run budget: tasks running together do not share the limit (box 3)",
         EXECUTOR,
-        "        budget = self._budgets.setdefault(key, Budget(BudgetLimits(max_tokens=self._run_max_tokens)))",
-        "        budget = Budget(BudgetLimits(max_tokens=self._run_max_tokens))",
+        "        budget = self._budgets.setdefault(key, created)",
+        "        budget = created",
     ),
     (
         "M11",

@@ -44,15 +44,17 @@ M6 KILLED: no grant issuer configured: pii_access is silently ignored instead of
 
 M7 KILLED: the model is not recorded on the task (box 2)
   file: apps/orchestrator/src/onb_orchestrator/agent_executor.py
-  failing tests (3):
+  failing tests (4):
     apps/orchestrator/tests/test_agent_executor.py::test_a_config_change_while_the_task_runs_does_not_change_its_recorded_model
     apps/orchestrator/tests/test_agent_executor.py::test_a_new_attempt_of_a_task_keeps_its_model_and_a_new_task_takes_the_new_config
     apps/orchestrator/tests/test_agent_executor.py::test_the_model_is_recorded_on_the_task
+    apps/orchestrator/tests/test_agent_executor.py::test_the_run_budget_is_rebuilt_from_the_tasks_recorded_usage_after_a_restart
 
 M8 KILLED: a new attempt re-resolves the model instead of keeping the recorded one (box 2)
   file: apps/orchestrator/src/onb_orchestrator/agent_executor.py
-  failing tests (1):
+  failing tests (2):
     apps/orchestrator/tests/test_agent_executor.py::test_a_new_attempt_of_a_task_keeps_its_model_and_a_new_task_takes_the_new_config
+    apps/orchestrator/tests/test_agent_executor.py::test_the_run_budget_is_rebuilt_from_the_tasks_recorded_usage_after_a_restart
 
 M9 KILLED: the recorded model is overwritten on every attempt (box 2)
   file: libs/py-agents/src/onb_agents/runs/store.py
@@ -117,28 +119,31 @@ M19 KILLED: no tool span (box 4)
     apps/orchestrator/tests/test_run_spans.py::test_a_runs_spans_form_run_task_agent_llm_and_tool
 
 M20 KILLED: the fail_task consumer fails a task that already finished
-  file: apps/orchestrator/src/onb_orchestrator/consumer.py
-  failing tests (2):
+  file: libs/py-agents/src/onb_agents/runs/store.py
+  failing tests (3):
     apps/orchestrator/tests/test_sink_rejected.py::test_a_finished_task_stays_finished
     apps/orchestrator/tests/test_sink_rejected.py::test_a_redelivered_event_changes_nothing_more
+    libs/py-agents/tests/test_run_store.py::test_fail_running_fails_only_a_running_task_and_an_outcome_can_be_limited_to_one
 
 M21 KILLED: a sink's rejection is not applied: the task stays running
   file: apps/orchestrator/src/onb_orchestrator/consumer.py
-  failing tests (3):
+  failing tests (4):
     apps/orchestrator/tests/test_sink_rejected.py::test_a_rejection_without_a_task_id_fails_the_running_tasks_of_that_agent_only
     apps/orchestrator/tests/test_sink_rejected.py::test_a_running_task_is_failed_with_the_sinks_reason
     apps/orchestrator/tests/test_sink_rejected.py::test_a_task_failed_by_a_rejection_while_its_agent_runs_ends_failed_and_fails_the_run
+    apps/orchestrator/tests/test_sink_rejected.py::test_an_agents_own_failure_never_overwrites_the_sinks_cause
 
 M22 KILLED: an agent's late success turns a task failed by a sink `done` again
   file: apps/orchestrator/src/onb_orchestrator/runner.py
   failing tests (1):
     apps/orchestrator/tests/test_sink_rejected.py::test_a_task_failed_by_a_rejection_while_its_agent_runs_ends_failed_and_fails_the_run
 
-M23 KILLED: a later outcome write clears the cause a sink recorded
+M23 KILLED: an agent's outcome is written onto a task that is no longer running (overwrites a sink's cause)
   file: libs/py-agents/src/onb_agents/runs/store.py
-  failing tests (2):
+  failing tests (3):
     apps/orchestrator/tests/test_sink_rejected.py::test_a_task_failed_by_a_rejection_while_its_agent_runs_ends_failed_and_fails_the_run
-    libs/py-agents/tests/test_run_store.py::test_an_outcome_is_stored_and_a_recorded_failure_is_never_cleared
+    apps/orchestrator/tests/test_sink_rejected.py::test_an_agents_own_failure_never_overwrites_the_sinks_cause
+    libs/py-agents/tests/test_run_store.py::test_fail_running_fails_only_a_running_task_and_an_outcome_can_be_limited_to_one
 
 M24 KILLED: a rejection without a task id fails every running task, whatever the agent
   file: apps/orchestrator/src/onb_orchestrator/consumer.py
