@@ -1,4 +1,4 @@
-# Handoff — CHAT-1 · Answer "why is this run stuck?" from run state        attempt 1 · goal/chat-1-run-assistant-chat · HEAD_PLACEHOLDER
+# Handoff — CHAT-1 · Answer "why is this run stuck?" from run state        attempt 1 · goal/chat-1-run-assistant-chat · 83a8935 (+ this handoff commit)
 
 **Outcome claimed.** Everything except the real-connector eval report: HR and managers chat about a run
 (`POST/GET /runs/{id}/chat`), the Run Assistant answers read-only with task citations, a proposed retry
