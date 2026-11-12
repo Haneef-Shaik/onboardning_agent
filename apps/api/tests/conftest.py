@@ -27,6 +27,9 @@ from onb_agents.registry import AgentRegistry, load_catalog, load_manifests
 from onb_agents.runs.testing import OutboxStandIn
 from onb_agents.testing import InMemoryRegistryStore
 from onb_api import create_app
+from onb_api.chat import ChatService
+from onb_api.chat.store import ChatStore
+from onb_api.chat.testing import StubAssistant
 from onb_api.documents.service import DocumentService
 from onb_api.evals.store import EvalRunStore
 from onb_api.hires.service import HireService
@@ -49,7 +52,9 @@ from onb_telemetry.testing import reset_telemetry_globals
 
 __all__ = [
     "app",
+    "assistant",
     "audit_log",
+    "chat",
     "client",
     "decisions",
     "documents",
@@ -190,6 +195,17 @@ def runs(
 
 
 @pytest.fixture
+def assistant() -> StubAssistant:
+    return StubAssistant()
+
+
+@pytest.fixture
+def chat(memory_db: MemoryDatabase, runs: RunService, assistant: StubAssistant) -> ChatService:
+    assert runs.control is not None
+    return ChatService(store=ChatStore(memory_store(memory_db)), control=runs.control, assistant=assistant)
+
+
+@pytest.fixture
 def app(
     users: InMemoryUserStore,
     registry: AgentRegistry,
@@ -200,6 +216,7 @@ def app(
     memory_db: MemoryDatabase,
     notify: MockChannels,
     runs: RunService,
+    chat: ChatService,
 ) -> FastAPI:
     reset_telemetry_globals()
     return create_app(
@@ -213,6 +230,7 @@ def app(
         evals=EvalRunStore(memory_store(memory_db)),
         notify=notify,
         runs=runs,
+        chat=chat,
     )
 
 

@@ -27,6 +27,7 @@ from onb_telemetry import init_telemetry
 from onb_api.app import create_app
 from onb_api.auth.mongo_users import MongoUserStore
 from onb_api.auth.settings import AuthSettings, require_env
+from onb_api.chat.setup import build_chat
 from onb_api.documents.service import DocumentService
 from onb_api.evals.store import EvalRunStore
 from onb_api.health import SERVICE_NAME
@@ -59,6 +60,7 @@ notify = MockChannels(
 )
 bus = run_bus(store)
 runs = RunService.build(store, bus, auditor=audit_log, hires=hires, templates=templates, bus_indexes=bus.ensure_indexes)
+chat = build_chat(os.environ, store=store, runs=runs, registry=registry, audit_log=audit_log, llm_config=llm_config)
 app = create_app(
     auth=auth,
     users=users,
@@ -71,4 +73,5 @@ app = create_app(
     llm=llm_config,
     notify=notify,
     runs=runs,
+    chat=chat,
 )

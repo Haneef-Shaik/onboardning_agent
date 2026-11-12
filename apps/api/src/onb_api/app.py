@@ -10,7 +10,7 @@ service, the hire and PII routes answer 503; without a template lifecycle, `/tem
 without a document service, the document upload answers 503; without an eval run store,
 `/evals/runs*` answer 503 (UI-8); without mock channels, `GET /mock-outbox` and
 `POST /webhooks/telegram` answer 503 (NOTIF-1); without a run service, `POST /runs` answers 503
-(RUN-1); without an LLM configuration, agent records carry no resolved model. On startup the app
+(RUN-1); without a chat service, `/runs/{id}/chat*` answer 503 (CHAT-1); without an LLM configuration, agent records carry no resolved model. On startup the app
 makes the user store's, the audit log's, the hire service's (hires, vault, org keys, PII access
 log), the template store's, the document service's (encrypted bucket, `documents_meta`), the eval
 runs', the mock channels' and the run service's (runs, run tasks, the outbox) indexes and the
@@ -38,6 +38,8 @@ from onb_api.auth.passwords import warm_up
 from onb_api.auth.settings import AuthSettings
 from onb_api.auth.users import UserStore
 from onb_api.body_limit import BodyLimitMiddleware
+from onb_api.chat import ChatService
+from onb_api.chat import routes as chat_routes
 from onb_api.documents import routes as document_routes
 from onb_api.documents.service import DocumentService
 from onb_api.errors import install_error_handling
@@ -74,6 +76,7 @@ def create_app(
     llm: LLMConfig | None = None,
     notify: MockChannels | None = None,
     runs: RunService | None = None,
+    chat: ChatService | None = None,
 ) -> FastAPI:
     settings = auth if auth is not None else AuthSettings.from_env()
 
@@ -95,6 +98,8 @@ def create_app(
             await notify.ensure_indexes()
         if runs is not None:
             await runs.ensure_indexes()
+        if chat is not None:
+            await chat.ensure_indexes()
         await run_in_threadpool(warm_up, settings.bcrypt_rounds)
         yield
 
@@ -110,6 +115,7 @@ def create_app(
     app.state.llm = llm
     app.state.notify = notify
     app.state.runs = runs
+    app.state.chat = chat
     install_error_handling(app)
     # Added after the error handling, so it sits outside it: an oversized body never reaches a route.
     app.add_middleware(BodyLimitMiddleware)
@@ -123,6 +129,7 @@ def create_app(
     app.include_router(eval_routes.router)
     app.include_router(notify_routes.router)
     app.include_router(run_routes.router)
+    app.include_router(chat_routes.router)
     if telemetry_is_active():
         # `from fastapi import FastAPI` above bound the class before the instrumentor could swap
         # it, so instrument this app explicitly.

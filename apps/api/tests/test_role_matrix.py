@@ -94,6 +94,11 @@ ROLE_MATRIX: dict[tuple[str, str], dict[Role, int]] = {
     ("POST", "/runs/{run_id}/cancel"): HR_ONLY_200,
     ("POST", "/runs/{run_id}/tasks/{task_id}/retry"): HR_ONLY_200,
     ("POST", "/runs/{run_id}/tasks/{task_id}/complete"): HR_ONLY_200,
+    # CHAT-1 (FR-C1, FR-C2): every role chats about a run it may see (a MANAGER one of their reports) and reads
+    # their own conversation; only HR and HR_ADMIN confirm, and a proposal nobody made is 404.
+    ("POST", "/runs/{run_id}/chat"): ALL_200,
+    ("GET", "/runs/{run_id}/chat"): ALL_200,
+    ("POST", "/runs/{run_id}/chat/confirm"): {Role.HR_ADMIN: 404, Role.HR: 404, Role.MANAGER: 403},
 }
 
 CONFIG = Path(__file__).resolve().parents[3] / "config"
@@ -129,6 +134,8 @@ SAMPLE_PATHS = {
     "/runs/{run_id}/cancel": f"/runs/{RUN_BLOCKED}/cancel",
     "/runs/{run_id}/tasks/{task_id}/retry": f"/runs/{RUN_BLOCKED}/tasks/{FAILED_TASK}/retry",
     "/runs/{run_id}/tasks/{task_id}/complete": f"/runs/{RUN_BLOCKED}/tasks/{FAILED_TASK}/complete",
+    "/runs/{run_id}/chat": f"/runs/{RUN_BLOCKED}/chat",
+    "/runs/{run_id}/chat/confirm": f"/runs/{RUN_BLOCKED}/chat/confirm",
 }
 
 # A valid body for the routes whose permitted roles should succeed (the hire routes are sent none).
@@ -142,6 +149,8 @@ SAMPLE_BODIES: dict[tuple[str, str], dict[str, Any]] = {
     ("POST", "/runs/{run_id}/cancel"): {},
     ("POST", "/runs/{run_id}/tasks/{task_id}/retry"): {},
     ("POST", "/runs/{run_id}/tasks/{task_id}/complete"): {"reason": "Done by hand, sample"},
+    ("POST", "/runs/{run_id}/chat"): {"message": "Why is this run stuck?"},
+    ("POST", "/runs/{run_id}/chat/confirm"): {"proposal_id": "prop_" + "0" * 24},
 }
 
 

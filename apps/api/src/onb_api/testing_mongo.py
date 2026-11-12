@@ -69,6 +69,9 @@ def _condition_holds(value: Any, condition: Any) -> bool:
             elif op == "$lt":
                 if value is _MISSING or value is None or not value < operand:
                     return False
+            elif op == "$gt":
+                if value is _MISSING or value is None or not value > operand:
+                    return False
             elif op == "$ne":
                 if (None if value is _MISSING else value) == operand:
                     return False
