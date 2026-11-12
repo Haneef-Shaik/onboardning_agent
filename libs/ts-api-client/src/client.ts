@@ -26,6 +26,11 @@ export type HireRecord = Schemas["HireRecord"];
 export type NewHireRequest = Schemas["NewHireRequest"];
 export type PiiField = Schemas["PiiField"];
 export type RevealedValue = Schemas["RevealedValue"];
+export type RunRecord = Schemas["RunRecord"];
+export type RunSummary = Schemas["RunSummary"];
+export type RunTaskRecord = Schemas["RunTaskRecord"];
+export type RunStatus = RunRecord["status"];
+export type TaskStatus = RunTaskRecord["status"];
 
 export type ApiClient = Client<paths>;
 

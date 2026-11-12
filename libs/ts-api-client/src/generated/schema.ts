@@ -1613,6 +1613,8 @@ export interface components {
             template_key: string;
             /** Template Version */
             template_version: number;
+            /** Trace Id */
+            trace_id?: string | null;
         };
         /**
          * RunSummary

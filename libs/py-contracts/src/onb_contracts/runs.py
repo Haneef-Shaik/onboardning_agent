@@ -85,6 +85,7 @@ class RunRecord(BaseModel):
     status: RunStatus
     created_by: str
     created_at: datetime
+    trace_id: str | None = None  # the run's W3C trace id (32 hex), for the trace link (UI-5); None if untraced
     tasks: list[RunTaskRecord]
 
 

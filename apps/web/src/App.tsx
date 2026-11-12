@@ -9,6 +9,7 @@ import type { SessionStore } from "./auth/session";
 import { canAccess, navFor, safeReturnPath, sectionOf } from "./nav/nav";
 import { HiresPage } from "./hires/HiresPage";
 import { LoginPage } from "./pages/LoginPage";
+import { RunsPage } from "./runs/RunsPage";
 import { NotAvailablePage, SectionPage } from "./pages/SectionPage";
 import { Shell } from "./pages/Shell";
 
@@ -87,6 +88,14 @@ function AppRoutes({ client }: { client: ApiClient }) {
           element={
             <RequireSection me={me}>
               <HiresPage client={client} role={me.role} />
+            </RequireSection>
+          }
+        />
+        <Route
+          path="/runs/*"
+          element={
+            <RequireSection me={me}>
+              <RunsPage client={client} role={me.role} />
             </RequireSection>
           }
         />
