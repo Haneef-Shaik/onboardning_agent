@@ -33,7 +33,13 @@ from onb_guardrails.pii import redact
 from .in_app import USERS_COLLECTION, InAppChannel, MalformedEventError, UnknownRecipientError
 from .outbox import DecisionButton, OutboxEntry, TelegramMockChannel
 
-__all__ = ["approval_notify_handler", "ensure_approval_notify_indexes", "mock_chat_id"]
+__all__ = [
+    "approval_message_body",
+    "approval_notify_handler",
+    "approval_recipients",
+    "ensure_approval_notify_indexes",
+    "mock_chat_id",
+]
 
 _ID: Final = re.compile(r"appr_[A-Za-z0-9_]{1,64}")
 _MAX_ROLE_RECIPIENTS: Final = 20
@@ -119,6 +125,12 @@ async def _recipients(store: DataStore, approval: Mapping[str, Any]) -> list[str
         role_users = await users.find({"role": approval["approver_role"]}, limit=_MAX_ROLE_RECIPIENTS)
         return [str(u["_id"]) for u in role_users]
     return []
+
+
+approval_message_body = _body
+"""The approval's Telegram text (HIL-2's reminder repeats it)."""
+approval_recipients = _recipients
+"""Who decides the approval: its approver, or the users of its approver role (HIL-2's reminder goes to them)."""
 
 
 def approval_notify_handler(

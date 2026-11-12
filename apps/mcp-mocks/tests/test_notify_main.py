@@ -10,7 +10,7 @@ from pathlib import Path
 import pytest
 from onb_api.testing_mongo import MemoryDatabase, memory_store
 from onb_crypto import GrantSigningKey
-from onb_mcp_mocks.notify.main import build_service, ensure_indexes
+from onb_mcp_mocks.notify.main import build_service, consumer_handlers, ensure_indexes
 from onb_mcp_mocks.notify.settings import SettingsError, load_notify_settings
 
 POLICY = Path(__file__).resolve().parents[3] / "config" / "pii_sink_policy.yaml"
@@ -75,9 +75,18 @@ def test_the_service_serves_notify_send_and_subscribes_the_in_app_consumer() -> 
     # RUN-3 subscribes fail_task; HIL-1 the approvals notifier and the decision recorder (the webhook's bus)
     assert service.bus.consumers() == (
         "notify.approval",
+        "notify.approval_sla",  # HIL-2: reminder and escalation of overdue approvals
         "notify.in_app",
         "orchestrator.fail_task",
         "orchestrator.record_decision",
     )
     tools = asyncio.run(service.server.list_tools())
     assert [t.name for t in tools] == ["notify_send"]
+
+
+def test_the_process_runs_the_in_app_approval_and_approval_sla_consumers() -> None:
+    service = build_service(load_notify_settings(env()), memory_store(MemoryDatabase()))
+    handlers = consumer_handlers(service)
+    assert tuple(handlers) == ("notify.in_app", "notify.approval", "notify.approval_sla")
+    assert all(callable(h) for h in handlers.values())
+    service.bus.worker(handlers)  # every handler is a consumer the service's bus subscribes

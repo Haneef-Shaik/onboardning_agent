@@ -1,5 +1,6 @@
 """Entry point: `python -m onb_mcp_mocks.notify.main` serves `notify_send` at `/mcp` (port 8210) and runs
-the `notify.in_app` and `notify.approval` (HIL-1) consumers on the EVT-1 bus in the same process.
+the `notify.in_app`, `notify.approval` (HIL-1) and `notify.approval_sla` (HIL-2) consumers on the EVT-1 bus
+in the same process.
 
 Startup makes the indexes the sink relies on, before the first call: PII-4's grant indexes (the
 unique `{org_id, jti}` gives concurrent replays exactly one winner), the outbox and in-app indexes,
@@ -15,7 +16,12 @@ from dataclasses import dataclass
 
 import uvicorn
 from mcp.server.fastmcp import FastMCP
-from onb_contracts.notify import APPROVAL_NOTIFY_CONSUMER, IN_APP_CONSUMER, NOTIFY_SUBSCRIPTIONS
+from onb_contracts.notify import (
+    APPROVAL_NOTIFY_CONSUMER,
+    APPROVAL_SLA_CONSUMER,
+    IN_APP_CONSUMER,
+    NOTIFY_SUBSCRIPTIONS,
+)
 from onb_crypto import (
     ORG_KEYS_COLLECTION,
     GrantAudit,
@@ -26,7 +32,7 @@ from onb_crypto import (
     load_sink_policy,
 )
 from onb_data import AuditLog, DataStore, connect
-from onb_eventbus import MongoEventBus
+from onb_eventbus import Handler, MongoEventBus
 from onb_telemetry import init_telemetry
 
 from ..telegram import TelegramMockTransport
@@ -38,8 +44,9 @@ from .sends import ensure_send_indexes
 from .server import SERVER_NAME, build_notify_server
 from .settings import NotifySettings, load_notify_settings
 from .sink import NotifySink
+from .sla import approval_sla_handler
 
-__all__ = ["NotifyService", "build_service", "ensure_indexes", "main"]
+__all__ = ["NotifyService", "build_service", "consumer_handlers", "ensure_indexes", "main"]
 
 
 @dataclass(frozen=True)
@@ -83,15 +90,19 @@ async def ensure_indexes(service: NotifyService) -> None:
     await AuditLog(service.store).ensure_indexes()
 
 
+def consumer_handlers(service: NotifyService) -> dict[str, Handler]:
+    """The consumers this process runs: `notify.in_app`, `notify.approval` (HIL-1), `notify.approval_sla` (HIL-2)."""
+    return {
+        IN_APP_CONSUMER: in_app_handler(service.store),
+        APPROVAL_NOTIFY_CONSUMER: approval_notify_handler(service.store, service.telegram),
+        APPROVAL_SLA_CONSUMER: approval_sla_handler(service.store, service.telegram),
+    }
+
+
 async def serve(service: NotifyService, settings: NotifySettings) -> None:  # pragma: no cover - process loop
     await ensure_indexes(service)
     stop = asyncio.Event()
-    worker = service.bus.worker(
-        {
-            IN_APP_CONSUMER: in_app_handler(service.store),
-            APPROVAL_NOTIFY_CONSUMER: approval_notify_handler(service.store, service.telegram),
-        }
-    )
+    worker = service.bus.worker(consumer_handlers(service))
     config = uvicorn.Config(service.server.streamable_http_app(), host=settings.host, port=settings.port)
     worker_task = asyncio.create_task(worker.run(stop))
     try:
