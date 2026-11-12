@@ -18,14 +18,14 @@ MUTANTS = [
     (
         "M1 the retry is confirmed as soon as 'Review' is pressed (no dialog gate)",
         PANEL,
-        "onReview={setReviewing} />",
+        "onReview={(m) => setReviewingId(m.id)} />",
         'onReview={(m) => confirm.mutate(m.proposal?.proposal_id ?? "")} />',
     ),
     (
         "M2 Cancel in the dialog confirms",
         PANEL,
-        "onCancel={() => setReviewing(null)}",
-        'onCancel={() => confirm.mutate(reviewing.proposal?.proposal_id ?? "")}',
+        "onCancel={() => setReviewingId(null)}",
+        "onCancel={() => confirm.mutate(reviewing.proposal_id)}",
     ),
     ("M3 a manager is offered the confirm button", PANEL, "const canConfirm = canControlRuns(role);", "const canConfirm = true;"),
     (
