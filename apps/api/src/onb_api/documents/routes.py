@@ -18,7 +18,13 @@ from typing import Annotated, Any, Final
 from fastapi import APIRouter, Depends, Path, Query, Request
 from onb_contracts import Envelope, ErrorCode
 from onb_contracts.auth import Role
-from onb_contracts.documents import ALLOWED_DOCUMENT_MEDIA_TYPES, DocumentMeta, DocumentMetaEnvelope, DocumentsEnvelope, DocumentType
+from onb_contracts.documents import (
+    ALLOWED_DOCUMENT_MEDIA_TYPES,
+    DocumentMeta,
+    DocumentMetaEnvelope,
+    DocumentsEnvelope,
+    DocumentType,
+)
 from onb_contracts.hires import HIRE_ID_PATTERN
 
 from onb_api.auth.dependencies import require_role

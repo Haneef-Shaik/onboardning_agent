@@ -165,3 +165,24 @@ def test_an_oversized_scan_stores_nothing_on_mongo(
     with unscoped("root read-back: nothing stored for a refused upload"):
         counts = [db[name].count_documents({}) for name in (CHUNKS_COLLECTION, FILES_COLLECTION, META_COLLECTION)]
     assert counts == [0, 0, 0]
+
+
+def test_the_list_route_on_mongo_returns_one_hires_scans_oldest_first_as_metadata_only(stack: Stack) -> None:
+    """UI-4: `GET /hires/{id}/documents` reads `documents_meta` with a real sort and the tenant filter."""
+    first = _upload(stack.client).json()["data"]
+    second = _upload(stack.client).json()["data"]
+    other = stack.client.post(
+        "/hires/h_acme_002/documents",
+        params={"type": "pan"},
+        content=SCAN,
+        headers={**bearer(token_for(*HR)), "Content-Type": "image/png"},
+    )
+    assert other.status_code == 201, other.text
+
+    response = stack.client.get(f"/hires/{HIRE}/documents", headers=bearer(token_for(*HR)))
+
+    assert response.status_code == 200, response.text
+    listed = response.json()["data"]
+    assert listed == [first, second]
+    assert all(set(item) == {"id", "hire_id", "type", "uploaded_at", "verified"} for item in listed)
+    assert MARKER.decode() not in response.text

@@ -1,0 +1,14 @@
+M1 CAUGHT · HR may reveal Aadhaar (UI) · apps/web/src/hires/policy.ts · expected failure: lets HR reveal every field but Aadhaar
+M2 CAUGHT · a manager may reveal (UI) · apps/web/src/hires/policy.ts · expected failure: never lets a manager reveal anything
+M3 CAUGHT · a revealed value never expires · apps/web/src/hires/useReveal.ts · expected failure: holds a revealed value, then drops it after the TTL the API names
+M4 CAUGHT · the TTL ignores the API's seconds (never hides before 10 min) · apps/web/src/hires/useReveal.ts · expected failure: holds a revealed value, then drops it after the TTL the API names
+M5 CAUGHT · a reveal needs no reason · apps/web/src/hires/HireDetail.tsx · expected failure: asks for a reason, reveals one field, and hides it again after the TTL
+M6 CAUGHT · the upload sends no media type of its own · apps/web/src/hires/hires-api.ts · expected failure: uploads a scan with its type and media type, then lists its metadata
+M7 CAUGHT · a non-scan file is sent anyway · apps/web/src/hires/DocumentsPanel.tsx · expected failure: refuses a file that is not a PDF, JPEG or PNG before sending it
+M8 CAUGHT · an Aadhaar goes without consent · apps/web/src/hires/new-hire.ts · expected failure: needs the hire's consent purpose whenever an Aadhaar is entered
+M9 CAUGHT · unverified shows as verified · apps/web/src/hires/DocumentsPanel.tsx · expected failure: lists existing scans with type, upload time and verified flag
+M10 CAUGHT · the list route lets a manager in · apps/api/src/onb_api/documents/routes.py · expected failure: test_a_manager_cannot_list_scans
+M11 CAUGHT · the list returns every hire's scans · apps/api/src/onb_api/documents/meta.py · expected failure: test_the_list_holds_only_that_hires_scans
+M12 CAUGHT · the list does not check the hire is the caller org's · apps/api/src/onb_api/documents/service.py · expected failure: test_listing_the_scans_of_a_missing_or_foreign_hire_is_404
+M13 CAUGHT · the list is not oldest-first · apps/api/src/onb_api/documents/meta.py · expected failure: test_hr_lists_a_hires_scans_as_metadata_only
+SUMMARY: 13 of 13 mutations caught

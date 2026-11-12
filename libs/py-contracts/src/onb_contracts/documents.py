@@ -22,8 +22,8 @@ __all__ = [
     "MAX_DOCUMENT_BYTES",
     "DocumentMeta",
     "DocumentMetaEnvelope",
-    "DocumentsEnvelope",
     "DocumentType",
+    "DocumentsEnvelope",
 ]
 
 MAX_DOCUMENT_BYTES: Final = 5 * 1024 * 1024

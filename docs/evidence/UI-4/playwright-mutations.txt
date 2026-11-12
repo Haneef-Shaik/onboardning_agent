@@ -1,0 +1,3 @@
+P1 HR may reveal Aadhaar -> ✘  3 [chromium] › apps/web/e2e/hires.spec.ts:50:1 › a manager sees no reveal control; HR sees no Aadhaar reveal control (7.2s) | Error: expect(locator).toHaveCount(expected) failed | 1 failed | 2 passed (12.6s)
+P2 a revealed value never expires -> ✘  2 [chromium] › apps/web/e2e/hires.spec.ts:11:1 › HR creates a hire, sees masked fields, reveals one with a reason, and it hides again after the TTL (7.4s) | Error: expect(locator).toHaveAttribute(expected) failed | 1 failed | 2 passed (9.5s)
+P3 managers get the Hires section -> ✘  1 [chromium] › apps/web/e2e/hires.spec.ts:50:1 › a manager sees no reveal control; HR sees no Aadhaar reveal control (7.2s) | Error: expect(locator).toHaveCount(expected) failed | 1 failed | 2 passed (12.7s)

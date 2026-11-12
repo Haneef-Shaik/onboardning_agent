@@ -1,0 +1,16 @@
+[WebServer] (!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+[WebServer]   - import "./aliases" without a file extension (apps/web/vite.config.ts:4:25). Add the file extension
+[WebServer] Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+Running 8 tests using 5 workers
+
+  ✓  3 [chromium] › apps/web/e2e/smoke.spec.ts:49:3 › HR_ADMIN signs in and sees the HR_ADMIN nav (1.3s)
+  ✓  1 [chromium] › apps/web/e2e/smoke.spec.ts:49:3 › HR signs in and sees the HR nav (1.3s)
+  ✓  6 [chromium] › apps/web/e2e/smoke.spec.ts:49:3 › MANAGER signs in and sees the MANAGER nav (842ms)
+  ✓  7 [chromium] › apps/web/e2e/smoke.spec.ts:79:1 › a wrong password shows the login error and does not sign in (851ms)
+  ✓  2 [chromium] › apps/web/e2e/hires.spec.ts:11:1 › HR creates a hire, sees masked fields, reveals one with a reason, and it hides again after the TTL (2.3s)
+  ✓  5 [chromium] › apps/web/e2e/hires.spec.ts:83:1 › a document upload shows its type, upload time and verified flag (2.4s)
+  ✓  8 [chromium] › apps/web/e2e/smoke.spec.ts:86:1 › a reload signs the user out: the token is in memory only (592ms)
+  ✓  4 [chromium] › apps/web/e2e/hires.spec.ts:50:1 › a manager sees no reveal control; HR sees no Aadhaar reveal control (3.1s)
+
+  8 passed (7.2s)

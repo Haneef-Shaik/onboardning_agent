@@ -612,7 +612,8 @@ def _list_documents_check(client: TestClient, xt: World) -> None:
             assert foreign.status_code == 404, foreign.json()
             assert_indistinguishable(seen(foreign), seen(missing), f"list of org B's scans as {role.value}")
         listed = client.get(f"/hires/{a_hire}/documents", headers=headers)
-        assert listed.status_code == 200 and b_doc not in listed.text, "org B's scan is listed for org A"
+        assert listed.status_code == 200, listed.json()
+        assert b_doc not in listed.text, "org B's scan is listed for org A"
 
 
 def _documents_meta(xt: World, org_id: str) -> set[tuple[str, str]]:
