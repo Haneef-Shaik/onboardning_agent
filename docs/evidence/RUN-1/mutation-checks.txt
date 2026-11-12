@@ -1,0 +1,109 @@
+baseline: exit=0, failed=0
+
+M1 KILLED: a join is two plain edges, not a fan-in (box 1)
+  file: apps/orchestrator/src/onb_orchestrator/graph.py
+  failing tests (1):
+    apps/orchestrator/tests/test_run_graph.py::test_a_join_waits_for_every_branch_even_a_longer_one
+
+M2 KILLED: tasks run one at a time, never in parallel (box 1)
+  file: apps/orchestrator/src/onb_orchestrator/graph.py
+  failing tests (1):
+    apps/orchestrator/tests/test_run_graph.py::test_in_a_diamond_b_and_c_run_in_parallel_and_d_starts_only_after_both
+
+M3 KILLED: a skipped dependency blocks its dependents (box 2)
+  file: libs/py-agents/src/onb_agents/runs/states.py
+  failing tests (3):
+    apps/orchestrator/tests/test_run_graph.py::test_a_skipped_dependency_does_not_block_its_dependent
+    apps/orchestrator/tests/test_run_graph.py::test_the_run_completes_and_every_task_ends_done_or_skipped
+    libs/py-agents/tests/test_run_states.py::test_skipped_dependencies_do_not_block
+
+M4 KILLED: the runner no longer re-checks dependencies before readying a task (box 2)
+  file: apps/orchestrator/src/onb_orchestrator/runner.py
+  failing tests (1):
+    apps/orchestrator/tests/test_run_graph.py::test_a_task_whose_dependency_is_not_finished_is_refused
+
+M5 KILLED: pending → running is allowed (box 2)
+  file: libs/py-agents/src/onb_agents/runs/states.py
+  failing tests (4):
+    apps/orchestrator/tests/test_run_graph.py::test_an_illegal_transition_is_rejected_and_nothing_is_written
+    libs/py-agents/tests/test_run_states.py::test_illegal_state_transitions_are_rejected[pending-running]
+    libs/py-agents/tests/test_run_states.py::test_the_transitions_that_matter_most_are_illegal[pending-running]
+    libs/py-agents/tests/test_run_store.py::test_a_task_moves_only_along_the_state_machine_and_stamps_its_times
+
+M6 KILLED: a done task may run again (box 2)
+  file: libs/py-agents/src/onb_agents/runs/states.py
+  failing tests (4):
+    libs/py-agents/tests/test_run_states.py::test_illegal_state_transitions_are_rejected[done-running]
+    libs/py-agents/tests/test_run_states.py::test_states_given_as_strings_are_checked_like_enums
+    libs/py-agents/tests/test_run_states.py::test_the_transitions_that_matter_most_are_illegal[done-running]
+    libs/py-agents/tests/test_run_store.py::test_a_task_moves_only_along_the_state_machine_and_stamps_its_times
+
+M7 KILLED: a task move is not compare-and-set on the status it was decided on (box 2)
+  file: libs/py-agents/src/onb_agents/runs/store.py
+  failing tests (1):
+    libs/py-agents/tests/test_run_store.py::test_a_move_that_loses_a_race_is_a_conflict_and_writes_nothing
+
+M8 KILLED: a skipped task is executed (box 2)
+  file: apps/orchestrator/src/onb_orchestrator/runner.py
+  failing tests (2):
+    apps/orchestrator/tests/test_run_graph.py::test_a_skipped_dependency_does_not_block_its_dependent
+    apps/orchestrator/tests/test_run_graph.py::test_the_run_completes_and_every_task_ends_done_or_skipped
+
+M9 KILLED: the checkpoint thread is the bare run id (box 3)
+  file: apps/orchestrator/src/onb_orchestrator/graph.py
+  failing tests (11):
+    apps/orchestrator/tests/test_run_graph.py::test_a_failing_task_fails_the_run_and_its_dependents_never_start
+    apps/orchestrator/tests/test_run_graph.py::test_a_graph_built_for_a_run_is_configured_with_its_thread
+    apps/orchestrator/tests/test_run_graph.py::test_a_join_waits_for_every_branch_even_a_longer_one
+    apps/orchestrator/tests/test_run_graph.py::test_a_redelivered_job_resumes_a_run_that_stopped_part_way
+    apps/orchestrator/tests/test_run_graph.py::test_a_run_stays_pinned_to_its_version_after_a_newer_version_is_published
+    apps/orchestrator/tests/test_run_graph.py::test_a_skipped_dependency_does_not_block_its_dependent
+    apps/orchestrator/tests/test_run_graph.py::test_in_a_diamond_b_and_c_run_in_parallel_and_d_starts_only_after_both
+    apps/orchestrator/tests/test_run_graph.py::test_running_the_handler_again_executes_nothing_twice
+    ... and 3 more
+
+M10 KILLED: the checkpointer accepts another org's thread (box 3)
+  file: apps/orchestrator/src/onb_orchestrator/checkpointer.py
+  failing tests (2):
+    apps/orchestrator/tests/test_checkpointer.py::test_a_thread_that_is_not_org_id_colon_run_id_of_the_tenant_is_refused[:run_1]
+    apps/orchestrator/tests/test_checkpointer.py::test_a_thread_that_is_not_org_id_colon_run_id_of_the_tenant_is_refused[org_b:run_1]
+
+M11 KILLED: a replayed regular checkpoint write overwrites the first (box 3)
+  file: apps/orchestrator/src/onb_orchestrator/checkpointer.py
+  failing tests (1):
+    apps/orchestrator/tests/test_checkpointer.py::test_pending_writes_come_back_in_order_and_are_written_once
+
+M12 KILLED: the run is started on version 1 whatever version was asked for (box 4)
+  file: apps/api/src/onb_api/runs/service.py
+  failing tests (2):
+    apps/api/tests/test_runs_route.py::test_a_run_stays_pinned_to_its_version_after_a_newer_version_is_published
+    apps/api/tests/test_runs_route.py::test_an_unknown_or_foreign_hire_or_version_is_404[unknown-version]
+
+M13 KILLED: the DAG hash is not recomputed before persisting (box 4, ADR 0008)
+  file: libs/py-agents/src/onb_agents/runs/records.py
+  failing tests (2):
+    libs/py-agents/tests/test_run_records.py::test_a_dag_with_a_forged_hash_is_refused
+    libs/py-agents/tests/test_run_records.py::test_the_hash_is_recomputed_before_persisting_and_a_changed_dag_is_refused
+
+M14 KILLED: a stored DAG is executed without checking its hash (box 4)
+  file: libs/py-agents/src/onb_agents/runs/records.py
+  failing tests (2):
+    apps/orchestrator/tests/test_run_graph.py::test_a_run_whose_stored_dag_was_changed_is_not_executed
+    libs/py-agents/tests/test_run_records.py::test_the_stored_dag_is_returned_only_when_its_hash_still_matches
+
+M15 KILLED: the consumer drives runs in states it does not own
+  file: apps/orchestrator/src/onb_orchestrator/runner.py
+  failing tests (3):
+    apps/orchestrator/tests/test_run_graph.py::test_a_run_in_a_state_this_orchestrator_does_not_drive_is_left_alone[blocked]
+    apps/orchestrator/tests/test_run_graph.py::test_a_run_in_a_state_this_orchestrator_does_not_drive_is_left_alone[in_progress]
+    apps/orchestrator/tests/test_run_graph.py::test_a_run_in_a_state_this_orchestrator_does_not_drive_is_left_alone[paused]
+
+M16 KILLED: a manager may start a run (box 5 route guard)
+  file: apps/api/src/onb_api/runs/routes.py
+  failing tests (2):
+    apps/api/tests/test_role_matrix.py::test_role_matrix[POST
+    apps/api/tests/test_runs_route.py::test_a_manager_may_not_start_a_run
+
+source diff after all mutations: 0 files differ []
+mutations: 16, killed: 16, survivors: none
+exit=0
