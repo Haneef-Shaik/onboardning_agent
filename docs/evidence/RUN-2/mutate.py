@@ -20,19 +20,25 @@ ORCH = REPO / "apps/orchestrator/src/onb_orchestrator"
 API = REPO / "apps/api/src/onb_api/runs"
 BUS = REPO / "libs/py-eventbus/src/onb_eventbus"
 CONTRACTS = REPO / "libs/py-contracts/src/onb_contracts"
-TESTS = [
-    "libs/py-agents/tests/test_run_states.py",
-    "libs/py-agents/tests/test_run_store.py",
-    "libs/py-agents/tests/test_run_control_store.py",
-    "libs/py-eventbus/tests/test_worker.py",
-    "libs/py-contracts/tests/test_run_control_contracts.py",
-    "apps/orchestrator/tests/test_run_control.py",
-    "apps/orchestrator/tests/test_run_graph.py",
-    "apps/orchestrator/tests/test_run_failures.py",
-    "apps/orchestrator/tests/test_checkpointer.py",
-    "apps/orchestrator/tests/test_worker_main.py",
-    "apps/api/tests/test_run_control_routes.py",
-    "apps/api/tests/test_role_matrix.py",
+TESTS_BY_PROJECT = [  # one pytest call per project: their `tests` packages clash in a single run (RUN-3)
+    [
+        "libs/py-agents/tests/test_run_states.py",
+        "libs/py-agents/tests/test_run_store.py",
+        "libs/py-agents/tests/test_run_control_store.py",
+    ],
+    ["libs/py-eventbus/tests/test_worker.py"],
+    ["libs/py-contracts/tests/test_run_control_contracts.py"],
+    [
+        "apps/orchestrator/tests/test_run_control.py",
+        "apps/orchestrator/tests/test_run_graph.py",
+        "apps/orchestrator/tests/test_run_failures.py",
+        "apps/orchestrator/tests/test_checkpointer.py",
+        "apps/orchestrator/tests/test_worker_main.py",
+        "apps/orchestrator/tests/test_sink_rejected.py",
+        "apps/orchestrator/tests/test_agent_executor.py",
+        "apps/orchestrator/tests/test_run_spans.py",
+    ],
+    ["apps/api/tests/test_run_control_routes.py", "apps/api/tests/test_role_matrix.py"],
 ]
 
 MUTATIONS: list[tuple[str, str, Path, str, str]] = [
@@ -61,8 +67,8 @@ MUTATIONS: list[tuple[str, str, Path, str, str]] = [
         "M4",
         "a task gets one attempt more than its maximum (box 2)",
         ORCH / "runner.py",
-        "            last = attempts >= self.policy.max_attempts",
-        "            last = attempts > self.policy.max_attempts",
+        "            last = not failure.retryable or attempts >= self.policy.max_attempts",
+        "            last = not failure.retryable or attempts > self.policy.max_attempts",
     ),
     (
         "M5",
@@ -145,8 +151,8 @@ MUTATIONS: list[tuple[str, str, Path, str, str]] = [
         "M16",
         "a cut-off task keeps the attempt it did not finish",
         ORCH / "runner.py",
-        '                await asyncio.shield(self._release(run_id, task_id, token, int(task["attempts"]) - 1))',
-        '                await asyncio.shield(self._release(run_id, task_id, token, int(task["attempts"])))',
+        '                await asyncio.shield(self._release(run_id, task_id, token, int(task["attempts"]) - 1))\n                raise\n            except PyMongoError:',
+        '                await asyncio.shield(self._release(run_id, task_id, token, int(task["attempts"])))\n                raise\n            except PyMongoError:',
     ),
     (
         "M17",
@@ -176,19 +182,53 @@ MUTATIONS: list[tuple[str, str, Path, str, str]] = [
         "            await asyncio.sleep(self.policy.heartbeat_seconds)",
         "            await asyncio.sleep(3600)",
     ),
+    (
+        "M21",
+        "a retried task keeps the previous attempt's cause (RUN-3's stale `failure`)",
+        ORCH / "runner.py",
+        '"error": None, "retry_at": None, "failure": None},',
+        '"error": None, "retry_at": None},',
+    ),
+    (
+        "M22",
+        "an executor that says retrying cannot help is retried anyway",
+        ORCH / "runner.py",
+        "            last = not failure.retryable or attempts >= self.policy.max_attempts",
+        "            last = attempts >= self.policy.max_attempts",
+    ),
+    (
+        "M23",
+        "a database error from the executor fails the task instead of retrying the job",
+        ORCH / "runner.py",
+        "            except PyMongoError:\n                # A database error is not the task's failure",
+        "            except ZeroDivisionError:\n                # A database error is not the task's failure",
+    ),
+    (
+        "M24",
+        "a task failed by a sink is not an attempt: the driver's conflict is an error",
+        ORCH / "runner.py",
+        "                    if outside is None or outside[\"status\"] != TaskState.FAILED.value:\n                        raise\n                    failure = _Failure(_outside_failure(outside))",
+        "                    raise",
+    ),
 ]
 
 
 def _run_tests() -> tuple[int, list[str]]:
-    result = subprocess.run(
-        ["uv", "run", "--frozen", "pytest", "-q", "-p", "no:cacheprovider", "-rf", "-x", *TESTS],
-        cwd=REPO,
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-    failed = sorted({line.split(" ")[1] for line in result.stdout.splitlines() if line.startswith("FAILED ")})
-    return result.returncode, failed
+    failed: list[str] = []
+    code = 0
+    for files in TESTS_BY_PROJECT:
+        result = subprocess.run(
+            ["uv", "run", "--frozen", "pytest", "-q", "-p", "no:cacheprovider", "-rf", "-x", *files],
+            cwd=REPO,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        failed += sorted({line.split(" ")[1] for line in result.stdout.splitlines() if line.startswith("FAILED ")})
+        code = code or result.returncode
+        if failed:
+            break  # killed: the first failing project is enough
+    return code, failed
 
 
 def main() -> int:

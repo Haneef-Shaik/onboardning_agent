@@ -237,9 +237,11 @@ def test_an_exhausted_run_token_budget_fails_the_task_and_the_run(scratch: Scrat
     assert by_id["a"]["status"] == "done"
     assert by_id["b"]["status"] == "failed"
     assert by_id["b"]["failure"] == {"kind": "budget_exceeded", "reason": "run tokens 1200/1000"}
-    assert by_id["c"]["status"] == "cancelled"
+    assert (
+        by_id["c"]["status"] == "pending"
+    )  # RUN-2: a blocked run keeps the rest for HR (was cancelled when the run failed)
     [run] = scratch.find("onboarding_runs", {"_id": run_id})
-    assert run["status"] == "failed"
+    assert run["status"] == "blocked"  # RUN-2 (FR-R4): budget_exceeded is deterministic, so the run blocks at once
 
 
 def test_a_sinks_rejection_published_on_the_bus_fails_the_running_task(scratch: Scratch, tmp_path: Path) -> None:

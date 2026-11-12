@@ -76,3 +76,33 @@
 - The eval fixture's own `onboarding_runs` documents (another shape) share the collection in test
   databases; the run list and read routes ignore documents that are not runs of this platform.
 - The audit `reason` is free text. It must not carry personal data; enforcing that is GR-1/SEC-1's.
+
+## Addendum — reconciled with RUN-3's agent tasks (attempt 2)
+
+RUN-3 (ADR 0019) merged first, so RUN-2 was rebased onto it and these were decided:
+
+10. **A sink-rejected task is an ordinary failed attempt.** `orchestrator.fail_task` still fails the
+    `running` task at once (now also releasing its lease and appending to its history, so the stream shows
+    it). The driver that was running the task sees the compare-and-set conflict on its own move, never
+    turns the task `done` (RUN-3's rule, kept), and treats it as that attempt's failure: the task is
+    retried with backoff while attempts remain, and at `max_attempts` the run is **blocked** (not failed)
+    and HR is notified. The cause (`failure = {kind: sink_rejected, reason}`, `error = sink_rejected`)
+    stays on the task. RUN-3's "the run fails when its driver sees the failed task" is superseded by FR-R4.
+11. **A retry starts clean.** Moving a task to `running` clears its `error`, `retry_at` and `failure`, so a
+    retried task never shows the previous attempt's cause (RUN-3's open item). A manual retry clears them too.
+12. **Recovery of a run whose driver died after `fail_task`.** The task is `failed` with the sink's cause and
+    the run `running`. The driver's job lease runs out and the job is redelivered; the next delivery finds the
+    failed task and retries it (or blocks the run at its maximum). Nothing else is needed while the job is
+    redelivered; a dead-lettered job is the open item of this ADR's review list (resume republishes one).
+13. **Executor errors are classified by the executor.** An error may say `retryable = False` (RUN-3's
+    `AgentTaskFailedError` does for `no_agent`, `retired_agent`, `grant_refused`, `budget_exceeded`,
+    `guardrail_blocked`): the task fails once and the run is blocked at once, since identical retries cannot
+    help and (for a budget) would spend more. Every other error, and a sink rejection, is a normal attempt.
+    A database error from the executor (RUN-3 re-raises them) is not the task's failure: the lease is
+    released, the attempt handed back and the job retried. The failure `kind` an executor reports is the
+    task's `error` for HR.
+14. **Span nesting.** The executor is started inside the task span, so the agent, its LLM and tool calls are
+    children of `orchestrator.task` (run → task → agent → LLM/tool, RUN-3's tree test).
+15. **Exact subscription lists** now name every consumer: `start_run`, `resume_run`, `cleanup_run`,
+    `fail_task` on the orchestrator's side (`notify.in_app` on the run bus), and `task.sink_rejected` stays in
+    both `run_bus` and `NOTIFY_SUBSCRIPTIONS`.
