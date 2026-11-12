@@ -156,14 +156,14 @@ def test_startup_fails_when_the_llm_configuration_does_not_resolve() -> None:
 
 def test_startup_fails_without_the_telegram_webhook_secret() -> None:
     env = {k: v for k, v in MONGO_ENV.items() if k != "TELEGRAM_WEBHOOK_SECRET"}
-    result = _start_api({**env, "JWT_SECRET": GOOD_SECRET})
+    result = _start_api({**env, **CONFIG_ENV, "JWT_SECRET": GOOD_SECRET})
     assert result.returncode != 0
     assert "ConfigError: TELEGRAM_WEBHOOK_SECRET is not set" in result.stderr
 
 
 def test_startup_fails_with_a_weak_telegram_webhook_secret() -> None:
     sentinel = secrets.token_hex(8)  # 16 characters: too short to resist guessing
-    result = _start_api({**MONGO_ENV, "JWT_SECRET": GOOD_SECRET, "TELEGRAM_WEBHOOK_SECRET": sentinel})
+    result = _start_api({**MONGO_ENV, **CONFIG_ENV, "JWT_SECRET": GOOD_SECRET, "TELEGRAM_WEBHOOK_SECRET": sentinel})
     assert result.returncode != 0
     assert "TELEGRAM_WEBHOOK_SECRET must be 32-256 characters" in result.stderr
     assert sentinel not in result.stderr
