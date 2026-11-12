@@ -162,8 +162,9 @@ CONSUMER_CASES: Mapping[str, ConsumerCase] = {
         lambda org: {"approval_id": XT_APPROVALS[org], "run_id": XT_RUNS[org][0], "task_id": "manager_approval"},
         _approval_notify,
     ),
-    # HIL-2: an approval is overdue; the escalation reads the job's org's approval and HR users only (org A's
-    # approval is pending, so org A's HR are told) and writes notes and messages in that org alone.
+    # HIL-2: an approval is overdue; the handler reads the job's org's approval only and writes nothing of org
+    # B's. The seeded org-A approval is pending but carries no `escalated_at` stamp, so the handler sends nothing
+    # (an unstamped stage is refused, ADR 0027): this row proves isolation, not delivery (tests_int proves that).
     APPROVAL_SLA_CONSUMER: ConsumerCase(
         APPROVAL_OVERDUE,
         lambda org: {

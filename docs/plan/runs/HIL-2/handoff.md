@@ -1,4 +1,16 @@
-# Handoff — HIL-2 · Remind and escalate overdue approvals        attempt 1 · goal/hil-2-approval-sla · HEAD: see `git log -1` (base main 5f61a29)
+# Handoff — HIL-2 · Remind and escalate overdue approvals        attempt 2 · goal/hil-2-approval-sla · HEAD: see `git log -1` (base main 5f61a29)
+
+**Attempt 2.** The attempt 1 verifier found all three boxes met and every gate it ran passing. It failed on
+one standing-rule problem: `docs/evidence/HIL-2/make-check.txt` and `make-check-run3-flake.txt` held this
+stack's Mongo root password, which leaked through `mongo_uri` in pytest fixture tracebacks of the test-xt flake.
+Fixed as follows:
+- Every credentialed `mongodb://user:pass@` in `docs/evidence/HIL-2/` now reads `mongodb://***:***@`.
+- A scan of every tracked file for each `.env` secret value finds 0 files (`MONGO_ROOT_PASSWORD`,
+  `PII_MASTER_KEY`, `SEED_*_PASSWORD`, `JAEGER_BASIC_AUTH_HASH`).
+- History is not rewritten (MASTER-PLAN rule), and the branch was never pushed. Instead the `ob-hil-2` stack's
+  root password was **rotated** (`changeUserPassword`, new value in `.env`). The old value no longer
+  authenticates ("old password still works: False"), and the Mongo SLA tests pass with the new one (`3 passed`).
+- Also fixed: the xt row's comment now says what the row proves (isolation; delivery is proved in tests_int).
 
 **Outcome claimed.** An undecided approval reminds its approver once when it is overdue and escalates to HR
 once at a second threshold. Both thresholds come from `config/approval_sla.yaml`. Each stage is stamped on
@@ -101,7 +113,16 @@ Left open:
 
   Exact-list tests were extended, never loosened: `test_run_store.py`, `test_notify_contracts.py`, `test_notify_main.py`. `test_worker_main.py`'s serve test got a `FakeStore.tenant` and a stubbed sweep; its assertions are unchanged.
 
+- **Orchestrator / UI-5:** per the attempt 1 verifier, `docs/evidence/UI-5/test-xt-rerun-2.txt` on main has the
+  same kind of credential leak (a root `mongodb://` URI from a test-xt traceback). That is another goal's cleanup:
+  redact it, and rotate that stack's root password.
+- **All goals / T-3:** a test-xt or test-int setup error prints the fixture `mongo_uri` with the root password
+  into any captured log. Redact `mongodb://…@` before committing evidence, or make the fixture value a
+  repr-safe object.
+
 ## Traps hit
+- Committed gate logs can carry `.env` secrets via pytest tracebacks (the attempt 1 failure): scan evidence for
+  `mongodb://…@` and `.env` values before committing.
 - Approval `_id`s are unique across the whole collection, not per org; tests that open the same (run, task) in two orgs collide.
 - The worktree sandbox refuses heredocs and `. ./.env`: use Edit, script files and `uv run --env-file .env`.
 - The rtk hook rewrites `make check` and truncates its output into the evidence file: use `rtk proxy make …`.

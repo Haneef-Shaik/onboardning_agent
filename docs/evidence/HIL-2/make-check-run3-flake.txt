@@ -1430,7 +1430,7 @@ E           pymongo.errors._OperationCancelled: operation cancelled
 The above exception was the direct cause of the following exception:
 
 root_client = MongoClient(host=['127.0.0.1:55386'], document_class=dict, tz_aware=True, connect=True, authsource='admin', directconnection=True, serverselectiontimeoutms=10000)
-mongo_uri = 'mongodb://root:f8e0897e69beb8165892db7ba8f8da93@127.0.0.1:55386/?authSource=admin&directConnection=true'
+mongo_uri = 'mongodb://***:***@127.0.0.1:55386/?authSource=admin&directConnection=true'
 database_name = 'xt_118dc6fc9888'
 
     @pytest.fixture
@@ -1615,7 +1615,7 @@ E                   pymongo.errors.NetworkTimeout: operation cancelled
 _ ERROR at setup of test_the_routes_own_cross_tenant_checks[POST /runs/{run_id}/pause] _
 
 root_client = MongoClient(host=['127.0.0.1:55386'], document_class=dict, tz_aware=True, connect=True, authsource='admin', directconnection=True, serverselectiontimeoutms=10000)
-mongo_uri = 'mongodb://root:f8e0897e69beb8165892db7ba8f8da93@127.0.0.1:55386/?authSource=admin&directConnection=true'
+mongo_uri = 'mongodb://***:***@127.0.0.1:55386/?authSource=admin&directConnection=true'
 database_name = 'xt_118dc6fc9888'
 
     @pytest.fixture
@@ -1709,7 +1709,7 @@ E               pymongo.errors.ServerSelectionTimeoutError: 127.0.0.1:55386: tim
 _ ERROR at setup of test_the_routes_own_cross_tenant_checks[POST /runs/{run_id}/resume] _
 
 root_client = MongoClient(host=['127.0.0.1:55386'], document_class=dict, tz_aware=True, connect=True, authsource='admin', directconnection=True, serverselectiontimeoutms=10000)
-mongo_uri = 'mongodb://root:f8e0897e69beb8165892db7ba8f8da93@127.0.0.1:55386/?authSource=admin&directConnection=true'
+mongo_uri = 'mongodb://***:***@127.0.0.1:55386/?authSource=admin&directConnection=true'
 database_name = 'xt_118dc6fc9888'
 
     @pytest.fixture
@@ -1803,7 +1803,7 @@ E               pymongo.errors.ServerSelectionTimeoutError: 127.0.0.1:55386: tim
 _ ERROR at setup of test_the_routes_own_cross_tenant_checks[POST /runs/{run_id}/cancel] _
 
 root_client = MongoClient(host=['127.0.0.1:55386'], document_class=dict, tz_aware=True, connect=True, authsource='admin', directconnection=True, serverselectiontimeoutms=10000)
-mongo_uri = 'mongodb://root:f8e0897e69beb8165892db7ba8f8da93@127.0.0.1:55386/?authSource=admin&directConnection=true'
+mongo_uri = 'mongodb://***:***@127.0.0.1:55386/?authSource=admin&directConnection=true'
 database_name = 'xt_118dc6fc9888'
 
     @pytest.fixture
@@ -1897,7 +1897,7 @@ E               pymongo.errors.ServerSelectionTimeoutError: 127.0.0.1:55386: tim
 _ ERROR at setup of test_the_routes_own_cross_tenant_checks[POST /runs/{run_id}/tasks/{task_id}/retry] _
 
 root_client = MongoClient(host=['127.0.0.1:55386'], document_class=dict, tz_aware=True, connect=True, authsource='admin', directconnection=True, serverselectiontimeoutms=10000)
-mongo_uri = 'mongodb://root:f8e0897e69beb8165892db7ba8f8da93@127.0.0.1:55386/?authSource=admin&directConnection=true'
+mongo_uri = 'mongodb://***:***@127.0.0.1:55386/?authSource=admin&directConnection=true'
 database_name = 'xt_118dc6fc9888'
 
     @pytest.fixture
@@ -1991,7 +1991,7 @@ E               pymongo.errors.ServerSelectionTimeoutError: 127.0.0.1:55386: tim
 _ ERROR at setup of test_the_routes_own_cross_tenant_checks[POST /runs/{run_id}/tasks/{task_id}/complete] _
 
 root_client = MongoClient(host=['127.0.0.1:55386'], document_class=dict, tz_aware=True, connect=True, authsource='admin', directconnection=True, serverselectiontimeoutms=10000)
-mongo_uri = 'mongodb://root:f8e0897e69beb8165892db7ba8f8da93@127.0.0.1:55386/?authSource=admin&directConnection=true'
+mongo_uri = 'mongodb://***:***@127.0.0.1:55386/?authSource=admin&directConnection=true'
 database_name = 'xt_118dc6fc9888'
 
     @pytest.fixture
