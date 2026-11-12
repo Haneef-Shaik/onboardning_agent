@@ -1,0 +1,961 @@
+{
+  "generated_at": "2026-11-12T20:21:35+00:00",
+  "what": "SEC-1 tamper report: every vault, grant, token and document tamper case, run by make test-pii",
+  "cases": 231,
+  "rejected": 231,
+  "rejected_percent": 100.0,
+  "categories": {
+    "vault": {
+      "title": "Vault records changed in the database (AEAD binding, record HMAC, fail closed)",
+      "rejected": "84/84",
+      "cases": [
+        {
+          "case": "libs/py-crypto/tests/test_vault.py::test_tamper_changed_subject_id_fails_closed",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_vault.py::test_tamper_ciphertext_swapped_between_records_fails_closed",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_vault.py::test_tamper_ciphertext_swapped_and_resigned_still_fails_on_the_aad",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_vault.py::test_tamper_changed_field_fails_closed",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_vault.py::test_tamper_changed_status_fails_closed",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_vault.py::test_tamper_edited_sig_fails_closed",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_vault.py::test_tamper_with_any_other_signed_part_fails_closed[ciphertext-\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00]",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_vault.py::test_tamper_with_any_other_signed_part_fails_closed[created_at-value4]",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_vault.py::test_tamper_with_any_other_signed_part_fails_closed[created_by-user_attacker]",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_vault.py::test_tamper_with_any_other_signed_part_fails_closed[key_version-2]",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_vault.py::test_tamper_with_any_other_signed_part_fails_closed[nonce-\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00]",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_vault.py::test_tamper_with_any_other_signed_part_fails_closed[token-ptk_0000000000000000000000000000000000000000000000000000]",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_vault.py::test_tamper_with_any_other_signed_part_fails_closed[version-7]",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_vault.py::test_the_signature_covers_every_field_but_itself_with_the_signing_key",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_vault.py::test_a_record_signed_by_another_org_fails_closed",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_vault.py::test_a_malformed_record_fails_closed[<lambda>0]",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_vault.py::test_a_malformed_record_fails_closed[<lambda>10]",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_vault.py::test_a_malformed_record_fails_closed[<lambda>11]",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_vault.py::test_a_malformed_record_fails_closed[<lambda>12]",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_vault.py::test_a_malformed_record_fails_closed[<lambda>13]",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_vault.py::test_a_malformed_record_fails_closed[<lambda>1]",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_vault.py::test_a_malformed_record_fails_closed[<lambda>2]",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_vault.py::test_a_malformed_record_fails_closed[<lambda>3]",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_vault.py::test_a_malformed_record_fails_closed[<lambda>4]",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_vault.py::test_a_malformed_record_fails_closed[<lambda>5]",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_vault.py::test_a_malformed_record_fails_closed[<lambda>6]",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_vault.py::test_a_malformed_record_fails_closed[<lambda>7]",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_vault.py::test_a_malformed_record_fails_closed[<lambda>8]",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_vault.py::test_a_malformed_record_fails_closed[<lambda>9]",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_vault.py::test_resolving_with_the_wrong_subject_or_field_is_refused",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_vault.py::test_resolving_with_the_wrong_field_in_the_same_partition_is_refused",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_vault.py::test_another_orgs_token_is_not_found",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_vault.py::test_a_duplicated_token_fails_closed",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_vault.py::test_an_update_over_a_tampered_current_record_fails_closed",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_vault.py::test_a_purged_record_with_ciphertext_left_fails_closed",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_vault.py::test_a_purged_record_that_kept_its_ciphertext_fails_closed_even_when_signed",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_vault_review_fixes.py::test_a_replayed_active_copy_of_a_superseded_record_does_not_resolve",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_vault_aadhaar.py::test_a_general_record_moved_into_the_aadhaar_partition_is_refused",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_vault_aadhaar.py::test_an_aadhaar_record_moved_into_the_general_partition_is_not_resolved_there",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_vault_purge_subject.py::test_purge_subject_fails_closed_on_a_tampered_record",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_vault_purge_subject.py::test_one_tampered_record_does_not_stop_the_purge_of_the_others",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_envelope.py::test_a_tampered_wrapped_key_fails",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_envelope.py::test_a_wrapped_key_moved_to_another_org_version_or_purpose_fails[org_alpha-1-aadhaar]",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_envelope.py::test_a_wrapped_key_moved_to_another_org_version_or_purpose_fails[org_alpha-1-signing]",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_envelope.py::test_a_wrapped_key_moved_to_another_org_version_or_purpose_fails[org_alpha-2-data]",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_envelope.py::test_a_wrapped_key_moved_to_another_org_version_or_purpose_fails[org_beta-1-data]",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_envelope.py::test_a_wrong_master_key_fails_closed",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_envelope.py::test_a_malformed_wrapped_key_fails_closed[]",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_envelope.py::test_a_malformed_wrapped_key_fails_closed[xxxxxxxxxxx]",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_envelope.py::test_a_malformed_wrapped_key_fails_closed[xxxxxxxxxxxxx]",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_keyring.py::test_a_key_record_swapped_from_another_org_fails_closed",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_keyring.py::test_a_store_returning_another_orgs_record_is_refused",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_keyring.py::test_a_wrong_master_key_fails_closed_and_returns_nothing",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_keyring.py::test_a_wrong_master_key_fails_even_when_the_record_claims_its_id",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_keyring.py::test_ciphertext_moved_to_other_associated_data_fails",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_keyring.py::test_ciphertext_naming_an_unknown_version_fails_closed",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_keyring.py::test_tampered_ciphertext_fails_closed",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_keyring_review_fixes.py::test_cached_keys_of_another_org_are_refused_in_this_tenant_context",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_key_store.py::test_a_malformed_document_fails_closed[corrupt0]",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_key_store.py::test_a_malformed_document_fails_closed[corrupt1]",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_key_store.py::test_a_malformed_document_fails_closed[corrupt2]",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_key_store.py::test_a_malformed_document_fails_closed[corrupt3]",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_key_store.py::test_a_malformed_document_fails_closed[corrupt4]",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_key_store.py::test_a_malformed_document_fails_closed[corrupt5]",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_key_store.py::test_a_malformed_document_fails_closed[corrupt6]",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_key_store.py::test_a_malformed_document_fails_closed[corrupt7]",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_key_store.py::test_a_malformed_document_fails_closed[corrupt8]",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_key_store.py::test_a_malformed_document_fails_closed[corrupt9]",
+          "result": "rejected"
+        },
+        {
+          "case": "apps/api/tests/test_retention.py::test_a_tampered_record_fails_that_hire_audits_a_failure_and_the_others_go_on",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests_int/test_vault_mongo.py::test_put_update_resolve_and_tamper_against_mongo",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests_int/test_org_keys_mongo.py::test_two_orgs_keys_are_isolated_and_a_wrong_master_fails_closed",
+          "result": "rejected"
+        },
+        {
+          "case": "apps/mcp-mongo/tests/test_validator.py::test_every_update_operator_on_pii_mobile_is_rejected[$addToSet]",
+          "result": "rejected"
+        },
+        {
+          "case": "apps/mcp-mongo/tests/test_validator.py::test_every_update_operator_on_pii_mobile_is_rejected[$inc]",
+          "result": "rejected"
+        },
+        {
+          "case": "apps/mcp-mongo/tests/test_validator.py::test_every_update_operator_on_pii_mobile_is_rejected[$max]",
+          "result": "rejected"
+        },
+        {
+          "case": "apps/mcp-mongo/tests/test_validator.py::test_every_update_operator_on_pii_mobile_is_rejected[$min]",
+          "result": "rejected"
+        },
+        {
+          "case": "apps/mcp-mongo/tests/test_validator.py::test_every_update_operator_on_pii_mobile_is_rejected[$mul]",
+          "result": "rejected"
+        },
+        {
+          "case": "apps/mcp-mongo/tests/test_validator.py::test_every_update_operator_on_pii_mobile_is_rejected[$pull]",
+          "result": "rejected"
+        },
+        {
+          "case": "apps/mcp-mongo/tests/test_validator.py::test_every_update_operator_on_pii_mobile_is_rejected[$push]",
+          "result": "rejected"
+        },
+        {
+          "case": "apps/mcp-mongo/tests/test_validator.py::test_every_update_operator_on_pii_mobile_is_rejected[$set]",
+          "result": "rejected"
+        },
+        {
+          "case": "apps/mcp-mongo/tests/test_validator.py::test_every_update_operator_on_pii_mobile_is_rejected[$unset]",
+          "result": "rejected"
+        },
+        {
+          "case": "apps/mcp-mongo/tests/test_server_validator.py::test_an_update_touching_pii_mobile_is_denied_over_mcp",
+          "result": "rejected"
+        },
+        {
+          "case": "apps/mcp-hub/tests/test_review_fixes.py::test_raw_pii_in_arguments_is_denied[email]",
+          "result": "rejected"
+        },
+        {
+          "case": "apps/mcp-hub/tests/test_review_fixes.py::test_raw_pii_in_arguments_is_denied[mobile-number]",
+          "result": "rejected"
+        },
+        {
+          "case": "apps/mcp-hub/tests/test_review_fixes.py::test_raw_pii_in_arguments_is_denied[mobile-text]",
+          "result": "rejected"
+        }
+      ]
+    },
+    "grant": {
+      "title": "Forged, widened, replayed or expired grants and swapped tokens at the sink",
+      "rejected": "92/92",
+      "cases": [
+        {
+          "case": "libs/py-crypto/tests/test_grants.py::test_bad_signature_another_key_is_rejected",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_grants.py::test_bad_signature_another_key_claiming_our_kid_is_rejected",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_grants.py::test_bad_signature_a_flipped_signature_bit_is_rejected",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_grants.py::test_bad_signature_a_widened_payload_under_the_old_signature_is_rejected",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_grants.py::test_bad_signature_alg_none_is_rejected",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_grants.py::test_bad_signature_hs256_keyed_with_the_public_key_is_rejected",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_grants.py::test_bad_signature_an_unexpected_header_is_rejected[header_change0]",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_grants.py::test_bad_signature_an_unexpected_header_is_rejected[header_change1]",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_grants.py::test_bad_signature_an_unexpected_header_is_rejected[header_change2]",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_grants.py::test_bad_signature_an_unexpected_header_is_rejected[header_change3]",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_grants.py::test_expired_grant_is_rejected",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_grants.py::test_expired_a_signed_grant_living_longer_than_ten_minutes_is_rejected",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_grants.py::test_a_grant_issued_in_the_future_is_rejected",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_grants.py::test_a_signed_grant_with_malformed_claims_is_rejected[change0]",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_grants.py::test_a_signed_grant_with_malformed_claims_is_rejected[change10]",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_grants.py::test_a_signed_grant_with_malformed_claims_is_rejected[change11]",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_grants.py::test_a_signed_grant_with_malformed_claims_is_rejected[change12]",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_grants.py::test_a_signed_grant_with_malformed_claims_is_rejected[change13]",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_grants.py::test_a_signed_grant_with_malformed_claims_is_rejected[change14]",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_grants.py::test_a_signed_grant_with_malformed_claims_is_rejected[change15]",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_grants.py::test_a_signed_grant_with_malformed_claims_is_rejected[change16]",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_grants.py::test_a_signed_grant_with_malformed_claims_is_rejected[change1]",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_grants.py::test_a_signed_grant_with_malformed_claims_is_rejected[change2]",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_grants.py::test_a_signed_grant_with_malformed_claims_is_rejected[change3]",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_grants.py::test_a_signed_grant_with_malformed_claims_is_rejected[change4]",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_grants.py::test_a_signed_grant_with_malformed_claims_is_rejected[change5]",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_grants.py::test_a_signed_grant_with_malformed_claims_is_rejected[change6]",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_grants.py::test_a_signed_grant_with_malformed_claims_is_rejected[change7]",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_grants.py::test_a_signed_grant_with_malformed_claims_is_rejected[change8]",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_grants.py::test_a_signed_grant_with_malformed_claims_is_rejected[change9]",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_grants.py::test_a_signed_grant_missing_a_claim_is_rejected[exp]",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_grants.py::test_a_signed_grant_missing_a_claim_is_rejected[fields]",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_grants.py::test_a_signed_grant_missing_a_claim_is_rejected[jti]",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_grants.py::test_a_signed_grant_missing_a_claim_is_rejected[org_id]",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_grants.py::test_a_signed_grant_missing_a_claim_is_rejected[run_id]",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_grants.py::test_a_signed_grant_missing_a_claim_is_rejected[sink]",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_grants.py::test_a_signed_grant_missing_a_claim_is_rejected[subject_id]",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_grants.py::test_a_signed_grant_missing_a_claim_is_rejected[task_id]",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_grants.py::test_garbage_is_rejected_as_malformed_or_bad_signature[!!!.###.$$$]",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_grants.py::test_garbage_is_rejected_as_malformed_or_bad_signature[42]",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_grants.py::test_garbage_is_rejected_as_malformed_or_bad_signature[None]",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_grants.py::test_garbage_is_rejected_as_malformed_or_bad_signature[W10.e30.eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eA]",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_grants.py::test_garbage_is_rejected_as_malformed_or_bad_signature[]",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_grants.py::test_garbage_is_rejected_as_malformed_or_bad_signature[a.b.c.d]",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_grants.py::test_garbage_is_rejected_as_malformed_or_bad_signature[a.b]",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_grants.py::test_garbage_is_rejected_as_malformed_or_bad_signature[eyJhbGciOiJFZERTQSJ9.e30.AA=]",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_grants.py::test_garbage_is_rejected_as_malformed_or_bad_signature[grant4]",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_grants.py::test_garbage_is_rejected_as_malformed_or_bad_signature[grant8]",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_grants.py::test_a_non_canonical_base64_signature_is_rejected",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_grants.py::test_a_non_ascii_grant_is_rejected_as_malformed",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_grants.py::test_the_issuer_refuses_a_field_the_policy_does_not_allow_at_that_sink",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_sink.py::test_rejects_a_bad_signature",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_sink.py::test_rejects_an_expired_grant",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_sink.py::test_rejects_the_wrong_sink",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_sink.py::test_rejects_another_hires_token",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_sink.py::test_rejects_another_hires_token_mixed_in_with_the_right_one",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_sink.py::test_rejects_another_orgs_token",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_sink.py::test_rejects_another_orgs_grant",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_sink.py::test_rejects_a_field_not_granted",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_sink.py::test_rejects_a_field_not_granted_at_the_shipped_telegram_sink",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_sink.py::test_rejects_aadhaar_even_when_the_grant_lists_it",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_sink.py::test_rejects_pan_and_bank_fields_even_when_the_grant_lists_them[bank_account]",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_sink.py::test_rejects_pan_and_bank_fields_even_when_the_grant_lists_them[ifsc]",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_sink.py::test_rejects_pan_and_bank_fields_even_when_the_grant_lists_them[pan]",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_sink.py::test_rejects_a_replayed_jti",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_sink.py::test_rejects_a_replayed_jti_even_after_a_failed_first_use",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_sink.py::test_rejects_a_superseded_token",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_sink.py::test_rejects_a_purged_token",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_sink.py::test_rejects_a_tampered_vault_record",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_sink.py::test_rejects_a_token_the_vault_did_not_issue",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_sink.py::test_rejects_a_malformed_token_list[tokens0]",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_sink.py::test_rejects_a_malformed_token_list[tokens1]",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_sink.py::test_rejects_a_malformed_token_list[tokens2]",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_sink.py::test_rejects_too_many_tokens",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_sink.py::test_rejects_the_same_token_twice",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_sink.py::test_rejects_a_concurrent_replay_through_the_unique_jti_index",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_sink.py::test_a_raw_value_put_where_a_token_belongs_never_reaches_the_audit_record",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_sink.py::test_a_raw_value_never_reaches_the_audit_record_of_a_forged_grant",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_sink.py::test_nothing_is_released_when_the_access_log_cannot_be_written",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests/test_sink.py::test_a_failing_audit_store_does_not_turn_a_rejection_into_a_release",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-crypto/tests_int/test_grants_mongo.py::test_another_hires_and_another_orgs_tokens_are_refused_in_mongo",
+          "result": "rejected"
+        },
+        {
+          "case": "apps/mcp-mocks/tests/test_notify_sink.py::test_the_same_grant_with_other_arguments_is_a_rejected_replay",
+          "result": "rejected"
+        },
+        {
+          "case": "apps/mcp-mocks/tests/test_notify_sink.py::test_box2_a_rejected_grant_stores_nothing_fails_the_task_and_writes_a_guardrail_event_and_an_audit_record[another-hires-token]",
+          "result": "rejected"
+        },
+        {
+          "case": "apps/mcp-mocks/tests/test_notify_sink.py::test_box2_a_rejected_grant_stores_nothing_fails_the_task_and_writes_a_guardrail_event_and_an_audit_record[another-orgs-grant]",
+          "result": "rejected"
+        },
+        {
+          "case": "apps/mcp-mocks/tests/test_notify_sink.py::test_box2_a_rejected_grant_stores_nothing_fails_the_task_and_writes_a_guardrail_event_and_an_audit_record[another-orgs-token]",
+          "result": "rejected"
+        },
+        {
+          "case": "apps/mcp-mocks/tests/test_notify_sink.py::test_box2_a_rejected_grant_stores_nothing_fails_the_task_and_writes_a_guardrail_event_and_an_audit_record[email-token-as-recipient]",
+          "result": "rejected"
+        },
+        {
+          "case": "apps/mcp-mocks/tests/test_notify_sink.py::test_box2_a_rejected_grant_stores_nothing_fails_the_task_and_writes_a_guardrail_event_and_an_audit_record[forged-signature]",
+          "result": "rejected"
+        },
+        {
+          "case": "apps/mcp-mocks/tests/test_notify_sink.py::test_box2_a_rejected_grant_stores_nothing_fails_the_task_and_writes_a_guardrail_event_and_an_audit_record[no-grant]",
+          "result": "rejected"
+        },
+        {
+          "case": "apps/mcp-mocks/tests/test_notify_sink.py::test_box2_a_rejected_grant_stores_nothing_fails_the_task_and_writes_a_guardrail_event_and_an_audit_record[wrong-sink]",
+          "result": "rejected"
+        },
+        {
+          "case": "apps/mcp-mocks/tests/test_notify_sink.py::test_a_grant_for_another_run_is_refused_and_recorded_like_any_refusal",
+          "result": "rejected"
+        },
+        {
+          "case": "apps/mcp-mocks/tests/test_notify_sink.py::test_another_orgs_grant_writes_none_of_its_run_or_task_into_the_callers_org",
+          "result": "rejected"
+        },
+        {
+          "case": "apps/mcp-mocks/tests/test_notify_sink.py::test_a_body_carrying_a_token_is_refused_before_any_grant_is_used",
+          "result": "rejected"
+        }
+      ]
+    },
+    "token": {
+      "title": "Forged, unsigned, expired or widened agent, hub and user tokens and manifests",
+      "rejected": "25/25",
+      "cases": [
+        {
+          "case": "apps/api/tests/test_tokens.py::test_a_token_with_another_algorithm_is_refused[HS384]",
+          "result": "rejected"
+        },
+        {
+          "case": "apps/api/tests/test_tokens.py::test_a_token_with_another_algorithm_is_refused[HS512]",
+          "result": "rejected"
+        },
+        {
+          "case": "apps/api/tests/test_tokens.py::test_an_expired_token_is_refused",
+          "result": "rejected"
+        },
+        {
+          "case": "apps/api/tests/test_tokens.py::test_an_unsigned_token_is_refused",
+          "result": "rejected"
+        },
+        {
+          "case": "apps/api/tests/test_login.py::test_tampered_token_returns_401",
+          "result": "rejected"
+        },
+        {
+          "case": "apps/api/tests/test_login.py::test_expired_token_returns_401",
+          "result": "rejected"
+        },
+        {
+          "case": "apps/mcp-mongo/tests/test_call_context.py::test_an_expired_context_is_refused",
+          "result": "rejected"
+        },
+        {
+          "case": "apps/mcp-mongo/tests/test_call_context.py::test_an_unsigned_context_is_refused",
+          "result": "rejected"
+        },
+        {
+          "case": "apps/mcp-hub/tests/test_gateway.py::test_a_forged_token_is_denied_with_a_span_but_no_audit_in_any_org",
+          "result": "rejected"
+        },
+        {
+          "case": "apps/mcp-hub/tests/test_gateway.py::test_an_expired_token_is_denied_with_an_audit_record_and_a_denied_span",
+          "result": "rejected"
+        },
+        {
+          "case": "apps/mcp-hub/tests/test_gateway.py::test_a_tampered_registry_record_is_denied",
+          "result": "rejected"
+        },
+        {
+          "case": "apps/mcp-hub/tests/test_gateway.py::test_a_vault_collection_under_a_forged_manifest_is_denied_with_an_audit_record_and_a_denied_span",
+          "result": "rejected"
+        },
+        {
+          "case": "apps/mcp-hub/tests/test_policy.py::test_a_forged_manifest_never_puts_the_vault_into_the_call_context",
+          "result": "rejected"
+        },
+        {
+          "case": "apps/mcp-hub/tests/test_policy.py::test_a_vault_collection_under_a_forged_manifest_is_hard_denied[org_keys]",
+          "result": "rejected"
+        },
+        {
+          "case": "apps/mcp-hub/tests/test_policy.py::test_a_vault_collection_under_a_forged_manifest_is_hard_denied[pii_access_log]",
+          "result": "rejected"
+        },
+        {
+          "case": "apps/mcp-hub/tests/test_policy.py::test_a_vault_collection_under_a_forged_manifest_is_hard_denied[pii_vault]",
+          "result": "rejected"
+        },
+        {
+          "case": "apps/mcp-hub/tests/test_policy.py::test_a_vault_collection_under_a_forged_manifest_is_hard_denied[pii_vault_aadhaar]",
+          "result": "rejected"
+        },
+        {
+          "case": "apps/mcp-hub/tests/test_policy.py::test_a_vault_collection_under_a_forged_manifest_is_hard_denied[users]",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-agents/tests/test_tokens.py::test_the_none_algorithm_is_refused",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-agents/tests/test_tokens.py::test_an_expired_token_is_refused_but_its_genuine_claims_are_kept_for_the_audit",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-agents/tests/test_sync.py::test_a_tampered_stored_manifest_does_not_load",
+          "result": "rejected"
+        },
+        {
+          "case": "libs/py-agents/tests/test_review_fixes.py::test_a_stored_manifest_widened_behind_the_registry_does_not_load",
+          "result": "rejected"
+        },
+        {
+          "case": "apps/mcp-hub/tests_int/test_hub_int.py::test_int_an_expired_token_is_denied_with_an_audit_record_and_a_denied_span",
+          "result": "rejected"
+        },
+        {
+          "case": "apps/mcp-hub/tests_int/test_hub_int.py::test_int_a_vault_collection_under_a_forged_manifest_is_denied_with_an_audit_record_and_a_denied_span",
+          "result": "rejected"
+        },
+        {
+          "case": "apps/orchestrator/tests/test_agent_approvals.py::test_an_agent_cannot_widen_its_own_scopes_from_a_stored_approval_of_another_task",
+          "result": "rejected"
+        }
+      ]
+    },
+    "document": {
+      "title": "Encrypted document scans moved, rebound, truncated or flipped in the database",
+      "rejected": "30/30",
+      "cases": [
+        {
+          "case": "apps/api/tests/test_document_bucket.py::test_a_flipped_byte_fails_to_decrypt",
+          "result": "rejected"
+        },
+        {
+          "case": "apps/api/tests/test_document_bucket.py::test_a_huge_tampered_length_fails_closed_without_allocating",
+          "result": "rejected"
+        },
+        {
+          "case": "apps/api/tests/test_document_bucket.py::test_a_malformed_encryption_header_fails_closed[alg]",
+          "result": "rejected"
+        },
+        {
+          "case": "apps/api/tests/test_document_bucket.py::test_a_malformed_encryption_header_fails_closed[media-type-not-str]",
+          "result": "rejected"
+        },
+        {
+          "case": "apps/api/tests/test_document_bucket.py::test_a_malformed_encryption_header_fails_closed[nonce-int]",
+          "result": "rejected"
+        },
+        {
+          "case": "apps/api/tests/test_document_bucket.py::test_a_malformed_encryption_header_fails_closed[nonce-length]",
+          "result": "rejected"
+        },
+        {
+          "case": "apps/api/tests/test_document_bucket.py::test_a_malformed_encryption_header_fails_closed[nonce-missing]",
+          "result": "rejected"
+        },
+        {
+          "case": "apps/api/tests/test_document_bucket.py::test_a_malformed_encryption_header_fails_closed[purpose-not-encrypting]",
+          "result": "rejected"
+        },
+        {
+          "case": "apps/api/tests/test_document_bucket.py::test_a_malformed_encryption_header_fails_closed[purpose-unknown]",
+          "result": "rejected"
+        },
+        {
+          "case": "apps/api/tests/test_document_bucket.py::test_a_malformed_encryption_header_fails_closed[type-missing]",
+          "result": "rejected"
+        },
+        {
+          "case": "apps/api/tests/test_document_bucket.py::test_a_malformed_encryption_header_fails_closed[version-str]",
+          "result": "rejected"
+        },
+        {
+          "case": "apps/api/tests/test_document_bucket.py::test_a_malformed_encryption_header_fails_closed[version-zero]",
+          "result": "rejected"
+        },
+        {
+          "case": "apps/api/tests/test_document_bucket.py::test_a_malformed_length_fails_closed[change0]",
+          "result": "rejected"
+        },
+        {
+          "case": "apps/api/tests/test_document_bucket.py::test_a_malformed_length_fails_closed[change1]",
+          "result": "rejected"
+        },
+        {
+          "case": "apps/api/tests/test_document_bucket.py::test_a_malformed_length_fails_closed[change2]",
+          "result": "rejected"
+        },
+        {
+          "case": "apps/api/tests/test_document_bucket.py::test_a_malformed_length_fails_closed[change3]",
+          "result": "rejected"
+        },
+        {
+          "case": "apps/api/tests/test_document_bucket.py::test_a_malformed_length_fails_closed[change4]",
+          "result": "rejected"
+        },
+        {
+          "case": "apps/api/tests/test_document_bucket.py::test_a_purpose_swap_in_the_database_fails_to_decrypt",
+          "result": "rejected"
+        },
+        {
+          "case": "apps/api/tests/test_document_bucket.py::test_a_truncated_chunk_fails_closed_on_the_length",
+          "result": "rejected"
+        },
+        {
+          "case": "apps/api/tests/test_document_bucket.py::test_an_unknown_key_version_fails_closed",
+          "result": "rejected"
+        },
+        {
+          "case": "apps/api/tests/test_document_bucket.py::test_another_hire_cannot_decrypt_them",
+          "result": "rejected"
+        },
+        {
+          "case": "apps/api/tests/test_document_bucket.py::test_another_org_cannot_read_the_document",
+          "result": "rejected"
+        },
+        {
+          "case": "apps/api/tests/test_document_bucket.py::test_changing_the_bound_metadata_fails_to_decrypt[media_type]",
+          "result": "rejected"
+        },
+        {
+          "case": "apps/api/tests/test_document_bucket.py::test_changing_the_bound_metadata_fails_to_decrypt[type]",
+          "result": "rejected"
+        },
+        {
+          "case": "apps/api/tests/test_document_bucket.py::test_ciphertext_copied_into_another_document_of_the_same_hire_fails_to_decrypt",
+          "result": "rejected"
+        },
+        {
+          "case": "apps/api/tests/test_document_bucket.py::test_ciphertext_copied_into_another_hires_document_fails_to_decrypt",
+          "result": "rejected"
+        },
+        {
+          "case": "apps/api/tests/test_document_bucket.py::test_rebinding_the_file_to_another_hire_in_the_database_fails_to_decrypt",
+          "result": "rejected"
+        },
+        {
+          "case": "apps/api/tests/test_documents.py::test_moving_a_scan_to_another_hire_in_the_database_does_not_open_it",
+          "result": "rejected"
+        },
+        {
+          "case": "apps/api/tests/test_documents.py::test_a_consent_flag_forged_on_the_hire_does_not_open_the_gate",
+          "result": "rejected"
+        },
+        {
+          "case": "apps/api/tests/test_documents.py::test_another_hires_consent_does_not_count",
+          "result": "rejected"
+        }
+      ]
+    }
+  },
+  "excluded": {
+    "libs/py-agents/tests/test_config_manifests.py::test_tools_the_eval_cases_forbid_are_not_granted": "a static check of manifest contents against eval cases (REG-1), not a rejection of a tampered artifact",
+    "libs/py-agents/tests/test_run_records.py::test_a_dag_with_a_forged_hash_is_refused": "run DAG integrity (RUN-1, PRD \u00a75.1), not PII integrity; it stays in the run suite"
+  }
+}

@@ -1,0 +1,95 @@
+=== P1 KILLED: mock_outbox keeps the Telegram chat id (the raw mobile) next to the token
+    command: pytest -q -s -p no:cacheprovider tools/tests_pii/test_pii_scan.py  (exit 1)
+    SEC-1 PII scan: {"app_logs": 4080, "container_logs": 185125, "events": 181, "jaeger": 43219, "llm_inputs": 2884, "mock_outbox": 31, "mongo": 4179}, hits=2
+    E       AssertionError: raw:mobile_updated in mock_outbox at mock_outbox[0].recipient.chat
+    E         detector:MOBILE in mock_outbox at mock_outbox[0].recipient.chat
+    E       assert False
+    FAILED tools/tests_pii/test_pii_scan.py::test_a_full_run_leaves_no_raw_pii_outside_the_vault
+    1 failed in 23.75s
+=== P2 KILLED: hire notes stored without redaction
+    command: pytest -q -s -p no:cacheprovider tools/tests_pii/test_pii_scan.py  (exit 1)
+    SEC-1 PII scan: {"app_logs": 4066, "container_logs": 210761, "events": 181, "jaeger": 42575, "llm_inputs": 2884, "mock_outbox": 29, "mongo": 4181}, hits=6
+    E       assert False
+    FAILED tools/tests_pii/test_pii_scan.py::test_a_full_run_leaves_no_raw_pii_outside_the_vault
+    1 failed in 18.03s
+=== P3 KILLED: the chat question stored and sent to the model without redaction
+    command: pytest -q -s -p no:cacheprovider tools/tests_pii/test_pii_scan.py  (exit 1)
+    SEC-1 PII scan: {"app_logs": 4073, "container_logs": 234331, "events": 181, "jaeger": 42973, "llm_inputs": 2884, "mock_outbox": 29, "mongo": 4180}, hits=6
+    E       assert 0 >= 1
+    FAILED tools/tests_pii/test_pii_scan.py::test_a_full_run_leaves_no_raw_pii_outside_the_vault
+    1 failed in 21.52s
+=== P4 KILLED: the hire service logs the raw email, and the OBS-1 log scrubber is off
+    command: pytest -q -s -p no:cacheprovider tools/tests_pii/test_pii_scan.py  (exit 1)
+    SEC-1 PII scan: {"app_logs": 4080, "container_logs": 258375, "events": 181, "jaeger": 42941, "llm_inputs": 2884, "mock_outbox": 29, "mongo": 4178}, hits=2
+    E       AssertionError: raw:email in app_logs at app.log:71.message
+    E         detector:EMAIL in app_logs at app.log:71.message
+    E       assert False
+    FAILED tools/tests_pii/test_pii_scan.py::test_a_full_run_leaves_no_raw_pii_outside_the_vault
+    1 failed in 20.23s
+=== P5 KILLED: the hire service puts the raw email on its span, and the OBS-1 span scrubber passes attributes through
+    command: pytest -q -s -p no:cacheprovider tools/tests_pii/test_pii_scan.py  (exit 1)
+    SEC-1 PII scan: {"app_logs": 4066, "container_logs": 282375, "events": 181, "jaeger": 42523, "llm_inputs": 2884, "mock_outbox": 29, "mongo": 4178}, hits=2
+    E       AssertionError: raw:email in jaeger at resourceSpans[154].scopeSpans[1].spans[3].attributes[0].value.stringValue
+    E         detector:EMAIL in jaeger at resourceSpans[154].scopeSpans[1].spans[3].attributes[0].value.stringValue
+    E       assert False
+    FAILED tools/tests_pii/test_pii_scan.py::test_a_full_run_leaves_no_raw_pii_outside_the_vault
+    1 failed in 22.47s
+=== C1 CLEAN (as expected): control: the hire service logs the raw email, scrubber on (expected clean: the scrubber removes it)
+    command: pytest -q -s -p no:cacheprovider tools/tests_pii/test_pii_scan.py  (exit 0)
+    SEC-1 PII scan: {"app_logs": 4080, "container_logs": 306205, "events": 181, "jaeger": 42920, "llm_inputs": 2884, "mock_outbox": 29, "mongo": 4178}, hits=0
+    1 passed in 23.91s
+=== P6 KILLED: the scan skips mock_outbox
+    command: pytest -q -s -p no:cacheprovider tools/tests_pii/test_pii_scan.py  (exit 1)
+    SEC-1 PII scan: {"app_logs": 4073, "container_logs": 330315, "events": 181, "jaeger": 42948, "llm_inputs": 2884, "mongo": 4178}, hits=0
+    E           AssertionError: nothing scanned from mock_outbox
+    E           assert 0 > 0
+    FAILED tools/tests_pii/test_pii_scan.py::test_a_full_run_leaves_no_raw_pii_outside_the_vault
+    1 failed in 21.02s
+=== S1 KILLED: numbers matched only verbatim
+    command: pytest -q -s -p no:cacheprovider tools/tests/test_pii_scanner.py tools/tests/test_tamper_manifest.py  (exit 1)
+    E       AssertionError: assert [set(), {'mob... set(), set()] == [{'mobile'}, ...ank_account'}]
+    FAILED tools/tests/test_pii_scanner.py::test_numbers_are_found_in_the_forms_people_write_them
+    1 failed, 33 passed in 0.77s
+=== S2 KILLED: every detector hit excused as an id
+    command: pytest -q -s -p no:cacheprovider tools/tests/test_pii_scanner.py tools/tests/test_tamper_manifest.py  (exit 1)
+    E       AssertionError: assert [] == [('detector',...BILE', 'llm')]
+    E       AssertionError: assert [] == ['MOBILE']
+    E       AssertionError: assert 0 == 1
+    E       AssertionError: assert [('pan', 'caddy:2')] == [('pan', 'cad...', 'caddy:2')]
+    FAILED tools/tests/test_pii_scanner.py::test_a_value_the_fixture_does_not_know_is_caught_by_the_detectors
+    FAILED tools/tests/test_pii_scanner.py::test_digits_next_to_an_id_are_still_a_value
+    FAILED tools/tests/test_pii_scanner.py::test_an_allow_rule_excuses_only_its_source_location_and_type
+    FAILED tools/tests/test_pii_scanner.py::test_a_json_log_line_is_scanned_field_by_field_and_a_plain_line_whole
+    4 failed, 30 passed in 0.58s
+=== S3 KILLED: an allow rule ignores its location
+    command: pytest -q -s -p no:cacheprovider tools/tests/test_pii_scanner.py tools/tests/test_tamper_manifest.py  (exit 1)
+    E       AssertionError: assert [] == ['EMAIL']
+    FAILED tools/tests/test_pii_scanner.py::test_an_allow_rule_excuses_only_its_source_location_and_type
+    1 failed, 33 passed in 0.59s
+=== S4 KILLED: document keys not scanned
+    command: pytest -q -s -p no:cacheprovider tools/tests/test_pii_scanner.py tools/tests/test_tamper_manifest.py  (exit 1)
+    E       AssertionError: {'mongo': {'mobile'}, 'mongo-key': set(), 'mongo-int': {'mobile'}, 'mongo-bytes': {'email'}, ...}
+    E       assert False
+    E       AssertionError: assert {'caddy:1.lim...g', 'caddy:2'} == {'caddy:1.<ke...g', 'caddy:2'}
+    FAILED tools/tests/test_pii_scanner.py::test_a_planted_value_is_found_in_every_kind_of_source
+    FAILED tools/tests/test_pii_scanner.py::test_a_json_log_line_is_scanned_field_by_field_and_a_plain_line_whole
+    2 failed, 32 passed in 0.57s
+=== S5 KILLED: the tamper guard lets unlisted tamper tests through
+    command: pytest -q -s -p no:cacheprovider tools/tests/test_pii_scanner.py tools/tests/test_tamper_manifest.py  (exit 1)
+    E       AssertionError: assert [] == ['tamper-name...record_fails']
+    FAILED tools/tests/test_tamper_manifest.py::test_an_unlisted_tamper_test_is_reported
+    1 failed, 33 passed in 0.48s
+=== S6 KILLED: a skipped tamper case counts as rejected
+    command: pytest -q -s -p no:cacheprovider tools/tests/test_pii_scanner.py tools/tests/test_tamper_manifest.py  (exit 1)
+    E       AssertionError: assert {'a/tests/tes...lse, 'error')} == {'a/tests/tes...lse, 'error')}
+    FAILED tools/tests/test_tamper_manifest.py::test_only_a_passed_case_reads_as_rejected_in_the_junit_results
+    1 failed, 33 passed in 0.52s
+=== T1 KILLED: the vault no longer checks a record's signature
+    command: pytest -q -s -p no:cacheprovider tools/tests_pii/test_tamper_report.py  (exit 1)
+    SEC-1 tamper report: 202/218 rejected (92.66%)
+    E       AssertionError: assert ['libs/py-cry...failure', ...] == []
+    FAILED tools/tests_pii/test_tamper_report.py::test_every_tamper_case_is_rejected
+    1 failed in 25.49s
+
+source diff after all mutations: 0 files differ
+result: 14/14 as expected; unexpected: none

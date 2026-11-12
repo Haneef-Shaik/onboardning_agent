@@ -48,8 +48,8 @@ a result is malformed.
 | ID | Requirement | Proved by | Gate | Result |
 |---|---|---|---|---|
 | NF-TENANT | Cross-tenant suite passes 100% for all endpoints, MCP tools and consumers; runs in CI | T-3, HUB-1, EVT-1, SEC-2 | MS-6 | open |
-| NF-PII | 0 raw sensitive values outside the vault: prompts, outputs, logs, traces | OBS-1, GR-1, NOTIF-1, SEC-1 | MS-6 | open |
-| NF-PII-INT | 100% of tampered vault records and forged or widened grants rejected | PII-2, PII-4, SEC-1 | MS-6 | open |
+| NF-PII | 0 raw sensitive values outside the vault: prompts, outputs, logs, traces | OBS-1, GR-1, NOTIF-1, SEC-1 | MS-6 | pass · 2026-11-13 · compose · docs/evidence/SEC-1/pii-scan-report.md |
+| NF-PII-INT | 100% of tampered vault records and forged or widened grants rejected | PII-2, PII-4, SEC-1 | MS-6 | pass · 2026-11-13 · compose · docs/evidence/SEC-1/tamper-report.md |
 | NF-EVAL | Eval gates met before any agent, prompt or model change merges | EVAL-1, EVAL-2 | MS-6 | open |
 | NF-DUR | No run state lost on worker restart; jobs at-least-once with idempotent handlers | EVT-1, RUN-2 | MS-4 | pass · 2026-11-12 · compose · docs/evidence/RUN-2/kill-and-restart.txt |
 | NF-LAT | API p95 < 300 ms (non-LLM); approval decision → run resumed < 5 s | HIL-1, PERF-1 | MS-6 | open |
