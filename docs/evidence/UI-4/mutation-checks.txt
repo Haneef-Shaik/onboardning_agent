@@ -11,4 +11,5 @@ M10 CAUGHT · the list route lets a manager in · apps/api/src/onb_api/documents
 M11 CAUGHT · the list returns every hire's scans · apps/api/src/onb_api/documents/meta.py · expected failure: test_the_list_holds_only_that_hires_scans
 M12 CAUGHT · the list does not check the hire is the caller org's · apps/api/src/onb_api/documents/service.py · expected failure: test_listing_the_scans_of_a_missing_or_foreign_hire_is_404
 M13 CAUGHT · the list is not oldest-first · apps/api/src/onb_api/documents/meta.py · expected failure: test_hr_lists_a_hires_scans_as_metadata_only
-SUMMARY: 13 of 13 mutations caught
+M14 CAUGHT · a reveal that resolves after hide/clear/unmount still shows · apps/web/src/hires/useReveal.ts · expected failure: drops an answer that arrives after unmount, and leaves no timer behind
+SUMMARY: 14 of 14 mutations caught

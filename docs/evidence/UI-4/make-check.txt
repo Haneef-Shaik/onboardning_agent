@@ -12,7 +12,7 @@ uv run --frozen pytest tools/tests scripts/plan/test_plan.py -q
 ........................................................................ [ 41%]
 ........................................................................ [ 82%]
 ..............................                                                [100%]
-174 passed, 67 subtests passed in 5.26s
+174 passed, 67 subtests passed in 3.50s
 node_modules/.bin/nx run-many -t lint --output-style=static
 
  NX   Running target lint for 17 projects:
@@ -64,15 +64,6 @@ node_modules/.bin/nx run-many -t lint --output-style=static
 
 23 files already formatted
 
-> nx run py-llm:lint  [existing outputs match the cache, left as is]
-
-[2m> [22muv run --frozen ruff check libs/py-llm
-
-[1;32mAll checks passed![0m
-[2m> [22muv run --frozen ruff format --check libs/py-llm
-
-27 files already formatted
-
 > nx run py-crypto:lint  [existing outputs match the cache, left as is]
 
 [2m> [22muv run --frozen ruff check libs/py-crypto
@@ -81,6 +72,15 @@ node_modules/.bin/nx run-many -t lint --output-style=static
 [2m> [22muv run --frozen ruff format --check libs/py-crypto
 
 45 files already formatted
+
+> nx run py-llm:lint  [existing outputs match the cache, left as is]
+
+[2m> [22muv run --frozen ruff check libs/py-llm
+
+[1;32mAll checks passed![0m
+[2m> [22muv run --frozen ruff format --check libs/py-llm
+
+27 files already formatted
 
 > nx run py-contracts:lint  [existing outputs match the cache, left as is]
 
@@ -91,15 +91,6 @@ node_modules/.bin/nx run-many -t lint --output-style=static
 
 23 files already formatted
 
-> nx run py-agents:lint  [existing outputs match the cache, left as is]
-
-[2m> [22muv run --frozen ruff check libs/py-agents
-
-[1;32mAll checks passed![0m
-[2m> [22muv run --frozen ruff format --check libs/py-agents
-
-49 files already formatted
-
 > nx run mcp-mongo:lint  [existing outputs match the cache, left as is]
 
 [2m> [22muv run --frozen ruff check apps/mcp-mongo
@@ -108,6 +99,15 @@ node_modules/.bin/nx run-many -t lint --output-style=static
 [2m> [22muv run --frozen ruff format --check apps/mcp-mongo
 
 34 files already formatted
+
+> nx run py-agents:lint  [existing outputs match the cache, left as is]
+
+[2m> [22muv run --frozen ruff check libs/py-agents
+
+[1;32mAll checks passed![0m
+[2m> [22muv run --frozen ruff format --check libs/py-agents
+
+49 files already formatted
 
 > nx run ts-api-client:lint  [existing outputs match the cache, left as is]
 
@@ -133,24 +133,6 @@ node_modules/.bin/nx run-many -t lint --output-style=static
 > eslint --max-warnings=0 apps/web
 
 
-> nx run orchestrator:lint  [existing outputs match the cache, left as is]
-
-[2m> [22muv run --frozen ruff check apps/orchestrator
-
-[1;32mAll checks passed![0m
-[2m> [22muv run --frozen ruff format --check apps/orchestrator
-
-2 files already formatted
-
-> nx run py-evals:lint  [existing outputs match the cache, left as is]
-
-[2m> [22muv run --frozen ruff check libs/py-evals
-
-[1;32mAll checks passed![0m
-[2m> [22muv run --frozen ruff format --check libs/py-evals
-
-56 files already formatted
-
 > nx run api:lint  [existing outputs match the cache, left as is]
 
 [2m> [22muv run --frozen ruff check apps/api
@@ -160,6 +142,15 @@ node_modules/.bin/nx run-many -t lint --output-style=static
 
 78 files already formatted
 
+> nx run orchestrator:lint  [existing outputs match the cache, left as is]
+
+[2m> [22muv run --frozen ruff check apps/orchestrator
+
+[1;32mAll checks passed![0m
+[2m> [22muv run --frozen ruff format --check apps/orchestrator
+
+2 files already formatted
+
 > nx run mcp-hub:lint  [existing outputs match the cache, left as is]
 
 [2m> [22muv run --frozen ruff check apps/mcp-hub
@@ -168,6 +159,15 @@ node_modules/.bin/nx run-many -t lint --output-style=static
 [2m> [22muv run --frozen ruff format --check apps/mcp-hub
 
 31 files already formatted
+
+> nx run py-evals:lint  [existing outputs match the cache, left as is]
+
+[2m> [22muv run --frozen ruff check libs/py-evals
+
+[1;32mAll checks passed![0m
+[2m> [22muv run --frozen ruff format --check libs/py-evals
+
+56 files already formatted
 
 > nx run py-eventbus:lint  [existing outputs match the cache, left as is]
 
@@ -184,7 +184,7 @@ node_modules/.bin/nx run-many -t lint --output-style=static
 
 Nx read the output from the cache instead of running the command for 17 out of 17 tasks.
 
-  Run duration:      16ms
+  Run duration:      13ms
   Cache:             17/17 hit (100%)
   Critical path:     <1ms (1 task)
   Recoverable time:  <1ms
@@ -291,17 +291,17 @@ node_modules/.bin/nx run-many -t typecheck --output-style=static
 
 [1m[32mSuccess: no issues found in 56 source files(B[m
 
-> nx run py-eventbus:typecheck  [existing outputs match the cache, left as is]
-
-[2m> [22muv run --frozen mypy --cache-dir .mypy_cache/py-eventbus libs/py-eventbus/src libs/py-eventbus/tests libs/py-eventbus/tests_int
-
-[1m[32mSuccess: no issues found in 19 source files(B[m
-
 > nx run mcp-hub:typecheck  [existing outputs match the cache, left as is]
 
 [2m> [22muv run --frozen mypy --cache-dir .mypy_cache/mcp-hub apps/mcp-hub/src apps/mcp-hub/tests apps/mcp-hub/tests_int
 
 [1m[32mSuccess: no issues found in 31 source files(B[m
+
+> nx run py-eventbus:typecheck  [existing outputs match the cache, left as is]
+
+[2m> [22muv run --frozen mypy --cache-dir .mypy_cache/py-eventbus libs/py-eventbus/src libs/py-eventbus/tests libs/py-eventbus/tests_int
+
+[1m[32mSuccess: no issues found in 19 source files(B[m
 
 > nx run web:typecheck  [existing outputs match the cache, left as is]
 
@@ -320,7 +320,7 @@ node_modules/.bin/nx run-many -t typecheck --output-style=static
 
 Nx read the output from the cache instead of running the command for 17 out of 17 tasks.
 
-  Run duration:      14ms
+  Run duration:      15ms
   Cache:             17/17 hit (100%)
   Critical path:     1ms (1 task)
   Recoverable time:  <1ms
@@ -399,7 +399,7 @@ libs/py-data/src/onb_data/testing.py                34      3    91%   38, 78, 8
 ------------------------------------------------------------------------------
 TOTAL                                             1052      9    99%
 [32mRequired test coverage of 80% reached. Total coverage: 99.14%
-[0m[32m============================= [32m[1m441 passed[0m[32m in 4.49s[0m[32m ==============================[0m
+[0m[32m============================= [32m[1m441 passed[0m[32m in 4.45s[0m[32m ==============================[0m
 
 > nx run py-guardrails:test  [existing outputs match the cache, left as is]
 
@@ -452,7 +452,7 @@ libs/py-guardrails/src/onb_guardrails/structured.py          29      0   100%
 ---------------------------------------------------------------------------------------
 TOTAL                                                       717      0   100%
 [32mRequired test coverage of 80% reached. Total coverage: 100.00%
-[0m[32m============================= [32m[1m307 passed[0m[32m in 16.68s[0m[32m =============================[0m
+[0m[32m============================= [32m[1m307 passed[0m[32m in 13.55s[0m[32m =============================[0m
 
 > nx run py-telemetry:test  [existing outputs match the cache, left as is]
 
@@ -494,7 +494,7 @@ libs/py-telemetry/src/onb_telemetry/testing.py           41      1    98%   32
 -----------------------------------------------------------------------------------
 TOTAL                                                   575     14    98%
 [32mRequired test coverage of 80% reached. Total coverage: 97.57%
-[0m[32m============================= [32m[1m115 passed[0m[32m in 1.30s[0m[32m ==============================[0m
+[0m[32m============================= [32m[1m115 passed[0m[32m in 0.93s[0m[32m ==============================[0m
 
 > nx run py-llm:test  [existing outputs match the cache, left as is]
 
@@ -542,7 +542,7 @@ libs/py-llm/src/onb_llm/telemetry.py                 56      3    95%   48, 55, 
 -------------------------------------------------------------------------------
 TOTAL                                               584      7    99%
 [32mRequired test coverage of 80% reached. Total coverage: 98.80%
-[0m[32m============================= [32m[1m123 passed[0m[32m in 3.72s[0m[32m ==============================[0m
+[0m[32m============================= [32m[1m123 passed[0m[32m in 2.26s[0m[32m ==============================[0m
 
 > nx run py-crypto:test  [existing outputs match the cache, left as is]
 
@@ -606,7 +606,7 @@ libs/py-crypto/src/onb_crypto/vault_record.py      124      8    94%   116, 177,
 ------------------------------------------------------------------------------
 TOTAL                                             1414     39    97%
 [32mRequired test coverage of 80% reached. Total coverage: 97.24%
-[0m[32m============================= [32m[1m424 passed[0m[32m in 1.98s[0m[32m ==============================[0m
+[0m[32m============================= [32m[1m424 passed[0m[32m in 1.48s[0m[32m ==============================[0m
 
 > nx run py-contracts:test  [existing outputs match the cache, left as is]
 
@@ -657,7 +657,7 @@ libs/py-contracts/src/onb_contracts/templates.py              159      0   100%
 -----------------------------------------------------------------------------------------
 TOTAL                                                         796     74    91%
 [32mRequired test coverage of 80% reached. Total coverage: 90.70%
-[0m[32m============================= [32m[1m332 passed[0m[32m in 0.70s[0m[32m ==============================[0m
+[0m[32m============================= [32m[1m332 passed[0m[32m in 0.36s[0m[32m ==============================[0m
 
 > nx run mcp-mongo:test  [existing outputs match the cache, left as is]
 
@@ -691,7 +691,7 @@ apps/mcp-mongo/tests/test_validator.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m
 [0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m          [ 98%][0m
 apps/mcp-mongo/tests/test_validator_properties.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m              [100%][0m
 
-[32m============================= [32m[1m523 passed[0m[32m in 10.96s[0m[32m =============================[0m
+[32m============================= [32m[1m523 passed[0m[32m in 8.23s[0m[32m ==============================[0m
 
 > nx run py-agents:test  [existing outputs match the cache, left as is]
 
@@ -767,7 +767,7 @@ libs/py-agents/src/onb_agents/tokens.py                   94      3    97%   88,
 ------------------------------------------------------------------------------------
 TOTAL                                                   2083     31    99%
 [32mRequired test coverage of 80% reached. Total coverage: 98.51%
-[0m[32m============================= [32m[1m553 passed[0m[32m in 10.45s[0m[32m =============================[0m
+[0m[32m============================= [32m[1m553 passed[0m[32m in 9.22s[0m[32m ==============================[0m
 
 > nx run mcp-mocks:test  [existing outputs match the cache, left as is]
 
@@ -790,7 +790,7 @@ apps/mcp-mocks/tests/test_server.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32
 apps/mcp-mocks/tests/test_telegram.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                  [ 84%][0m
 apps/mcp-mocks/tests/test_tools.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                         [100%][0m
 
-[32m============================== [32m[1m85 passed[0m[32m in 0.47s[0m[32m ==============================[0m
+[32m============================== [32m[1m85 passed[0m[32m in 0.35s[0m[32m ==============================[0m
 
 > nx run ts-ui:test  [existing outputs match the cache, left as is]
 
@@ -802,8 +802,8 @@ apps/mcp-mocks/tests/test_tools.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m
 
 [2m Test Files [22m [1m[32m2 passed[39m[22m[90m (2)[39m
 [2m      Tests [22m [1m[32m11 passed[39m[22m[90m (11)[39m
-[2m   Start at [22m 15:29:26
-[2m   Duration [22m 928ms[2m (environment 69%, setup 18%, transform 5%, import 4%, tests 4%)[22m
+[2m   Start at [22m 15:45:19
+[2m   Duration [22m 647ms[2m (environment 75%, setup 13%, tests 6%, import 5%, transform 1%)[22m
 
 
 > nx run ts-api-client:test  [existing outputs match the cache, left as is]
@@ -816,8 +816,8 @@ apps/mcp-mocks/tests/test_tools.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m
 
 [2m Test Files [22m [1m[32m2 passed[39m[22m[90m (2)[39m
 [2m      Tests [22m [1m[32m6 passed[39m[22m[90m (6)[39m
-[2m   Start at [22m 15:29:25
-[2m   Duration [22m 123ms[2m (transform 62%, tests 13%, worker 13%, import 12%)[22m
+[2m   Start at [22m 15:45:19
+[2m   Duration [22m 113ms[2m (tests 33%, import 29%, transform 28%, worker 10%)[22m
 
 
 > nx run api:test  [existing outputs match the cache, left as is]
@@ -861,7 +861,7 @@ apps/api/tests/test_templates_route.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m
 apps/api/tests/test_tokens.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m          [ 96%][0m
 apps/api/tests/test_validation_details.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m            [100%][0m
 
-[32m============================= [32m[1m543 passed[0m[32m in 12.64s[0m[32m =============================[0m
+[32m============================= [32m[1m543 passed[0m[32m in 11.28s[0m[32m =============================[0m
 
 > nx run py-evals:test  [existing outputs match the cache, left as is]
 
@@ -935,7 +935,7 @@ libs/py-evals/src/onb_evals/vault_seed.py             57      0   100%
 --------------------------------------------------------------------------------
 TOTAL                                               1949     42    98%
 [32mRequired test coverage of 80% reached. Total coverage: 97.85%
-[0m[32m============================= [32m[1m255 passed[0m[32m in 8.83s[0m[32m ==============================[0m
+[0m[32m============================= [32m[1m255 passed[0m[32m in 7.44s[0m[32m ==============================[0m
 
 > nx run web:test  [existing outputs match the cache, left as is]
 
@@ -949,9 +949,9 @@ Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.[39m
 
 
 [2m Test Files [22m [1m[32m9 passed[39m[22m[90m (9)[39m
-[2m      Tests [22m [1m[32m86 passed[39m[22m[90m (86)[39m
-[2m   Start at [22m 15:29:30
-[2m   Duration [22m 3.31s[2m (environment 60%, tests 25%, setup 10%, import 3%, worker 1%, transform 1%)[22m
+[2m      Tests [22m [1m[32m88 passed[39m[22m[90m (88)[39m
+[2m   Start at [22m 15:45:20
+[2m   Duration [22m 3.07s[2m (environment 58%, tests 29%, setup 7%, import 3%, transform 3%)[22m
 
 
 > nx run mcp-hub:test  [existing outputs match the cache, left as is]
@@ -976,7 +976,7 @@ apps/mcp-hub/tests/test_review_fixes.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m
 apps/mcp-hub/tests/test_scan.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                             [ 89%][0m
 apps/mcp-hub/tests/test_server.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                        [100%][0m
 
-[32m============================= [32m[1m138 passed[0m[32m in 1.15s[0m[32m ==============================[0m
+[32m============================= [32m[1m138 passed[0m[32m in 0.73s[0m[32m ==============================[0m
 
 > nx run py-eventbus:test  [existing outputs match the cache, left as is]
 
@@ -1011,7 +1011,7 @@ libs/py-eventbus/src/onb_eventbus/worker.py        160      7    96%   62, 67, 2
 ------------------------------------------------------------------------------
 TOTAL                                              409     15    96%
 [32mRequired test coverage of 80% reached. Total coverage: 96.33%
-[0m[32m============================== [32m[1m77 passed[0m[32m in 0.62s[0m[32m ==============================[0m
+[0m[32m============================== [32m[1m77 passed[0m[32m in 0.54s[0m[32m ==============================[0m
 
 > nx run orchestrator:test  [existing outputs match the cache, left as is]
 
@@ -1027,7 +1027,7 @@ collected 1 item
 
 apps/orchestrator/tests/test_onb_orchestrator.py [32m.[0m[32m                       [100%][0m
 
-[32m============================== [32m[1m1 passed[0m[32m in 0.06s[0m[32m ===============================[0m
+[32m============================== [32m[1m1 passed[0m[32m in 0.05s[0m[32m ===============================[0m
 
 
 
@@ -1035,9 +1035,9 @@ apps/orchestrator/tests/test_onb_orchestrator.py [32m.[0m[32m                
 
 Nx read the output from the cache instead of running the command for 17 out of 17 tasks.
 
-  Run duration:      17ms
+  Run duration:      13ms
   Cache:             17/17 hit (100%)
-  Critical path:     1ms (1 task)
+  Critical path:     <1ms (1 task)
   Recoverable time:  <1ms
 infra/mongo/gen-keyfile.sh
 gen-keyfile: keeping existing infra/mongo/keyfile
@@ -1048,25 +1048,25 @@ docker compose up -d --wait --build
 #1 DONE 0.0s
 
 #2 [internal] load build definition from Dockerfile
-#2 transferring dockerfile: 578B 0.0s done
+#2 transferring dockerfile: 578B done
 #2 DONE 0.0s
 
 #3 [internal] load metadata for docker.io/otel/opentelemetry-collector-contrib:0.165.0@sha256:e40d61f10c9a617cca1ffd1be4d7e2b3a4b0f0001798ff07e58cabe82e618cea
-#3 DONE 0.0s
+#3 DONE 0.1s
 
 #4 [internal] load metadata for docker.io/library/alpine:3.24.4@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf
-#4 DONE 0.0s
+#4 DONE 0.1s
 
 #5 [internal] load .dockerignore
 #5 transferring context: 2B done
 #5 DONE 0.0s
 
 #6 [upstream 1/1] FROM docker.io/otel/opentelemetry-collector-contrib:0.165.0@sha256:e40d61f10c9a617cca1ffd1be4d7e2b3a4b0f0001798ff07e58cabe82e618cea
-#6 resolve docker.io/otel/opentelemetry-collector-contrib:0.165.0@sha256:e40d61f10c9a617cca1ffd1be4d7e2b3a4b0f0001798ff07e58cabe82e618cea 0.0s done
+#6 resolve docker.io/otel/opentelemetry-collector-contrib:0.165.0@sha256:e40d61f10c9a617cca1ffd1be4d7e2b3a4b0f0001798ff07e58cabe82e618cea done
 #6 DONE 0.0s
 
 #7 [stage-1 1/3] FROM docker.io/library/alpine:3.24.4@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf
-#7 resolve docker.io/library/alpine:3.24.4@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf 0.0s done
+#7 resolve docker.io/library/alpine:3.24.4@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf done
 #7 DONE 0.0s
 
 #8 [stage-1 2/3] RUN adduser -D -H -u 10001 otel
@@ -1079,31 +1079,31 @@ docker compose up -d --wait --build
 #10 exporting layers done
 #10 exporting manifest sha256:b6a926824ff111bb10670c2434c1b28fe701a9a6e2df51f0d5b377106969c3d9 done
 #10 exporting config sha256:0f8ec2726d7355fbcc1f8a56196ca4b5760edf19c9b6a1732c803af85e271fa8 done
-#10 exporting attestation manifest sha256:4200d0135b0b5f6d0d179ae4d8af6e9490cb30eed78550c0a2aeca8476d85e26
-#10 exporting attestation manifest sha256:4200d0135b0b5f6d0d179ae4d8af6e9490cb30eed78550c0a2aeca8476d85e26 0.0s done
-#10 exporting manifest list sha256:1e513392305e47bd57d35360f0e29cc74b52e6938642c0ac0e8f77abd2b8ecf1 0.0s done
+#10 exporting attestation manifest sha256:08f7c44f5ff96dc0bd36637360cb46c42da0c799014d6c356de6b3e30677f60e done
+#10 exporting manifest list sha256:0057978e5f3dd11b8b1bab4eae098b1000e6f782e08fa53968a7d38f5efdc9a9 done
 #10 naming to docker.io/onb/otel-collector:0.165.0 done
-#10 unpacking to docker.io/onb/otel-collector:0.165.0 0.0s done
-#10 DONE 0.2s
+#10 unpacking to docker.io/onb/otel-collector:0.165.0
+#10 unpacking to docker.io/onb/otel-collector:0.165.0 done
+#10 DONE 0.0s
 
 #11 resolving provenance for metadata file
-#11 DONE 0.1s
+#11 DONE 0.0s
  Image onb/otel-collector:0.165.0 Built 
- Container ob-ui-4-mongo-1 Running 
  Container ob-ui-4-otel-collector-1 Running 
  Container ob-ui-4-jaeger-1 Running 
  Container ob-ui-4-caddy-1 Running 
+ Container ob-ui-4-mongo-1 Running 
  Container ob-ui-4-jaeger-1 Waiting 
  Container ob-ui-4-jaeger-1 Waiting 
  Container ob-ui-4-jaeger-1 Healthy 
  Container ob-ui-4-jaeger-1 Healthy 
- Container ob-ui-4-caddy-1 Waiting 
- Container ob-ui-4-mongo-1 Waiting 
  Container ob-ui-4-otel-collector-1 Waiting 
  Container ob-ui-4-jaeger-1 Waiting 
- Container ob-ui-4-mongo-1 Healthy 
- Container ob-ui-4-jaeger-1 Healthy 
+ Container ob-ui-4-caddy-1 Waiting 
+ Container ob-ui-4-mongo-1 Waiting 
  Container ob-ui-4-otel-collector-1 Healthy 
+ Container ob-ui-4-jaeger-1 Healthy 
+ Container ob-ui-4-mongo-1 Healthy 
  Container ob-ui-4-caddy-1 Healthy 
 set -a && . ./.env && set +a && \
 	uv run --frozen pytest tools/tests_xt -q -o cache_dir=.pytest_cache/tests-xt && \
@@ -1143,7 +1143,7 @@ cross-tenant surface: 23 API routes, 8 MCP tools, 0 event consumers
   tool     mcp-mongo.insert_one
   tool     mcp-mongo.list_collections
   tool     mcp-mongo.update_one
-210 passed in 292.81s (0:04:52)
+210 passed in 160.43s (0:02:40)
 
  NX   Running target test-xt for project mcp-hub:
 
@@ -1168,15 +1168,15 @@ make test-xt: hub tools covered: mocks__create_bitbucket_account, mocks__provisi
 [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m
 apps/mcp-hub/tests_int/test_safety_net_guard.py [32m.[0m[32m.[0m
 
-[32m============================== [32m[1m12 passed[0m[32m in 6.82s[0m[32m ==============================[0m
+[32m============================== [32m[1m12 passed[0m[32m in 5.66s[0m[32m ==============================[0m
 
 
 
  NX   Successfully ran target test-xt for project mcp-hub
 
 
-  Run duration:      8.3s
+  Run duration:      7.3s
   Cache:             0/1 hit (0%)
-  Critical path:     8.3s (1 task)
+  Critical path:     7.3s (1 task)
   Recoverable time:  <1ms
 make check: all passed
