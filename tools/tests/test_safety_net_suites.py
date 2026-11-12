@@ -26,11 +26,12 @@ KNOWN_MONGO_SUITES = {
     "libs/py-telemetry/tests_int",
     "apps/orchestrator/tests_int",
     "tools/tests_xt",
+    "tools/tests_pii",
 }
 
 
-# Root suites run by a make target rather than an Nx `test-int` target (T-3: `make test-xt`).
-ROOT_SUITES = ("tools/tests_xt",)
+# Root suites run by a make target rather than an Nx `test-int` target (T-3: `make test-xt`; SEC-1: `make test-pii`).
+ROOT_SUITES = ("tools/tests_xt", "tools/tests_pii")
 
 
 def integration_suites(root: Path) -> dict[str, Path]:

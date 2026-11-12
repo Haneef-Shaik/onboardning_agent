@@ -1,0 +1,153 @@
+# SEC-1 tamper report (PRD §12 "PII integrity": 100% of tampered vault records / forged or widened grants
+# rejected; §7.10; §15 "AI manipulating PII"). Every case below alters a stored record, forges, widens,
+# replays or expires a credential, or moves ciphertext, and passes only when the platform refuses it.
+# `make test-pii` runs them all (tools/tests_pii/test_tamper_report.py) into reports/test-pii/tamper-report.*.
+#
+# Guard (tools/tests/test_tamper_manifest.py, in `make check`): every test in apps/ and libs/ whose name
+# says tamper, forged, widened, swapped, signature, unsigned, alg none, flipped, fails to decrypt, rebind,
+# "did not issue" or "not granted" is listed here or under `excluded` with a reason, and every listed test
+# exists.
+
+categories:
+  vault:
+    title: Vault records changed in the database (AEAD binding, record HMAC, fail closed)
+    cases:
+      - libs/py-crypto/tests/test_vault.py::test_tamper_changed_subject_id_fails_closed
+      - libs/py-crypto/tests/test_vault.py::test_tamper_ciphertext_swapped_between_records_fails_closed
+      - libs/py-crypto/tests/test_vault.py::test_tamper_ciphertext_swapped_and_resigned_still_fails_on_the_aad
+      - libs/py-crypto/tests/test_vault.py::test_tamper_changed_field_fails_closed
+      - libs/py-crypto/tests/test_vault.py::test_tamper_changed_status_fails_closed
+      - libs/py-crypto/tests/test_vault.py::test_tamper_edited_sig_fails_closed
+      - libs/py-crypto/tests/test_vault.py::test_tamper_with_any_other_signed_part_fails_closed
+      - libs/py-crypto/tests/test_vault.py::test_the_signature_covers_every_field_but_itself_with_the_signing_key
+      - libs/py-crypto/tests/test_vault.py::test_a_record_signed_by_another_org_fails_closed
+      - libs/py-crypto/tests/test_vault.py::test_a_malformed_record_fails_closed
+      - libs/py-crypto/tests/test_vault.py::test_resolving_with_the_wrong_subject_or_field_is_refused
+      - libs/py-crypto/tests/test_vault.py::test_resolving_with_the_wrong_field_in_the_same_partition_is_refused
+      - libs/py-crypto/tests/test_vault.py::test_another_orgs_token_is_not_found
+      - libs/py-crypto/tests/test_vault.py::test_a_duplicated_token_fails_closed
+      - libs/py-crypto/tests/test_vault.py::test_an_update_over_a_tampered_current_record_fails_closed
+      - libs/py-crypto/tests/test_vault.py::test_a_purged_record_with_ciphertext_left_fails_closed
+      - libs/py-crypto/tests/test_vault.py::test_a_purged_record_that_kept_its_ciphertext_fails_closed_even_when_signed
+      - libs/py-crypto/tests/test_vault_review_fixes.py::test_a_replayed_active_copy_of_a_superseded_record_does_not_resolve
+      - libs/py-crypto/tests/test_vault_aadhaar.py::test_a_general_record_moved_into_the_aadhaar_partition_is_refused
+      - libs/py-crypto/tests/test_vault_aadhaar.py::test_an_aadhaar_record_moved_into_the_general_partition_is_not_resolved_there
+      - libs/py-crypto/tests/test_vault_purge_subject.py::test_purge_subject_fails_closed_on_a_tampered_record
+      - libs/py-crypto/tests/test_vault_purge_subject.py::test_one_tampered_record_does_not_stop_the_purge_of_the_others
+      - libs/py-crypto/tests/test_envelope.py::test_a_tampered_wrapped_key_fails
+      - libs/py-crypto/tests/test_envelope.py::test_a_wrapped_key_moved_to_another_org_version_or_purpose_fails
+      - libs/py-crypto/tests/test_envelope.py::test_a_wrong_master_key_fails_closed
+      - libs/py-crypto/tests/test_envelope.py::test_a_malformed_wrapped_key_fails_closed
+      - libs/py-crypto/tests/test_keyring.py::test_a_key_record_swapped_from_another_org_fails_closed
+      - libs/py-crypto/tests/test_keyring.py::test_a_store_returning_another_orgs_record_is_refused
+      - libs/py-crypto/tests/test_keyring.py::test_a_wrong_master_key_fails_closed_and_returns_nothing
+      - libs/py-crypto/tests/test_keyring.py::test_a_wrong_master_key_fails_even_when_the_record_claims_its_id
+      - libs/py-crypto/tests/test_keyring.py::test_ciphertext_moved_to_other_associated_data_fails
+      - libs/py-crypto/tests/test_keyring.py::test_ciphertext_naming_an_unknown_version_fails_closed
+      - libs/py-crypto/tests/test_keyring.py::test_tampered_ciphertext_fails_closed
+      - libs/py-crypto/tests/test_keyring_review_fixes.py::test_cached_keys_of_another_org_are_refused_in_this_tenant_context
+      - libs/py-crypto/tests/test_key_store.py::test_a_malformed_document_fails_closed
+      - apps/api/tests/test_retention.py::test_a_tampered_record_fails_that_hire_audits_a_failure_and_the_others_go_on
+      - libs/py-crypto/tests_int/test_vault_mongo.py::test_put_update_resolve_and_tamper_against_mongo
+      - libs/py-crypto/tests_int/test_org_keys_mongo.py::test_two_orgs_keys_are_isolated_and_a_wrong_master_fails_closed
+
+  grant:
+    title: Forged, widened, replayed or expired grants and swapped tokens at the sink
+    cases:
+      - libs/py-crypto/tests/test_grants.py::test_bad_signature_another_key_is_rejected
+      - libs/py-crypto/tests/test_grants.py::test_bad_signature_another_key_claiming_our_kid_is_rejected
+      - libs/py-crypto/tests/test_grants.py::test_bad_signature_a_flipped_signature_bit_is_rejected
+      - libs/py-crypto/tests/test_grants.py::test_bad_signature_a_widened_payload_under_the_old_signature_is_rejected
+      - libs/py-crypto/tests/test_grants.py::test_bad_signature_alg_none_is_rejected
+      - libs/py-crypto/tests/test_grants.py::test_bad_signature_hs256_keyed_with_the_public_key_is_rejected
+      - libs/py-crypto/tests/test_grants.py::test_bad_signature_an_unexpected_header_is_rejected
+      - libs/py-crypto/tests/test_grants.py::test_expired_grant_is_rejected
+      - libs/py-crypto/tests/test_grants.py::test_expired_a_signed_grant_living_longer_than_ten_minutes_is_rejected
+      - libs/py-crypto/tests/test_grants.py::test_a_grant_issued_in_the_future_is_rejected
+      - libs/py-crypto/tests/test_grants.py::test_a_signed_grant_with_malformed_claims_is_rejected
+      - libs/py-crypto/tests/test_grants.py::test_a_signed_grant_missing_a_claim_is_rejected
+      - libs/py-crypto/tests/test_grants.py::test_garbage_is_rejected_as_malformed_or_bad_signature
+      - libs/py-crypto/tests/test_grants.py::test_a_non_canonical_base64_signature_is_rejected
+      - libs/py-crypto/tests/test_grants.py::test_a_non_ascii_grant_is_rejected_as_malformed
+      - libs/py-crypto/tests/test_grants.py::test_the_issuer_refuses_a_field_the_policy_does_not_allow_at_that_sink
+      - libs/py-crypto/tests/test_sink.py::test_rejects_a_bad_signature
+      - libs/py-crypto/tests/test_sink.py::test_rejects_an_expired_grant
+      - libs/py-crypto/tests/test_sink.py::test_rejects_the_wrong_sink
+      - libs/py-crypto/tests/test_sink.py::test_rejects_another_hires_token
+      - libs/py-crypto/tests/test_sink.py::test_rejects_another_hires_token_mixed_in_with_the_right_one
+      - libs/py-crypto/tests/test_sink.py::test_rejects_another_orgs_token
+      - libs/py-crypto/tests/test_sink.py::test_rejects_another_orgs_grant
+      - libs/py-crypto/tests/test_sink.py::test_rejects_a_field_not_granted
+      - libs/py-crypto/tests/test_sink.py::test_rejects_a_field_not_granted_at_the_shipped_telegram_sink
+      - libs/py-crypto/tests/test_sink.py::test_rejects_aadhaar_even_when_the_grant_lists_it
+      - libs/py-crypto/tests/test_sink.py::test_rejects_pan_and_bank_fields_even_when_the_grant_lists_them
+      - libs/py-crypto/tests/test_sink.py::test_rejects_a_replayed_jti
+      - libs/py-crypto/tests/test_sink.py::test_rejects_a_replayed_jti_even_after_a_failed_first_use
+      - libs/py-crypto/tests/test_sink.py::test_rejects_a_superseded_token
+      - libs/py-crypto/tests/test_sink.py::test_rejects_a_purged_token
+      - libs/py-crypto/tests/test_sink.py::test_rejects_a_tampered_vault_record
+      - libs/py-crypto/tests/test_sink.py::test_rejects_a_token_the_vault_did_not_issue
+      - libs/py-crypto/tests/test_sink.py::test_rejects_a_malformed_token_list
+      - libs/py-crypto/tests/test_sink.py::test_rejects_too_many_tokens
+      - libs/py-crypto/tests/test_sink.py::test_rejects_the_same_token_twice
+      - libs/py-crypto/tests/test_sink.py::test_rejects_a_concurrent_replay_through_the_unique_jti_index
+      - libs/py-crypto/tests/test_sink.py::test_a_raw_value_put_where_a_token_belongs_never_reaches_the_audit_record
+      - libs/py-crypto/tests/test_sink.py::test_a_raw_value_never_reaches_the_audit_record_of_a_forged_grant
+      - libs/py-crypto/tests/test_sink.py::test_nothing_is_released_when_the_access_log_cannot_be_written
+      - libs/py-crypto/tests/test_sink.py::test_a_failing_audit_store_does_not_turn_a_rejection_into_a_release
+      - libs/py-crypto/tests_int/test_grants_mongo.py::test_another_hires_and_another_orgs_tokens_are_refused_in_mongo
+      - apps/mcp-mocks/tests/test_notify_sink.py::test_the_same_grant_with_other_arguments_is_a_rejected_replay
+      - apps/mcp-mocks/tests/test_notify_sink.py::test_box2_a_rejected_grant_stores_nothing_fails_the_task_and_writes_a_guardrail_event_and_an_audit_record
+      - apps/mcp-mocks/tests/test_notify_sink.py::test_a_grant_for_another_run_is_refused_and_recorded_like_any_refusal
+      - apps/mcp-mocks/tests/test_notify_sink.py::test_another_orgs_grant_writes_none_of_its_run_or_task_into_the_callers_org
+      - apps/mcp-mocks/tests/test_notify_sink.py::test_a_body_carrying_a_token_is_refused_before_any_grant_is_used
+
+  token:
+    title: Forged, unsigned, expired or widened agent, hub and user tokens and manifests
+    cases:
+      - libs/py-agents/tests/test_tokens.py::test_the_none_algorithm_is_refused
+      - libs/py-agents/tests/test_tokens.py::test_an_expired_token_is_refused_but_its_genuine_claims_are_kept_for_the_audit
+      - libs/py-agents/tests/test_sync.py::test_a_tampered_stored_manifest_does_not_load
+      - libs/py-agents/tests/test_review_fixes.py::test_a_stored_manifest_widened_behind_the_registry_does_not_load
+      - apps/mcp-hub/tests/test_gateway.py::test_a_forged_token_is_denied_with_a_span_but_no_audit_in_any_org
+      - apps/mcp-hub/tests/test_gateway.py::test_an_expired_token_is_denied_with_an_audit_record_and_a_denied_span
+      - apps/mcp-hub/tests/test_gateway.py::test_a_tampered_registry_record_is_denied
+      - apps/mcp-hub/tests/test_gateway.py::test_a_vault_collection_under_a_forged_manifest_is_denied_with_an_audit_record_and_a_denied_span
+      - apps/mcp-hub/tests/test_policy.py::test_a_forged_manifest_never_puts_the_vault_into_the_call_context
+      - apps/mcp-hub/tests/test_policy.py::test_a_vault_collection_under_a_forged_manifest_is_hard_denied
+      - apps/mcp-hub/tests_int/test_hub_int.py::test_int_an_expired_token_is_denied_with_an_audit_record_and_a_denied_span
+      - apps/mcp-hub/tests_int/test_hub_int.py::test_int_a_vault_collection_under_a_forged_manifest_is_denied_with_an_audit_record_and_a_denied_span
+      - apps/mcp-mongo/tests/test_call_context.py::test_an_expired_context_is_refused
+      - apps/mcp-mongo/tests/test_call_context.py::test_an_unsigned_context_is_refused
+      - apps/orchestrator/tests/test_agent_approvals.py::test_an_agent_cannot_widen_its_own_scopes_from_a_stored_approval_of_another_task
+      - apps/api/tests/test_tokens.py::test_a_token_with_another_algorithm_is_refused
+      - apps/api/tests/test_tokens.py::test_an_expired_token_is_refused
+      - apps/api/tests/test_tokens.py::test_an_unsigned_token_is_refused
+      - apps/api/tests/test_login.py::test_tampered_token_returns_401
+      - apps/api/tests/test_login.py::test_expired_token_returns_401
+
+  document:
+    title: Encrypted document scans moved, rebound, truncated or flipped in the database
+    cases:
+      - apps/api/tests/test_document_bucket.py::test_a_flipped_byte_fails_to_decrypt
+      - apps/api/tests/test_document_bucket.py::test_a_huge_tampered_length_fails_closed_without_allocating
+      - apps/api/tests/test_document_bucket.py::test_a_malformed_encryption_header_fails_closed
+      - apps/api/tests/test_document_bucket.py::test_a_malformed_length_fails_closed
+      - apps/api/tests/test_document_bucket.py::test_a_purpose_swap_in_the_database_fails_to_decrypt
+      - apps/api/tests/test_document_bucket.py::test_a_truncated_chunk_fails_closed_on_the_length
+      - apps/api/tests/test_document_bucket.py::test_an_unknown_key_version_fails_closed
+      - apps/api/tests/test_document_bucket.py::test_another_hire_cannot_decrypt_them
+      - apps/api/tests/test_document_bucket.py::test_another_org_cannot_read_the_document
+      - apps/api/tests/test_document_bucket.py::test_changing_the_bound_metadata_fails_to_decrypt
+      - apps/api/tests/test_document_bucket.py::test_ciphertext_copied_into_another_document_of_the_same_hire_fails_to_decrypt
+      - apps/api/tests/test_document_bucket.py::test_ciphertext_copied_into_another_hires_document_fails_to_decrypt
+      - apps/api/tests/test_document_bucket.py::test_rebinding_the_file_to_another_hire_in_the_database_fails_to_decrypt
+      - apps/api/tests/test_documents.py::test_moving_a_scan_to_another_hire_in_the_database_does_not_open_it
+      - apps/api/tests/test_documents.py::test_a_consent_flag_forged_on_the_hire_does_not_open_the_gate
+      - apps/api/tests/test_documents.py::test_another_hires_consent_does_not_count
+
+excluded:
+  libs/py-agents/tests/test_config_manifests.py::test_tools_the_eval_cases_forbid_are_not_granted: >-
+    a static check of manifest contents against eval cases (REG-1), not a rejection of a tampered artifact
+  libs/py-agents/tests/test_run_records.py::test_a_dag_with_a_forged_hash_is_refused: >-
+    run DAG integrity (RUN-1, PRD §5.1), not PII integrity; it stays in the run suite
