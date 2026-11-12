@@ -361,11 +361,13 @@ def test_the_run_bus_subscribes_the_orchestrator_to_run_started() -> None:
         "approval.requested": ("notify.approval",),
         "approval.decided": ("orchestrator.resume_approval",),
         "decision.received": ("orchestrator.record_decision",),
+        "approval.overdue": ("notify.approval_sla",),  # HIL-2: the SLA sweep's reminder / escalation
     }
     assert started_key("run_x") == "run:run_x:started"
     bus = run_bus(memory_store(MemoryDatabase()))
     assert bus.consumers() == (
         "notify.approval",
+        "notify.approval_sla",
         "notify.in_app",
         "orchestrator.cleanup_run",
         "orchestrator.fail_task",

@@ -31,7 +31,9 @@ from onb_contracts.envelope import Envelope
 __all__ = [
     "APPROVAL_DECIDED",
     "APPROVAL_NOTIFY_CONSUMER",
+    "APPROVAL_OVERDUE",
     "APPROVAL_REQUESTED",
+    "APPROVAL_SLA_CONSUMER",
     "CALLBACK_DATA_PATTERN",
     "CALLBACK_PREFIX",
     "CHANGE_REQUEST_DECIDED",
@@ -116,6 +118,13 @@ APPROVAL_DECIDED: Final = "approval.decided"
 `orchestrator.resume_approval` resumes the run from the stored decision, never from this payload."""
 APPROVAL_NOTIFY_CONSUMER: Final = "notify.approval"
 RESUME_APPROVAL_CONSUMER: Final = "orchestrator.resume_approval"
+APPROVAL_OVERDUE: Final = "approval.overdue"
+"""Published by the orchestrator's approval SLA sweep (HIL-2, FR-H4) in the transaction that stamps the stage on
+the approval: `{approval_id, run_id, task_id, stage: reminder | escalation, escalate_to: HR | HR_ADMIN | None}`.
+Once per approval and stage (key `approval:<id>:<stage>`)."""
+APPROVAL_SLA_CONSUMER: Final = "notify.approval_sla"
+"""Reminds the approver (`reminder`) or tells the `escalate_to` users (`escalation`), in-app and on the Telegram
+mock (HIL-2)."""
 RECORD_DECISION_CONSUMER: Final = "orchestrator.record_decision"
 """The orchestrator's consumer of `decision.received` (HIL-1): a Telegram press on an approval's buttons is
 recorded like the web decision. Subscribed here because the webhook that publishes the event builds its bus with
@@ -129,6 +138,7 @@ NOTIFY_SUBSCRIPTIONS: Final[dict[str, list[str]]] = {
     SINK_REJECTED: [SINK_REJECTED_CONSUMER],
     DECISION_RECEIVED: [RECORD_DECISION_CONSUMER],
     APPROVAL_REQUESTED: [APPROVAL_NOTIFY_CONSUMER],  # HIL-1: the notifier lives in mcp-mocks
+    APPROVAL_OVERDUE: [APPROVAL_SLA_CONSUMER],  # HIL-2: reminder and escalation, also in mcp-mocks
 }
 """The notification consumers, by event type: every publisher of these events builds its bus with them."""
 

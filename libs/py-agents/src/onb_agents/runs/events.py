@@ -15,7 +15,9 @@ from typing import Final
 from onb_contracts.notify import (
     APPROVAL_DECIDED,
     APPROVAL_NOTIFY_CONSUMER,
+    APPROVAL_OVERDUE,
     APPROVAL_REQUESTED,
+    APPROVAL_SLA_CONSUMER,
     DECISION_RECEIVED,
     IN_APP_CONSUMER,
     RECORD_DECISION_CONSUMER,
@@ -74,6 +76,7 @@ SUBSCRIPTIONS: Final[Mapping[str, tuple[str, ...]]] = {
     APPROVAL_REQUESTED: (APPROVAL_NOTIFY_CONSUMER,),  # HIL-1: the approver is told (mcp-mocks)
     APPROVAL_DECIDED: (RESUME_APPROVAL,),
     DECISION_RECEIVED: (RECORD_DECISION_CONSUMER,),  # HIL-1: the worker's bus must know every consumer it runs
+    APPROVAL_OVERDUE: (APPROVAL_SLA_CONSUMER,),  # HIL-2: the orchestrator's SLA sweep publishes it (mcp-mocks)
 }
 
 

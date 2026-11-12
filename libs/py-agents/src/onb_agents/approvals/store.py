@@ -4,7 +4,9 @@ A record (`approvals`, tenant collection; the shape the eval fixtures already us
 
     {_id: "appr_<hash>", org_id, run_id, task_id, hire_id, kind, rule, status, approver_id,
      approver_role, title, request: {items}, packet, packet_failure, requested_at, sla_hours,
-     decision: {decision, comment, channel, decided_by, decided_at} | None}
+     decision: {decision, comment, channel, decided_by, decided_at} | None, reminded_at?, escalated_at?}
+
+`reminded_at` / `escalated_at` (HIL-2) are stamped once each, by the SLA sweep, while the approval is pending.
 
 The id is a hash of (run, task, kind, rule), so a redelivered job opens the same approval instead of a
 second one. `packet` is the Approvals Agent's masked output (`ApprovalPacket`), `packet_failure` a code
@@ -22,6 +24,8 @@ from typing import Any, Final
 from onb_contracts.approvals import APPROVALS_COLLECTION, ApprovalKind, ApprovalStatus, approval_id_for
 from onb_data import DataStore, current_tenant
 from pymongo.errors import DuplicateKeyError
+
+from .sla import SlaStage, stage_field
 
 __all__ = ["ApprovalSpec", "ApprovalStore"]
 
@@ -63,6 +67,9 @@ class ApprovalStore:
         await self._store.ensure_index(APPROVALS_COLLECTION, [("org_id", 1), ("run_id", 1), ("task_id", 1)])
         await self._store.ensure_index(
             APPROVALS_COLLECTION, [("org_id", 1), ("approver_id", 1), ("status", 1), ("requested_at", -1)]
+        )
+        await self._store.ensure_index(  # HIL-2: the SLA sweep's scan
+            APPROVALS_COLLECTION, [("org_id", 1), ("status", 1), ("escalated_at", 1), ("requested_at", 1)]
         )
 
     async def create(self, spec: ApprovalSpec, *, now: datetime) -> dict[str, Any]:
@@ -158,6 +165,21 @@ class ApprovalStore:
 
     async def count_for(self, *, user_id: str, role: str | None, status: ApprovalStatus | None) -> int:
         return await self._approvals.count(self._visible(user_id, role, status))
+
+    async def awaiting_sla(self, *, limit: int) -> list[dict[str, Any]]:
+        """Pending approvals not yet escalated, oldest first: those the SLA sweep may still owe a stage (HIL-2)."""
+        return await self._approvals.find(
+            {"status": "pending", "escalated_at": None}, sort=[("requested_at", 1), ("_id", 1)], limit=limit
+        )
+
+    async def mark_stage(self, approval_id: str, stage: SlaStage, *, at: datetime) -> bool:
+        """Stamp an SLA stage as done, once, and only while the approval is pending. False when it was stamped
+        already or the approval was decided or cancelled first; nothing is written then."""
+        field = stage_field(stage)
+        outcome = await self._approvals.update_one(
+            {"_id": approval_id, "status": "pending", field: None}, {"$set": {field: at}}
+        )
+        return outcome.matched == 1
 
     async def decide_if_pending(self, approval_id: str, decision: Mapping[str, Any], status: ApprovalStatus) -> bool:
         """The one decision write: applies only while the approval is `pending`. False when another

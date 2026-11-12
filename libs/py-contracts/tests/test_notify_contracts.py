@@ -119,4 +119,5 @@ def test_the_in_app_consumer_is_subscribed_to_its_events() -> None:
         "task.sink_rejected": ["orchestrator.fail_task"],  # RUN-3: the orchestrator fails the task
         "decision.received": ["orchestrator.record_decision"],  # HIL-1: a Telegram press decides an approval
         "approval.requested": ["notify.approval"],  # HIL-1: the approver is told
+        "approval.overdue": ["notify.approval_sla"],  # HIL-2: reminder to the approver, escalation to HR
     }
