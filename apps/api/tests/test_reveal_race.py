@@ -62,7 +62,7 @@ def _reveal_audits(audit: InMemoryAuditLog, hire_id: str) -> list[tuple[str, str
 
 
 def _reveal_log(db: MemoryDatabase, hire_id: str) -> list[dict[str, Any]]:
-    return [r for r in db.raw("pii_access_log") if r.get("kind") == "reveal" and r.get("hire_id") == hire_id]
+    return [r for r in db.raw("pii_access_log") if r.get("kind") == "reveal" and r["subject"]["id"] == hire_id]
 
 
 def _race_resolve(
@@ -102,7 +102,9 @@ def test_a_reveal_racing_a_finished_update_returns_the_current_value_and_is_audi
     assert response.status_code == 200, response.text
     assert response.json()["data"]["value"] == written[-1], "the current value, never the superseded one"
     assert _reveal_audits(hire_audit, hire_id) == [("success", "race check")]
-    assert len(_reveal_log(memory_db, hire_id)) == 1, "the value left with its access-log entry"
+    [entry] = _reveal_log(memory_db, hire_id)  # the value left with its access-log entry
+    [hire] = [h for h in memory_db.raw("new_hires") if h["_id"] == hire_id]
+    assert entry["token"] == hire["pii"]["mobile"], "the entry names the token that was read: the current one"
 
 
 def test_a_reveal_racing_an_update_still_in_flight_is_a_409_and_is_audited(

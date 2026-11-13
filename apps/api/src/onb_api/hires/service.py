@@ -9,7 +9,9 @@
   email is reserved and the change audited before the vault is touched, and the hire only ever takes
   a newer version than it holds (see `update`).
 - **Reveal** (HR/HR_ADMIN; Aadhaar HR_ADMIN only): with a reason, one field. The value leaves only
-  after its `pii_access_log` entry and its audit record are written (fail closed).
+  after its `pii_access_log` entry and its audit record are written (fail closed). A reveal racing an
+  update of the field reads the hire's newer token; while the field keeps changing (or the update has
+  not reached the hire yet) it is a 409, audited as failed, never a 500 (FIX-1).
 
 Org keys are made on the first sensitive write of an org (ADR 0007). Logs carry ids, fields and
 tokens only; never values, notes or reasons.
@@ -41,6 +43,7 @@ from onb_crypto import (
     BlindIndexField,
     CryptoError,
     Keyring,
+    SupersededTokenError,
     TokenNotFoundError,
     Vault,
     VaultConflictError,
@@ -66,6 +69,10 @@ log = logging.getLogger(__name__)
 
 _AADHAAR_REVEAL_ROLES: Final = frozenset({Role.HR_ADMIN})
 _EMAIL_TAKEN: Final = "A hire with this email already exists"
+# A reveal whose token an update superseded reads the hire's newer token; after this many reads that all
+# lost to an update, the field is changing under it and the caller is told to retry (FIX-1).
+_REVEAL_READS: Final = 3
+_CHANGED_MEANWHILE: Final = "the value changed meanwhile"
 _NOT_A_MANAGER: Final = ErrorDetail(field="body.manager_id", issue="Not a manager in this org")
 
 
@@ -316,22 +323,7 @@ class HireService:
         if field is PiiField.AADHAAR and principal.role not in _AADHAAR_REVEAL_ROLES:
             await self._audit(principal, "pii.reveal", target, AuditOutcome.DENIED, "aadhaar reveal needs HR_ADMIN")
             raise AppError(ErrorCode.FORBIDDEN)
-        document = await self._visible(principal, hire_id)
-        token = document.get("pii", {}).get(field.value)
-        if not isinstance(token, str):
-            raise AppError(ErrorCode.NOT_FOUND)
-        try:
-            value = await self._vault.resolve(
-                token, org_id=principal.org_id, subject_id=hire_id, field=fields.vault_field(field)
-            )
-        except TokenNotFoundError:
-            raise AppError(ErrorCode.NOT_FOUND) from None
-        except CryptoError as error:
-            log.warning(
-                "reveal refused by the vault: hire=%s field=%s error=%s", hire_id, field.value, type(error).__name__
-            )
-            await self._audit(principal, "pii.reveal", target, AuditOutcome.FAILED, "vault refused the token")
-            raise AppError(ErrorCode.INTERNAL_ERROR, "The value could not be read") from None
+        token, value = await self._read_current(principal, hire_id, field, target)
         masked = self._masked_or_unmaskable(field, value)
         access_id = await self._access_log.record_reveal(
             user_id=principal.user_id, hire_id=hire_id, field=field, token=token, masked=masked, reason=safe_reason
@@ -341,6 +333,37 @@ class HireService:
         return RevealedValue(
             hire_id=hire_id, field=field, value=value, access_id=access_id, expires_in_seconds=REVEAL_TTL_SECONDS
         )
+
+    async def _read_current(
+        self, principal: Principal, hire_id: str, field: PiiField, target: str
+    ) -> tuple[str, str]:
+        """The field's current token and value. An update can supersede the token between the read of the
+        hire and the vault's read: the hire is read again for its newer token. A token the hire still holds
+        although it is superseded (the update has not reached the hire) or a field that keeps changing is a
+        409; any other vault refusal is a 500. Both failures are audited before the error leaves."""
+        for _ in range(_REVEAL_READS):
+            document = await self._visible(principal, hire_id)
+            token = document.get("pii", {}).get(field.value)
+            if not isinstance(token, str):
+                raise AppError(ErrorCode.NOT_FOUND)
+            try:
+                value = await self._vault.resolve(
+                    token, org_id=principal.org_id, subject_id=hire_id, field=fields.vault_field(field)
+                )
+            except SupersededTokenError:
+                log.info("reveal met a superseded token: hire=%s field=%s token=%s", hire_id, field.value, token)
+                continue
+            except TokenNotFoundError:
+                raise AppError(ErrorCode.NOT_FOUND) from None
+            except CryptoError as error:
+                log.warning(
+                    "reveal refused by the vault: hire=%s field=%s error=%s", hire_id, field.value, type(error).__name__
+                )
+                await self._audit(principal, "pii.reveal", target, AuditOutcome.FAILED, "vault refused the token")
+                raise AppError(ErrorCode.INTERNAL_ERROR, "The value could not be read") from None
+            return token, value
+        await self._audit(principal, "pii.reveal", target, AuditOutcome.FAILED, _CHANGED_MEANWHILE)
+        raise AppError(ErrorCode.CONFLICT, "The value changed meanwhile; reload and retry")
 
     # --- internals ---------------------------------------------------------------------------------
 
