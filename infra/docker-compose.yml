@@ -23,6 +23,11 @@ services:
       - --
     command: [mongod, --replSet, rs0, --keyFile, /etc/mongo-keyfile, --bind_ip_all]
     environment:
+      # Linux 6.19+ kernels: mongod 8.0 refuses to start (SERVER-121912, tcmalloc's per-CPU caches vs the
+      # new rseq ABI; no fixed release yet). Letting glibc own rseq makes tcmalloc use per-thread caches,
+      # so mongod starts. GitHub's runners are on such a kernel; so may the VM (DEP-1). Small allocator
+      # cost; drop this once MongoDB ships a fix.
+      GLIBC_TUNABLES: glibc.pthread.rseq=1
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME:?set MONGO_ROOT_USERNAME in .env}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:?set MONGO_ROOT_PASSWORD in .env}
     secrets: [mongo_keyfile]

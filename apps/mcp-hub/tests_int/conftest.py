@@ -80,6 +80,9 @@ __all__ = ["pytest_configure", "pytest_sessionfinish", "tenant_safety_net", "ten
 
 # Same image and digest as infra/docker-compose.yml.
 MONGO_IMAGE = "mongo:8.0.34@sha256:b9924c330a8bbc5800fe9c69f04a84e221eca7b28fd049a0354147d9908fa142"
+# Same as infra/docker-compose.yml: mongod 8.0 refuses to start on Linux 6.19+ kernels (SERVER-121912)
+# unless glibc owns rseq. GitHub runners are on such a kernel.
+MONGO_KERNEL_WORKAROUND = ("GLIBC_TUNABLES", "glibc.pthread.rseq=1")
 DATABASE = "onb_hub_int"
 ORGS = ("org_acme", "org_globex")
 ROOT = Path(__file__).resolve().parents[3]
@@ -189,7 +192,9 @@ def _user_uri(root_uri: str, user: str, password: str) -> str:
 
 @pytest.fixture(scope="session")
 def mongo_uri() -> Iterator[str]:
-    container = MongoDbContainer(MONGO_IMAGE, username="root", password=secrets.token_hex(16))
+    container = MongoDbContainer(MONGO_IMAGE, username="root", password=secrets.token_hex(16)).with_env(
+        *MONGO_KERNEL_WORKAROUND
+    )
     with container:
         uri = container.get_connection_url()
         client: RootClient = MongoClient(uri, serverSelectionTimeoutMS=5_000)

@@ -76,6 +76,21 @@ def test_mongo_runs_a_replica_set_with_auth_and_keyfile() -> None:
     assert "rs.initiate" in _text(ROOT / "infra" / "mongo" / "rs-init.js")
 
 
+MONGO_RSEQ_TUNABLE = "glibc.pthread.rseq=1"
+
+
+@pytest.mark.parametrize(
+    "path",
+    ["infra/docker-compose.yml", "apps/mcp-hub/tests_int/conftest.py", "apps/mcp-mongo/tests_int/conftest.py"],
+)
+def test_every_mongo_we_start_lets_glibc_own_rseq(path: str) -> None:
+    """mongod 8.0 refuses to start on Linux 6.19+ kernels (SERVER-121912), which GitHub's runners use, unless
+    glibc owns rseq. Every place that starts a Mongo container must keep the tunable until MongoDB ships a fix."""
+    text = _text(ROOT / path)
+    assert "GLIBC_TUNABLES" in text
+    assert MONGO_RSEQ_TUNABLE in text
+
+
 def test_keyfile_is_generated_and_ignored_never_committed() -> None:
     gen = _text(ROOT / "infra" / "mongo" / "gen-keyfile.sh")
     assert "openssl rand" in gen
