@@ -38,7 +38,8 @@ __all__ = [
 ]
 
 DRAFTS = "template_drafts"
-# Most recently updated first; the id breaks ties so pages never overlap (index `org_updated`).
+# Most recently updated first; the id breaks ties so pages never overlap. Index `org_updated` serves the
+# org filter and `updated_at`; ties (same millisecond) are rare and sorted in memory.
 _DRAFT_ORDER: list[tuple[str, int]] = [("updated_at", -1), ("_id", 1)]
 TEMPLATES = "templates"
 VERSIONS = "template_versions"

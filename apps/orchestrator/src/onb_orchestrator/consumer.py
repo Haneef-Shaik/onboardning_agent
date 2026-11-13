@@ -18,8 +18,8 @@ How a run ends or stops:
   `cancelled`, the checkpoint is deleted;
 - HR paused or cancelled the run while this ran → the step in hand finishes, nothing new starts, and
   the handler returns: the control route owns the run's state. A cancelled run's checkpoint is deleted.
-  A run paused and resumed again before this delivery noticed is left `running` too: the resume
-  published `run.resumed`, whose delivery drives it on (FIX-1);
+  A run paused and resumed again before this delivery noticed is never failed: the job is retried
+  (transient) and drives it on, as does the resume's own `run.resumed` delivery (FIX-1);
 - this worker is draining (SIGTERM) → `ReleaseJob`: the task in hand finished, the job goes back to the
   queue at once with no attempt used, and the next worker drives the run on;
 - a transient error (the database, a lost compare-and-set race, a task another delivery holds) is
@@ -295,9 +295,12 @@ async def _drive_guarded(driver: _Driver, run: Mapping[str, Any], action: Callab
             # A task was cancelled under a run that is still running (a failure that cancelled the
             # tasks but not the run): nothing can drive it, so end it instead of leaving it running.
             await driver.fail(run_id, "TaskCancelled")
-        # Otherwise the run was paused when this delivery read it and is `running` again: HR resumed it,
-        # and the resume's `run.resumed` delivery drives it on. A pause and a resume never fail a run (FIX-1).
-        return
+            return
+        # Otherwise the run was paused when this delivery read it and is `running` again: HR resumed it. A
+        # pause and a resume never fail a run (FIX-1). This job is retried rather than dropped: the resume's
+        # own `run.resumed` delivery may have given up on a task this one still held, and re-driving is
+        # idempotent (the graph resumes from its checkpoint, finished tasks are skipped).
+        raise TaskStepError("RunResumedMeanwhile", transient=True) from None
     except TaskExhaustedError as error:
         await driver.block(run_id, error.task_id)
         return
@@ -320,9 +323,8 @@ async def _drive_guarded(driver: _Driver, run: Mapping[str, Any], action: Callab
     try:
         await driver.complete(run_id)
     except (IllegalTransitionError, TransitionConflictError):
-        # HR paused or blocked it while its last task finished (moot), or paused and resumed it already: the
-        # resume's `run.resumed` delivery finds every task finished and completes it (FIX-1).
-        await driver.is_moot(run_id)
+        if not await driver.is_moot(run_id):  # HR paused or blocked it while its last task finished
+            raise  # or paused and resumed it already: the bus retries the job, which completes it (FIX-1)
 
 
 # --- orchestrator.fail_task: a sink refused a task's grant (NOTIF-1, ADR 0013) -------------------------

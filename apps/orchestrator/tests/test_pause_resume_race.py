@@ -31,7 +31,6 @@ from onb_eventbus import JobContext
 from onb_orchestrator.consumer import start_run_handler
 from onb_orchestrator.executor import StubExecutor
 from onb_orchestrator.policy import RunPolicy
-from onb_orchestrator.runner import TaskStepError
 
 ORG: Final = "org_a"
 HR: Final = "u_hr"
@@ -113,7 +112,8 @@ class World:
         return True
 
     async def deliver(self, run_id: str, event: str) -> None:
-        """One job, delivered like the bus does: a handler that raises is retried, up to `BUS_ATTEMPTS`."""
+        """One job, delivered like the bus does (`onb_eventbus.worker`): a handler that raises anything but
+        `ReleaseJob` is retried, up to `BUS_ATTEMPTS`; the last error is raised (dead-lettered)."""
         handler = start_run_handler(self.store, StubExecutor(), bus=self.bus, policy=NO_WAIT, clock=lambda: NOW)
         consumer = START_RUN if event == RUN_STARTED else "orchestrator.resume_run"
         for attempt in range(1, BUS_ATTEMPTS + 1):
@@ -122,8 +122,8 @@ class World:
                 with tenant_scope(ORG):
                     await handler(job)
                 return
-            except TaskStepError as error:
-                if not error.transient or attempt == BUS_ATTEMPTS:
+            except Exception:
+                if attempt == BUS_ATTEMPTS:
                     raise
 
     async def drain_resumes(self, run_id: str) -> None:
