@@ -1,0 +1,30 @@
+# FIX-1 make check at c6b45b9, compose project ob-fix-1, 2026-11-13: exit 0. Result lines:
+16:288 passed, 68 subtests passed in 5.37s
+184: NX   Successfully ran target lint for 17 projects
+320: NX   Successfully ran target typecheck for 17 projects
+403:[0m[32m============================= [32m[1m446 passed[0m[32m in 2.95s[0m[32m ==============================[0m
+456:[0m[32m============================= [32m[1m307 passed[0m[32m in 12.91s[0m[32m =============================[0m
+498:[0m[32m============================= [32m[1m115 passed[0m[32m in 1.08s[0m[32m ==============================[0m
+563:[0m[32m============================= [32m[1m432 passed[0m[32m in 1.81s[0m[32m ==============================[0m
+623:[0m[32m============================= [32m[1m386 passed[0m[32m in 0.47s[0m[32m ==============================[0m
+671:[0m[32m============================= [32m[1m123 passed[0m[32m in 2.29s[0m[32m ==============================[0m
+706:[0m[32m============================== [32m[1m80 passed[0m[32m in 0.56s[0m[32m ==============================[0m
+803:[0m[32m============================= [32m[1m789 passed[0m[32m in 10.18s[0m[32m =============================[0m
+837:[32m============================= [32m[1m523 passed[0m[32m in 7.53s[0m[32m ==============================[0m
+867:[32m============================= [32m[1m189 passed[0m[32m in 0.91s[0m[32m ==============================[0m
+877:[2m Test Files [22m [1m[32m2 passed[39m[22m[90m (2)[39m
+878:[2m      Tests [22m [1m[32m11 passed[39m[22m[90m (11)[39m
+891:[2m Test Files [22m [1m[32m2 passed[39m[22m[90m (2)[39m
+892:[2m      Tests [22m [1m[32m6 passed[39m[22m[90m (6)[39m
+954:[32m============================= [32m[1m888 passed[0m[32m in 23.56s[0m[32m =============================[0m
+1031:[0m[32m============================= [32m[1m258 passed[0m[32m in 8.60s[0m[32m ==============================[0m
+1064:[32m============================= [32m[1m242 passed[0m[32m in 5.65s[0m[32m ==============================[0m
+1077:[2m Test Files [22m [1m[32m16 passed[39m[22m[90m (16)[39m
+1078:[2m      Tests [22m [1m[32m146 passed[39m[22m[90m (146)[39m
+1110:[32m============================= [32m[1m158 passed[0m[32m in 1.02s[0m[32m ==============================[0m
+1114: NX   Successfully ran target test for 17 projects
+1189:	uv run --frozen pytest tools/tests_xt -q -o cache_dir=.pytest_cache/tests-xt && \
+1258:362 passed in 461.77s (0:07:41)
+1279:make test-xt: hub tools covered: mocks__create_bitbucket_account, mocks__provision_laptop, mongo__aggregate, mongo__count, mongo__find, mongo__insert_one, mongo__list_collections, mongo__update_one, notify__notify_send
+1283:[32m============================== [32m[1m13 passed[0m[32m in 5.26s[0m[32m ==============================[0m
+1287: NX   Successfully ran target test-xt for project mcp-hub
