@@ -1,0 +1,30 @@
+# FIX-1 mutation checks at 0f46f39, 2026-11-13: uv run python docs/evidence/FIX-1/mutate.py (env from .env, compose ob-fix-1 for M8/M9)
+M1 any halt under a running run fails it (the old code) [apps/orchestrator/src/onb_orchestrator/consumer.py] -> KILLED: 4 failed, 1 passed in 1.42s
+    FAILED apps/orchestrator/tests/test_pause_resume_race.py::test_a_pause_and_resume_at_any_read_of_the_run_never_fails_it[1]
+    FAILED apps/orchestrator/tests/test_pause_resume_race.py::test_a_pause_and_resume_at_any_read_of_the_run_never_fails_it[3]
+    FAILED apps/orchestrator/tests/test_pause_resume_race.py::test_a_pause_and_resume_while_an_approval_is_pending_keeps_the_approval_and_the_tasks[1]
+    FAILED apps/orchestrator/tests/test_pause_resume_race.py::test_a_pause_and_resume_while_an_approval_is_pending_keeps_the_approval_and_the_tasks[3]
+M2 a completion that lost to a pause/resume pair raises again [apps/orchestrator/src/onb_orchestrator/consumer.py] -> KILLED: 2 failed, 3 passed in 1.99s
+    FAILED apps/orchestrator/tests/test_pause_resume_race.py::test_a_pause_and_resume_at_any_read_of_the_run_never_fails_it[1]
+    FAILED apps/orchestrator/tests/test_pause_resume_race.py::test_a_pause_and_resume_at_any_read_of_the_run_never_fails_it[3]
+M3 a cancelled task raises a plain RunHaltedError (the run is left running) [apps/orchestrator/src/onb_orchestrator/runner.py] -> KILLED: 1 failed in 0.36s
+    FAILED apps/orchestrator/tests/test_run_control.py::test_a_task_cancelled_under_a_running_run_ends_the_run_instead_of_leaving_it_running
+M4 a superseded token is a vault failure again (500) [apps/api/src/onb_api/hires/service.py] -> KILLED: 3 failed in 0.17s
+    FAILED apps/api/tests/test_reveal_race.py::test_a_reveal_racing_a_finished_update_returns_the_current_value_and_is_audited
+    FAILED apps/api/tests/test_reveal_race.py::test_a_reveal_racing_an_update_still_in_flight_is_a_409_and_is_audited
+    FAILED apps/api/tests/test_reveal_race.py::test_reveals_racing_updates_of_the_same_field_never_answer_500
+M5 a single read: no re-read of the hire's newer token [apps/api/src/onb_api/hires/service.py] -> KILLED: 1 failed, 2 passed in 0.17s
+    FAILED apps/api/tests/test_reveal_race.py::test_a_reveal_racing_a_finished_update_returns_the_current_value_and_is_audited
+M6 the 409 is not audited [apps/api/src/onb_api/hires/service.py] -> KILLED: 2 failed, 1 passed in 0.19s
+    FAILED apps/api/tests/test_reveal_race.py::test_a_reveal_racing_an_update_still_in_flight_is_a_409_and_is_audited
+    FAILED apps/api/tests/test_reveal_race.py::test_reveals_racing_updates_of_the_same_field_never_answer_500
+M7 the route ignores limit [apps/api/src/onb_api/templates/routes.py] -> KILLED: 1 failed, 6 passed in 0.26s
+    FAILED apps/api/tests/test_template_drafts_paging.py::test_the_draft_list_pages_and_reports_the_total
+M8 the Mongo store does not skip earlier pages [apps/api/src/onb_api/templates/store.py] -> KILLED: 1 failed in 1.15s
+    FAILED apps/api/tests_int/test_mongo_templates.py::test_the_draft_list_pages_over_mongo_within_the_org
+M9 the Mongo store has no tie-breaker (pages can overlap) [apps/api/src/onb_api/templates/store.py] -> SURVIVED: 1 passed in 1.00s
+
+# M9 survived, and that's expected: the `_id` tie-breaker only matters when two drafts share an
+# `updated_at` (ms). Mongo returns tied rows in a stable natural order on a small collection, so no
+# deterministic test sees overlapping pages without it. Kept as defence (Mongo documents that sort on a
+# non-unique key with skip/limit is not guaranteed consistent); the in-memory store ties by id too.
