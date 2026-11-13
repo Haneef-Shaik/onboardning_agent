@@ -1,13 +1,18 @@
-# FIX-1 make test-int at 0f46f39 (code as c6b45b9), compose ob-fix-1, 2026-11-13: exit 0. Result lines:
-12 passed in 2.44s
-[32m============================== [32m[1m12 passed[0m[32m in 2.58s[0m[32m ==============================[0m
-[32m============================== [32m[1m5 passed[0m[32m in 2.99s[0m[32m ===============================[0m
-[32m============================== [32m[1m50 passed[0m[32m in 4.64s[0m[32m ==============================[0m
-[32m============================== [32m[1m11 passed[0m[32m in 3.67s[0m[32m ==============================[0m
-[32m============================== [32m[1m79 passed[0m[32m in 5.04s[0m[32m ==============================[0m
-[32m============================== [32m[1m19 passed[0m[32m in 8.77s[0m[32m ==============================[0m
-[32m============================== [32m[1m38 passed[0m[32m in 6.76s[0m[32m ==============================[0m
-[32m============================= [32m[1m46 passed[0m[32m in 10.20s[0m[32m ==============================[0m
-[32m============================== [32m[1m4 passed[0m[32m in 23.51s[0m[32m ==============================[0m
-[32m======================== [32m[1m29 passed[0m[32m in 62.14s (0:01:02)[0m[32m =========================[0m
+# FIX-1 make test-int at 416c22a (final code), compose ob-fix-1, 2026-11-13: exit 0 on the second run. Result lines:
+12 passed in 2.23s
+============================== 12 passed in 2.48s ==============================
+============================== 5 passed in 3.17s ===============================
+============================== 50 passed in 4.72s ==============================
+============================== 11 passed in 4.22s ==============================
+============================== 79 passed in 5.49s ==============================
+============================== 19 passed in 8.63s ==============================
+============================== 46 passed in 9.80s ==============================
+============================== 38 passed in 7.35s ==============================
+============================== 4 passed in 23.65s ==============================
+======================== 29 passed in 64.12s (0:01:04) =========================
  NX   Successfully ran target test-int for 10 projects
+
+# The first run at 416c22a failed one test outside this diff (timing): mcp-hub tests_int
+E       ValueError: not enough values to unpack (expected 1, got 0)
+FAILED apps/mcp-hub/tests_int/test_hub_mocks_int.py::test_int_every_registered_agent_without_the_mock_tool_is_denied - ValueError: not enough values to unpack (expected 1, got 0)
+# (the hub span was not exported within SPAN_WAIT_SECONDS on a loaded machine; FIX-1 does not touch apps/mcp-hub)

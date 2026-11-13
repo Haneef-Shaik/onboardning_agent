@@ -9,9 +9,11 @@
    `docs/evidence/FIX-1/red-drafts-paging.txt`), paging in `templates/*` + tests_int + tests_xt (c6b45b9).
 4. `make check` exit 0 at c6b45b9 (`docs/evidence/FIX-1/make-check.txt`, test-xt 362 passed).
 
+5. Review H1 fixed (3660385 red, then fix): a halted delivery under a resumed run is retried (transient).
+6. Gates green on the final code; mutation checks 8/9 (M9 explained); handoff written.
+
 ## Next
-`make test-int`, `make contracts-check`, mutation checks (`docs/evidence/FIX-1/mutation-checks.txt`),
-code + security review, handoff, goal-verifier, board → in review, `make down`.
+goal-verifier, board → in review, `make down`.
 
 ## Surprises
 - Root cause of box 1: a delivery that met a paused run raised `RunHaltedError`; HR's resume landed
