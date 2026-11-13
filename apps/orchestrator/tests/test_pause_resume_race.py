@@ -31,6 +31,7 @@ from onb_eventbus import JobContext
 from onb_orchestrator.consumer import start_run_handler
 from onb_orchestrator.executor import StubExecutor
 from onb_orchestrator.policy import RunPolicy
+from onb_orchestrator.runner import TaskStepError
 
 ORG: Final = "org_a"
 HR: Final = "u_hr"
@@ -41,6 +42,7 @@ NO_WAIT: Final = RunPolicy(max_attempts=3, backoff_base=0.0, backoff_max=0.0, le
 READS_SWEPT: Final = 40
 PAIRS_PER_READ: Final = 3
 NEVER: Final = frozenset({"failed", "cancelled"})
+BUS_ATTEMPTS: Final = 5  # the event bus's default attempts per job (onb_eventbus settings)
 
 
 def run[T](coroutine: Coroutine[Any, Any, T]) -> T:
@@ -111,11 +113,18 @@ class World:
         return True
 
     async def deliver(self, run_id: str, event: str) -> None:
+        """One job, delivered like the bus does: a handler that raises is retried, up to `BUS_ATTEMPTS`."""
         handler = start_run_handler(self.store, StubExecutor(), bus=self.bus, policy=NO_WAIT, clock=lambda: NOW)
         consumer = START_RUN if event == RUN_STARTED else "orchestrator.resume_run"
-        job = JobContext("job", ORG, consumer, "ev", event, MappingProxyType({"run_id": run_id}), run_id, 1)
-        with tenant_scope(ORG):
-            await handler(job)
+        for attempt in range(1, BUS_ATTEMPTS + 1):
+            job = JobContext("job", ORG, consumer, "ev", event, MappingProxyType({"run_id": run_id}), run_id, attempt)
+            try:
+                with tenant_scope(ORG):
+                    await handler(job)
+                return
+            except TaskStepError as error:
+                if not error.transient or attempt == BUS_ATTEMPTS:
+                    raise
 
     async def drain_resumes(self, run_id: str) -> None:
         """The bus delivers every `run.resumed` the resumes published (at least once, in order)."""
@@ -274,3 +283,25 @@ def test_many_pause_resume_pairs_racing_the_worker_never_fail_the_run() -> None:
         _assert_never_failed(status, tasks, approvals, f"round {round_no}")
         assert status == "completed", f"round {round_no}: {status} {tasks}"
     assert total_pairs >= runs_tried, "the toggler must actually have raced the worker"
+
+
+@pytest.mark.parametrize("pairs", [1, PAIRS_PER_READ])
+def test_a_halted_delivery_is_retried_so_the_run_finishes_even_if_the_resume_delivery_is_lost(
+    pairs: int, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Review finding: the resume's `run.resumed` delivery can be dead-lettered (it met a task the halted
+    delivery still held, past its attempts). The halted delivery must not just return and leave the run
+    `running` with nothing driving it: the bus retries it, and the retry finishes the run."""
+    for target in range(READS_SWEPT):
+        world = World()
+
+        async def go(w: World = world, at: int = target) -> tuple[str, dict[str, str], list[str]]:
+            run_id = await w.start(diamond_template())
+            with monkeypatch.context() as patch:
+                _pair_at_read(w, run_id, at, pairs, patch)
+                await w.deliver(run_id, RUN_STARTED)  # every run.resumed is lost: never delivered
+            return await w.state(run_id)
+
+        status, tasks, approvals = run(go())
+        _assert_never_failed(status, tasks, approvals, f"read {target}")
+        assert status == "completed", f"read {target}: left {status} with nothing to drive it: {tasks}"

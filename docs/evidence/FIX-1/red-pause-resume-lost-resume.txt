@@ -1,0 +1,9 @@
+# FIX-1 review finding H1 red run (HEAD b69cfef + new test, 2026-11-13): the halted delivery returned, so a lost run.resumed left the run running
+$ uv run pytest apps/orchestrator/tests/test_pause_resume_race.py -q -p no:randomly
+            _assert_never_failed(status, tasks, approvals, f"read {target}")
+E           AssertionError: read 2: left running with nothing to drive it: {'a': 'pending', 'b': 'pending', 'c': 'pending', 'd': 'pending', 'e': 'pending', 'f': 'pending'}
+            _assert_never_failed(status, tasks, approvals, f"read {target}")
+E           AssertionError: read 2: left running with nothing to drive it: {'a': 'pending', 'b': 'pending', 'c': 'pending', 'd': 'pending', 'e': 'pending', 'f': 'pending'}
+FAILED apps/orchestrator/tests/test_pause_resume_race.py::test_a_halted_delivery_is_retried_so_the_run_finishes_even_if_the_resume_delivery_is_lost[1]
+FAILED apps/orchestrator/tests/test_pause_resume_race.py::test_a_halted_delivery_is_retried_so_the_run_finishes_even_if_the_resume_delivery_is_lost[3]
+2 failed, 5 passed in 2.26s
