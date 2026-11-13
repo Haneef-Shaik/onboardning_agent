@@ -100,7 +100,13 @@ seed: up
 ## this target has generated the Mongo keyfile. Needs Docker Engine 25+ (healthcheck start_interval).
 up: $(ENV_FILE)
 	infra/mongo/gen-keyfile.sh
-	$(COMPOSE) up -d --wait --build
+	$(COMPOSE) up -d --wait --build || { \
+	  echo "make up: the stack did not become healthy; container states and recent logs follow"; \
+	  $(COMPOSE) ps -a; \
+	  $(COMPOSE) logs --no-color --tail=150 mongo; \
+	  for c in $$($(COMPOSE) ps -aq mongo); do \
+	    docker inspect --format '{{range .State.Health.Log}}health exit={{.ExitCode}}: {{.Output}}{{end}}' $$c; done; \
+	  exit 1; }
 
 ## Stops the stack; data volumes are kept.
 down:
