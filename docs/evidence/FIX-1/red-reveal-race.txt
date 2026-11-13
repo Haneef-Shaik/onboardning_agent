@@ -1,0 +1,12 @@
+# FIX-1 box 2 red run: the test on the code before the fix (HEAD 512aca0, service.py unchanged from main 73bd4d4, 2026-11-13)
+$ uv run pytest apps/api/tests/test_reveal_race.py -q -p no:randomly
+E       AssertionError: {"success":false,"data":null,"error":{"code":"INTERNAL_ERROR","message":"The value could not be read","details":[]},"meta":{"trace_id":null,"page":null}}
+E       assert 500 == 200
+E       AssertionError: {"success":false,"data":null,"error":{"code":"INTERNAL_ERROR","message":"The value could not be read","details":[]},"meta":{"trace_id":null,"page":null}}
+E       assert 500 == 409
+E           AssertionError: race 1: 500 {"success":false,"data":null,"error":{"code":"INTERNAL_ERROR","message":"The value could not be read","details":[]},"meta":{"trace_id":null,"page":null}}
+E           assert 500 in (200, 409)
+FAILED apps/api/tests/test_reveal_race.py::test_a_reveal_racing_a_finished_update_returns_the_current_value_and_is_audited
+FAILED apps/api/tests/test_reveal_race.py::test_a_reveal_racing_an_update_still_in_flight_is_a_409_and_is_audited
+FAILED apps/api/tests/test_reveal_race.py::test_reveals_racing_updates_of_the_same_field_never_answer_500
+3 failed in 0.16s

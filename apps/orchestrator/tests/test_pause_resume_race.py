@@ -207,7 +207,9 @@ def test_a_pause_and_resume_while_an_approval_is_pending_keeps_the_approval_and_
             with tenant_scope(ORG):
                 [approval] = await w.approvals.for_task(run_id, "appr")
                 decider = ApprovalDecider(w.approvals, w.bus, clock=lambda: NOW)
-                await decider.decide(approval["_id"], decision=Decision.APPROVE, comment=None, channel="web", user_id=MANAGER)
+                await decider.decide(
+                    approval["_id"], decision=Decision.APPROVE, comment=None, channel="web", user_id=MANAGER
+                )
             await w.deliver(run_id, RUN_RESUMED)  # drives the run on and settles the decided approval
             return await w.state(run_id)
 
