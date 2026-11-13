@@ -16,8 +16,8 @@ import re
 from collections.abc import Awaitable, Callable, Mapping
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, Path, Request
-from onb_contracts import Envelope, ErrorCode, ErrorDetail
+from fastapi import APIRouter, Depends, Path, Query, Request
+from onb_contracts import Envelope, ErrorCode, ErrorDetail, PageMeta
 from onb_contracts.auth import Role
 from onb_contracts.template_lifecycle import (
     DRAFT_ID_PATTERN,
@@ -52,7 +52,12 @@ from onb_api.templates.lifecycle import (
 )
 from onb_api.templates.store import VersionExistsError
 
-__all__ = ["router", "template_lifecycle"]
+__all__ = ["DEFAULT_DRAFT_LIMIT", "MAX_DRAFT_LIMIT", "MAX_DRAFT_PAGE", "router", "template_lifecycle"]
+
+# The draft list pages like `/runs` (FIX-1): bounded page size and depth.
+DEFAULT_DRAFT_LIMIT = 20
+MAX_DRAFT_LIMIT = 100
+MAX_DRAFT_PAGE = 1000
 
 router = APIRouter(tags=["templates"])
 
@@ -150,8 +155,14 @@ async def create_draft(principal: Author, lifecycle: Lifecycle, body: DraftCreat
 
 
 @router.get("/templates/drafts", response_model=DraftsEnvelope, operation_id="listTemplateDrafts")
-async def list_drafts(_: Author, lifecycle: Lifecycle) -> Envelope[list[DraftRecord]]:
-    return respond(await lifecycle.list_drafts())
+async def list_drafts(
+    _: Author,
+    lifecycle: Lifecycle,
+    page: Annotated[int, Query(ge=1, le=MAX_DRAFT_PAGE)] = 1,
+    limit: Annotated[int, Query(ge=1, le=MAX_DRAFT_LIMIT)] = DEFAULT_DRAFT_LIMIT,
+) -> Envelope[list[DraftRecord]]:
+    drafts, total = await lifecycle.page_drafts(page=page, limit=limit)
+    return respond(drafts, page=PageMeta(total=total, page=page, limit=limit))
 
 
 @router.get("/templates/drafts/{draft_id}", response_model=DraftEnvelope, operation_id="getTemplateDraft")

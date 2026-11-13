@@ -223,3 +223,20 @@ def test_an_archive_whose_audit_write_fails_leaves_the_version_published(
         assert head is not None
         assert [entry["archived_at"] for entry in head["versions"]] == [None]
         assert database["audit_log"].count_documents({"action": "template.archive"}) == 0
+
+
+def test_the_draft_list_pages_over_mongo_within_the_org(root_client: Client, scratch: str) -> None:
+    """FIX-1: `GET /templates/drafts` pages through `MongoTemplateStore.page_drafts` (skip/limit on the
+    `org_updated` order); the total and every page hold the token's org's drafts only."""
+    with _api(root_client, scratch) as client:
+        mine = {_draft(client, {**SEED, "key": f"paging-{n}"}) for n in range(5)}
+        _draft(client, {**SEED, "key": "paging-b"}, ADMIN_B)
+        pages = [
+            client.get("/templates/drafts", params={"page": n, "limit": 2}, headers=_auth(HR_A)).json()
+            for n in (1, 2, 3, 4)
+        ]
+    assert [len(p["data"]) for p in pages] == [2, 2, 1, 0]
+    assert {p["meta"]["page"]["total"] for p in pages} == {5}
+    seen = [d["id"] for p in pages for d in p["data"]]
+    assert len(seen) == len(set(seen)) == 5, "pages never overlap"
+    assert set(seen) == mine

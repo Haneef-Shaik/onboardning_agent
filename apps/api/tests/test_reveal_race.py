@@ -20,7 +20,7 @@ from onb_api.testing import InMemoryAuditLog, bearer, token_for
 from onb_api.testing_mongo import MemoryDatabase
 from onb_contracts.auth import Role
 from onb_contracts.hires import PiiField, PiiUpdateRequest
-from onb_data import AuditOutcome, AuditQuery, tenant_scope
+from onb_data import AuditQuery, tenant_scope
 
 HR: Final = ("u_acme_hr1", "org_acme", Role.HR)
 PRINCIPAL: Final = Principal(user_id="u_acme_hr1", org_id="org_acme", role=Role.HR)
@@ -70,7 +70,7 @@ def _race_resolve(
 ) -> list[str]:
     """Before each of the first `times` vault reads, `update` changes the field: the token the reveal holds is
     superseded by the time the vault reads it. Returns the values the updates wrote."""
-    vault = hires._vault  # noqa: SLF001 - the race is between the route's read of the hire and the vault's read
+    vault = hires._vault
     original = vault.resolve
     written: list[str] = []
 
@@ -119,7 +119,7 @@ def test_a_reveal_racing_an_update_still_in_flight_is_a_409_and_is_audited(
     hire_id = _create(client)
 
     async def put_only(value: str) -> None:
-        await hires._vault.put(  # noqa: SLF001 - the first half of an update: vault written, hire not yet
+        await hires._vault.put(
             "org_acme", subject_id=hire_id, field=_vault_mobile(), value=value, created_by="u_other", consent=None
         )
 

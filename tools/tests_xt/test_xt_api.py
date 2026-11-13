@@ -439,8 +439,16 @@ def _list_drafts_request(_: World, role: Role) -> Request:
 
 
 def _list_drafts_check(client: TestClient, _: World) -> None:
-    listed = client.get("/templates/drafts", headers=_admin()).json()["data"]
-    assert {draft["id"] for draft in listed} == _a_draft_ids()
+    listed = client.get("/templates/drafts", headers=_admin()).json()
+    assert {draft["id"] for draft in listed["data"]} == _a_draft_ids()
+    assert listed["meta"]["page"]["total"] == len(_a_draft_ids()), "org B's drafts are not counted"
+    # FIX-1: paged one draft at a time, every page still holds org A's drafts only.
+    paged = [
+        client.get("/templates/drafts", params={"page": n, "limit": 1}, headers=_admin()).json()["data"]
+        for n in range(1, len(_a_draft_ids()) + 2)
+    ]
+    assert {draft["id"] for page in paged for draft in page} == _a_draft_ids()
+    assert paged[-1] == []
     b_admin = client.get("/templates/drafts", headers=bearer(token_for(*B_ADMIN))).json()["data"]
     assert {draft["id"] for draft in b_admin} == {draft_id for draft_id, _, _ in template_drafts(ORG_B)}
 

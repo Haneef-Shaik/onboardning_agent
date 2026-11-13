@@ -334,9 +334,7 @@ class HireService:
             hire_id=hire_id, field=field, value=value, access_id=access_id, expires_in_seconds=REVEAL_TTL_SECONDS
         )
 
-    async def _read_current(
-        self, principal: Principal, hire_id: str, field: PiiField, target: str
-    ) -> tuple[str, str]:
+    async def _read_current(self, principal: Principal, hire_id: str, field: PiiField, target: str) -> tuple[str, str]:
         """The field's current token and value. An update can supersede the token between the read of the
         hire and the vault's read: the hire is read again for its newer token. A token the hire still holds
         although it is superseded (the update has not reached the hire) or a field that keeps changing is a

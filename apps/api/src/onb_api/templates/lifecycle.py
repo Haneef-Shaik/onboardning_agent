@@ -149,7 +149,13 @@ class TemplateLifecycle:
         return _draft_record(await self._draft(draft_id))
 
     async def list_drafts(self) -> list[DraftRecord]:
+        """Every draft of the org (the seeder's lookup); the route pages with `page_drafts`."""
         return [_draft_record(draft) for draft in await self._store.list_drafts()]
+
+    async def page_drafts(self, *, page: int, limit: int) -> tuple[list[DraftRecord], int]:
+        """One page of the org's drafts, most recently updated first, and the org's total."""
+        drafts, total = await self._store.page_drafts(page=page, limit=limit)
+        return [_draft_record(draft) for draft in drafts], total
 
     async def save_draft(
         self, draft_id: str, template: Template, *, revision: int | None, actor_id: str

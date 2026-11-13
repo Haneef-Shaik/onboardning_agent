@@ -57,6 +57,11 @@ class InMemoryTemplateStore:
         own = [draft for (owner, _), draft in self._state.drafts.items() if owner == org]
         return sorted(sorted(own, key=lambda d: d.id), key=lambda d: d.updated_at, reverse=True)
 
+    async def page_drafts(self, *, page: int, limit: int) -> tuple[list[StoredDraft], int]:
+        every = await self.list_drafts()
+        start = (page - 1) * limit
+        return every[start : start + limit], len(every)
+
     async def replace_draft(self, draft: StoredDraft, *, expected_revision: int) -> bool:
         key = (_org(), draft.id)
         current = self._state.drafts.get(key)

@@ -38,6 +38,8 @@ __all__ = [
 ]
 
 DRAFTS = "template_drafts"
+# Most recently updated first; the id breaks ties so pages never overlap (index `org_updated`).
+_DRAFT_ORDER: list[tuple[str, int]] = [("updated_at", -1), ("_id", 1)]
 TEMPLATES = "templates"
 VERSIONS = "template_versions"
 
@@ -208,6 +210,9 @@ class TemplateStore(Protocol):
     async def list_drafts(self) -> list[StoredDraft]:
         """The org's drafts, most recently updated first."""
 
+    async def page_drafts(self, *, page: int, limit: int) -> tuple[list[StoredDraft], int]:
+        """One page of the org's drafts in `list_drafts` order, and how many the org has."""
+
     async def replace_draft(self, draft: StoredDraft, *, expected_revision: int) -> bool:
         """Store `draft` over the unpublished draft at `expected_revision`; False when there is none."""
 
@@ -258,8 +263,14 @@ class MongoTemplateStore:
         return None if found is None else StoredDraft.from_document(found)
 
     async def list_drafts(self) -> list[StoredDraft]:
-        found = await self._store.tenant(DRAFTS).find({}, sort=[("updated_at", -1), ("_id", 1)])
+        found = await self._store.tenant(DRAFTS).find({}, sort=_DRAFT_ORDER)
         return [StoredDraft.from_document(document) for document in found]
+
+    async def page_drafts(self, *, page: int, limit: int) -> tuple[list[StoredDraft], int]:
+        drafts = self._store.tenant(DRAFTS)
+        total: int = await drafts.count({})
+        found = await drafts.find({}, sort=_DRAFT_ORDER, skip=(page - 1) * limit, limit=limit)
+        return [StoredDraft.from_document(document) for document in found], total
 
     async def replace_draft(self, draft: StoredDraft, *, expected_revision: int) -> bool:
         fields = {k: v for k, v in draft.document().items() if k != "_id"}
