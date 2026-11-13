@@ -43,10 +43,10 @@ MUTATIONS = [
         RACE,
     ),
     Mutation(
-        "M2 a completion that lost to a pause/resume pair raises again",
+        "M2 a halt under a resumed run returns instead of being retried (review H1)",
         CONSUMER,
-        "        await driver.is_moot(run_id)\n",
-        "        if not await driver.is_moot(run_id):\n            raise\n",
+        '        raise TaskStepError("RunResumedMeanwhile", transient=True) from None\n',
+        "        return\n",
         RACE,
     ),
     Mutation(

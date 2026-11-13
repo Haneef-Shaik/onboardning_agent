@@ -1,0 +1,20 @@
+# FIX-1 box 1 red run with the final test: test file at HEAD, consumer.py and runner.py as on main (73bd4d4), 2026-11-13
+$ git show main:apps/orchestrator/src/onb_orchestrator/{consumer,runner}.py > (working tree); uv run pytest apps/orchestrator/tests/test_pause_resume_race.py -q -p no:randomly
+6 failed, 1 passed in 1.50s
+E       AssertionError: read 1: the run ended failed; tasks {'a': 'done', 'appr': 'cancelled', 'b': 'cancelled', 'c': 'done'}
+E       AssertionError: read 2, during the drive: the run ended failed; tasks {'a': 'cancelled', 'b': 'cancelled', 'c': 'cancelled', 'd': 'cancelled', 'e': 'cancelled', 'f': 'cancelled'}
+E       AssertionError: read 2: the run ended failed; tasks {'a': 'cancelled', 'b': 'cancelled', 'c': 'cancelled', 'd': 'cancelled', 'e': 'cancelled', 'f': 'cancelled'}
+FAILED apps/orchestrator/tests/test_pause_resume_race.py::test_a_halted_delivery_is_retried_so_the_run_finishes_even_if_the_resume_delivery_is_lost[1]
+FAILED apps/orchestrator/tests/test_pause_resume_race.py::test_a_halted_delivery_is_retried_so_the_run_finishes_even_if_the_resume_delivery_is_lost[3]
+FAILED apps/orchestrator/tests/test_pause_resume_race.py::test_a_pause_and_resume_at_any_read_of_the_run_never_fails_it[1]
+FAILED apps/orchestrator/tests/test_pause_resume_race.py::test_a_pause_and_resume_at_any_read_of_the_run_never_fails_it[3]
+FAILED apps/orchestrator/tests/test_pause_resume_race.py::test_a_pause_and_resume_while_an_approval_is_pending_keeps_the_approval_and_the_tasks[1]
+FAILED apps/orchestrator/tests/test_pause_resume_race.py::test_a_pause_and_resume_while_an_approval_is_pending_keeps_the_approval_and_the_tasks[3]
+WARNING  onb_orchestrator:consumer.py:195 run run_0bf0c65bbf01bf1d41dc1fd9 failed: TaskCancelled
+WARNING  onb_orchestrator:consumer.py:195 run run_2b706c4c8b6e6fbc90ebdb08 failed: TaskCancelled
+WARNING  onb_orchestrator:consumer.py:195 run run_41225efc8de925d165ae9a68 failed: TaskCancelled
+WARNING  onb_orchestrator:consumer.py:195 run run_aff7ac5f026f863bc080612a failed: TaskCancelled
+WARNING  onb_orchestrator:consumer.py:195 run run_bb905fcddbd8cf84e0a78941 failed: TaskCancelled
+WARNING  onb_orchestrator:consumer.py:195 run run_cc41fd2375533ad4b146a4c7 failed: TaskCancelled
+--- restored; green run on the fix:
+7 passed in 2.60s
