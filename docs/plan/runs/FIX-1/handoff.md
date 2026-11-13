@@ -70,3 +70,6 @@ None. ADR 0029 (reserved) is not used. Each fix stays within its owner's existin
 - mcp-hub `test_int_every_registered_agent_without_the_mock_tool_is_denied` flaked once on span-export timing under load; it passed on the re-run.
 - The `rtk` hook truncates `make` output; run gates as `rtk proxy make …`.
 - A test harness that calls a handler once hides the bus's retries. The race tests deliver like `onb_eventbus.worker` (any exception is retried, 5 attempts), otherwise "raise to retry" looks like a failure.
+
+## Verification
+goal-verifier attempt 1 on bd17a2e: **pass**. All 3 boxes are met. Red runs were reproduced by loading main's `consumer.py`/`runner.py` (6 failed) and `service.py` (3 failed) through PYTHONPATH. `make check` (test-xt 362 + 13), `make test-int` (10 projects) and `make contracts-check` were all green. The verifier also ran `make test-pii`: 4 passed. No problems found.
