@@ -1,0 +1,7 @@
+# FIX-1 box 3 red run: the test on the code before the fix (HEAD d05804a, templates/routes.py unchanged from main 73bd4d4, 2026-11-13)
+# The route has no paging constants or parameters, so the test cannot even import them.
+$ uv run pytest apps/api/tests/test_template_drafts_paging.py -q -p no:randomly
+E   ImportError: cannot import name 'DEFAULT_DRAFT_LIMIT' from 'onb_api.templates.routes' (/Users/Adya/personals/onboardning_agent/.claude/worktrees/goal-fix-1/apps/api/src/onb_api/templates/routes.py)
+ERROR apps/api/tests/test_template_drafts_paging.py
+!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+1 error in 0.10s
